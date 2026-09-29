@@ -467,7 +467,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val p = state.player(e.player ?: "me")
                     val attackers = curEvents.filter { it.verb == "attack" && it.player == p.id && it.obj != null }.mapNotNull { it.obj }.distinct()
                     val blocked = curEvents.filter { it.verb == "block" }.flatMap { it.targets }.toSet()
-                    val through = attackers.filter { it !in blocked }
+                    // "Bob attacks with two creatures and has 2 lands" under Propaganda: one never attacked, so it isn't through.
+                    val declared = attackers.filter { id -> state.objects[id]?.attacking != null }
+                    val actual = if (declared.isEmpty() && attackers.none { id -> state.outcomes.any { o -> o.startsWith("${state.objects[id]?.name} can't attack") } }) attackers else declared
+                    val through = actual.filter { it !in blocked }
                     state.outcomes += "${through.size} of ${p.possessive} ${attackers.size} attackers ${if (through.size == 1) "is" else "are"} unblocked" + (if (through.isNotEmpty()) ": ${through.joinToString(", ") { state.objects[it]?.name ?: it }}." else ".")
                     return
                 }

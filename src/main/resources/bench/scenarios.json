@@ -24605,5 +24605,104 @@
       "a 1/1 token ceases to exist; it doesn't stay in the zone it went to.",
       "a creature: the battlefield → your graveyard."
     ]
+  },
+  {
+    "id": "named-if-bob-blocks-does-his-creature-die",
+    "text": "Alice attacks Bob with a 3/3. Bob has a 2/2. If Bob blocks, does his creature die?",
+    "expect": [
+      "Yes: a 2/2 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "named-wrath-bob-two-carol-one",
+    "text": "Alice casts Wrath of God. Bob has two creatures and Carol has one. What dies?",
+    "expect": [
+      "a creature: the battlefield → Bob's graveyard. (×2)",
+      "a creature: the battlefield → Carol's graveyard."
+    ]
+  },
+  {
+    "id": "named-bolt-and-shock-at-him",
+    "text": "Bob is at 4. Alice casts Lightning Bolt at him and Carol casts Shock at him. Is Bob dead?",
+    "expect": [
+      "Bob takes 2 damage.",
+      "Bob takes 3 damage.",
+      "Yes: Bob has lost the game."
+    ]
+  },
+  {
+    "id": "named-rhystic-bob-pays",
+    "text": "Alice controls Rhystic Study. Bob casts a spell and pays. Does Alice draw?",
+    "expect": [
+      "Bob pays {1}; Rhystic Study's triggered ability has no further effect.",
+      "No: Alice doesn't draw."
+    ]
+  },
+  {
+    "id": "named-two-defenders-bob-blocks-wrong-one",
+    "text": "I attack Bob with my 5/5 and Carol with my 2/2. Bob blocks with a 6/6. Who takes damage?",
+    "expect": [
+      "a 6/6 creature can't block a 2/2 creature (it isn't attacking bob).",
+      "Bob takes 5 damage.",
+      "Carol takes 2 damage."
+    ]
+  },
+  {
+    "id": "named-propaganda-bob-two-creatures-two-lands",
+    "text": "Alice has Propaganda. Bob attacks her with two creatures and has 2 lands. How many get through?",
+    "expect": [
+      "a creature can't attack (can't pay {2} for Propaganda).",
+      "1 of Bob's 2 attackers is unblocked: a creature."
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "named-doom-blade-on-alices-black-creature",
+    "text": "Bob casts Doom Blade on Alice's black creature. Does it work?",
+    "expect": [
+      "Doom Blade can't target a black creature (not a nonblack creature)."
+    ]
+  },
+  {
+    "id": "if-i-dont-block-4-4-and-2-2",
+    "text": "If I don't block, how much damage do I take from a 4/4 and a 2/2?",
+    "expect": [
+      "Yes: you take 6 damage in all."
+    ]
+  },
+  {
+    "id": "chump-5-5-with-1-1-any-damage",
+    "text": "If I chump block the 5/5 with my 1/1, do I take any damage?",
+    "expect": [
+      "No: you take no damage.",
+      "a 1/1 creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "what-if-i-block-the-2-2-instead",
+    "text": "What if I block the 2/2 instead of the 4/4? How much do I take?",
+    "expect": [
+      "You take 4 damage."
+    ]
+  },
+  {
+    "id": "named-alice-at-2-vs-infect-1-1",
+    "text": "Alice is at 2 and Bob attacks with a 1/1 with infect. Does Alice lose?",
+    "expect": [
+      "Alice has 1 poison counter.",
+      "No: Alice is still in the game at 2 life."
+    ],
+    "cite": [
+      "702.90b"
+    ]
+  },
+  {
+    "id": "named-blood-moon-urzas-tower",
+    "text": "Bob controls Blood Moon. Alice's Urza's Tower. What does it tap for?",
+    "expect": [
+      "Urza's Tower is a Mountain under Blood Moon, so it taps for {R} and nothing else."
+    ]
   }
 ]
