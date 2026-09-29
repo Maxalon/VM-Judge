@@ -39,6 +39,8 @@ class SituationParser(private val names: NameIndex) {
         val handSize = LinkedHashMap<String, Int>()
         /** "a Tarmogoyf that's 4/5": a size said for a creature whose printed size is star/star — taken as given at the end. */
         val statedPt = LinkedHashMap<String, String>()
+        /** "a 5/5 Wurm": creature-type words used for an unnamed creature, so "the Wurm" later means that creature. */
+        val genericNouns = LinkedHashSet<String>()
         val mana = LinkedHashMap<String, Int>()
         val librarySize = LinkedHashMap<String, Int>()
         val graveyardSize = LinkedHashMap<String, Int>()
@@ -1160,6 +1162,12 @@ class SituationParser(private val names: NameIndex) {
             // "Can I redirect it to my Grizzly Bears?" (Spellskite): it only ever pulls a spell onto itself.
         t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:redirect|move|point|send) (?:it|that|the spell|(?:the |their |my opponent's )?c\d+) (?:to|onto|at|towards) (?:my |another |a different |one of my )?(c\d+|creatures?|\d+/\d+)(?: instead)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
             if (ctx.objects.values.any { o -> o.zone == "battlefield" && (o.card.name ?: "") == "Spellskite" } && m.cards[r.groupValues[1]]?.display != "Spellskite") "spellskite-away-question" else r.value } }
+            // "a 5/5 Wurm", "a 2/2 Goblin": a creature type standing for an unnamed creature is just a creature of that size,
+            // and "the Wurm" afterwards is that creature.
+        t2 = t2.let { t0 -> Regex("""(?<=\b(?:an?|the|my|their|his|her|that|this|another) )(\d+/\d+) (angel|demon|dragon|giant|wizard|knight|elf|goblin|sphinx|beast|bird|cat|wolf|bear|elemental|spirit|soldier|warrior|rat|dog|zombie|vampire|hydra|titan|golem|wurm|drake|djinn|phoenix|shaman|druid|cleric|rogue|archer|horror|insect|snake|elephant|ape|boar|ooze|construct|thopter|servo|myr|sliver|merfolk|human|dwarf|orc|troll|minotaur|centaur|faerie|imp|devil|skeleton|wraith|shade|specter|kraken|leviathan|serpent|crab|fish|frog|lizard|spider|scorpion|wolf|hound|fox|rhino|hippo|crocodile|dinosaur|pegasus|unicorn|griffin|hippogriff|manticore|gargoyle|homunculus|gnome|kithkin|kor|vedalken|viashino|naga|satyr|nymph|dryad|treefolk|fungus|saproling|plant|thrull|ogre|cyclops|monk|samurai|ninja|pirate|assassin|berserker|scout|nomad|advisor|artificer|rebel|mercenary)(?! tokens?\b| creatures?\b| c\d+\b)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE).replace(t0) { r -> ctx.genericNouns += r.groupValues[2].lowercase(); "${r.groupValues[1]} creature" } }
+        if (ctx.genericNouns.isNotEmpty()) t2 = Regex("""\b(the|that|my|their|his|her) (${ctx.genericNouns.joinToString("|") { Regex.escape(it) }})s?\b""", RegexOption.IGNORE_CASE).replace(t2) { r -> "${r.groupValues[1]} creature" }
+            // "My opponent casts Lightning Bolt. Can they?": whether the spell just cast is allowed.
+        if (ctx.lastVerb == "cast" && Regex("""^can (?:they|he|she|i|we|my opponent)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "castallowed-question"
             // "Does my opponent get the choice?" (Vexing Devil under Torpor Orb): whether the trigger happens at all.
         t2 = t2.replace(Regex("""^(?:does|do|will) (?:my opponent|they|he|she|the opponent|i|we) (?:still |even )?get (?:the|a|their|my) (?:choice|option|chance to take (?:it|the \d+))\??$""", RegexOption.IGNORE_CASE), "does it trigger")
             // "I attack for 10 unblocked": the trailer adds nothing (no block is the default).
@@ -1418,8 +1426,13 @@ class SituationParser(private val names: NameIndex) {
             // "my Tarmogoyf which is 4/5": the size, stated as a fact about the card before what happens to it.
         t2 = Regex("""^(.*?\b(?:on|targeting|at) )(my|their|his|her) (c\d+) (?:which|that|who) is (?:an? )?(\d+/\d+)(?=,|\.|\?|$| and\b)""", RegexOption.IGNORE_CASE).replace(t2) { r -> "${r.groupValues[2]} ${r.groupValues[3]} becomes a ${r.groupValues[4]}, ${r.groupValues[1]}${r.groupValues[2]} ${r.groupValues[3]}" }
             // "I cast Snapcaster Mage and flash back Lightning Bolt at their 2/2": the Bolt is in the graveyard, the Mage targets it.
-        t2 = Regex("""\b(i|we) (?:cast|play) (c\d+) and (?:flash ?back|flashback) (?:the |my )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t2) { r ->
-            if (m.cards[r.groupValues[2]]?.display != "Snapcaster Mage") r.value else "${r.groupValues[1]} have ${r.groupValues[3]} in my graveyard, ${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}, then ${r.groupValues[1]} flashback ${r.groupValues[3]}" }
+        t2 = Regex("""\b(i|we|they|he|she|my opponent|the opponent) (?:casts?|plays?) (c\d+) and (?:then )?(?:flash ?backs?|flashbacks?) (?:the |my |their )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t2) { r ->
+            val who = r.groupValues[1].lowercase(); val poss = if (who in setOf("i", "we")) "my" else "their"
+            if (m.cards[r.groupValues[2]]?.display != "Snapcaster Mage") r.value else "${r.groupValues[1]} have ${r.groupValues[3]} in $poss graveyard, ${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}, then ${r.groupValues[1]} flashback ${r.groupValues[3]}" }
+            // "Can my opponent cast Snapcaster Mage and flashback Lightning Bolt?": the same, asked; the flashback is the question.
+        t2 = Regex("""^can (i|we|they|he|she|my opponent|the opponent) (?:casts?|plays?) (c\d+) and (?:then )?(?:flash ?backs?|flashbacks?) (?:the |my |their )?(c\d+)\??$""", RegexOption.IGNORE_CASE).replace(t2) { r ->
+            val who = r.groupValues[1].lowercase(); val poss = if (who in setOf("i", "we")) "my" else "their"
+            if (m.cards[r.groupValues[2]]?.display != "Snapcaster Mage") r.value else "${r.groupValues[1]} have ${r.groupValues[3]} in $poss graveyard, ${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}, can ${r.groupValues[1]} flashback ${r.groupValues[3]}" }
             // "can I cast two 4 drops in one turn?": each cast in turn, then whether the last can be paid for.
         t2 = t2.let { t0 -> Regex("""\bcan (i|we) cast (\d+) (\d+)[- ](?:mana )?(?:drops?|creatures?|spells?)(?: in (?:one|a|the same) turn| this turn| in a single turn)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 val n = r.groupValues[2].toIntOrNull() ?: 0
@@ -2779,6 +2792,12 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.none { it.verb == "sacrifice" || it.verb == "activate" }) return false
             ctx.asks += EventSpec("ask", to = "text:Yes. Sacrificing is neither attacking, blocking nor targeting: an Aura that says the creature can't attack or block (Pacifism), or hexproof or shroud on it, doesn't stop its controller from sacrificing it as a cost (701.21a, 702.11b). Only an effect that says it can't be sacrificed, or that takes control of it, would.")
             return true
+        }
+        // "My opponent casts Lightning Bolt. Can they?": whether the cast just described was allowed.
+        if (clause0 == "castallowed-question") {
+            val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
+            val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
+            ctx.asks += EventSpec("ask", card = card, to = "castAllowed"); return true
         }
         if (clause0 == "spellskite-away-question") {
             ctx.asks += EventSpec("ask", to = "text:No. Spellskite's ability reads \"Change a target of target spell or ability to Spellskite\": the new target is always Spellskite itself, never another creature. It can pull a spell onto Spellskite (if Spellskite is a legal target for it, 115.7), but it can't send a spell aimed at Spellskite anywhere else.")

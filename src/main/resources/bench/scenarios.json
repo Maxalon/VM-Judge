@@ -27979,5 +27979,106 @@
     "expect": [
       "Yes: Tarmogoyf can attack."
     ]
+  },
+  {
+    "id": "anthem-bears-vs-pyroclasm",
+    "text": "I have Glorious Anthem and two Grizzly Bears. My opponent casts Pyroclasm. Do my Bears survive?",
+    "expect": [
+      "Yes: Grizzly Bears is still on the battlefield."
+    ]
+  },
+  {
+    "id": "nighthawk-vs-wurm-blocker",
+    "text": "I attack with a Vampire Nighthawk and my opponent blocks with a 5/5 Wurm. Does the Wurm die?",
+    "expect": [
+      "a 5/5 creature can't block Vampire Nighthawk (flying).",
+      "You gain 2 life."
+    ]
+  },
+  {
+    "id": "crusader-vs-wurm-blocker",
+    "text": "I attack with a Phyrexian Crusader and my opponent blocks with a 5/5 Wurm. Does the Wurm die?",
+    "expect": [
+      "a 5/5 creature has 2 -1/-1 counter(s).",
+      "Phyrexian Crusader: the battlefield → your graveyard.",
+      "No: a 5/5 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "crusader-vs-bears-blocker",
+    "text": "I attack with Phyrexian Crusader and my opponent blocks with a Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears has 2 -1/-1 counter(s).",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "wrath-vs-avacyn-board",
+    "text": "I cast Wrath of God. My opponent has Avacyn, Angel of Hope and a Grizzly Bears. What dies?",
+    "expect": [
+      "Avacyn, Angel of Hope is indestructible and isn't destroyed.",
+      "Grizzly Bears is indestructible and isn't destroyed."
+    ]
+  },
+  {
+    "id": "rest-in-peace-vs-persist",
+    "text": "I have Rest in Peace. My opponent's Kitchen Finks dies. Does it come back with persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Rest in Peace).",
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard, and persist returns it only from the graveyard (702.79a)."
+    ]
+  },
+  {
+    "id": "counterspell-vs-abrupt-decay",
+    "text": "My opponent casts Counterspell on my Abrupt Decay. Does it work?",
+    "expect": [
+      "Abrupt Decay isn't countered (it can't be)."
+    ]
+  },
+  {
+    "id": "humility-goyf-size",
+    "text": "My opponent has Humility. I have Tarmogoyf. What size is my Goyf?",
+    "expect": [
+      "Tarmogoyf is 1/1"
+    ]
+  },
+  {
+    "id": "cage-vs-snapcaster-flashback",
+    "text": "I control Grafdigger's Cage. Can my opponent cast Snapcaster Mage and flashback Lightning Bolt?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn.",
+      "Lightning Bolt can't be cast from opponent's graveyard (Grafdigger's Cage)."
+    ]
+  },
+  {
+    "id": "snapcaster-opp-flashbacks-bolt",
+    "text": "My opponent casts Snapcaster Mage and flashbacks Lightning Bolt at my Grizzly Bears. What happens?",
+    "expect": [
+      "Lightning Bolt is exiled (flashback).",
+      "Grizzly Bears: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "meddling-mage-can-they",
+    "text": "I have Meddling Mage naming Lightning Bolt. My opponent casts Lightning Bolt. Can they?",
+    "expect": [
+      "No: Lightning Bolt can't be cast (Meddling Mage names it)."
+    ]
+  },
+  {
+    "id": "bolt-can-they-yes",
+    "text": "I have Grizzly Bears. My opponent casts Lightning Bolt on it. Can they?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Lightning Bolt costs {R} — 1 mana. Nothing on the battlefield changes it."
+    ]
+  },
+  {
+    "id": "mother-of-runes-vs-bolt",
+    "text": "My opponent has a Mother of Runes. I Lightning Bolt their Grizzly Bears. They give it protection from red. What happens?",
+    "expect": [
+      "Grizzly Bears has protection from red until end of turn.",
+      "Lightning Bolt doesn't resolve (all targets illegal)."
+    ]
   }
 ]
