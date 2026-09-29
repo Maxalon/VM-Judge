@@ -291,6 +291,8 @@ sealed interface Effect {
     data class LoseLifeEqualToRevealedMv(val who: Who) : Effect
     /** Ophidian: "this creature assigns no combat damage this turn". */
     data object NoCombatDamageThisTurn : Effect
+    /** Vexing Devil: "any opponent may have it deal N damage to them. If a player does, sacrifice ~." */
+    data class OpponentMayTakeDamage(val amount: Int) : Effect
     /** Reanimate: "You lose life equal to that card's mana value" — the spell's target, whether or not it moved. */
     data class LoseLifeEqualToTargetMv(val who: Who) : Effect
     /** Condemn: "Put target attacking creature on the bottom of its owner's library." */
@@ -404,7 +406,7 @@ sealed interface Effect {
         is LoseLifeUnlessSacOrDiscard -> emptyList()
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
-        is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
+        is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
     }
 
     fun hasUnparsed(): Boolean = when (this) {
@@ -495,6 +497,8 @@ sealed interface StaticEffect {
     data object DamageByToughness : StaticEffect
     /** "You can't lose the game and your opponents can't win the game" (Platinum Angel). */
     data object CantLose : StaticEffect
+    /** Phyrexian Unlife: "You don't lose the game for having 0 or less life." */
+    data object NoLossAtZeroLife : StaticEffect
     /** "~ can block an additional creature each combat": checked by its words as blockers are declared. */
     data object CanBlockMore : StaticEffect
     /** "~ can't be blocked by more than one creature": at most [n] blockers. */

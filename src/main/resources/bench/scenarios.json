@@ -27785,5 +27785,101 @@
     "expect": [
       "No: Grizzly Bears dealt no damage to opponent (it was blocked, and a blocked creature stays blocked even if its blocker leaves combat; without trample it assigns no damage to the player, 509.1h)."
     ]
+  },
+  {
+    "id": "condemn-the-attacker",
+    "text": "My opponent attacks me with a 5/5. I have Condemn in hand. What happens if I cast it?",
+    "expect": [
+      "a 5/5 creature: the battlefield → opponent's library.",
+      "opponent gains 5 life."
+    ]
+  },
+  {
+    "id": "swords-on-a-token-gain-one",
+    "text": "I cast Swords to Plowshares on my opponent's 1/1 token. How much life do they gain?",
+    "expect": [
+      "a 1/1 token: the battlefield → exile.",
+      "opponent gains 1 life in all."
+    ]
+  },
+  {
+    "id": "path-on-animated-mutavault",
+    "text": "My opponent casts Path to Exile on my Mutavault while it's animated. What happens?",
+    "expect": [
+      "Mutavault is a 2/2 creature until end of turn.",
+      "Mutavault: the battlefield → exile."
+    ]
+  },
+  {
+    "id": "natures-claim-on-rancor",
+    "text": "I have Grizzly Bears with a Rancor. My opponent casts Nature's Claim on the Rancor. What happens?",
+    "expect": [
+      "Rancor: the battlefield → your graveyard.",
+      "You gain 4 life.",
+      "Rancor: your graveyard → your hand."
+    ]
+  },
+  {
+    "id": "krosan-grip-cant-equip-in-response",
+    "text": "My opponent casts Krosan Grip on my Lightning Greaves. Can I respond by equipping to a different creature?",
+    "expect": [
+      "Lightning Greaves: the battlefield → your graveyard.",
+      "No. Equip can be activated only as a sorcery — in your main phase with the stack empty (702.6a, 702.6b) — so with Krosan Grip on the stack the Equipment can't be moved; it stays where it is while Krosan Grip resolves. Krosan Grip's split second would stop the activation too (702.61a)."
+    ]
+  },
+  {
+    "id": "holy-day-two-attackers",
+    "text": "I attack with two 2/2s and my opponent casts Holy Day. What happens?",
+    "expect": [
+      "Damage to opponent from a 2/2 creature is prevented. (×2)"
+    ]
+  },
+  {
+    "id": "worship-at-three-attacked-for-ten",
+    "text": "My opponent is at 3 with Worship and a creature. I attack for 10 unblocked. What happens?",
+    "expect": [
+      "opponent stays at 1 life (Worship).",
+      "opponent goes from 3 to 1 life."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "alpha-authority-double-block-illegal",
+    "text": "I control Grizzly Bears and cast Alpha Authority on it. My opponent blocks with two 2/2s. Is that legal?",
+    "expect": [
+      "a 2/2 creature can't block Grizzly Bears too (it can't be blocked by more than 1 creature)."
+    ],
+    "notExpect": [
+      "Grizzly Bears has 4 damage marked"
+    ]
+  },
+  {
+    "id": "phyrexian-unlife-at-zero",
+    "text": "I control Phyrexian Unlife and I'm at 0 life. Do I lose?",
+    "expect": [
+      "You stay in the game at 0 life: Phyrexian Unlife keeps you from losing for having 0 or less life. Further damage gives you poison counters instead (10 poison loses, 704.5c).",
+      "No: You are still in the game at 0 life."
+    ]
+  },
+  {
+    "id": "blightning-with-one-card",
+    "text": "My opponent casts Blightning targeting me. I have 1 card in hand. What happens?",
+    "expect": [
+      "You take 3 damage.",
+      "You discard 1 card (1 → 0 in hand)."
+    ],
+    "notExpect": [
+      "not modeled"
+    ]
+  },
+  {
+    "id": "vexing-devil-they-take-four",
+    "text": "I have Vexing Devil and my opponent chooses to take 4. What happens to the Devil?",
+    "expect": [
+      "opponent takes 4 damage.",
+      "Vexing Devil: the battlefield → your graveyard."
+    ]
   }
 ]

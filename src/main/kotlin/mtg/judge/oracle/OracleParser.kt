@@ -253,6 +253,8 @@ object OracleParser {
         }
         // "Whenever ~ blocks a creature, ~ deals 1 damage to that creature": the creature it blocks (or that blocks it).
         if (trigger is Trigger.ThisBlocks || trigger is Trigger.ThisBecomesBlockedByCreature) causingEffect(effText)?.let { return TriggeredAbility(trigger, it, line) }
+        // Vexing Devil: "any opponent may have it deal 4 damage to them. If a player does, sacrifice ~."
+        Regex("""^any opponent may have (?:it|~) deal (\d+) damage to them\.\s*if a player does, sacrifice (?:~|it)\.?$""", RegexOption.IGNORE_CASE).matchEntire(effText.trim())?.let { m -> return TriggeredAbility(trigger, Effect.OpponentMayTakeDamage(m.groupValues[1].toInt()), line) }
         return TriggeredAbility(trigger, parseEffect(effText), line)
     }
 
@@ -655,6 +657,12 @@ object OracleParser {
             val f = parseFilter(m.groupValues[1], Kind.CREATURE)
             return if (f.verifiable) listOf(StaticEffect.BlockOnly(f)) else emptyList()
         }
+        // Alpha Authority: "Enchanted creature has hexproof and can't be blocked by more than one creature."
+        Regex("""^(enchanted|equipped) creature (?:has (.+?) and )?can't be blocked by more than (one|two|three|\d+) creatures?\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val kws = m.groupValues[2].takeIf { it.isNotEmpty() }?.let { keywordsIn(it) }
+            val grant = kws?.let { StaticEffect.KeywordGrant(ObjFilter(setOf(Kind.CREATURE), raw = "${m.groupValues[1].lowercase()} creature", attachedToSource = true), it) }
+            return listOfNotNull(grant, StaticEffect.MaxBlockers(number(m.groupValues[3]) ?: 1))
+        }
         // "~ can't be blocked by more than one creature": a cap on blockers, not a kind of blocker.
         Regex("""^~ can't be blocked by more than (one|two|three|\d+) creatures?\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m -> return listOf(StaticEffect.MaxBlockers(number(m.groupValues[1]) ?: 1)) }
         Regex("""^~ can't be blocked by (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -704,6 +712,7 @@ object OracleParser {
             return listOf(StaticEffect.PlayerHexproof) + (if (f.verifiable) listOf(StaticEffect.KeywordGrant(f, setOf("hexproof"))) else emptyList())
         }
         Regex("""^you can't lose the game and your opponents can't win the game\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.CantLose) }
+        Regex("""^you don't lose the game for having 0 or less life\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NoLossAtZeroLife) }
         Regex("""^nonbasic lands are mountains\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NonbasicLandsAreMountains) }
         // "Creatures without flying can't attack" (Moat), "Non-Eye creatures you control can't block": a filter
         // and a restriction, the same shape the engine already checks for enchanted creatures.
@@ -1539,7 +1548,7 @@ object OracleParser {
         }
         Regex("""^you gain (\d+) life for each spell you've cast this turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.GainLifePerSpellThisTurn(Who.YOU, it.groupValues[1].toInt()) }
         // "Target player discards X cards at random" / "each player discards two cards": modeled, so it goes before the narrated table.
-        Regex("""^(you|target player|target opponent|each player|each opponent|that player) discards? (a|an|\d+|X|two|three|four) cards?( at random)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+        Regex("""^(you|target player|target opponent|each player|each opponent|that player|that player or that planeswalker's controller|that player or planeswalker's controller) discards? (a|an|\d+|X|two|three|four) cards?( at random)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val w = when (m.groupValues[1].lowercase()) { "you" -> Who.YOU; "target player", "target opponent" -> Who.TARGET_PLAYER; "each player" -> Who.EACH_PLAYER; "each opponent" -> Who.EACH_OPPONENT; else -> Who.THAT_PLAYER }
             val n = m.groupValues[2].let { if (it.equals("X", true)) 0 else number(it) ?: 1 }
             return Effect.Discard(w, n, x = m.groupValues[2].equals("X", true), random = m.groupValues[3].isNotEmpty())

@@ -980,7 +980,7 @@ class SituationParser(private val names: NameIndex) {
                 "they attack with a ${r.groupValues[4]}, ${r.groupValues[1]} block it with ${r.groupValues[3]}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}"
             } }
             // "I attack for 5": a creature of that power attacks the opponent.
-        t2 = t2.replace(Regex("""\b(i|we) (attacks?|swings?) for (\d+)(?: damage)?(?=,| and\b|$)""", RegexOption.IGNORE_CASE), "$1 $2 them with a $3/$3 creature")
+        t2 = t2.replace(Regex("""\b(i|we) (attacks?|swings?) for (\d+)(?: damage)?(?: unblocked)?(?=,| and\b|$)""", RegexOption.IGNORE_CASE), "$1 $2 them with a $3/$3 creature")
             // "Can I cast it next turn?" after Snapcaster gave a card flashback: the grant ends with the turn.
         t2 = t2.replace(Regex("""^can (?:i|we) (?:still )?(?:cast|flashback|play) (it|that|c\d+)(?: from (?:my|the) graveyard)? (?:next turn|on my next turn|later|a turn later|next time|on a later turn|during my next turn)\??$""", RegexOption.IGNORE_CASE), "castlater-question $1")
             // "Can I respond by sacrificing the creature?": the response, then what happens.
@@ -1151,6 +1151,12 @@ class SituationParser(private val names: NameIndex) {
             // "casts Force of Will pitching Brainstorm to counter my Grizzly Bears": the Bears is cast first, then the counter at it.
         t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) casts? (?:an? |the )?(c\d+)(?:,? (?:pitching|exiling|by exiling|and exiles?) (?:an? |the |my |their )?c\d+(?: to it| for it)?)? to counter (?:my |their |the )?(c\d+)\b""", RegexOption.IGNORE_CASE), "$3-cast-first $1 cast $2 targeting it")
         t2 = t2.let { t0 -> Regex("""^(c\d+)-cast-first (i|we|they|he|she|my opponent|the opponent|@\w+) cast (c\d+) targeting it""", RegexOption.IGNORE_CASE).replace(t0) { r -> val other = if (r.groupValues[2].lowercase() in setOf("i", "we")) "they" else "i"; "$other cast ${r.groupValues[1]}, ${r.groupValues[2]} cast ${r.groupValues[3]} targeting it" } }
+            // "I attack for 10 unblocked": the trailer adds nothing (no block is the default).
+        t2 = t2.replace(Regex("""\b(attacks? for \d+) unblocked\b""", RegexOption.IGNORE_CASE), "$1")
+            // "my opponent chooses to take 4" (Vexing Devil): the choice its trigger offers.
+        t2 = t2.replace(Regex("""\b(i|we) (?:have|has|got|control|play|played|cast) (c\d+),? and (my opponent|they|he|she|the opponent|@\w+) (?:chooses? to take|decides? to take|opts? to take|takes? the) (?:\d+)(?: damage)?(?: from (?:it|the devil))?(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE), "$1 cast $2, $3 pay")
+        t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) (?:chooses? to take|decides? to take|opts? to take|takes? the) (?:\d+)(?: damage)?(?: from (?:it|the devil))?(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE), "$1 pay")
+        t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) (?:doesn't|don't|declines? to|refuses? to|won't) take (?:the )?(?:\d+|damage|it)(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE), "$1 don't pay")
             // "Does the counter save it?": whether it survives.
         t2 = t2.replace(Regex("""\b(?:does|do|will|would) (?:the|a|its|my|that|those) (?:[+-]\d/[+-]\d )?counters? (?:save|help|protect|keep) (it|him|her|them|(?:my |the )?c\d+)(?: alive)?\??$""", RegexOption.IGNORE_CASE), "does $1 survive")
             // "How big is Tarmogoyf after?": the trailing "after" adds nothing.
@@ -3376,6 +3382,13 @@ class SituationParser(private val names: NameIndex) {
     /** Equipment, Vehicles and "tap X with Icy": activations said as what they do to another permanent. Split out of
      * readClause0 to keep that method under the JVM's 64KB limit. */
     private fun readEquipStatements(c: String, actor: String?, subject: String?, m: Marked, ctx: Ctx): Boolean {
+        // "they Krosan Grip my Greaves; can I respond by equipping it to another creature?": equip is sorcery-speed.
+        if (Regex("""^(?:then |and then |and )?(?:in response,? )?(?:casts? |pays? |uses? |activates? )?(?:re-?)?equips? """).containsMatchIn(c) && ctx.events.lastOrNull { it.verb != "manaNow" }?.let { it.verb == "cast" && it.player != (actor ?: subject ?: "me") } == true) {
+            val spell = ctx.lastCastEntry?.display ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:No. Equip can be activated only as a sorcery — in your main phase with the stack empty (702.6a, 702.6b) — so with $spell on the stack the Equipment can't be moved; it stays where it is while $spell resolves.${if (spell.contains("Krosan Grip")) " Krosan Grip's split second would stop the activation too (702.61a)." else ""}")
+            ctx.notes += "\"${restore(c, m)}\" with a spell on the stack is ruled out."
+            return true
+        }
         // "they block with a 1/1 and then equip Bonesplitter to it": equip is sorcery-speed, so it can't happen in combat.
         if (Regex("""^(?:then |and then |and )?(?:casts? |pays? |uses? |activates? )?equips? """).containsMatchIn(c) && ctx.events.any { it.verb == "block" || it.verb == "attack" || it.verb == "attackAll" } && ctx.events.none { it.verb == "step" && ctx.events.indexOf(it) > ctx.events.indexOfLast { e -> e.verb == "block" || e.verb == "attack" || e.verb == "attackAll" } }) {
             ctx.asks += EventSpec("ask", to = "text:No, that isn't legal: Equip can be activated only as a sorcery — in its controller's main phase with the stack empty (702.6a, 702.6b) — so nothing can be equipped during combat. The block stands as it was declared, and the Equipment stays where it is until a main phase.")
@@ -5473,7 +5486,7 @@ class SituationParser(private val names: NameIndex) {
             // "they cast a creature with flash during my combat and block with it, is that allowed?": yes, and why.
             val flashed = ctx.events.lastOrNull { it.verb == "cast" }?.let { e -> (e.obj ?: e.card?.name?.let { n -> ctx.objects.values.firstOrNull { it.card.name == n }?.id })?.takeIf { id -> ctx.objects[id]?.card?.name?.contains("flash", true) == true && ctx.events.any { b -> b.verb == "block" && b.obj == id } } }
             // "I Bolt my own Bears. Is that allowed?": a spell may target its caster's own permanents.
-            ctx.events.lastOrNull { it.verb == "cast" }?.let { e -> val who = e.player ?: "me"; e.targets.firstOrNull { t -> t in ctx.objects && ctx.objects.getValue(t).controller == who }?.let { own ->
+            ctx.events.lastOrNull { it.verb != "resolveAll" }?.takeIf { it.verb == "cast" }?.let { e -> val who = e.player ?: "me"; e.targets.firstOrNull { t -> t in ctx.objects && ctx.objects.getValue(t).controller == who }?.let { own ->
                 ctx.asks += EventSpec("ask", to = "text:Yes. \"Target creature\" and \"any target\" mean any legal object, the caster's own included (115.1, 115.4): nothing restricts a spell to opponents' permanents unless its text says so (\"target creature an opponent controls\"). ${ctx.objects.getValue(own).card.name} is a legal target, and the spell does to it exactly what it would do to an opponent's."); return true } }
             if (flashed != null) { ctx.asks += EventSpec("ask", to = "text:Yes. A creature with flash can be cast any time its controller could cast an instant (702.8a), so it can be cast during the declare attackers step; it is on the battlefield untapped when blockers are declared and can block (509.1a). It couldn't have been cast after blockers were declared and still block."); return true }
             ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below and the rules it cites."; return true }
