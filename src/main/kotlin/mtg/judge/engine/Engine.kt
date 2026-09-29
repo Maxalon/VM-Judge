@@ -2890,20 +2890,7 @@ class Engine(val state: GameState) {
                 if (n == null) { trace.step("Each player draws as many cards as the most any one player discarded; the hand sizes weren't all given, so the number isn't known.", "608.2h"); state.outcomes += "Each player draws cards equal to the greatest number discarded (hand sizes needed)." }
                 else { trace.step("The most any one player discarded was $n, so each player draws $n card${if (n == 1) "" else "s"}.", "608.2h"); for (p in state.players.filter { !it.lost }) draw(p.id, n) }
             }
-            is Effect.Discard -> for (p in resolvePlayers(effect.who, item)) {
-                val n = if (effect.x) (item.x ?: 0) else effect.count
-                if (effect.x && item.x == null) state.clarifications += Clarification("${item.source.name}'s X", "${item.source.name} makes a player discard X cards; what was X? (assuming 0)")
-                val hand = p.handSize
-                // "They Hymn me and I have Bolt and Bears in hand": every card the hand is known to hold goes when the count covers it.
-                val known = state.objects.values.filter { it.zone == Zone.HAND && it.owner == p.id }
-                if (known.isNotEmpty() && n >= known.size && (hand == null || hand <= known.size)) {
-                    for (c in known.toList()) move(c, Zone.GRAVEYARD, "${p.subject} ${p.v("discards", "discard")} ${c.name}${if (effect.random) " (at random, but with $n to discard from ${known.size} in hand every card goes)" else ""}.", "701.9a")
-                    p.handSize = 0; state.outcomes += "${p.subject} ${p.v("discards", "discard")} ${known.joinToString(" and ") { it.name }}."; continue
-                }
-                if (hand == null) { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"} (${p.possessive} hand size wasn't given).", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}." }
-                else if (hand == 0) { trace.step("${p.subject} ${p.v("has", "have")} no cards in hand, so nothing is discarded.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} nothing (no cards in hand)." }
-                else { val d = minOf(n, hand); p.handSize = hand - d; trace.step("${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"}${if (d < n) " (only $hand in hand)" else ""}, leaving ${p.handSize} in hand.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"} ($hand → ${p.handSize} in hand)." }
-            }
+            is Effect.Discard -> applyDiscard(effect, item)
             is Effect.ExileIfDamagedDies -> {
                 val hit = item.damaged.mapNotNull { state.objects[it] }.filter { it.isOnBattlefield() }
                 hit.forEach { it.exileOnDeath = item.source.name }
@@ -3218,6 +3205,31 @@ class Engine(val state: GameState) {
     }
 
     /** The newer one-shot effects, kept out of [applyEffect] so that method stays under the JVM's 64 KB limit. */
+    /** Discard effects, kept out of applyEffect so that method stays under the JVM size limit. */
+    private fun applyDiscard(effect: Effect.Discard, item: StackItem) {
+        for (p in resolvePlayers(effect.who, item)) {
+                val n = if (effect.x) (item.x ?: 0) else effect.count
+                if (effect.x && item.x == null) state.clarifications += Clarification("${item.source.name}'s X", "${item.source.name} makes a player discard X cards; what was X? (assuming 0)")
+                val hand = p.handSize
+                // "They Hymn me and I have Bolt and Bears in hand": every card the hand is known to hold goes when the count covers it.
+                val known = state.objects.values.filter { it.zone == Zone.HAND && it.owner == p.id }
+                if (known.isNotEmpty() && n >= known.size && (hand == null || hand <= known.size)) {
+                    for (c in known.toList()) move(c, Zone.GRAVEYARD, "${p.subject} ${p.v("discards", "discard")} ${c.name}${if (effect.random) " (at random, but with $n to discard from ${known.size} in hand every card goes)" else ""}.", "701.9a")
+                    p.handSize = 0; state.outcomes += "${p.subject} ${p.v("discards", "discard")} ${known.joinToString(" and ") { it.name }}."; continue
+                }
+                // "They Hymn me and I have Bolt, Counterspell and a Forest": fewer to discard than the hand holds, so which go is random (or the discarder's choice).
+                if (known.isNotEmpty() && n > 0 && n < known.size && (hand == null || hand == known.size)) {
+                    val names = if (known.size == 1) known[0].name else known.dropLast(1).joinToString(", ") { it.name } + " and " + known.last().name
+                    if (effect.random) { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"} at random from ${known.size} in hand ($names): which ${if (n == 1) "one goes" else "ones go"} is random, not anyone's choice.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n of $names at random: which ${if (n == 1) "one" else "ones"} is decided randomly (shuffle the hand and pick), not by either player." }
+                    else { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"} of ${p.possessive} choice from ${known.size} in hand ($names).", "701.9a"); state.outcomes += "${p.subject} ${p.v("chooses", "choose")} $n of $names to discard." }
+                    p.handSize = known.size - n; continue
+                }
+                if (hand == null) { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"} (${p.possessive} hand size wasn't given).", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}." }
+                else if (hand == 0) { trace.step("${p.subject} ${p.v("has", "have")} no cards in hand, so nothing is discarded.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} nothing (no cards in hand)." }
+                else { val d = minOf(n, hand); p.handSize = hand - d; trace.step("${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"}${if (d < n) " (only $hand in hand)" else ""}, leaving ${p.handSize} in hand.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"} ($hand → ${p.handSize} in hand)." }
+        }
+    }
+
     private fun applyEffectMore(effect: Effect, item: StackItem) {
         when (effect) {
             is Effect.SetBasePtTarget -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->

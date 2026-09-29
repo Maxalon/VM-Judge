@@ -2865,6 +2865,11 @@ class SituationParser(private val names: NameIndex) {
             val who = when (w) { "i", "we" -> "me"; else -> pronounPlayer(ctx, w.substringAfterLast(' ')) }
             ctx.asks += EventSpec("ask", player = who, to = "optionalSearch"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
+        // "They cast Ponder and I Bolt them in response. What resolves first?": the stack's order.
+        Regex("""^(?:what|which|which one|which spell|who|whose) (?:resolves|goes|happens|resolve) first$|^(?:what|which) (?:is|'s) the order(?: of resolution)?$|^in (?:what|which) order do (?:they|these|those|the spells) resolve$""").find(clause0)?.let {
+            if (ctx.events.count { it.verb == "cast" || it.verb == "activate" || it.verb == "trigger" } < 2) return@let
+            ctx.asks += EventSpec("ask", to = "resolvesFirst"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
         // "I Show and Tell Emrakul. Do I get the extra turn?": whether a cast trigger happened.
         Regex("""^(?:do|does|will|would) (i|we|they|he|she|my opponent|the opponent) (?:still |even |actually )?(?:get|take|receive) (?:the|an|its|my|their|that|another) (?:extra|additional) turn$""").find(clause0)?.let { r ->
             val who = when (r.groupValues[1]) { "i", "we" -> "me"; else -> pronounPlayer(ctx, r.groupValues[1].substringAfterLast(' ')) }

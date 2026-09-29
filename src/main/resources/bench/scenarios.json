@@ -26489,5 +26489,107 @@
     "expect": [
       "a 2/2 creature: the battlefield → exile."
     ]
+  },
+  {
+    "id": "bolt-the-wall-blocked-bears-no-damage",
+    "text": "I attack with Grizzly Bears and my opponent blocks with Wall of Omens. I cast Lightning Bolt on the Wall after blockers. Does my Bears deal damage to them?",
+    "expect": [
+      "Wall of Omens: the battlefield → opponent's graveyard.",
+      "No: Grizzly Bears dealt no damage to opponent (it was blocked"
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "hymn-known-hand-of-three-random-two",
+    "text": "My opponent casts Hymn to Tourach on me. I have Lightning Bolt, Counterspell and a Forest in hand. What do I discard?",
+    "expect": [
+      "You discard 2 of Lightning Bolt, Counterspell and Forest at random: which ones is decided randomly (shuffle the hand and pick), not by either player."
+    ]
+  },
+  {
+    "id": "mind-rot-known-hand-of-three",
+    "text": "I cast Mind Rot on my opponent. They have Lightning Bolt, Counterspell and a Forest in hand. What happens?",
+    "expect": [
+      "opponent chooses 2 of Lightning Bolt, Counterspell and Forest to discard."
+    ]
+  },
+  {
+    "id": "blood-artist-pyroclasm-two-tokens",
+    "text": "I control Blood Artist and my opponent casts Pyroclasm. I have two 1/1 tokens. What happens?",
+    "expect": [
+      "Blood Artist: the battlefield → your graveyard.",
+      "opponent loses 1 life. (×3)",
+      "You gain 1 life. (×3)"
+    ]
+  },
+  {
+    "id": "mirran-crusader-vs-doom-blade",
+    "text": "I have Mirran Crusader and my opponent casts Doom Blade on it. What happens?",
+    "expect": [
+      "Doom Blade can't target Mirran Crusader.",
+      "Why: Mirran Crusader has protection from black, so it can't be targeted by that spell."
+    ]
+  },
+  {
+    "id": "mirran-crusader-blocks-five-five",
+    "text": "My opponent attacks with a 5/5 and I block with Mirran Crusader. Does it survive?",
+    "expect": [
+      "a 5/5 creature has 4 damage marked.",
+      "No: Mirran Crusader is in the graveyard."
+    ]
+  },
+  {
+    "id": "grafdiggers-cage-vs-snapcaster-flashback",
+    "text": "My opponent has Grafdigger's Cage. Can I cast Snapcaster Mage and flashback Lightning Bolt?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn.",
+      "Lightning Bolt can't be cast from your graveyard (Grafdigger's Cage)."
+    ]
+  },
+  {
+    "id": "thassas-oracle-empty-library-wins",
+    "text": "I control Thassa's Oracle and my library is empty. I cast it. Do I win?",
+    "expect": [
+      "You win the game (Thassa's Oracle: X = 2, library = 0).",
+      "Yes: You have won the game."
+    ]
+  },
+  {
+    "id": "sphinx-of-the-steel-wind-vs-bolt",
+    "text": "I have Sphinx of the Steel Wind and my opponent casts Lightning Bolt on it. What happens?",
+    "expect": [
+      "Lightning Bolt can't target Sphinx of the Steel Wind.",
+      "Why: Sphinx of the Steel Wind has protection from red, so it can't be targeted by that spell."
+    ]
+  },
+  {
+    "id": "ponder-vs-bolt-response-what-resolves-first",
+    "text": "My opponent casts Ponder and I respond with Lightning Bolt to their face. What resolves first?",
+    "expect": [
+      "Lightning Bolt resolves first: it was put on the stack last, and the stack resolves top-down (608.1, 405.2). Then Ponder — each after all players pass again."
+    ],
+    "cite": [
+      "608.1",
+      "405.2"
+    ]
+  },
+  {
+    "id": "lifelink-blocker-trade",
+    "text": "I attack with a 2/2 and my opponent has a 2/2 with lifelink and blocks. What happens?",
+    "expect": [
+      "opponent gains 2 life.",
+      "a 2/2 creature: the battlefield → your graveyard.",
+      "a 2/2 creature with lifelink: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "blightsteel-unblocked-at-three-poison",
+    "text": "I have 3 poison counters. My opponent attacks with Blightsteel Colossus unblocked. Do I lose?",
+    "expect": [
+      "You have 14 poison counters.",
+      "Yes: You have lost the game."
+    ]
   }
 ]
