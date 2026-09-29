@@ -4263,6 +4263,8 @@ class Engine(val state: GameState) {
                 // "they cast Lightning Bolt" with my creatures out: "any target" said without a target is read as the face.
                 else if (opp != null && harmful && spec.raw.equals("any target", true) && distinct.any { it is Ref.Player && it.id == opp.id } && distinct.all { it is Ref.Player || (it is Ref.Obj && state.objects[it.id]?.controller == opp.id) }) {
                     state.assumptions += "$what targets ${state.nameOf(Ref.Player(opp.id))} (\"any target\" with no target named; assuming its controller's opponent rather than one of ${state.player(opp.id).possessive} creatures — say the creature if that was the target)."; listOf(Ref.Player(opp.id)) }
+                // "I have two Grizzly Bears and they cast Fatal Push. Which one dies?": identical candidates, so whichever is chosen is the same answer.
+                else if (distinct.size > 1 && distinct.all { it is Ref.Obj } && distinct.map { state.nameOf(it) }.distinct().size == 1) { state.assumptions += "$what targets one of the ${distinct.size} ${state.nameOf(distinct[0])}s: its controller chooses which as it's cast (601.2c), and since they're identical the answer is the same either way."; listOf(distinct[0]) }
                 else { state.clarifications += Clarification("$what's target", "$what needs a target (${spec.raw}); it could be ${distinct.joinToString(", ") { state.nameOf(it) }}. Which?"); emptyList<Ref>().also { return null } }
             }
         }

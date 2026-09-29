@@ -27706,5 +27706,84 @@
     "expect": [
       "Yes: a 2/2 creature died (it's in the graveyard)."
     ]
+  },
+  {
+    "id": "leyline-vs-hymn",
+    "text": "My opponent has Leyline of Sanctity and I cast Hymn to Tourach on them. What happens?",
+    "expect": [
+      "Hymn to Tourach can't target opponent.",
+      "Why: opponent has hexproof (Leyline of Sanctity) and can't be the target of spells or abilities an opponent controls."
+    ]
+  },
+  {
+    "id": "bolt-own-bears-is-that-allowed",
+    "text": "I control Grizzly Bears and cast Lightning Bolt on my own Bears. Is that allowed?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Yes. \"Target creature\" and \"any target\" mean any legal object, the caster's own included (115.1, 115.4)"
+    ]
+  },
+  {
+    "id": "vines-vs-damnation",
+    "text": "My opponent casts Damnation. I have Grizzly Bears and respond with Vines of Vastwood on it. Does it survive?",
+    "expect": [
+      "Grizzly Bears' hexproof doesn't help: Damnation doesn't target anything.",
+      "No: Grizzly Bears is in the graveyard."
+    ]
+  },
+  {
+    "id": "two-bears-fatal-push-which-one",
+    "text": "I have two Grizzly Bears and my opponent casts Fatal Push. Which one dies?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "Which?"
+    ]
+  },
+  {
+    "id": "reach-blocks-flier",
+    "text": "I attack with a 2/2 with flying and my opponent has a 2/2 with reach. Can they block?",
+    "expect": [
+      "Yes: a 2/2 creature with reach can block, and did (above)."
+    ]
+  },
+  {
+    "id": "kor-firewalker-doesnt-stop-bolt-to-me",
+    "text": "My opponent casts Lightning Bolt at me while I have Kor Firewalker. Do I still take damage?",
+    "expect": [
+      "You gain 1 life.",
+      "Yes: you take 3 damage in all."
+    ]
+  },
+  {
+    "id": "serra-avenger-turn-two",
+    "text": "I control Serra Avenger. Can I cast it on turn 2?",
+    "expect": [
+      "Serra Avenger can't be cast yet (turn 2; not before your turn 4)."
+    ]
+  },
+  {
+    "id": "thoughtseize-only-lands",
+    "text": "My opponent casts Thoughtseize on me and I have only lands in hand. What happens?",
+    "expect": [
+      "You discard nothing (no nonland card in hand).",
+      "opponent loses 2 life."
+    ]
+  },
+  {
+    "id": "three-islands-counterspell-then-mana-leak",
+    "text": "I have 3 Islands and cast Counterspell on my opponent's Grizzly Bears. Can I also cast Mana Leak on their next spell this turn?",
+    "expect": [
+      "Grizzly Bears is countered.",
+      "Mana Leak can't be cast (costs 2, only 1 mana available)."
+    ]
+  },
+  {
+    "id": "sacrificed-blocker-bears-stays-blocked",
+    "text": "I attack with Grizzly Bears and my opponent blocks with a 0/1 Saproling and then sacrifices it before damage. Does my Bears deal damage to them?",
+    "expect": [
+      "No: Grizzly Bears dealt no damage to opponent (it was blocked, and a blocked creature stays blocked even if its blocker leaves combat; without trample it assigns no damage to the player, 509.1h)."
+    ]
   }
 ]

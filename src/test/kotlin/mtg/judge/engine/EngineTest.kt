@@ -106,11 +106,12 @@ class EngineTest {
         assertTrue(item != null && !item.targetsUnknown, "the spell goes on the stack aimed at the opponent")
         assertTrue(s.assumptions.any { "assuming its controller's opponent rather than" in it })
         e.resolveAll(); assertEquals(17, s.player("me").life); assertEquals(Zone.BATTLEFIELD, s.obj("bears").zone)
-        // A creature-only target with several candidates is still asked for.
+        // A creature-only target with several identical candidates takes one of them: which one makes no difference.
         val s1 = state(); s1.add("bears", bears, "me"); s1.add("bears2", bears, "me"); val e1 = Engine(s1)
         val item1 = e1.cast("opp", doomBlade, emptyList())
-        assertTrue(item1 != null && item1.targetsUnknown, "the spell still goes on the stack, with its target unknown")
-        assertTrue(s1.clarifications.any { it.about.contains("target") })
+        assertTrue(item1 != null && !item1.targetsUnknown, "the spell goes on the stack aimed at one of the identical Bears")
+        assertTrue(s1.assumptions.any { "identical" in it })
+        assertTrue(s1.clarifications.none { it.about.contains("target") })
         val s2 = state(); val e2 = Engine(s2)
         assertTrue(e2.cast("opp", bolt, emptyList()) != null)
         assertTrue(s2.assumptions.any { "assuming its controller's opponent" in it })
