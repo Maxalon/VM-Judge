@@ -242,6 +242,12 @@ class Engine(val state: GameState) {
             if (spec != null && spec.filter.inGraveyard && o != null && Generic.isGeneric(o.def) && !filterMatches(spec.filter, ref, playerId))
                 state.objects.values.firstOrNull { it.zone == Zone.GRAVEYARD && it !== o && state.matches(spec.filter, it, playerId, anyZone = true) }?.let { real -> trace.step("${card.name} targets ${withArticle(spec.raw)}: ${real.name} in ${state.player(real.controller).possessive} graveyard is the card meant.", "601.2c"); Ref.Obj(real.id) } ?: ref
             else ref }
+        // "They have Leyline of Sanctity. Can I Bolt their Bears?": the player's hexproof is theirs, not their creatures'.
+        for (ref in targets) (ref as? Ref.Obj)?.let { state.objects[it.id] }?.takeIf { it.controller != playerId }?.let { o ->
+            state.objects.values.firstOrNull { l -> l.isOnBattlefield() && l.controller == o.controller && l.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.PlayerHexproof } }?.let { ley ->
+                if (!state.hasKeyword(o, "hexproof")) { trace.step("${ley.name} gives ${state.player(o.controller).subject.lowercase()} hexproof, not ${state.player(o.controller).possessive} permanents: ${o.name} can still be targeted.", "702.11c", "115.1"); state.outcomes += "${ley.name} doesn't protect ${o.name}: it gives its controller hexproof, not their creatures." }
+            }
+        }
         for (ref in targets) targetingProblem(obj, playerId, ref)?.let { (why, rule) ->
             trace.step("${card.name} can't be cast targeting ${state.nameOf(ref)}: $why.", rule, "601.2c")
             state.outcomes += "${card.name} can't target ${state.nameOf(ref)}."

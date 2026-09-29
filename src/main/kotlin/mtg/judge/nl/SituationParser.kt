@@ -225,7 +225,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.events.add(at, EventSpec("activate", player = maze.controller, obj = maze.id, targets = listOf(target)))
             ctx.notes += "${maze.card.name} is on ${if (maze.controller == "me") "your" else (ctx.players[maze.controller] ?: "your opponent") + "'s"} side; assuming it is activated on the attacker once it has attacked. Say it isn't if so."
         }
-        ctx.events += ctx.asks
+        ctx.events += ctx.asks.distinct()
         // Every player that took part; "me" and "opponent" only when the text spoke of them (or named nobody).
         for (e in ctx.events) { e.player?.let { ctx.note(it) }; e.targets.forEach { if (it == "me" || it == "opp") ctx.note(it) } }
         for (o in ctx.objects.values) ctx.note(o.controller)
@@ -2846,6 +2846,11 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "${card.display} is in your library and is what ${ctx.objects[srcId]?.card?.name ?: srcEv.card?.name ?: "the search"} looks for; the outcome says whether it qualifies."
             ctx.lastMentioned = cid; return true
         }
+        // "I Show and Tell Emrakul. Do I get the extra turn?": whether a cast trigger happened.
+        Regex("""^(?:do|does|will|would) (i|we|they|he|she|my opponent|the opponent) (?:still |even |actually )?(?:get|take|receive) (?:the|an|its|my|their|that|another) (?:extra|additional) turn$""").find(clause0)?.let { r ->
+            val who = when (r.groupValues[1]) { "i", "we" -> "me"; else -> pronounPlayer(ctx, r.groupValues[1].substringAfterLast(' ')) }
+            ctx.asks += EventSpec("ask", player = who, to = "extraTurn"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
         // "Can I cast the Bolt this turn?" after Snapcaster Mage: whether a card in a graveyard or exile can be cast from there.
         Regex("""^can (i|we|they) (?:still |now |even )?cast (?:the |my |their |that |it |this )?(c\d+)(?: (?:again|now|this turn|right now|from (?:my |the |their )?graveyard|from exile|for its flashback cost|with flashback))*$""").find(clause0)?.let { r ->
             val who = if (r.groupValues[1] == "they") ctx.other(ctx.lastActor ?: "me") ?: "opp" else "me"
@@ -2915,7 +2920,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", obj = id, to = "untapsOn"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "They attack with a 6/6 and a 1/1. I have one 3/3. Which should I block?": the trades, one per attacker.
-        Regex("""^(?:which|which one|what|who) (?:should|do|can|would) (?:i|we) block(?: with(?: (?:it|my creature|my \d+/\d+))?)?$|^(?:what|which) (?:is|'s) (?:the )?(?:best|right|correct) block$|^(?:what|which) (?:should|do) (?:i|we) block with$""").find(clause0)?.let {
+        Regex("""^(?:which|which one|what|who) (?:should|do|can|would) (?:i|we) block(?: with(?: (?:it|my creature|my \d+/\d+))?)?$|^(?:what|which) (?:is|'s) (?:the |my )?(?:best|right|correct|correct|optimal) block(?: here)?$|^(?:what|which) (?:should|do) (?:i|we) block with$""").find(clause0)?.let {
             if (ctx.events.none { it.verb == "attack" || it.verb == "attackAll" }) return@let
             ctx.asks += EventSpec("ask", player = "me", to = "whichBlock"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
@@ -5680,7 +5685,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "${ctx.objects.getValue(id).card.name} is read as the top card of ${if (who == "me") "your" else "their"} library."; ctx.lastMentioned = id; return true
         }
         // "I have Dark Confidant and reveal Emrakul": the revealed card was the top of the library; the upkeep trigger does the rest.
-        Regex("""^(?:and )?reveals? (?:an? |the )?(c\d+)(?: (?:with|to|off|from) (?:my |the )?(?:c\d+|it))?$""").find(c)?.let { r ->
+        Regex("""^(?:and )?reveals? (?:an? |the )?(c\d+)(?: (?:with|to|off|from) (?:my |the )?(?:c\d+|it))?(?: (?:at|in|during|on) (?:my |the |their )?(?:next )?upkeep| at the beginning of my upkeep)?$""").find(c)?.let { r ->
             val who = actor ?: ctx.lastActor ?: "me"
             if (ctx.objects.values.none { it.controller == who && it.zone == "battlefield" && it.card.oracleId != null }) return@let
             val id = addObject(m.cards.getValue(r.groupValues[1]), who, false, ctx, zone = "library", allowDuplicate = true)
@@ -6564,6 +6569,10 @@ class SituationParser(private val names: NameIndex) {
             if (at >= 0 && at < ctx.events.lastIndex) ctx.events.add(at + 1, choose) else ctx.events += choose
             ctx.notes += "${card.display} is in ${if (who == "me") "your" else "their"} graveyard and is the card ${srcCard.display}'s enters-the-battlefield trigger is aimed at."
             ctx.lastActor = who; ctx.lastMentioned = cardId; return true
+        }
+        // "Graveyards are empty" / "there's nothing in my graveyard": nothing to add, and nothing left unread.
+        if (Regex("""^(?:both |all |the |my |their |our |each )?graveyards? (?:are|is) (?:both |all )?empty$|^(?:there is|there's|there are) (?:nothing|no cards?) in (?:any|either|both|all|my|their|the) graveyards?$|^(?:no|neither) graveyard has anything in it$""").matches(c)) {
+            ctx.notes += "The graveyards are empty: nothing is counted there."; return true
         }
         // "they activate its tap ability" / "use Top's first ability": an ability named by its cost or its place in the text.
         Regex("""^(?:activates?|uses?|activating|using) (?:its |the |their |his |her |my )?(?:(c\d+)(?:'s)? )?(tap|\{t\}|t|untap|first|second|third|last|loyalty) ability(?: in response| again| first| now)?$""").find(c)?.let { r ->

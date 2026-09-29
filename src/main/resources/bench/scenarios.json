@@ -23860,7 +23860,7 @@
     "id": "pacifism-can-it-still-block",
     "text": "They have a 5/5 and I cast Pacifism on it. Can it still block?",
     "expect": [
-      "No: a 5/5 creature can't block (Pacifism says so). (×2)"
+      "No: a 5/5 creature can't block (Pacifism says so)."
     ]
   },
   {
@@ -26301,6 +26301,103 @@
     "expect": [
       "You draw 1 card.",
       "You lose 1 life."
+    ]
+  },
+  {
+    "id": "leyline-of-sanctity-doesnt-protect-creatures",
+    "text": "My opponent has Leyline of Sanctity. Can I Lightning Bolt their Grizzly Bears?",
+    "expect": [
+      "Leyline of Sanctity doesn't protect Grizzly Bears: it gives its controller hexproof, not their creatures.",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "702.11c"
+    ]
+  },
+  {
+    "id": "giant-growth-on-blocker-who-dies",
+    "text": "I attack with a 3/3 and my opponent blocks with a 3/3. Before damage they cast Giant Growth. Who dies?",
+    "expect": [
+      "No: opponent's 3/3 creature is still on the battlefield.",
+      "Yes: your 3/3 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "show-and-tell-emrakul-no-extra-turn",
+    "text": "I cast Show and Tell and put Emrakul, the Aeons Torn onto the battlefield. Do I get the extra turn?",
+    "expect": [
+      "Emrakul, the Aeons Torn enters the battlefield.",
+      "No: Emrakul, the Aeons Torn's extra turn comes from \"when you cast this spell\", a trigger that happens only when it's cast. Putting it onto the battlefield with an effect (Show and Tell, Sneak Attack) isn't casting it (601.2a), so the trigger never happens (603.2). It's still on the battlefield with its other abilities."
+    ]
+  },
+  {
+    "id": "cast-emrakul-extra-turn-yes",
+    "text": "I cast Emrakul, the Aeons Torn. Do I get the extra turn?",
+    "expect": [
+      "Yes: you take an extra turn after this one."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-two-cards-which-can-attack",
+    "text": "My opponent has Ensnaring Bridge with 2 cards in hand. I attack with a 2/2 and a 3/3. Which can attack?",
+    "expect": [
+      "Yes: a 2/2 creature can attack.",
+      "No: a 3/3 creature can't attack (Ensnaring Bridge: opponent has 2 cards in hand and a 3/3 creature's power is 3, 508.1c)."
+    ]
+  },
+  {
+    "id": "pacifism-bears-can-it-block-once",
+    "text": "I have Grizzly Bears with Pacifism on it. Can it block?",
+    "expect": [
+      "No: Grizzly Bears can't block (Pacifism says so)."
+    ],
+    "notExpect": [
+      "(×2)"
+    ]
+  },
+  {
+    "id": "bolt-at-three-with-platinum-angel",
+    "text": "I cast Lightning Bolt at my opponent and they're at 3 with Platinum Angel. Do they lose?",
+    "expect": [
+      "opponent stays in the game: Platinum Angel keeps opponent from losing.",
+      "No: opponent is still in the game at 0 life."
+    ]
+  },
+  {
+    "id": "tarmogoyf-empty-graveyards-bolt-kills",
+    "text": "I control Tarmogoyf and my opponent casts Lightning Bolt on it. Graveyards are empty. Does it die?",
+    "expect": [
+      "Tarmogoyf has 3 damage marked.",
+      "Yes: Tarmogoyf died (it's in the graveyard)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "dark-confidant-reveal-bolt-at-upkeep",
+    "text": "I have Dark Confidant and reveal Lightning Bolt at upkeep. What happens?",
+    "expect": [
+      "Lightning Bolt: your library → your hand.",
+      "You lose 1 life (Lightning Bolt's mana value)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "best-block-first-striker-vs-two-bears",
+    "text": "My opponent attacks me with two 2/2s. I have a 2/2 with first strike. What's my best block?",
+    "expect": [
+      "Blocking a 2/2 creature with a 2/2 creature with first strike: saves you 2 damage; a 2/2 creature with first strike survives and a 2/2 creature dies (first strike kills it before it deals damage). (×2)"
+    ]
+  },
+  {
+    "id": "counterspell-vs-emrakul",
+    "text": "I cast Counterspell targeting my opponent's Emrakul, the Aeons Torn. What happens?",
+    "expect": [
+      "Emrakul, the Aeons Torn isn't countered (it can't be).",
+      "Emrakul, the Aeons Torn enters the battlefield."
     ]
   }
 ]
