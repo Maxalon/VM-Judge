@@ -1100,6 +1100,18 @@ class SituationParser(private val names: NameIndex) {
             // "Can I put Grizzly Bears onto the battlefield with it?" (Aether Vial): the Vial's activation.
         t2 = t2.let { t0 -> Regex("""\b(can (?:i|we) |i |we )?put (?:my |the |an? )?(c\d+) (?:onto the battlefield|into play|in|out) (?:with|off|using|via) (?:it|that|the vial|my vial|the |my )?(?:vial|aether vial|c\d+)?(?=\?|$|,)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name ?: "").contains("Vial", true) } || m.cards.values.any { it.display.contains("Vial", true) }) "${r.groupValues[1]}vial in ${r.groupValues[2]}" else r.value } }
+            // "Can I still sacrifice it to my Viscera Seer?": the sacrifice happens, and the answer says why nothing stops it.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:still |even )?(sacrifice|sac) (it|that|(?:my |the )?c\d+) (?:to|with|into) (?:my |the )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "then i $1 $2 to my $3, sacrifice-allowed-question")
+            // "Does the counter save it?": whether it survives.
+        t2 = t2.replace(Regex("""\b(?:does|do|will|would) (?:the|a|its|my|that|those) (?:[+-]\d/[+-]\d )?counters? (?:save|help|protect|keep) (it|him|her|them|(?:my |the )?c\d+)(?: alive)?\??$""", RegexOption.IGNORE_CASE), "does $1 survive")
+            // "How big is Tarmogoyf after?": the trailing "after" adds nothing.
+        t2 = t2.replace(Regex("""\b(how big is (?:it|that|(?:my |the |their )?c\d+|my \d+/\d+)) (?:after(?:wards| that| this)?|then|now)\??$""", RegexOption.IGNORE_CASE), "$1")
+            // "Counterspell on the creature I vial in": a creature put in with Aether Vial was never cast, so it isn't a spell.
+        t2 = t2.let { t0 -> Regex("""\b(?:casts?|plays?) (?:an? |the |my )?(c\d+) (?:on|at|targeting) (?:the|my|a) (?:creature|guy|card|\d+[- ]drop) (?:i|we) (?:(vial(?:ed)?|c\d+) in|put in with (?:the |my )?(vial|aether vial|c\d+)|vial(?:ed)?)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+            val w = r.groupValues[2].ifEmpty { r.groupValues[3] }.lowercase()
+            if (w.isEmpty() || w.startsWith("vial") || w == "aether vial" || m.cards[w]?.display?.contains("Vial", true) == true) "casts ${r.groupValues[1]} vialed-creature-question" else r.value } }
+            // "How many lands do I get?" (Settle the Wreckage): the count searched for.
+        t2 = t2.replace(Regex("""^how many (?:basic )?lands? (?:do|can|will|would) (?:i|we) (?:get|fetch|search for|find|search up)(?: from (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE), "landcount-question")
             // "At end of turn, what happens?" (damage wearing off): the cleanup step.
         t2 = t2.replace(Regex("""^at (?:the )?end of (?:the |my |this )?turn,? what happens(?: to (?:it|the damage|my creature))?\??$""", RegexOption.IGNORE_CASE), "in the cleanup step, what happens")
             // "How much damage do I deal if I attack?": everything attacks, and the question is what they take.
@@ -2673,6 +2685,12 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:No. Blocking is never required by the rules: the defending player chooses which creatures they control, if any, will block (509.1a). Only an effect that says a creature must block, or that all creatures able to block a creature do so, takes that choice away (509.1c). The outcome below assumes no block.")
             return true
         }
+        if (clause0 == "sacrifice-allowed-question") {
+            if (ctx.events.none { it.verb == "sacrifice" || it.verb == "activate" }) return false
+            ctx.asks += EventSpec("ask", to = "text:Yes. Sacrificing is neither attacking, blocking nor targeting: an Aura that says the creature can't attack or block (Pacifism), or hexproof or shroud on it, doesn't stop its controller from sacrificing it as a cost (701.21a, 702.11b). Only an effect that says it can't be sacrificed, or that takes control of it, would.")
+            return true
+        }
+        if (clause0 == "landcount-question") { ctx.asks += EventSpec("ask", player = "me", to = "landCount"); return true }
         if (clause0 == "saveteam-question") {
             if (ctx.events.none { it.verb == "cast" && it.player != "me" }) return false
             ctx.asks += EventSpec("ask", player = "me", to = "saveTeam"); return true
@@ -2882,6 +2900,12 @@ class SituationParser(private val names: NameIndex) {
             val att = ctx.events.lastOrNull { it.verb == "attack" && it.player == "me" }?.obj ?: return@let
             if (ctx.events.none { it.verb in setOf("cast", "activate") && ctx.events.indexOf(it) > ctx.events.indexOfLast { e -> e.verb == "attack" } }) return@let
             ctx.asks += EventSpec("ask", obj = att, to = "stillAttacking"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "They Counterspell the creature I vial in": it was never cast, so it isn't a spell to counter.
+        Regex("""^(?:i|we|they|he|she|my opponent|the opponent) casts? (?:an? |the |my )?(c\d+) vialed-creature-question$""").find(clause0)?.let { r ->
+            val vial = ctx.objects.values.lastOrNull { it.zone == "battlefield" && (it.card.name ?: "").contains("Vial", true) }?.card?.name ?: "Aether Vial"
+            ctx.asks += EventSpec("ask", to = "text:${m.cards[r.groupValues[1]]?.display ?: "The counterspell"} has nothing to target: $vial puts the creature card onto the battlefield without casting it (601.2a), so it's never a spell on the stack. A spell that says \"counter target spell\" can't be cast at it (601.2c), and the creature just enters. Only a counter that says \"counter target activated ability\" (Stifle) could stop the Vial's ability itself.")
+            return true
         }
         // "Then I cast Raise Dead. What can I get back?": every card the spell could have chosen.
         Regex("""^(?:what|which(?: ones?| cards?| creatures?)?) (?:can|could|may) (?:i|we) (?:get back|return|bring back|reanimate|target|pick|choose|take back|grab|recur)(?: with (?:it|that|(?:my |the )?c\d+))?$""").find(clause0)?.let {
@@ -4559,7 +4583,10 @@ class SituationParser(private val names: NameIndex) {
             // this "it" took the last thing named — the Seer — and the answer sacrificed the outlet to itself.
             val outletId = r.groupValues[2].takeIf { cardRef.matches(it) }?.let { ph -> m.cards[ph]?.let { objectIdFor(it, ctx) } }
             // Only your own permanents can be sacrificed, so "it" is the actor's rather than the last one named.
-            val id = if (what == "it" || what == "itself") (ctx.lastMentioned?.takeIf { it in ctx.objects && it != outletId && ctx.objects.getValue(it).controller == who } ?: ctx.lastCastEntry?.takeIf { ctx.lastMentioned == "cast:" + slug(it.display) }?.let { castPermanentObject(ctx) } ?: ctx.events.lastOrNull { it.verb == "cast" && it.player == who }?.card?.name?.let { slug(it) }?.takeIf { it != outletId } ?: ctx.events.lastOrNull { it.verb == "cast" || it.verb == "activate" }?.targets?.firstOrNull { it in ctx.objects && it != outletId && ctx.objects.getValue(it).controller == who } ?: ctx.objects.values.lastOrNull { it.controller == who && it.id != outletId }?.id ?: return@let)
+            val id = if (what == "it" || what == "itself") (ctx.lastMentioned?.takeIf { it in ctx.objects && it != outletId && ctx.objects.getValue(it).controller == who }
+                     // "they cast Pacifism on it. I sacrifice it to my Seer": "it" is the creature the spell was aimed at, which is the actor's.
+                     ?: ctx.lastMentioned?.takeIf { it.startsWith("cast:") }?.let { ctx.events.lastOrNull { e -> e.verb == "cast" }?.targets?.firstOrNull { t -> t in ctx.objects && t != outletId && ctx.objects.getValue(t).controller == who } }
+                     ?: ctx.lastCastEntry?.takeIf { ctx.lastMentioned == "cast:" + slug(it.display) }?.let { castPermanentObject(ctx) } ?: ctx.events.lastOrNull { it.verb == "cast" && it.player == who }?.card?.name?.let { slug(it) }?.takeIf { it != outletId } ?: ctx.events.lastOrNull { it.verb == "cast" || it.verb == "activate" }?.targets?.firstOrNull { it in ctx.objects && it != outletId && ctx.objects.getValue(it).controller == who } ?: ctx.objects.values.lastOrNull { it.controller == who && it.id != outletId }?.id ?: return@let)
                      else if (what.startsWith("says-")) {
                          // "I sacrifice a creature that says when this creature dies each opponent loses 2 life": a stand-in named by its text, on the battlefield now.
                          val kind = what.substringAfterLast(' '); val body = what.substringBeforeLast(' ').removePrefix("says-")

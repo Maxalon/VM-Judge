@@ -3847,6 +3847,16 @@ class Engine(val state: GameState) {
 
     fun narrateLandTypeSetters(only: GameObject? = null, land: GameObject? = null) {
         val moons = state.objects.values.filter { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } && (only == null || it === only) }
+        // "They cast Blood Moon. I have three Islands.": basic lands are untouched, and that is worth saying.
+        if (land == null) for (moon in moons) for (p in state.players) {
+            val basics = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && "Land" in it.def.types && "Basic" in it.def.supertypes }
+            val nonbasics = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && "Land" in it.def.types && "Basic" !in it.def.supertypes }
+            if (basics.isNotEmpty() && nonbasics.isEmpty() && basics.any { it.controller != moon.controller || state.players.size == 1 }) {
+                val names = basics.groupBy { it.def.name }.entries.joinToString(" and ") { (n, l) -> if (l.size == 1) n else "${l.size} ${n}s" }
+                trace.step("${moon.name} says nonbasic lands are Mountains; ${p.possessive} $names ${if (basics.size == 1) "is" else "are"} basic, so nothing about ${if (basics.size == 1) "it" else "them"} changes.", "205.4c", "305.7")
+                state.outcomes += "${moon.name} doesn't touch ${p.possessive} $names: they're basic lands, and ${moon.name} changes only nonbasic ones."
+            }
+        }
         for (moon in moons) for (land in state.objects.values.filter { it.isOnBattlefield() && "Land" in it.def.types && "Basic" !in it.def.supertypes && (land == null || it === land) }) {
             val saga = "Saga" in land.def.subtypes
             trace.step("${moon.name} makes ${land.name} a Mountain: it loses its other land types and every ability from its rules text${if (saga) ", chapter abilities included," else ""} and has only \"{T}: Add {R}\" (a type-changing effect, layer 4).${if (saga) " It's still an enchantment and a Saga; its lore counters stay, and with no chapter abilities it is neither sacrificed nor able to do anything." else ""}", "613.1d", "305.7", *(if (saga) arrayOf("714.4") else emptyArray()))

@@ -26894,5 +26894,104 @@
       "opponent takes 3 damage.",
       "Yes: opponent takes 3 damage in all."
     ]
+  },
+  {
+    "id": "pacifism-can-i-still-sacrifice-to-seer",
+    "text": "I have Grizzly Bears and my opponent casts Pacifism on it. Can I still sacrifice it to my Viscera Seer?",
+    "expect": [
+      "Pacifism enters the battlefield.",
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Yes. Sacrificing is neither attacking, blocking nor targeting: an Aura that says the creature can't attack or block (Pacifism), or hexproof or shroud on it, doesn't stop its controller from sacrificing it as a cost (701.21a, 702.11b)."
+    ]
+  },
+  {
+    "id": "fog-in-hand-one-land-am-i-dead",
+    "text": "My opponent attacks me with a 6/6 and I'm at 5. I have Fog in hand and 1 untapped land. Am I dead?",
+    "expect": [
+      "Damage to you from a 6/6 creature is prevented.",
+      "No: You are still in the game at 5 life."
+    ]
+  },
+  {
+    "id": "elesh-norn-bears-deal-four",
+    "text": "I control Elesh Norn, Grand Cenobite and attack with Grizzly Bears. How much damage does it deal?",
+    "expect": [
+      "Yes: opponent takes 4 damage in all."
+    ]
+  },
+  {
+    "id": "ponder-then-brainstorm-drawn",
+    "text": "I cast Ponder and then Brainstorm. How many cards have I drawn?",
+    "expect": [
+      "You draw 4 cards in all."
+    ]
+  },
+  {
+    "id": "blood-moon-vs-three-islands",
+    "text": "My opponent casts Blood Moon. I have three Islands. What happens?",
+    "expect": [
+      "Blood Moon doesn't touch your 3 Islands: they're basic lands, and Blood Moon changes only nonbasic ones."
+    ],
+    "cite": [
+      "305.7"
+    ]
+  },
+  {
+    "id": "sword-of-feast-and-famine-connects",
+    "text": "I have Sword of Feast and Famine on a 2/2 and hit my opponent. What happens?",
+    "expect": [
+      "opponent takes 4 damage.",
+      "opponent discards 1 card."
+    ]
+  },
+  {
+    "id": "does-the-counter-save-it-from-damnation",
+    "text": "My opponent casts Damnation while I have Grizzly Bears with a +1/+1 counter. Does the counter save it?",
+    "expect": [
+      "No: Grizzly Bears is in the graveyard."
+    ]
+  },
+  {
+    "id": "tarmogoyf-after-bolt-to-face",
+    "text": "I control Tarmogoyf and cast Lightning Bolt at my opponent's face. How big is Tarmogoyf after?",
+    "expect": [
+      "Tarmogoyf is 1/2 (1/2 base, base set by its own ability (layer 7a: 1 card type in graveyards (Instant)))."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "deathtouch-one-one-blocks-two-two",
+    "text": "My opponent has a 2/2 and I have a 1/1 with deathtouch. If I block, who dies?",
+    "expect": [
+      "Yes: a 1/1 creature with deathtouch died (it's in the graveyard).",
+      "Yes: a 2/2 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "counterspell-on-the-creature-i-vial-in",
+    "text": "I have Aether Vial with 2 counters. My opponent casts Counterspell on the creature I vial in. What happens?",
+    "expect": [
+      "Counterspell has nothing to target: Aether Vial puts the creature card onto the battlefield without casting it (601.2a), so it's never a spell on the stack."
+    ],
+    "notExpect": [
+      "can't target Aether Vial"
+    ]
+  },
+  {
+    "id": "settle-two-attackers-how-many-lands",
+    "text": "I attack with two 2/2s and my opponent casts Settle the Wreckage. How many lands do I get?",
+    "expect": [
+      "a 2/2 creature: the battlefield → exile. (×2)",
+      "You get 2 basic lands: one for each creature exiled this way, put onto the battlefield tapped (you may search for fewer or none, 701.19b)."
+    ]
+  },
+  {
+    "id": "grafdiggers-cage-vs-green-suns-zenith",
+    "text": "My opponent controls Grafdigger's Cage. I cast Green Sun's Zenith for 2. What happens?",
+    "expect": [
+      "Grafdigger's Cage: no creature card enters the battlefield from Green Sun's Zenith (creature cards in graveyards and libraries can't enter)."
+    ]
   }
 ]
