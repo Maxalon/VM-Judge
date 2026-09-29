@@ -2316,7 +2316,9 @@ class Engine(val state: GameState) {
                         val n = legal.size
                         val base = effect.amount / n; val extra = if (effect.evenly) 0 else effect.amount % n
                         if (effect.evenly && n > 1) trace.step("${item.source.name} divides its ${effect.amount} damage evenly among $n targets, rounded down: $base to each${if (effect.amount % n > 0) ", and the remaining ${effect.amount % n} is lost" else ""}.", "608.2c")
-                        if (n > effect.amount) {
+                        // Fireball with X = 0 at one target deals 0 damage: nothing to divide, and nothing happens.
+                        if (n == 1 && effect.amount == 0) { trace.step("${item.describe} deals 0 damage to ${state.nameOf(legal[0])}: with X = 0 there is no damage to deal, and a single target needs no division.", "107.3a", "120.1"); state.outcomes += "${item.describe} deals no damage (X = 0)." }
+                        else if (n > effect.amount) {
                             state.clarifications += Clarification("${item.describe}'s division", "${effect.amount} damage can't be divided among $n targets: each one has to be assigned at least 1 damage as the spell is cast (601.2d).")
                             trace.step("The division is chosen as ${item.describe} is cast, and each target must be assigned at least 1 damage, so $n targets can't share ${effect.amount} damage.", "601.2d")
                         } else {
@@ -3882,6 +3884,8 @@ class Engine(val state: GameState) {
                 Triple(o, text, Regex("""\{[^}]+\}""").findAll(text).count().takeIf { it > 0 } ?: 1)
             }
         val stated = p.mana?.takeIf { it > 0 }
+        // "They have Ghostly Prison and I have 4 lands. I attack with two creatures. Do I have mana left?": the taxes took it all.
+        if (sources.isEmpty() && p.mana == 0) return "${p.subject} ${p.v("has", "have")} no mana left${poolNote(p)}: everything the situation gave ${p.subject.lowercase()} was spent (on costs paid as things were attacked with or cast)."
         // "I have 3 lands and cast a 2 drop, then a 1 drop, do I have mana left?": what the casts already paid comes off.
         if (sources.isEmpty() && stated != null && p.manaSpent > 0) return "${p.subject} ${p.v("has", "have")} ${maxOf(0, stated - p.manaSpent)} mana left${poolNote(p)}: the situation gave ${p.subject.lowercase()} $stated, and ${p.manaSpent} of it paid for what ${p.subject.lowercase()} cast."
         if (sources.isEmpty()) return (if (stated != null) "${p.subject} ${p.v("has", "have")} $stated mana available (the situation says so; no permanent it named makes mana)."

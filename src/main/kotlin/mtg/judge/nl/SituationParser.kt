@@ -2796,6 +2796,29 @@ class SituationParser(private val names: NameIndex) {
             ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(slug(name) + ":spell"))
             ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Spellskite targeting $name; the outcome says where the spell ends up aimed."; return true
         }
+        // "I control Thalia and cast Lightning Bolt. Does my own Thalia tax me?": the cost of the spell just cast.
+        Regex("""^(?:does|will|would) (?:my own |my |their |the )?(c\d+|it|that|she|he) (?:still |also |even )?(?:tax|taxes|taxing|make it cost more|raise the cost|apply to|hit|affect) (?:me|us|it|that|my spells?|my own spells?|my bolt|this|my stuff|myself|my c\d+)(?: too| as well| also)?$""").find(clause0)?.let {
+            val last = ctx.events.lastOrNull { it.verb == "cast" } ?: return@let
+            val id = last.card?.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { objectIdForOrCast(it, ctx) ?: slug(it.display) } ?: last.obj ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "spellCost"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the cost below (a tax on \"each\" or \"noncreature\" spell applies to its controller's own spells too)."; return true
+        }
+        // "I have 1 life and cast Dark Ritual. Does the mana burn?": there hasn't been mana burn since 2009.
+        Regex("""^(?:does|will|would) (?:the |that |unused |leftover |extra |floating )?mana (burn|c\d+)(?: me)?$|^is there (?:still )?mana (burn|c\d+)$|^do (?:i|we) take mana (burn|c\d+)$""").find(clause0)?.let { r ->
+            // "Burn" is also a card name, so the word may have been read as one.
+            val w = r.groupValues[1].ifEmpty { r.groupValues[2] }.ifEmpty { r.groupValues[3] }
+            if (w != "burn" && m.cards[w]?.display != "Burn") return@let
+            ctx.asks += EventSpec("ask", to = "text:No. Mana burn no longer exists (it left the rules in 2009). Unspent mana simply empties from your mana pool at the end of each step and phase, with no life lost (106.4)."); return true
+        }
+        // "They Pacifism my Bears. Can I still tap it for a mana ability?": Pacifism only stops attacking and blocking.
+        Regex("""^can (?:i|we) (?:still |even )?(?:tap|use|activate) (it|that|(?:my |the )?(c\d+)) (?:for (?:a |its |the )?(?:mana ability|mana|ability|abilities)|for its (?:tap )?ability)$""").find(clause0)?.let { r ->
+            val id = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) }
+                ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull { it in ctx.objects && isCreatureName(ctx.objects.getValue(it).card.name) }
+                ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            // Only when something of the other side's was aimed at it (Pacifism); "can I tap it for mana?" on its own
+            // is the activation itself, read elsewhere, so summoning sickness and the mana made are shown.
+            if (ctx.events.none { e -> e.verb == "cast" && e.player != ctx.objects.getValue(id).controller && id in e.targets }) return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "tapAbility"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
         // "I cast Bloodbraid Elf. What does cascade do?": the keyword, in the rules' words, alongside the situation.
         Regex("""^(?:what does|what's|what is|how does) (cascade|storm|prowess|menace|deathtouch|lifelink|trample|first strike|flash|hexproof|indestructible|vigilance|haste|flying|reach|defender|infect|split second)(?: do| work| mean)?$""").find(clause0)?.let { r ->
             val (text, rule) = when (r.groupValues[1]) {
@@ -5402,6 +5425,14 @@ class SituationParser(private val names: NameIndex) {
             var id = slug(kind); var k = 2; while (ctx.objects.containsKey(id)) id = slug(kind) + "_" + (k++)
             ctx.objects[id] = ObjectSpec(id, CardRef(name = src.card.name), controller = who); ctx.note(who)
             ctx.lastMentioned = id; ctx.lastOwner = who; ctx.lastVerb = "have"; return true
+        }
+        // "…and Thalia in hand": a card said to be in hand, with no verb of its own after the "and".
+        Regex("""^(?:an? |my |their )?(c\d+) (?:in|is in|'s in) (?:my |their |his |her )?hand$""").find(c)?.let { r ->
+            val who = if (Regex("""\b(?:their|his|her) hand$""").containsMatchIn(c)) pronounPlayer(ctx, "their") else actor ?: ctx.lastActor ?: "me"
+            val card = m.cards.getValue(r.groupValues[1])
+            val id = ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "hand" && it.controller == who }?.id ?: addObject(card, who, false, ctx, zone = "hand", allowDuplicate = true)
+            ctx.notes += "${card.display} noted as in hand (hidden zones are only tracked when you cast from them)."
+            ctx.lastOwner = who; ctx.lastVerb = "have"; ctx.lastMentioned = id; return true
         }
         // "I only have lands in hand" / "my hand is all lands": a hand of nothing but lands, for a discard spell to look at.
         Regex("""^(?:(?:only |just )?(?:have|has|got|'ve got|hold|holds|am holding) (?:only |just |nothing but |all )?(lands?|creatures?|instants?|sorcer(?:y|ies)|artifacts?|enchantments?) in (?:my |their |his |her )?hand|(?:my|their) hand is (?:all|only|just|nothing but) (lands?|creatures?|instants?|sorcer(?:y|ies)|artifacts?|enchantments?))$""").find(c)?.let { r ->

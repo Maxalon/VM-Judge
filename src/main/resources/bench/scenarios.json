@@ -24704,5 +24704,108 @@
     "expect": [
       "Urza's Tower is a Mountain under Blood Moon, so it taps for {R} and nothing else."
     ]
+  },
+  {
+    "id": "aether-vial-three-counters-thalia-in-hand",
+    "text": "I have Aether Vial with 3 counters and Thalia in hand. Can I put Thalia in?",
+    "expect": [
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 3 counters)."
+    ]
+  },
+  {
+    "id": "counterspell-on-sol-ring",
+    "text": "They cast Counterspell on my Sol Ring. Does it get countered?",
+    "expect": [
+      "Yes: Sol Ring is countered."
+    ]
+  },
+  {
+    "id": "serra-giant-growth-after-no-blocks",
+    "text": "I attack with Serra Angel and cast Giant Growth after blockers. They didn't block. How much damage do they take?",
+    "expect": [
+      "Serra Angel is 7/7 until end of turn.",
+      "Yes: opponent takes 7 damage in all."
+    ]
+  },
+  {
+    "id": "trample-3-3-vs-1-1-deathtouch-how-much-over",
+    "text": "I have a 3/3 with trample and they block with a 1/1 with deathtouch. How much tramples over?",
+    "expect": [
+      "Yes: opponent takes 2 damage in all.",
+      "a 3/3 creature with trample: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "702.19b"
+    ]
+  },
+  {
+    "id": "ghostly-prison-four-lands-two-attackers-mana-left",
+    "text": "They have Ghostly Prison and I have 4 lands. I attack with two creatures. Do I have mana left?",
+    "expect": [
+      "You pay {2} for Ghostly Prison (a creature attacks). (×2)",
+      "You have no mana left: everything the situation gave you was spent (on costs paid as things were attacked with or cast)."
+    ]
+  },
+  {
+    "id": "does-my-own-thalia-tax-me",
+    "text": "I control Thalia and cast Lightning Bolt. Does my own Thalia tax me?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "pacifism-bears-tap-for-mana-ability",
+    "text": "I have Grizzly Bears and they Pacifism it. Can I still tap it for a mana ability?",
+    "expect": [
+      "Grizzly Bears has no activated ability with {T} in its cost, so there's nothing to tap it for; Pacifism only stops it attacking and blocking, and wouldn't stop an ability anyway."
+    ]
+  },
+  {
+    "id": "pacifism-elves-tap-for-mana",
+    "text": "I have Llanowar Elves and they Pacifism it. Can I still tap it for mana?",
+    "expect": [
+      "Yes: Llanowar Elves can be tapped for \"{T}: Add {G}.\"; Pacifism says only that it can't attack or block, and says nothing about its abilities (the tap is a cost, not an attack)."
+    ]
+  },
+  {
+    "id": "hymn-vs-one-card",
+    "text": "They cast Hymn to Tourach and I have 1 card. How many do I discard?",
+    "expect": [
+      "You discard 1 card (1 → 0 in hand)."
+    ]
+  },
+  {
+    "id": "dark-ritual-does-the-mana-burn",
+    "text": "I have 1 life and cast Dark Ritual. Does the mana burn?",
+    "expect": [
+      "No. Mana burn no longer exists (it left the rules in 2009). Unspent mana simply empties from your mana pool at the end of each step and phase, with no life lost (106.4)."
+    ],
+    "cite": [
+      "106.4"
+    ]
+  },
+  {
+    "id": "fireball-x-zero",
+    "text": "I cast Fireball with X = 0. What happens?",
+    "expect": [
+      "Fireball deals no damage (X = 0)."
+    ]
+  },
+  {
+    "id": "sphere-of-resistance-bolt-cost",
+    "text": "They have Sphere of Resistance. How much does my Lightning Bolt cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Sphere of Resistance makes it cost {1} more) — 2 mana in all."
+    ]
+  },
+  {
+    "id": "two-anthems-and-a-1-1",
+    "text": "I have two Glorious Anthems and a 1/1. How big is it?",
+    "expect": [
+      "a 1/1 creature is 3/3 (1/1 base, +1/+1 from Glorious Anthem, +1/+1 from Glorious Anthem)."
+    ]
   }
 ]

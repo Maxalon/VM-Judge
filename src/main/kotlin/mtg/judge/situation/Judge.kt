@@ -725,6 +725,18 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         return
                     }
                 }
+                if (e.to == "tapAbility") {
+                    val o = state.obj(e.obj ?: throw JudgeException("ask needs an object"))
+                    val tapAbilities = o.def.abilities.filterIsInstance<ActivatedAbility>().filter { it.cost.contains("{T}") }
+                    val pacifier = state.objects.values.firstOrNull { a -> a.isOnBattlefield() && a.attachedTo == o.id && a.def.oracleText.contains("can't attack or block", true) }
+                    state.outcomes += when {
+                        tapAbilities.isEmpty() -> "${o.name} has no activated ability with {T} in its cost, so there's nothing to tap it for${pacifier?.let { "; ${it.name} only stops it attacking and blocking, and wouldn't stop an ability anyway" } ?: ""}."
+                        o.tapped == true -> "No: ${o.name} is already tapped, so its {T} ability can't be paid for (602.5a)."
+                        o.summoningSick == true && !state.hasKeyword(o, "haste") -> "No: ${o.name} came under your control this turn, so its {T} ability can't be activated yet (302.6)."
+                        else -> "Yes: ${o.name} can be tapped for \"${tapAbilities.first().text}\"${pacifier?.let { "; ${it.name} says only that it can't attack or block, and says nothing about its abilities (the tap is a cost, not an attack)" } ?: ""}."
+                    }
+                    return
+                }
                 if (e.to == "regenerateVs") {
                     val o = state.obj(e.obj ?: throw JudgeException("ask needs an object"))
                     val killer = curEvents.lastOrNull { it.verb == "cast" && it.player != o.controller && e.obj in it.targets }?.card?.let { cardDef(it, state) }
