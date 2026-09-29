@@ -464,6 +464,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     // "activate Nykthos for green": a colour was chosen, so the ability that uses one is the one
                     // meant — not Nykthos's plain "{T}: Add {C}", which was picked first and ignored the devotion.
                     ?: e.to?.takeIf { it.startsWith("color:") }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.effect is Effect.AddManaDevotion || (a.effect as? Effect.Seq)?.effects?.any { it is Effect.AddManaDevotion } == true }.takeIf { it >= 0 } }
+                    ?: e.to?.takeIf { it == "tap" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.cost.contains("{T}") }.takeIf { it >= 0 } }
+                    ?: e.to?.takeIf { it == "untap" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.cost.contains("{Q}") }.takeIf { it >= 0 } }
+                    ?: e.to?.takeIf { it == "last" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().lastIndex.takeIf { it >= 0 } }
                     ?: e.to?.takeIf { it == "mana" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.effect is Effect.AddMana || a.effect is Effect.AddManaPer || (a.effect as? Effect.Seq)?.effects?.any { it is Effect.AddMana || it is Effect.AddManaPer } == true }.takeIf { it >= 0 } }
                     ?: e.to?.takeIf { it == "levelup" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.cost.startsWith("Level up", true) }.takeIf { it >= 0 } }
                     ?: e.to?.takeIf { it == "saddle" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.effect is Effect.SaddleSelf }.takeIf { it >= 0 } }

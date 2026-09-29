@@ -26010,5 +26010,97 @@
     "cite": [
       "603.3d"
     ]
+  },
+  {
+    "id": "vial-in-response-to-wrath",
+    "text": "I control Aether Vial with 2 counters. My opponent casts Wrath of God. Can I flash in a Grizzly Bears in response?",
+    "expect": [
+      "Grizzly Bears enters the battlefield.",
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Yes: after Wrath of God is cast its controller gets priority, then each player does in turn; instants can be cast and abilities activated before it resolves (117.3c, 117.4)."
+    ]
+  },
+  {
+    "id": "thoughtseize-bolt-not-forest",
+    "text": "My opponent casts Thoughtseize on me and I have Lightning Bolt and a Forest in hand. What can they take?",
+    "expect": [
+      "Lightning Bolt: your hand → your graveyard.",
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Forest can't be chosen (not nonland card)."
+    ]
+  },
+  {
+    "id": "lifelink-one-one-blocked-by-three-three",
+    "text": "I attack with a 1/1 with lifelink. It's blocked by a 3/3. Do I gain life?",
+    "expect": [
+      "You gain 1 life in all.",
+      "a 1/1 creature with lifelink: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "elesh-norn-vs-bears",
+    "text": "My opponent has Elesh Norn, Grand Cenobite. I cast Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears enters the battlefield.",
+      "Grizzly Bears: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "sword-of-fire-and-ice-blue-blocker",
+    "text": "I have Sword of Fire and Ice equipped on a 2/2 and attack. They block with a blue creature. What happens?",
+    "expect": [
+      "a blue creature can't block a 2/2 creature (protection).",
+      "opponent takes 4 damage.",
+      "You draw 1 card."
+    ]
+  },
+  {
+    "id": "heros-downfall-on-jace",
+    "text": "My opponent casts Hero's Downfall on my Jace, the Mind Sculptor. Does it work?",
+    "expect": [
+      "Jace, the Mind Sculptor: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "chalice-one-counters-bolt",
+    "text": "I control Chalice of the Void with 1 counter. My opponent casts Lightning Bolt. What happens?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ]
+  },
+  {
+    "id": "stifle-the-top-tap-ability",
+    "text": "My opponent has Sensei's Divining Top. Can I Stifle the tap ability?",
+    "expect": [
+      "Sensei's Divining Top's activated ability is countered."
+    ],
+    "notExpect": [
+      "Nothing changes"
+    ]
+  },
+  {
+    "id": "top-tap-ability-stifled-explicit",
+    "text": "My opponent has Sensei's Divining Top. They activate its tap ability and I cast Stifle targeting the ability. What happens?",
+    "expect": [
+      "Sensei's Divining Top's activated ability is countered."
+    ]
+  },
+  {
+    "id": "terminate-vs-progenitus",
+    "text": "I cast Terminate on my opponent's Progenitus. What happens?",
+    "expect": [
+      "Terminate can't target Progenitus.",
+      "Why: Progenitus has protection from everything, so it can't be targeted by that spell."
+    ]
+  },
+  {
+    "id": "hexproof-doesnt-stop-wrath",
+    "text": "I control a 2/2 with hexproof. My opponent casts Wrath of God. Does it survive?",
+    "expect": [
+      "a 2/2 creature with hexproof's hexproof doesn't help: Wrath of God doesn't target anything.",
+      "No: a 2/2 creature with hexproof is in the graveyard."
+    ],
+    "cite": [
+      "702.11b"
+    ]
   }
 ]

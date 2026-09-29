@@ -1081,6 +1081,11 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\bon a creature that connects\b""", RegexOption.IGNORE_CASE), "on a creature, then i attack with it")
             // "Surgical Extraction on my graveyard's Snapcaster Mage": the card, in that graveyard.
         t2 = t2.replace(Regex("""\b(my|their|his|her) graveyard's (c\d+)\b""", RegexOption.IGNORE_CASE), "$2 in $1 graveyard")
+            // "Can I Stifle the tap ability?": the other player activates it, then the counter is cast at the ability.
+        t2 = t2.let { t0 -> Regex("""^can (i|we) (?:cast )?(c\d+) (?:on |at |targeting )?(?:the|its|their|his|her|that) (tap|\{t\}|first|second|third|last|loyalty|activated|triggered) ability\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                if (m.cards[r.groupValues[2]]?.isSpellOnly != true) r.value
+                else if (r.groupValues[3].lowercase() in setOf("activated", "triggered")) "they activate it, i cast ${r.groupValues[2]} targeting the ability"
+                else "they activate its ${r.groupValues[3].lowercase()} ability, i cast ${r.groupValues[2]} targeting the ability" } }
             // "my opponent Stifles my Wasteland activation": the activation, then the Stifle at the ability.
         t2 = t2.let { t0 -> Regex("""\b(they|he|she|my opponent|the opponent|i|we) (c\d+)s? (my|the|their) (c\d+)(?:'s)? (?:activation|activated ability|ability)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 val mine = r.groupValues[1].lowercase() in setOf("i", "we")
@@ -3033,6 +3038,7 @@ class SituationParser(private val names: NameIndex) {
             if (!inResponse && ctx.events.lastOrNull()?.verb in setOf("cast", "activate", "trigger")) ctx.events += EventSpec("resolveAll")
             ctx.events += EventSpec("choose", player = "me", obj = vial.id, to = "put:$cid")
             ctx.events += EventSpec("activate", player = "me", obj = vial.id)
+            if (clause0.startsWith("can ")) ctx.asks += EventSpec("ask", player = "me", to = "respond")
             ctx.notes += "\"${restore(clause0, m)}\" is read as activating ${vial.card.name} to put ${card.display} from your hand onto the battlefield${if (inResponse) " in response" else ""}; the outcome says whether it may."
             ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = cid; return true
         }
@@ -6522,6 +6528,15 @@ class SituationParser(private val names: NameIndex) {
             if (at >= 0 && at < ctx.events.lastIndex) ctx.events.add(at + 1, choose) else ctx.events += choose
             ctx.notes += "${card.display} is in ${if (who == "me") "your" else "their"} graveyard and is the card ${srcCard.display}'s enters-the-battlefield trigger is aimed at."
             ctx.lastActor = who; ctx.lastMentioned = cardId; return true
+        }
+        // "they activate its tap ability" / "use Top's first ability": an ability named by its cost or its place in the text.
+        Regex("""^(?:activates?|uses?|activating|using) (?:its |the |their |his |her |my )?(?:(c\d+)(?:'s)? )?(tap|\{t\}|t|untap|first|second|third|last|loyalty) ability(?: in response| again| first| now)?$""").find(c)?.let { r ->
+            val who = actor ?: subject ?: ctx.lastActor ?: "me"
+            val id = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards.getValue(it) }?.let { objectIdFor(it, ctx) ?: addObject(it, who, false, ctx) }
+                ?: ctx.lastMentioned?.takeIf { it in ctx.objects && ctx.objects.getValue(it).zone == "battlefield" } ?: return@let
+            val idx = when (r.groupValues[2]) { "first" -> 0; "second" -> 1; "third" -> 2; else -> null }
+            ctx.events += EventSpec("activate", player = who, obj = id, abilityIndex = idx, to = if (idx == null) r.groupValues[2].replace("{t}", "tap").replace(Regex("""^t$"""), "tap") else null)
+            ctx.lastActor = who; ctx.lastVerb = "activate"; ctx.lastMentioned = id; return true
         }
         // "put Rakdos onto the battlefield with the trigger" / "with Kaalia's trigger": the choice for that permanent's triggered ability.
         Regex("""^(?:puts?|putting|drops?|cheats?) (?:an? |the |my )?(c\d+) (?:onto the battlefield|into play|out|in)(?: tapped and attacking| attacking| tapped)? (?:with|off|using|via|from) (?:the |its |her |his )?(?:(c\d+)(?:'s)? )?trigger(?:ed ability)?$""").find(c)?.let { r ->

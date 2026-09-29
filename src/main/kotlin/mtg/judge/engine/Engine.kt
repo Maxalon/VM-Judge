@@ -3231,6 +3231,12 @@ class Engine(val state: GameState) {
                     val counted = p.mana ?: continue
                     if (counted > 0) { val n = counted; trace.step("${p.subject} ${p.v("has", "have")} $n land${if (n == 1) "" else "s"} given only as a count; ${if (n == 1) "it is" else "they are"} destroyed too.", "701.8a"); state.outcomes += "${p.possessive.replaceFirstChar { it.uppercase() }} $n other land${if (n == 1) "" else "s"} ${if (n == 1) "is" else "are"} destroyed."; p.mana = 0 }
                 }
+                // "I control a 2/2 with hexproof. Wrath.": hexproof and shroud only stop targeting, and this doesn't target.
+                if (effect.action in setOf("destroy", "exile", "bounce", "tuck", "sacrifice")) affected.filter { state.hasKeyword(it, "hexproof") || state.hasKeyword(it, "shroud") }.takeIf { it.isNotEmpty() }?.let { shy ->
+                    val kw = if (state.hasKeyword(shy[0], "hexproof")) "hexproof" else "shroud"
+                    trace.step("${shy.joinToString(" and ") { it.name }} ${if (shy.size == 1) "has" else "have"} $kw, but ${item.source.name} doesn't target: it affects each ${effect.filter.raw}, and $kw only stops spells and abilities from targeting.", if (kw == "hexproof") "702.11b" else "702.18b", "115.1")
+                    state.outcomes += "${shy.joinToString(" and ") { it.name }}'${if (shy.size == 1 && !shy[0].name.endsWith("s")) "s" else ""} $kw doesn't help: ${item.source.name} doesn't target anything."
+                }
                 if (effect.action in setOf("destroy", "exile", "bounce", "tuck") && affected.size > 1) { leavingTogether = affected.map { it.id }.toSet(); trace.step("All of them leave the battlefield simultaneously, so abilities that trigger on creatures dying or leaving look back and see every one of them.", "603.10a") }
                 try { for (o in affected) when (effect.action) {
                     "destroy" -> destroy(o, "${o.name} is destroyed.", "701.8a", canRegenerate = !effect.noRegen)
