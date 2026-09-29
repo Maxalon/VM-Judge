@@ -27881,5 +27881,103 @@
       "opponent takes 4 damage.",
       "Vexing Devil: the battlefield → your graveyard."
     ]
+  },
+  {
+    "id": "thrun-vs-wrath",
+    "text": "My opponent casts Wrath of God. I have Thrun, the Last Troll. Does Thrun die?",
+    "expect": [
+      "Thrun, the Last Troll's regeneration ability doesn't help: the effect says it can't be regenerated.",
+      "Yes: Thrun, the Last Troll died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "thrun-vs-doom-blade",
+    "text": "My opponent casts Doom Blade on my Thrun, the Last Troll. Does it die?",
+    "expect": [
+      "Doom Blade can't target Thrun, the Last Troll.",
+      "No: Thrun, the Last Troll is still on the battlefield."
+    ]
+  },
+  {
+    "id": "progenitus-vs-wrath",
+    "text": "My opponent casts Wrath of God. I have Progenitus. Does Progenitus die?",
+    "expect": [
+      "No: Progenitus didn't die, but it left the battlefield; it's in its owner's library."
+    ]
+  },
+  {
+    "id": "progenitus-vs-terminus",
+    "text": "My opponent casts Terminus. I have Progenitus. What happens?",
+    "expect": [
+      "Progenitus: the battlefield → your library."
+    ]
+  },
+  {
+    "id": "spellskite-redirect-path",
+    "text": "My opponent has a Spellskite. I cast Path to Exile on their Grizzly Bears. They redirect it to Spellskite. What happens?",
+    "expect": [
+      "Path to Exile now targets Spellskite instead of Grizzly Bears.",
+      "Spellskite: the battlefield → exile."
+    ]
+  },
+  {
+    "id": "spellskite-redirect-bolt-mine",
+    "text": "I have a Spellskite. My opponent casts Lightning Bolt on my Grizzly Bears. I redirect it to Spellskite. Does the Bears survive?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of Grizzly Bears.",
+      "Yes: Grizzly Bears is still on the battlefield."
+    ]
+  },
+  {
+    "id": "stony-silence-vs-vial",
+    "text": "I have Stony Silence. My opponent has Aether Vial with 2 counters. Can they activate it?",
+    "expect": [
+      "No: Stony Silence says Aether Vial's activated abilities can't be activated."
+    ]
+  },
+  {
+    "id": "torpor-orb-vexing-devil-choice",
+    "text": "I have a Torpor Orb. My opponent casts Vexing Devil. Does my opponent get the choice?",
+    "expect": [
+      "No: Torpor Orb stops it. Vexing Devil entering doesn't cause any ability to trigger, its own included."
+    ]
+  },
+  {
+    "id": "spellskite-redirect-away",
+    "text": "My opponent has a Spellskite. I cast Lightning Bolt targeting their Spellskite. Can I redirect it to my Grizzly Bears?",
+    "expect": [
+      "the new target is always Spellskite itself, never another creature"
+    ]
+  },
+  {
+    "id": "sudden-shock-vs-spellskite",
+    "text": "My opponent has a Spellskite. I cast Sudden Shock on their Grizzly Bears. Can they redirect it?",
+    "expect": [
+      "Spellskite can't redirect Sudden Shock: split second stops its ability from being activated while Sudden Shock is on the stack.",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "finks-persist-second-bolt",
+    "text": "I Lightning Bolt my opponent's Kitchen Finks. It comes back with persist. I Bolt it again. Does it die?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it.",
+      "Yes: Kitchen Finks died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-goyf-stated-size",
+    "text": "My opponent casts Ensnaring Bridge with 1 card in hand. I have a Tarmogoyf that's 4/5. Can I attack with it?",
+    "expect": [
+      "No: Tarmogoyf can't attack (Ensnaring Bridge: opponent has 1 card in hand and Tarmogoyf's power is 4, 508.1c)."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-five-cards-goyf",
+    "text": "My opponent casts Ensnaring Bridge with 5 cards in hand. I have a 4/5 Tarmogoyf. Can I attack with it?",
+    "expect": [
+      "Yes: Tarmogoyf can attack."
+    ]
   }
 ]

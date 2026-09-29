@@ -37,6 +37,8 @@ class SituationParser(private val names: NameIndex) {
         val life = LinkedHashMap<String, Int>()
         val poison = LinkedHashMap<String, Int>()
         val handSize = LinkedHashMap<String, Int>()
+        /** "a Tarmogoyf that's 4/5": a size said for a creature whose printed size is star/star — taken as given at the end. */
+        val statedPt = LinkedHashMap<String, String>()
         val mana = LinkedHashMap<String, Int>()
         val librarySize = LinkedHashMap<String, Int>()
         val graveyardSize = LinkedHashMap<String, Int>()
@@ -237,6 +239,10 @@ class SituationParser(private val names: NameIndex) {
             var at = i + 1; while (at < ctx.events.size && ctx.events[at].verb in setOf("attack", "attackAll")) at++
             ctx.events.add(at, EventSpec("activate", player = maze.controller, obj = maze.id, targets = listOf(target)))
             ctx.notes += "${maze.card.name} is on ${if (maze.controller == "me") "your" else (ctx.players[maze.controller] ?: "your opponent") + "'s"} side; assuming it is activated on the attacker once it has attacked. Say it isn't if so."
+        }
+        // "a Tarmogoyf that's 4/5": the size said for a */* creature is set before anything happens.
+        for ((oid, pt) in ctx.statedPt) ctx.objects.values.firstOrNull { it.card.oracleId == oid }?.id?.let { id ->
+            if (ctx.events.none { it.verb == "setPt" && it.obj == id }) ctx.events.add(0, EventSpec("setPt", obj = id, to = pt))
         }
         ctx.events += ctx.asks.distinct()
         // Every player that took part; "me" and "opponent" only when the text spoke of them (or named nobody).
@@ -1151,6 +1157,11 @@ class SituationParser(private val names: NameIndex) {
             // "casts Force of Will pitching Brainstorm to counter my Grizzly Bears": the Bears is cast first, then the counter at it.
         t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) casts? (?:an? |the )?(c\d+)(?:,? (?:pitching|exiling|by exiling|and exiles?) (?:an? |the |my |their )?c\d+(?: to it| for it)?)? to counter (?:my |their |the )?(c\d+)\b""", RegexOption.IGNORE_CASE), "$3-cast-first $1 cast $2 targeting it")
         t2 = t2.let { t0 -> Regex("""^(c\d+)-cast-first (i|we|they|he|she|my opponent|the opponent|@\w+) cast (c\d+) targeting it""", RegexOption.IGNORE_CASE).replace(t0) { r -> val other = if (r.groupValues[2].lowercase() in setOf("i", "we")) "they" else "i"; "$other cast ${r.groupValues[1]}, ${r.groupValues[2]} cast ${r.groupValues[3]} targeting it" } }
+            // "Can I redirect it to my Grizzly Bears?" (Spellskite): it only ever pulls a spell onto itself.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:redirect|move|point|send) (?:it|that|the spell|(?:the |their |my opponent's )?c\d+) (?:to|onto|at|towards) (?:my |another |a different |one of my )?(c\d+|creatures?|\d+/\d+)(?: instead)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+            if (ctx.objects.values.any { o -> o.zone == "battlefield" && (o.card.name ?: "") == "Spellskite" } && m.cards[r.groupValues[1]]?.display != "Spellskite") "spellskite-away-question" else r.value } }
+            // "Does my opponent get the choice?" (Vexing Devil under Torpor Orb): whether the trigger happens at all.
+        t2 = t2.replace(Regex("""^(?:does|do|will) (?:my opponent|they|he|she|the opponent|i|we) (?:still |even )?get (?:the|a|their|my) (?:choice|option|chance to take (?:it|the \d+))\??$""", RegexOption.IGNORE_CASE), "does it trigger")
             // "I attack for 10 unblocked": the trailer adds nothing (no block is the default).
         t2 = t2.replace(Regex("""\b(attacks? for \d+) unblocked\b""", RegexOption.IGNORE_CASE), "$1")
             // "my opponent chooses to take 4" (Vexing Devil): the choice its trigger offers.
@@ -1256,9 +1267,20 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(uses?|activates?) (his|her|its|the) ([+-]\d+|plus \w+|minus \w+) on ((?:my |the )?c\d+) twice over (?:two|2) turns\b""", RegexOption.IGNORE_CASE), "$1 $2 $3 on $4, i $1 $2 $3 on $4 next turn")
             // "Before blockers my opponent casts Fog": the timing phrase moves to the end, where it is read.
         t2 = t2.replace(Regex("""^((?:before|after|during) (?:blockers|blocks|attackers|attacks|combat|combat damage|damage|first strike damage)(?: (?:are|is) (?:declared|dealt))?),? (.+?)\??$""", RegexOption.IGNORE_CASE), "$2 $1")
-            // "a 2/2 Grizzly Bears": the size adds nothing the card doesn't say.
+            // "they redirect it to Spellskite" / "I redirect the Bolt to my Spellskite": Spellskite's ability, activated at the spell.
+        t2 = t2.let { t0 -> Regex("""\b(i|we|they|he|she|my opponent|the opponent) (?:then )?(?:redirects?|moves?|points?|deflects?) (it|that|the spell|(?:the |their |my |my opponent's )?c\d+) (?:to|onto|at) (?:their |my |his |her |the )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                if (m.cards[r.groupValues[3]]?.display == "Spellskite") "${r.groupValues[1]} activate ${r.groupValues[3]} targeting ${r.groupValues[2]}" else r.value } }
+            // "a Tarmogoyf that's a 4/5": the size, said after the name, goes in front of it.
+        t2 = t2.let { t0 -> Regex("""\b(an? |my |their |his |her |the )?(c\d+) (?:that's|that is|which is|who is|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                if (m.cards[r.groupValues[2]]?.typeLine?.contains("Creature") == true) "${r.groupValues[1]}${r.groupValues[3]} ${r.groupValues[2]}" else r.value } }
+            // "a 2/2 Grizzly Bears": the size adds nothing the card doesn't say. For a creature whose printed size is star/star
+            // (Tarmogoyf) the size said is the only way to know it, so it's kept and taken as given.
         t2 = t2.let { t0 -> Regex("""\b(an? |my |their |the )?(\d+/\d+) (c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
-                if (m.cards[r.groupValues[3]]?.typeLine?.contains("Creature") == true) "${r.groupValues[1]}${r.groupValues[3]}" else r.value } }
+                val card = m.cards[r.groupValues[3]]
+                if (card?.typeLine?.contains("Creature") == true) {
+                    if (card.power?.contains('*') == true || card.toughness?.contains('*') == true) ctx.statedPt[card.oracleId] = r.groupValues[2]
+                    "${r.groupValues[1]}${r.groupValues[3]}"
+                } else r.value } }
             // "My opponent plays a second land this turn": two land plays, the second refused by the rules.
         t2 = t2.replace(Regex("""\b(plays?|played|drops?) (?:a |their |his |her |my )?(?:second|2nd) land(?: this turn| for the turn| in one turn)?\b""", RegexOption.IGNORE_CASE), "$1 a land and $1 a land")
             // "Can I also cast Brainstorm this turn?" / "Can I cast Necropotence this turn?" with a ritual in hand: the
@@ -2295,6 +2317,15 @@ class SituationParser(private val names: NameIndex) {
         // sentence, or it was skipped as small talk.
         if (m.cards.isEmpty() && !Regex("""^what happens to (?:the|its|my|their|those|these) (?:[+-]\d+/[+-]\d+ )?counters\b""").containsMatchIn(t) && Regex("""^(what happens|what now|who wins|who dies|who loses|so what|what is the result|does (it|that|this) (resolve|work|happen)|can (i|they|my opponent) respond)\b.*$""").matches(t)) { askQuestion(t.trim().trimEnd('?'), m, ctx); return true }
 
+        // "It comes back with persist" / "it returns with undying": the spell and the trigger that brings it back have
+        // resolved; what's said is the outcome, and the creature is what "it" means next.
+        Regex("""^(?:it|that|the creature|(?:my |their |his |her |the )?c\d+) (?:then )?(?:comes|came|is|gets) (?:back|returned)(?: to the battlefield)?(?: with (?:persist|undying|a [+-]1/[+-]1 counter(?: on it)?))?$""").find(t)?.let { r ->
+            val name = Regex("""c\d+""").find(r.value)?.value?.let { m.cards[it] }
+            val id = name?.let { objectIdFor(it, ctx) } ?: ctx.objects.values.lastOrNull { o -> o.card.let { c -> c.name != null && isCreatureName(c.name) } && o.controller != null }?.id
+            ctx.events += EventSpec("resolveAll"); ctx.explicitResolve = true
+            if (id != null) ctx.lastMentioned = id
+            return true
+        }
         // Resolution statements.
         if (Regex("""\b(everything resolves|let (it|them|everything|that) resolve|(it|they|both|all) resolves?|resolves? (it|everything|the stack)|nobody responds|no (one|body) responds|no responses?|no further responses?)\b""").containsMatchIn(t)) {
             ctx.events += EventSpec("resolveAll"); ctx.explicitResolve = true; any = true
@@ -2747,6 +2778,10 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "sacrifice-allowed-question") {
             if (ctx.events.none { it.verb == "sacrifice" || it.verb == "activate" }) return false
             ctx.asks += EventSpec("ask", to = "text:Yes. Sacrificing is neither attacking, blocking nor targeting: an Aura that says the creature can't attack or block (Pacifism), or hexproof or shroud on it, doesn't stop its controller from sacrificing it as a cost (701.21a, 702.11b). Only an effect that says it can't be sacrificed, or that takes control of it, would.")
+            return true
+        }
+        if (clause0 == "spellskite-away-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. Spellskite's ability reads \"Change a target of target spell or ability to Spellskite\": the new target is always Spellskite itself, never another creature. It can pull a spell onto Spellskite (if Spellskite is a legal target for it, 115.7), but it can't send a spell aimed at Spellskite anywhere else.")
             return true
         }
         if (clause0 == "whyblock-question") {

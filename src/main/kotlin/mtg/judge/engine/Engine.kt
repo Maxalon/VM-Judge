@@ -397,7 +397,10 @@ class Engine(val state: GameState) {
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
         if (item.effect?.hasUnparsed() == true) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         if (item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" }) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
-            state.outcomes += "${sk.name}'s controller can respond: paying {U/P} changes ${card.name}'s target to ${sk.name} (a 0/4), if ${card.name} could target it."
+            if (card.has("split second")) {
+                trace.step("${card.name} has split second: while it's on the stack, players can't activate abilities that aren't mana abilities, so ${sk.name}'s ability can't be activated in response to it.", "702.61a")
+                state.outcomes += "${sk.name} can't redirect ${card.name}: split second stops its ability from being activated while ${card.name} is on the stack."
+            } else state.outcomes += "${sk.name}'s controller can respond: paying {U/P} changes ${card.name}'s target to ${sk.name} (a 0/4), if ${card.name} could target it."
         }
         onEvent(GameEvent.SpellCast(item))
         trace.step("${player.subject} ${player.v("receives", "receive")} priority again after casting.", "117.3c")

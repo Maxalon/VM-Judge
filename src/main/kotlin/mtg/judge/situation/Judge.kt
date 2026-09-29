@@ -362,8 +362,14 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val o = state.obj(e.obj ?: throw JudgeException("setPt needs an object"))
                 val pt = Regex("""^(\d+)/(\d+)$""").find(e.to ?: "") ?: throw JudgeException("setPt needs a size like \"4/4\"")
                 o.basePt = pt.groupValues[1].toInt() to pt.groupValues[2].toInt()
-                state.trace.step("${o.name} has base power and toughness ${pt.groupValues[1]}/${pt.groupValues[2]}. That's a layer 7b effect, so counters and +N/+N effects still apply on top of it; it is now ${o.power}/${o.toughness}.", "613.4b")
-                state.outcomes += "${o.name} is ${o.power}/${o.toughness}."
+                if (state.cdaOf(o) != null && curEvents.indexOf(e) == 0) {
+                    // "a Tarmogoyf that's 4/5": its characteristic-defining ability sets the size; the number said is taken as given.
+                    state.trace.step("${o.name}'s power and toughness are set by its own characteristic-defining ability (layer 7a); it was said to be ${pt.groupValues[1]}/${pt.groupValues[2]}, so that is taken as its current size.", "604.3", "613.4a")
+                    state.assumptions += "${o.name} is ${pt.groupValues[1]}/${pt.groupValues[2]} as said; its ability would set that from the game state (604.3)."
+                } else {
+                    state.trace.step("${o.name} has base power and toughness ${pt.groupValues[1]}/${pt.groupValues[2]}. That's a layer 7b effect, so counters and +N/+N effects still apply on top of it; it is now ${o.power}/${o.toughness}.", "613.4b")
+                    state.outcomes += "${o.name} is ${o.power}/${o.toughness}."
+                }
             }
             // "my opponent scoops": conceding is a special action that player may take any time they have priority.
             "concede" -> {
@@ -1362,7 +1368,18 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         }
 
     private fun parseRef(s: String, state: GameState): Ref {
-        if (state.objects.containsKey(s)) return Ref.Obj(s)
+        if (state.objects.containsKey(s)) {
+            // "Bolt the Finks again": the card that persisted back is a new object; the speaker means the one on the battlefield.
+            val o = state.objects.getValue(s)
+            if (o.zone == Zone.GRAVEYARD) {
+                val back = generateSequence(o) { it.successor?.let { id -> state.objects[id] } }.last()
+                if (back.id != o.id && back.isOnBattlefield()) {
+                    state.assumptions += "${o.name} returned to the battlefield as a new object, so \"${o.name}\" here means the one on the battlefield now (400.7)."
+                    return Ref.Obj(back.id)
+                }
+            }
+            return Ref.Obj(s)
+        }
         // "my 3/3 is blocked by a 2/2 and I cast Giant Growth on it": after a block "it" has two readings, and the
         // parser hands both over, the speaker's own side first. disambiguate() picks between them where it knows
         // the target's filter; everywhere else, take the first that names something rather than dropping the event.
