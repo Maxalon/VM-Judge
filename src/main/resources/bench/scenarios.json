@@ -27110,5 +27110,118 @@
       "Grizzly Bears has protection from white until end of turn.",
       "No: Grizzly Bears is in the graveyard."
     ]
+  },
+  {
+    "id": "mutavault-blocks-a-two-two",
+    "text": "I have Mutavault and my opponent attacks with a 2/2. Can I block with Mutavault?",
+    "expect": [
+      "Mutavault is a 2/2 creature until end of turn.",
+      "Mutavault: the battlefield → your graveyard.",
+      "a 2/2 creature: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "bolt-on-animated-mutavault",
+    "text": "My opponent casts Lightning Bolt on my Mutavault while it's animated. Does it die?",
+    "expect": [
+      "Mutavault is a 2/2 creature until end of turn.",
+      "Mutavault has 3 damage marked.",
+      "Yes: Mutavault died (it's in the graveyard)."
+    ],
+    "notExpect": [
+      "can't target Mutavault"
+    ]
+  },
+  {
+    "id": "celestial-colonnade-attacks-for-four",
+    "text": "I control Celestial Colonnade and attack with it. How much damage does it deal?",
+    "expect": [
+      "Celestial Colonnade is a 4/4 creature until end of turn.",
+      "Yes: opponent takes 4 damage in all."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-empty-hand-vs-mutavault",
+    "text": "My opponent has Ensnaring Bridge with no cards in hand. Can I attack with Mutavault?",
+    "expect": [
+      "Mutavault is a 2/2 creature until end of turn.",
+      "Mutavault can't attack (Ensnaring Bridge)."
+    ]
+  },
+  {
+    "id": "inkmoth-nexus-unblocked-poison",
+    "text": "I attack with Inkmoth Nexus unblocked. What happens to my opponent?",
+    "expect": [
+      "Inkmoth Nexus is a 1/1 creature until end of turn.",
+      "opponent has 1 poison counter."
+    ]
+  },
+  {
+    "id": "wrath-vs-unanimated-mutavault",
+    "text": "My opponent casts Wrath of God. I have Mutavault but I haven't animated it. Does it die?",
+    "expect": [
+      "No: Mutavault is still on the battlefield."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "animate-mutavault-in-response-to-wrath",
+    "text": "I animate Mutavault in response to Wrath of God. What happens?",
+    "expect": [
+      "Mutavault is a 2/2 creature until end of turn.",
+      "Mutavault: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "treetop-village-trades-with-three-three",
+    "text": "I control Treetop Village and attack with it. My opponent blocks with a 3/3. What happens?",
+    "expect": [
+      "Treetop Village is a 3/3 creature until end of turn.",
+      "Treetop Village: the battlefield → your graveyard.",
+      "a 3/3 creature: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "raging-ravine-attacks",
+    "text": "I have Raging Ravine and attack with it. How big is it?",
+    "expect": [
+      "Raging Ravine is a 3/3 creature until end of turn.",
+      "opponent takes 3 damage."
+    ],
+    "notExpect": [
+      "can't attack"
+    ]
+  },
+  {
+    "id": "doom-blade-on-unanimated-factory",
+    "text": "My opponent casts Doom Blade on my unanimated Mishra's Factory. What happens?",
+    "expect": [
+      "Doom Blade can't target Mishra's Factory (not a nonblack creature)."
+    ]
+  },
+  {
+    "id": "factory-pumps-itself",
+    "text": "I animate Mishra's Factory and tap it to pump itself. How big is it?",
+    "expect": [
+      "Mishra's Factory is a 2/2 creature until end of turn.",
+      "Mishra's Factory is 3/3 (2/2 base, +1/+1 until end of turn)."
+    ],
+    "notExpect": [
+      "null/null"
+    ]
+  },
+  {
+    "id": "blinkmoth-blocks-a-flier",
+    "text": "I control Blinkmoth Nexus and my opponent has a 2/2 flier attacking me. Can I block it?",
+    "expect": [
+      "Blinkmoth Nexus is a 1/1 creature until end of turn.",
+      "Blinkmoth Nexus has 2 damage marked.",
+      "Blinkmoth Nexus: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
   }
 ]

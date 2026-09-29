@@ -477,6 +477,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     // "activate Nykthos for green": a colour was chosen, so the ability that uses one is the one
                     // meant — not Nykthos's plain "{T}: Add {C}", which was picked first and ignored the devotion.
                     ?: e.to?.takeIf { it.startsWith("color:") }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.effect is Effect.AddManaDevotion || (a.effect as? Effect.Seq)?.effects?.any { it is Effect.AddManaDevotion } == true }.takeIf { it >= 0 } }
+                    ?: e.to?.takeIf { it == "pump" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.effect is Effect.Pump || a.effect is Effect.PumpSelf || (a.effect as? Effect.Seq)?.effects?.any { it is Effect.Pump || it is Effect.PumpSelf } == true }.takeIf { it >= 0 } }
                     ?: e.to?.takeIf { it == "tap" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.cost.contains("{T}") }.takeIf { it >= 0 } }
                     ?: e.to?.takeIf { it == "untap" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.cost.contains("{Q}") }.takeIf { it >= 0 } }
                     ?: e.to?.takeIf { it == "last" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().lastIndex.takeIf { it >= 0 } }
@@ -1143,12 +1144,20 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 engine.dealDamage(srcName, targets.firstOrNull() ?: throw JudgeException("damage needs a target"), e.amount ?: throw JudgeException("damage needs an amount"))
             }
             "statecheck" -> engine.stateBasedActions()
-            "attack" -> { val objId = e.obj ?: throw JudgeException("attack needs an object"); nextTurnIfOtherAttacks(e.player ?: state.obj(objId).controller, state, engine); engine.declareAttacker(e.player ?: state.obj(objId).controller, objId, targets.firstOrNull() ?: Ref.Player(state.opponentsOf(state.obj(objId).controller).firstOrNull()?.id ?: throw JudgeException("no defending player"))) }
+            "attack" -> { val objId = e.obj ?: throw JudgeException("attack needs an object"); nextTurnIfOtherAttacks(e.player ?: state.obj(objId).controller, state, engine)
+                // "I attack with Mutavault": a land that can become a creature is animated in the beginning of combat step, then attacks.
+                val atk = state.obj(objId)
+                fun animatesA(ef: Effect): Boolean = ef is Effect.AnimateSelf || (ef is Effect.Seq && ef.effects.any { animatesA(it) })
+                if (!atk.def.isCreature && atk.animatedAs == null) atk.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> animatesA(a.effect) && !a.cost.startsWith("Crew", true) }.takeIf { it >= 0 }?.let { idx ->
+                    state.trace.step("${atk.name} isn't a creature as it stands; to attack it must first become one, so its \"${atk.def.abilities.filterIsInstance<ActivatedAbility>()[idx].cost}\" ability is activated in the beginning of combat step, before attackers are declared.", "508.1a", "602.1")
+                    engine.activate(e.player ?: atk.controller, objId, idx, emptyList()); engine.resolveAll()
+                }
+                engine.declareAttacker(e.player ?: state.obj(objId).controller, objId, targets.firstOrNull() ?: Ref.Player(state.opponentsOf(state.obj(objId).controller).firstOrNull()?.id ?: throw JudgeException("no defending player"))) }
             "block" -> { val objId = e.obj ?: throw JudgeException("block needs an object"); val att = (targets.firstOrNull() as? Ref.Obj)?.id ?: state.objects.values.lastOrNull { it.attacking != null }?.id ?: throw JudgeException("block needs the attacker")
                 // "Can they block with Mishra's Factory?": a land that can become a creature is animated first, then blocks.
                 val blk = state.obj(objId)
                 fun animates(ef: Effect): Boolean = ef is Effect.AnimateSelf || (ef is Effect.Seq && ef.effects.any { animates(it) })
-                if (!blk.def.isCreature && blk.animatedAs == null) blk.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> animates(a.effect) }.takeIf { it >= 0 }?.let { idx ->
+                if (!blk.def.isCreature && blk.animatedAs == null) blk.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> animates(a.effect) && !a.cost.startsWith("Crew", true) }.takeIf { it >= 0 }?.let { idx ->
                     state.trace.step("${blk.name} isn't a creature as it stands; to block it must first become one, so its \"${blk.def.abilities.filterIsInstance<ActivatedAbility>()[idx].cost}\" ability is activated in the declare blockers step, before blockers are chosen.", "509.1a", "602.1")
                     engine.activate(e.player ?: blk.controller, objId, idx, emptyList()); engine.resolveAll()
                 }

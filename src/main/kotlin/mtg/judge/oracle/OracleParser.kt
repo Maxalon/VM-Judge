@@ -1381,6 +1381,12 @@ object OracleParser {
         }
         // Waterknot, Kasmina's Transmutation: "tap enchanted creature."
         Regex("""^tap enchanted (?:creature|permanent)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.TapAttached }
+        // Raging Ravine: "Until end of turn, ~ becomes a 3/3 red and green Elemental creature with "Whenever ~ attacks, put a +1/+1 counter on it."":
+        // the animation, plus the quoted ability it has while animated.
+        Regex("""^(?:until end of turn, )?(~ becomes an? \d+/\d+(?: [a-z, ]+?)?(?: [A-Za-z'-]+)*? (?:artifact )?creature)(?: with ([a-z, ]+?))? with "(.+?)"(?: that's still an? land)?(?: until end of turn)?\.?(?: it's still an? land\.?)?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val base = parseSentence(m.groupValues[1] + (m.groupValues[2].takeIf { it.isNotEmpty() }?.let { " with $it" } ?: "") + " until end of turn.")
+            if (base is Effect.AnimateSelf) return Effect.Seq(listOf(base, Effect.Narrated("it has \"${m.groupValues[3].trimEnd('.')}\" until end of turn", listOf("613.1f"))))
+        }
         // Mutavault, Celestial Colonnade, Inkmoth Nexus: "until end of turn, ~ becomes a 4/4 white and blue Elemental creature with flying and vigilance."
         Regex("""^(?:until end of turn, )?~ becomes an? (\d+)/(\d+)((?: (?:white|blue|black|red|green|colorless)(?:,|(?: and)?)?)*)((?: [A-Za-z'-]+)*?) (?:artifact )?creature(?: with (.+?))?(?: that's still an? (?:land|planeswalker))?(?: until end of turn)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val colours = Regex("""white|blue|black|red|green""", RegexOption.IGNORE_CASE).findAll(m.groupValues[3]).map { c ->

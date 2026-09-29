@@ -1115,6 +1115,12 @@ class SituationParser(private val names: NameIndex) {
             val who = r.groupValues[1].ifEmpty { "i" }.lowercase()
             val tgt = if (r.groupValues[4] == "it" || r.groupValues[4] == "that") "the attacker" else r.groupValues[4]
             ", ${if (who == "i" || who == "we") "they" else "i"} block ${r.groupValues[4]} with ${r.groupValues[5]}, $who ${r.groupValues[2]} ${r.groupValues[3]} on $tgt" }
+            // "Bolt on my Mutavault while it's animated": the animation, then the spell at it.
+        t2 = t2.replace(Regex("""\b((?:i|we|they|he|she|my opponent|the opponent|@\w+) casts? (?:an? |the )?c\d+ (?:on|at|targeting)) (?:my |the )?(c\d+) (?:while|when|after|once) (?:it's|it is|it has been|it was|i(?:'ve)? animated? it|it's been) (?:animated|a creature|activated|turned on|active)\b""", RegexOption.IGNORE_CASE), "i animate $2, then $1 it")
+            // "my opponent has a 2/2 flier attacking me": an attack.
+        t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) (?:has|have|'s got) (an? (?:\d+/\d+|c\d+)(?: [a-z]+)*?) attacking (me|them|him|her|us)\b""", RegexOption.IGNORE_CASE), "$1 attacks $3 with $2")
+            // "I haven't animated it": nothing happens, and nothing is left unread.
+        t2 = t2.replace(Regex("""\b(?:but |and )?(?:i|we) (?:haven't|have not|didn't|did not|don't|do not) (?:animated?|activated?|turned? (?:it|c\d+) on)(?: (?:it|that|c\d+))?(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE), "unanimated-note")
             // "Does the counter save it?": whether it survives.
         t2 = t2.replace(Regex("""\b(?:does|do|will|would) (?:the|a|its|my|that|those) (?:[+-]\d/[+-]\d )?counters? (?:save|help|protect|keep) (it|him|her|them|(?:my |the )?c\d+)(?: alive)?\??$""", RegexOption.IGNORE_CASE), "does $1 survive")
             // "How big is Tarmogoyf after?": the trailing "after" adds nothing.
@@ -2707,6 +2713,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:Yes. Sacrificing is neither attacking, blocking nor targeting: an Aura that says the creature can't attack or block (Pacifism), or hexproof or shroud on it, doesn't stop its controller from sacrificing it as a cost (701.21a, 702.11b). Only an effect that says it can't be sacrificed, or that takes control of it, would.")
             return true
         }
+        if (clause0 == "unanimated-note") { ctx.notes += "The land wasn't animated, so it's a land and nothing more when the spell resolves."; return true }
         if (clause0 == "landcount-question") { ctx.asks += EventSpec("ask", player = "me", to = "landCount"); return true }
         if (clause0 == "saveteam-question") {
             if (ctx.events.none { it.verb == "cast" && it.player != "me" }) return false
@@ -6683,6 +6690,16 @@ class SituationParser(private val names: NameIndex) {
         // "Graveyards are empty" / "there's nothing in my graveyard": nothing to add, and nothing left unread.
         if (Regex("""^(?:both |all |the |my |their |our |each )?graveyards? (?:are|is) (?:both |all )?empty$|^(?:there is|there's|there are) (?:nothing|no cards?) in (?:any|either|both|all|my|their|the) graveyards?$|^(?:no|neither) graveyard has anything in it$""").matches(c)) {
             ctx.notes += "The graveyards are empty: nothing is counted there."; return true
+        }
+        // "and tap it to pump itself" (Mishra's Factory): the +1/+1 ability aimed at itself.
+        Regex("""^(?:and )?(?:taps?|tapping|uses?) (?:it|that|(?:my |the )?(c\d+)) to (?:pump|grow|buff|boost) (?:itself|it|himself|herself)$""").find(c)?.let { r ->
+            val who = actor ?: subject ?: ctx.lastActor ?: "me"
+            val id = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards.getValue(it) }?.let { objectIdFor(it, ctx) ?: addObject(it, who, false, ctx) }
+                ?: ctx.lastMentioned?.takeIf { it in ctx.objects && ctx.objects.getValue(it).zone == "battlefield" } ?: return@let
+            // The animation it was just given resolves first, so the pump finds a creature.
+            if (ctx.events.lastOrNull()?.verb in setOf("activate", "cast")) ctx.events += EventSpec("resolveAll")
+            ctx.events += EventSpec("activate", player = who, obj = id, to = "pump", targets = listOf(id))
+            ctx.lastActor = who; ctx.lastVerb = "activate"; ctx.lastMentioned = id; return true
         }
         // "they activate its tap ability" / "use Top's first ability": an ability named by its cost or its place in the text.
         Regex("""^(?:activates?|uses?|activating|using) (?:its |the |their |his |her |my )?(?:(c\d+)(?:'s)? )?(tap|\{t\}|t|untap|first|second|third|last|loyalty) ability(?: in response| again| first| now)?$""").find(c)?.let { r ->
