@@ -240,13 +240,20 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     if (modalEffect != null && e.to == null && e.modes.isEmpty()) {
                         val texts = modalEffect.modeTexts
                         val kinds = curEvents.filter { it.verb == "ask" }.mapNotNull { it.to }
-                        val want = when {
+                        val want0 = when {
                             kinds.any { it == "playerGain" } -> listOf("gain", "life")
                             kinds.any { it == "playerDraw" || it == "drawCount" } -> listOf("draw")
-                            kinds.any { it == "countered" } -> listOf("counter")
+                            kinds.any { it == "countered" || it == "canCounter" } -> listOf("counter")
                             kinds.any { it == "playerDamage" || it == "playerLife" || it == "playerDie" || it == "playerSurvive" } -> listOf("damage")
                             else -> null
                         }
+                        // "I have Pyroblast and they cast Ancestral. Can I counter it?": the target says which mode — a spell on the stack wants the counter mode, a permanent the destroy mode.
+                        val tgt0 = e.targets.firstOrNull()
+                        val targetKind = (tgt0?.let { t -> if (t.endsWith(":spell") || state.stack.any { st -> st.source.id == t || st.id == t } || state.objects[t]?.zone == Zone.STACK) "counter" else if (state.objects[t]?.isOnBattlefield() == true) "destroy" else null }
+                            ?: if (tgt0 == null && state.stack.any { it.controller != player }) "counter" else null)
+                            // Only for modes whose target is unrestricted and checked as it resolves ("if it's blue"); a mode that names its target's colour refuses the wrong target on its own.
+                            ?.takeIf { texts.any { t -> t.contains("if it's", true) } }
+                        val want = want0 ?: targetKind?.let { listOf(it) }
                         val i = want?.let { w -> texts.indexOfFirst { t -> w.all { t.contains(it, true) } } }?.takeIf { it >= 0 }
                         if (i != null) { state.assumptions += "${def.name}'s mode wasn't said; the question is about ${want.joinToString(" ")}, so \"${texts[i].replace("~", def.name)}\" is taken as the mode."; listOf(i + 1) } else emptyList()
                     } else emptyList()

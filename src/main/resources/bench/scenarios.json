@@ -27595,5 +27595,116 @@
     "notExpect": [
       "Is that the target?"
     ]
+  },
+  {
+    "id": "reb-counters-counterspell-bolt-resolves",
+    "text": "I cast Lightning Bolt targeting my opponent. They respond with Counterspell. I have Red Elemental Blast. What happens if I cast it on the Counterspell?",
+    "expect": [
+      "Counterspell is countered.",
+      "opponent takes 3 damage."
+    ]
+  },
+  {
+    "id": "beb-counters-bolt",
+    "text": "My opponent casts Blue Elemental Blast on my Lightning Bolt. Does that work?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ]
+  },
+  {
+    "id": "pyroblast-counters-ancestral",
+    "text": "I have Pyroblast and my opponent casts Ancestral Recall. Can I counter it?",
+    "expect": [
+      "Ancestral Recall is countered."
+    ],
+    "notExpect": [
+      "Which mode(s)?"
+    ]
+  },
+  {
+    "id": "hydroblast-on-green-bears-does-nothing",
+    "text": "My opponent casts Hydroblast on my Grizzly Bears. What happens?",
+    "expect": [
+      "Nothing happens from Hydroblast: Grizzly Bears isn't red, and \"if it's red\" is checked as the spell resolves (608.2c). The spell could be cast at it all the same, since any permanent is a legal target."
+    ],
+    "notExpect": [
+      "Grizzly Bears: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "608.2c"
+    ]
+  },
+  {
+    "id": "hydroblast-on-goblin-guide",
+    "text": "My opponent casts Hydroblast on my Goblin Guide. What happens?",
+    "expect": [
+      "Goblin Guide: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "chalice-zero-vs-ornithopter",
+    "text": "I control Chalice of the Void with 0 counters. My opponent casts Ornithopter. What happens?",
+    "expect": [
+      "Ornithopter is countered."
+    ]
+  },
+  {
+    "id": "force-of-will-pitching-to-counter-bears",
+    "text": "My opponent casts Force of Will pitching Brainstorm to counter my Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears is countered."
+    ],
+    "notExpect": [
+      "a spell is countered"
+    ]
+  },
+  {
+    "id": "brute-force-after-no-blockers",
+    "text": "I attack with a 2/2 and cast Brute Force on it after my opponent declares no blockers. How much damage do they take?",
+    "expect": [
+      "a 2/2 creature is 5/5 until end of turn.",
+      "Yes: opponent takes 5 damage in all."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "swords-after-giant-growth-gain-five",
+    "text": "My opponent casts Swords to Plowshares on my Grizzly Bears. I respond with Giant Growth. How much life do I gain?",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile.",
+      "You gain 5 life in all."
+    ]
+  },
+  {
+    "id": "own-thalia-taxes-my-bolt",
+    "text": "I have Thalia, Guardian of Thraben and cast Lightning Bolt. How much does it cost me?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ]
+  },
+  {
+    "id": "dismember-kills-three-three",
+    "text": "My opponent casts Dismember on my 3/3. What happens?",
+    "expect": [
+      "a 3/3 creature is -2/-2 until end of turn.",
+      "a 3/3 creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "snuff-out-alternative-cost",
+    "text": "I cast Snuff Out on my opponent's 4/4. What does it cost me?",
+    "expect": [
+      "Snuff Out can be cast for 4 life instead of its mana cost if you control a Swamp (an alternative cost, 118.9); with no Swamp described, it costs its mana cost.",
+      "Snuff Out costs {3}{B} — 4 mana. Nothing on the battlefield changes it."
+    ]
+  },
+  {
+    "id": "fatal-push-kills-two-two",
+    "text": "My opponent has a 2/2 and I cast Fatal Push on it. Does it die?",
+    "expect": [
+      "Yes: a 2/2 creature died (it's in the graveyard)."
+    ]
   }
 ]

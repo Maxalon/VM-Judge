@@ -1148,6 +1148,9 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\bcan (?:they|he|she|my opponent|the opponent) (?:still |also )?block with (?:it|that|their creature|their \d+/\d+) (?:on|during|in) my (?:next )?turn\b""", RegexOption.IGNORE_CASE), "vigilance-blockmyturn-question")
             // "Do I survive if I block?": the block, then the question.
         t2 = t2.replace(Regex("""^(do|does|will|would|can|am) (i|we) (survive|live|die|lose|dead|still alive) if (?:i|we) block(?: with (?:it|my creature|my \d+/\d+))?\??$""", RegexOption.IGNORE_CASE), "i block with my creature, $1 $2 $3")
+            // "casts Force of Will pitching Brainstorm to counter my Grizzly Bears": the Bears is cast first, then the counter at it.
+        t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) casts? (?:an? |the )?(c\d+)(?:,? (?:pitching|exiling|by exiling|and exiles?) (?:an? |the |my |their )?c\d+(?: to it| for it)?)? to counter (?:my |their |the )?(c\d+)\b""", RegexOption.IGNORE_CASE), "$3-cast-first $1 cast $2 targeting it")
+        t2 = t2.let { t0 -> Regex("""^(c\d+)-cast-first (i|we|they|he|she|my opponent|the opponent|@\w+) cast (c\d+) targeting it""", RegexOption.IGNORE_CASE).replace(t0) { r -> val other = if (r.groupValues[2].lowercase() in setOf("i", "we")) "they" else "i"; "$other cast ${r.groupValues[1]}, ${r.groupValues[2]} cast ${r.groupValues[3]} targeting it" } }
             // "Does the counter save it?": whether it survives.
         t2 = t2.replace(Regex("""\b(?:does|do|will|would) (?:the|a|its|my|that|those) (?:[+-]\d/[+-]\d )?counters? (?:save|help|protect|keep) (it|him|her|them|(?:my |the )?c\d+)(?: alive)?\??$""", RegexOption.IGNORE_CASE), "does $1 survive")
             // "How big is Tarmogoyf after?": the trailing "after" adds nothing.
@@ -6793,6 +6796,11 @@ class SituationParser(private val names: NameIndex) {
             emitCast(who, held, "choosing tap", m, ctx)
             ctx.notes += "\"tap their team\" is read as casting ${held.display}, choosing the mode that taps their creatures."
             return true
+        }
+        // "after my opponent declares no blockers" / "they don't block": no block, said outright.
+        if (Regex("""^(?:after |once |when )?(?:my opponent |they |he |she |the opponent )?(?:declares? no blockers?|declares? no blocks?|doesn't block|don't block|does not block|do not block|declines? to block|chooses? not to block|has no blockers?|no blocks?|no blockers?)(?: anything| at all| with anything)?$""").matches(c)) {
+            if (ctx.events.none { it.verb == "attack" || it.verb == "attackAll" }) return false
+            ctx.notes += "No blockers are declared; the attackers are unblocked."; return true
         }
         // "Graveyards are empty" / "there's nothing in my graveyard": nothing to add, and nothing left unread.
         if (Regex("""^(?:both |all |the |my |their |our |each )?graveyards? (?:are|is) (?:both |all )?empty$|^(?:there is|there's|there are) (?:nothing|no cards?) in (?:any|either|both|all|my|their|the) graveyards?$|^(?:no|neither) graveyard has anything in it$""").matches(c)) {

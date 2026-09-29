@@ -3003,15 +3003,7 @@ class Engine(val state: GameState) {
                 state.assumptions += "${you.subject} ${you.v("chooses", "choose")} to ${describe(effect.choice, item)} for ${item.describe}."
                 applyEffect(effect.choice, item); applyEffect(effect.then, item)
             }
-            is Effect.IfCondition -> {
-                if (state.conditionHolds(effect.condition, item.source)) {
-                    trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves, and it holds, so the rest happens.", "608.2")
-                    applyEffect(effect.then, item)
-                } else {
-                    trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves. It needs ${state.describeCondition(effect.condition)}, which isn't so, so nothing happens.", "608.2")
-                    state.outcomes += "Nothing happens from ${item.describe}: it needs ${state.describeCondition(effect.condition)}."
-                }
-            }
+            is Effect.IfCondition -> applyIfCondition(effect, item)
             is Effect.GainControl -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 val was = state.player(o.controller); if (effect.untilEndOfTurn && o.controlRevertsTo == null) o.controlRevertsTo = o.controller; o.controller = item.controller
                 trace.step("${state.player(item.controller).subject} ${state.player(item.controller).v("gains", "gain")} control of ${o.name}${if (effect.untilEndOfTurn) " until end of turn" else ""} (it was ${was.possessive}). A control-changing effect applies in layer 2; the permanent doesn't change zones, so it isn't summoning sick only if it has haste or has been under its new controller's control since the turn began.", "613.1b", "611.2a", "302.6")
@@ -3228,6 +3220,29 @@ class Engine(val state: GameState) {
                 if (hand == null) { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"} (${p.possessive} hand size wasn't given).", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}." }
                 else if (hand == 0) { trace.step("${p.subject} ${p.v("has", "have")} no cards in hand, so nothing is discarded.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} nothing (no cards in hand)." }
                 else { val d = minOf(n, hand); p.handSize = hand - d; trace.step("${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"}${if (d < n) " (only $hand in hand)" else ""}, leaving ${p.handSize} in hand.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"} ($hand → ${p.handSize} in hand)." }
+        }
+    }
+
+    /** Conditional effects ("if …"), kept out of applyEffect so that method stays under the JVM size limit. */
+    private fun applyIfCondition(effect: Effect.IfCondition, item: StackItem) {
+        // "if it's blue": the target's colour, read as the spell resolves.
+        val holds = (effect.condition as? Condition.TargetIsColor)?.let { cc ->
+            val t = item.targets.firstOrNull()
+            val colors = when (t) { is Ref.Obj -> state.objects[t.id]?.def?.colors; is Ref.Stack -> state.stackItem(t.id)?.source?.def?.colors; else -> null }
+            val name = t?.let { state.nameOf(it) } ?: "the target"
+            val ok = colors?.contains(cc.color) == true
+            trace.step("$name is ${if (ok) "" else "not "}${colorWord(cc.color)}${colors?.takeIf { it.isNotEmpty() }?.let { " (it's ${it.joinToString(" and ") { c -> colorWord(c) }})" } ?: if (colors != null) " (it's colorless)" else ""}, so \"if it's ${colorWord(cc.color)}\" ${if (ok) "holds" else "fails"}.", "608.2c")
+            if (!ok) state.outcomes += "Nothing happens from ${item.describe}: $name isn't ${colorWord(cc.color)}, and \"if it's ${colorWord(cc.color)}\" is checked as the spell resolves (608.2c). The spell could be cast at it all the same, since any ${if (t is Ref.Stack) "spell" else "permanent"} is a legal target."
+            ok
+        } ?: state.conditionHolds(effect.condition, item.source)
+        if (holds) {
+            trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves, and it holds, so the rest happens.", "608.2")
+            applyEffect(effect.then, item)
+        } else {
+            if (effect.condition !is Condition.TargetIsColor) {
+                trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves. It needs ${state.describeCondition(effect.condition)}, which isn't so, so nothing happens.", "608.2")
+                state.outcomes += "Nothing happens from ${item.describe}: it needs ${state.describeCondition(effect.condition)}."
+            }
         }
     }
 
@@ -3906,6 +3921,11 @@ class Engine(val state: GameState) {
             return if (obj.commanderCasts > 0) "The commander tax adds {${2 * obj.commanderCasts}} to its mana cost (903.8), because it has been cast from the command zone ${obj.commanderCasts} time${if (obj.commanderCasts == 1) "" else "s"}. Name the card for the total."
                    else "It has not been cast from the command zone yet, so there is no commander tax (903.8): it costs its mana cost. Name the card for the total."
         val printed = card.manaCost ?: return "${card.name} has no mana cost, so it can't be cast for mana."
+        // Snuff Out, Dismember: an alternative cost in life is part of the answer.
+        Regex("""(?i)if you control an? (\w+), you may pay (\d+) life rather than pay this spell's mana cost""").find(card.oracleText)?.let { alt ->
+            val has = state.objects.values.any { it.isOnBattlefield() && it.controller == p.id && (it.def.subtypes.any { st -> st.equals(alt.groupValues[1], true) } || it.def.name.equals(alt.groupValues[1], true)) }
+            state.outcomes += "${card.name} can be cast for ${alt.groupValues[2]} life instead of its mana cost if ${p.subject.lowercase()} ${p.v("controls", "control")} a ${alt.groupValues[1]} (an alternative cost, 118.9)${if (has) ", which ${p.subject.lowercase()} ${p.v("does", "do")}: so it can cost ${alt.groupValues[2]} life and no mana" else "; with no ${alt.groupValues[1]} described, it costs its mana cost"}."
+        }
         // "I flashback Deep Analysis. How much does it cost?": the flashback cost, not the printed one.
         if (state.trace.steps.any { it.text.contains("flashback", true) && it.text.contains(card.name) }) Regex("""(?i)flashback(?:—|-|\s)\s*((?:\{[^}]*\})+)(?:,\s*([^.\n(]+))?""").find(card.oracleText)?.let { fb ->
             val extra = fb.groupValues[2].trim().takeIf { it.isNotEmpty() }?.let { ", plus ${it.lowercase()}" } ?: ""

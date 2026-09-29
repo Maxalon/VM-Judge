@@ -1554,6 +1554,12 @@ object OracleParser {
         if (Regex("""^put ~ on top of its owner's library\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.PutSelfOnLibraryTop
         Regex("""^~ deals (\d+) damage to you\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.DamagePlayer(Who.YOU, m.groupValues[1].toInt()) }
         if (Regex("""^reveal the top card of your library and put that card into your hand\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.RevealTopToHand(Who.YOU)
+        // Pyroblast / Hydroblast: "Counter target spell if it's blue." / "Destroy target permanent if it's red.": any target is legal, the colour is checked on resolution.
+        Regex("""^(.+?) if it's (white|blue|black|red|green)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val then = parseSentence(m.groupValues[1] + ".")
+            val colour = when (m.groupValues[2].lowercase()) { "white" -> 'W'; "blue" -> 'U'; "black" -> 'B'; "red" -> 'R'; else -> 'G' }
+            if (!then.hasUnparsed()) return Effect.IfCondition(Condition.TargetIsColor(colour), then, "it's ${m.groupValues[2].lowercase()}")
+        }
         // Vines of Vastwood: "Target creature can't be the target of spells or abilities your opponents control this turn." (hexproof for the turn)
         Regex("""^(target creature(?: you control)?) can't be the target of spells or abilities your opponents control this turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.GainKeywords(target(m.groupValues[1]), setOf("hexproof")) }
         if (Regex("""^(?:~|this creature|it) assigns no combat damage this turn\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.NoCombatDamageThisTurn

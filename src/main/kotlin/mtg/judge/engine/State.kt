@@ -338,6 +338,7 @@ class GameState(
     /** Whether a static ability's condition currently holds for its source. */
     fun conditionHolds(c: Condition?, src: GameObject): Boolean = when (c) {
         null -> true
+        is Condition.TargetIsColor -> false   // needs the target; the engine checks it where the targets are known
         is Condition.LifeAtLeast -> {
             val p = if (c.opponent) players.firstOrNull { it.id != src.controller } else players.firstOrNull { it.id == src.controller }
             p?.life?.let { it >= c.amount } ?: false
@@ -359,6 +360,7 @@ class GameState(
 
     /** What a static ability's condition asks for, for traces and for saying why one doesn't apply. */
     fun describeCondition(c: Condition): String = when (c) {
+        is Condition.TargetIsColor -> "the target to be ${when (c.color) { 'W' -> "white"; 'U' -> "blue"; 'B' -> "black"; 'R' -> "red"; else -> "green" }}"
         is Condition.LifeAtLeast -> "${if (c.opponent) "an opponent" else "its controller"} at ${c.amount} or more life"
         Condition.YourTurn -> "it to be its controller's turn"
         Condition.NotYourTurn -> "it to be another player's turn"

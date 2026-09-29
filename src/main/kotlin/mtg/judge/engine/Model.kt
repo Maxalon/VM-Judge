@@ -431,6 +431,8 @@ sealed interface Condition {
     data object WasKicked : Condition
     /** "if ~ is untapped" (Howling Mine) — about the permanent the ability is on. */
     data class SourceTapped(val tapped: Boolean) : Condition
+    /** Pyroblast: "Counter target spell if it's blue" — checked against the target as the spell resolves. */
+    data class TargetIsColor(val color: Char) : Condition
     data class Unknown(val text: String) : Condition
 }
 
