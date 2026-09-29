@@ -27498,5 +27498,102 @@
       "a 3/3 creature can't attack (Ensnaring Bridge).",
       "You take 2 damage."
     ]
+  },
+  {
+    "id": "disenchant-pacifism-then-attack",
+    "text": "I control Grizzly Bears and my opponent casts Pacifism on it. Then I cast Disenchant on Pacifism. Can the Bears attack this turn?",
+    "expect": [
+      "Pacifism: the battlefield → opponent's graveyard.",
+      "opponent takes 2 damage."
+    ]
+  },
+  {
+    "id": "propaganda-attack-and-still-cast-growth",
+    "text": "My opponent has Propaganda. I control Grizzly Bears and 2 lands. Can I attack and still cast Giant Growth?",
+    "expect": [
+      "You pay {2} for Propaganda (Grizzly Bears attacks).",
+      "Giant Growth can't be cast (costs 1, only 0 mana available)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "why-didnt-they-block",
+    "text": "I attack with a 2/2 into an untapped 3/3. They don't block. Why?",
+    "expect": [
+      "Nothing in the rules made them block: blocking is always the defending player's choice, creature by creature (509.1a), and an untapped creature may simply be left out of combat."
+    ]
+  },
+  {
+    "id": "doom-blade-vs-giant-growth-response",
+    "text": "My opponent casts Doom Blade on my Grizzly Bears. I respond with Giant Growth. Does it die?",
+    "expect": [
+      "Grizzly Bears is 5/5 until end of turn.",
+      "Yes: Grizzly Bears died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "sylvan-caryatid-defender",
+    "text": "I have Sylvan Caryatid. Can it attack?",
+    "expect": [
+      "Sylvan Caryatid can't attack (defender)."
+    ]
+  },
+  {
+    "id": "their-vigilance-attacker-blocks-on-my-turn",
+    "text": "My opponent has a 4/4 with vigilance. They attack me with it. Can they block with it on my turn?",
+    "expect": [
+      "You take 4 damage.",
+      "Yes, and vigilance is why. Attacking doesn't tap a creature with vigilance (702.20b), so it is still untapped on your turn and can block. Without vigilance it would have tapped as it attacked (508.1f) and stayed tapped through your turn: a permanent untaps only during its controller's untap step (502.3), and theirs comes at the start of their next turn, after yours."
+    ],
+    "notExpect": [
+      "can't block a 4/4"
+    ]
+  },
+  {
+    "id": "bolt-counterspell-second-bolt",
+    "text": "I cast Lightning Bolt and my opponent casts Counterspell. I cast another Lightning Bolt in response. What happens?",
+    "expect": [
+      "opponent takes 3 damage.",
+      "Lightning Bolt is countered."
+    ]
+  },
+  {
+    "id": "lifelink-block-at-one-life-survive",
+    "text": "My opponent attacks me with a 2/2. I have a 2/2 with lifelink and I'm at 1. Do I survive if I block?",
+    "expect": [
+      "You gain 2 life.",
+      "Yes: You are still in the game at 3 life."
+    ],
+    "notExpect": [
+      "You lose the game"
+    ]
+  },
+  {
+    "id": "naturalize-sol-ring",
+    "text": "I cast Naturalize on my opponent's Sol Ring. What happens?",
+    "expect": [
+      "Sol Ring: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "kor-firewalker-blocks-red-attacker",
+    "text": "My opponent has Kor Firewalker and I attack with a 3/3 red creature. Can it block?",
+    "expect": [
+      "Yes: Kor Firewalker can block a 3/3 red creature."
+    ]
+  },
+  {
+    "id": "unsummon-saves-bears-from-bolt",
+    "text": "I control Grizzly Bears. My opponent casts Lightning Bolt on it and I respond with Unsummon. Does it die?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your hand.",
+      "Lightning Bolt doesn't resolve (all targets illegal).",
+      "No: Grizzly Bears didn't die, but it left the battlefield; it's in its owner's hand."
+    ],
+    "notExpect": [
+      "Is that the target?"
+    ]
   }
 ]

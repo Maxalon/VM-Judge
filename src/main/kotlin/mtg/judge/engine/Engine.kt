@@ -4218,6 +4218,15 @@ class Engine(val state: GameState) {
             val theirs = distinct.filter { r -> when (r) { is Ref.Obj -> state.objects[r.id]?.controller != controller; is Ref.Player -> r.id != controller; is Ref.Stack -> state.stackItem(r.id)?.controller != controller } }
             if (theirs.isNotEmpty() && theirs.size < distinct.size) { distinct = theirs; if (theirs.size == 1) { state.assumptions += if (theirs[0] is Ref.Player) "$what targets ${state.nameOf(theirs[0])} (\"${spec.raw}\" with no target named; assuming its controller's opponent)." else "$what targets ${state.nameOf(theirs[0])}: of the legal targets for \"${spec.raw}\", it's the only one an opponent controls."; return theirs } }
         }
+        // "They Bolt my Bears and I respond with Unsummon": bouncing or blinking your own creature that an opposing spell
+        // is aimed at is the save the response is for, so it is the target.
+        if (harmful && distinct.size == 1 && (distinct[0] as? Ref.Obj)?.let { state.objects[it.id]?.controller == controller } == true
+            && state.stack.any { it.controller != controller && distinct[0] in it.targets }
+            && (source?.def?.spellEffect).let { ef -> ef is Effect.Bounce || ef is Effect.Blink || (ef is Effect.Seq && ef.effects.any { it is Effect.Bounce || it is Effect.Blink }) }) {
+            val threat = state.stack.first { it.controller != controller && distinct[0] in it.targets }
+            state.assumptions += "$what targets ${state.nameOf(distinct[0])}: it's the creature ${threat.describe} is aimed at, and getting it off the battlefield is what saves it."
+            return distinct
+        }
         // The only thing that fits is one of your own, and the effect would hurt it: that's a choice, not a default.
         if (harmful && distinct.size == 1 && (distinct[0] as? Ref.Obj)?.let { state.objects[it.id]?.controller == controller } == true) {
             state.clarifications += Clarification("$what's target", "$what needs a target (${spec.raw}), and the only one is ${state.nameOf(distinct[0])}, which ${state.player(controller).subject.lowercase()} ${state.player(controller).v("controls", "control")}. Is that the target?")

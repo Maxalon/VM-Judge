@@ -1140,6 +1140,14 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""^(?:do|does|will|would) (?:my|our|the) (equipment|equipments|artifacts|enchantments|lands|planeswalkers|auras|noncreature permanents)(?: cards?)? (?:die|get destroyed|get hit|go too|die too|also die|get destroyed too|blow up|get wiped|get swept)(?: too| as well| also)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r -> "sweepscope-question-${r.groupValues[1].lowercase().removeSuffix("s").replace(" ", "_")}" } }
             // "Can I put Batterskull onto the battlefield with it this turn?" (Stoneforge Mystic): a {T} ability the turn it came in.
         t2 = t2.replace(Regex("""^can (?:i|we) (?:put|drop|cheat) (?:an? |the |my )?(c\d+) (?:onto the battlefield|into play|in|out) (?:with|using|off) (?:it|that|him|her|(?:my |the )?(c\d+))(?:'s ability)? (?:this turn|right away|immediately|now|the same turn)\??$""", RegexOption.IGNORE_CASE), "tapability-thisturn-question $1 $2")
+            // "Can I attack and still cast Giant Growth?" (Propaganda): the attack pays its tax, then the spell is tried.
+        t2 = t2.replace(Regex("""^can (?:i|we) attack and (?:still |also |then )?cast (?:an? |the |my )?(c\d+)(?: on (?:it|my creature|the attacker|my attacker))?\??$""", RegexOption.IGNORE_CASE), "i attack with everything, then i cast $1 on my attacker")
+            // "They don't block. Why?": no rule makes anyone block.
+        t2 = t2.replace(Regex("""^why(?: not| is that| did they not| didn't they| don't they| wouldn't they)?(?: block)?\??$""", RegexOption.IGNORE_CASE), "whyblock-question")
+            // "Can they block with it on my turn?" (vigilance): the untap timing question.
+        t2 = t2.replace(Regex("""\bcan (?:they|he|she|my opponent|the opponent) (?:still |also )?block with (?:it|that|their creature|their \d+/\d+) (?:on|during|in) my (?:next )?turn\b""", RegexOption.IGNORE_CASE), "vigilance-blockmyturn-question")
+            // "Do I survive if I block?": the block, then the question.
+        t2 = t2.replace(Regex("""^(do|does|will|would|can|am) (i|we) (survive|live|die|lose|dead|still alive) if (?:i|we) block(?: with (?:it|my creature|my \d+/\d+))?\??$""", RegexOption.IGNORE_CASE), "i block with my creature, $1 $2 $3")
             // "Does the counter save it?": whether it survives.
         t2 = t2.replace(Regex("""\b(?:does|do|will|would) (?:the|a|its|my|that|those) (?:[+-]\d/[+-]\d )?counters? (?:save|help|protect|keep) (it|him|her|them|(?:my |the )?c\d+)(?: alive)?\??$""", RegexOption.IGNORE_CASE), "does $1 survive")
             // "How big is Tarmogoyf after?": the trailing "after" adds nothing.
@@ -2701,7 +2709,7 @@ class SituationParser(private val names: NameIndex) {
         }
         // "they attack with it, can it block on my turn?": untapping happens anyway before your turn.
         if (clause0 == "vigilance-blockmyturn-question") {
-            ctx.asks += EventSpec("ask", to = "text:Yes. Whether or not it has vigilance, it untaps during its controller's untap step (502.3), which comes before your turn, so on your turn it is untapped and can block. Vigilance only matters within the same turn: an attacker with vigilance stays untapped and can block or tap for something later that turn (702.20b).")
+            ctx.asks += EventSpec("ask", to = "text:Yes, and vigilance is why. Attacking doesn't tap a creature with vigilance (702.20b), so it is still untapped on your turn and can block. Without vigilance it would have tapped as it attacked (508.1f) and stayed tapped through your turn: a permanent untaps only during its controller's untap step (502.3), and theirs comes at the start of their next turn, after yours.")
             return true
         }
         // "I have an equipment that says equipped creature gets +2/+2 on my 1/1": the stand-in, attached to the creature.
@@ -2730,6 +2738,11 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "sacrifice-allowed-question") {
             if (ctx.events.none { it.verb == "sacrifice" || it.verb == "activate" }) return false
             ctx.asks += EventSpec("ask", to = "text:Yes. Sacrificing is neither attacking, blocking nor targeting: an Aura that says the creature can't attack or block (Pacifism), or hexproof or shroud on it, doesn't stop its controller from sacrificing it as a cost (701.21a, 702.11b). Only an effect that says it can't be sacrificed, or that takes control of it, would.")
+            return true
+        }
+        if (clause0 == "whyblock-question") {
+            if (ctx.events.none { it.verb == "attack" || it.verb == "attackAll" }) return false
+            ctx.asks += EventSpec("ask", to = "text:Nothing in the rules made them block: blocking is always the defending player's choice, creature by creature (509.1a), and an untapped creature may simply be left out of combat. Players usually decline when the block would lose the creature, when they want it untapped for something else, or when they'd rather take the damage. Ask them, or plan for both.")
             return true
         }
         if (clause0 == "leyline-creature-question") {
