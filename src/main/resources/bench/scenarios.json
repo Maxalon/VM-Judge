@@ -25820,5 +25820,99 @@
     "expect": [
       "Doom Blade is countered."
     ]
+  },
+  {
+    "id": "menace-vs-one-untapped-creature",
+    "text": "I attack with a 2/2 with menace. My opponent has one untapped creature. Can they block?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "No: a 2/2 creature with menace has menace and can't be blocked except by two or more creatures, and a creature is the only one that could (702.111b)."
+    ]
+  },
+  {
+    "id": "hymn-with-one-card-in-hand",
+    "text": "My opponent casts Hymn to Tourach on me. I have 1 card in hand. What happens?",
+    "expect": [
+      "You discard 1 card (1 → 0 in hand)."
+    ]
+  },
+  {
+    "id": "mana-leak-two-lands-cant-pay",
+    "text": "I cast Mana Leak on my opponent's Grizzly Bears. They have 2 untapped lands. What happens?",
+    "expect": [
+      "opponent can't pay {3} for Mana Leak: opponent has only 2 mana available.",
+      "Grizzly Bears is countered."
+    ],
+    "notExpect": [
+      "does not pay"
+    ]
+  },
+  {
+    "id": "bolt-attacker-after-block-blocker-lives",
+    "text": "My opponent attacks with a 3/3. I block with a 2/2 and then cast Lightning Bolt on the 3/3 before damage. Does my 2/2 survive?",
+    "expect": [
+      "a 3/3 creature: the battlefield → opponent's graveyard.",
+      "Yes: a 2/2 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "rhystic-three-unpaid-spells",
+    "text": "I control Rhystic Study and my opponent casts three spells this turn and pays for none of them. How many cards do I draw?",
+    "expect": [
+      "You draw 1 card. (×3)",
+      "You draw 3 cards in all."
+    ]
+  },
+  {
+    "id": "duress-choices-bolt-not-bears",
+    "text": "I cast Duress on my opponent. They have Lightning Bolt and Grizzly Bears in hand. What can I take?",
+    "expect": [
+      "Lightning Bolt: opponent's hand → opponent's graveyard.",
+      "Duress lets you choose a noncreature, nonland card from opponent's hand: Lightning Bolt; Grizzly Bears can't be chosen (not noncreature, nonland card)."
+    ]
+  },
+  {
+    "id": "cast-wrath-and-bolt-same-turn-five-lands",
+    "text": "I have 5 lands. Can I cast Wrath of God and Lightning Bolt in the same turn?",
+    "expect": [
+      "Yes: Wrath of God ({2}{W}{W}, 4) and Lightning Bolt ({R}, 1) cost 5 mana together, and you have 5 available. There's no limit on spells per turn; each just has to be paid for."
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "cast-wrath-and-bolt-same-turn-four-lands",
+    "text": "I have 4 lands. Can I cast Wrath of God and Lightning Bolt in the same turn?",
+    "expect": [
+      "No: Wrath of God ({2}{W}{W}, 4) and Lightning Bolt ({R}, 1) cost 5 mana together, and you have only 4 available; you can cast Wrath of God or Lightning Bolt but not both."
+    ]
+  },
+  {
+    "id": "rule-of-law-two-spells-same-turn",
+    "text": "My opponent has Rule of Law. I have 6 lands. Can I cast Lightning Bolt and Counterspell in the same turn?",
+    "expect": [
+      "No: Rule of Law allows only 1 spell per turn, so you can't cast both this turn however much mana you have."
+    ]
+  },
+  {
+    "id": "trample-vs-deathtouch-blocker",
+    "text": "My opponent blocks my 4/4 trample with a 2/2 with deathtouch. What happens?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "a 4/4 creature with trample: the battlefield → your graveyard.",
+      "a 2/2 creature with deathtouch: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "fling-sacrificing-described-attacker",
+    "text": "I attack with a 2/2 and my opponent blocks with a 1/1. I cast Fling sacrificing my 2/2 targeting them. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your graveyard.",
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "no creature was sacrificed"
+    ]
   }
 ]

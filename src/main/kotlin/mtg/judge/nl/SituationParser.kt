@@ -1366,6 +1366,8 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\bhow much (?:do|does) (they|he|she|my opponent) take (?:in )?total\b""", RegexOption.IGNORE_CASE), "how much damage do $1 take")
             // "can it attack and block in the same turn?" (vigilance): a rules answer.
         t2 = t2.replace(Regex("""\bcan (?:it|my creature|my c\d+|my \d+/\d+|a vigilance creature) attack and block in the same turn\b""", RegexOption.IGNORE_CASE), "vigilance-attackblock-question")
+            // "can I cast Wrath and Bolt in the same turn?": kept as one clause (the splitter would cut it at "and").
+        t2 = t2.replace(Regex("""\b(can (?:i|we|they) (?:still |even )?cast (?:both )?(?:an? |the |my |their )?c\d+),? and ((?:then |also |an? |the |my |their )?c\d+(?: both)?(?: (?:in|on|during) (?:the same|one|a single|this) turn| this turn| in one go| together| at once| back to back)?)(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE), "$1 plus $2")
             // "then I give mine +1/+1": a stand-in pump on that creature.
         t2 = t2.let { t0 -> Regex("""\b(?:and |, )?then (i|we) give (mine|it|that|my creature) ([+-]\d+/[+-]\d+)\b(?! counter)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 ", ${r.groupValues[1]} give ${r.groupValues[2]} ${r.groupValues[3]}" } }
@@ -2804,6 +2806,12 @@ class SituationParser(private val names: NameIndex) {
             }
             val defender = attack.targets.firstOrNull { t -> t in ctx.playerIds() } ?: ctx.other(attack.player ?: "me") ?: "opp"
             ctx.asks += EventSpec("ask", player = defender, to = "playerDamage"); ctx.note(defender); return true
+        }
+        // "Can I cast Wrath of God and Lightning Bolt in the same turn?": their costs against the mana described.
+        Regex("""^can (i|we|they) (?:still |even )?cast (?:both )?(?:an? |the |my |their )?(c\d+)(?:,? and| plus| as well as|,) (?:then |also |an? |the |my |their )?(c\d+)(?: both)?(?: (?:in|on|during) (?:the same|one|a single|this) turn| this turn| in one go| together| at once| back to back)?$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1] == "they") ctx.other(ctx.lastActor ?: "me") ?: "opp" else "me"
+            val ids = listOf(r.groupValues[2], r.groupValues[3]).map { ph -> m.cards.getValue(ph).let { card -> ctx.objects.values.firstOrNull { it.controller == who && it.zone == "hand" && it.card.name == card.display }?.id ?: addObject(card, who, false, ctx, zone = "hand", allowDuplicate = true) } }
+            ctx.asks += EventSpec("ask", player = who, to = "castAll", targets = ids); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "Can I cast the Bolt this turn?" after Snapcaster Mage: whether a card in a graveyard or exile can be cast from there.
         Regex("""^can (i|we|they) (?:still |now |even )?cast (?:the |my |their |that |it |this )?(c\d+)(?: (?:again|now|this turn|right now|from (?:my |the |their )?graveyard|from exile|for its flashback cost|with flashback))*$""").find(clause0)?.let { r ->
@@ -8197,10 +8205,14 @@ class SituationParser(private val names: NameIndex) {
             ctx.events += EventSpec("block", player = who, obj = slug(card.display), targets = listOf(attacker)); ctx.lastVerb = "block"; return
         }
         // "… sacrificing my 5/5 Beast token" / "sacrificing Grizzly Bears": an additional cost paid while casting.
-        val rest0 = Regex("""\s*\b(?:sacrificing|saccing|by sacrificing|and sacrifices?) (?:my |the |an? |their )?((?:\d+/\d+ )?(?:[a-z]+ )*?token|c\d+|it|that)\b""").find(rest00)?.let { r ->
+        val rest0 = Regex("""\s*\b(?:sacrificing|saccing|by sacrificing|and sacrifices?) (?:my |the |an? |their )?((?:\d+/\d+ )?(?:[a-z]+ )*?token|c\d+|it|that|\d+/\d+(?: (?:creature|guy|dude|attacker|blocker))?)\b""").find(rest00)?.let { r ->
             val what = r.groupValues[1]
             val id = if (what == "it" || what == "that") (ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.objects.values.lastOrNull { it.controller == who }?.id ?: return@let null)
                      else if (what.startsWith("c") && what.drop(1).all { it.isDigit() }) m.cards.getValue(what).let { objectIdFor(it, ctx) ?: addObject(it, who, false, ctx) }
+                     // "sacrificing my 2/2": the creature of that size already described, else one made now.
+                     else if (Regex("""^\d+/\d+""").containsMatchIn(what) && !what.endsWith("token")) { val pt = Regex("""^\d+/\d+""").find(what)!!.value
+                         ctx.objects.values.lastOrNull { it.controller == who && it.zone == "battlefield" && Regex("""^a $pt\b""").containsMatchIn(it.card.name ?: "") }?.id
+                             ?: describedCreatures("a ", pt, "", who, ctx).firstOrNull() ?: return@let null }
                      else { var id = slug(what); var k = 2; while (ctx.objects.containsKey(id)) id = slug(what) + "_" + (k++); ctx.objects[id] = ObjectSpec(id, CardRef(name = what), controller = who, token = true); id }
             ctx.events += EventSpec("sacrifice", player = who, obj = id)
             ctx.notes += "The sacrifice is an additional cost of ${card.display}, paid while casting it (601.2b); it's shown just before the spell goes on the stack."

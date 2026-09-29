@@ -2150,12 +2150,13 @@ class Engine(val state: GameState) {
                 val payer = resolveWho(effect.payer, item)
                 trace.step("${payer?.subject ?: "The named player"} may pay ${effect.cost}. If ${if (payer?.you == true) "you do" else "they do"}, nothing more happens; if not: ${describe(effect.effect, item)}.", "608.2g", "117.3d")
                 // "I have 2 lands untapped": with the mana known and enough of it, the player is taken to pay.
+                var cantPay: Int? = null
                 if (payer != null && payer.id !in state.willPay && payer.id !in state.wontPay) {
                     val need = Regex("""\{(\d+)\}""").findAll(effect.cost).sumOf { it.groupValues[1].toInt() } + Regex("""\{[WUBRGC]\}""").findAll(effect.cost).count()
                     val avail = availableMana(payer)
                     if (avail != null && need > 0) {
                         if (avail >= need) { state.willPay += payer.id; trace.step("${payer.subject} ${payer.v("has", "have")} $avail mana available, enough for ${effect.cost}, so ${payer.subject.lowercase()} ${payer.v("pays", "pay")} it (assumed; say otherwise if not).", "608.2g") }
-                        else trace.step("${payer.subject} ${payer.v("has", "have")} only $avail mana available, not enough for ${effect.cost}.", "608.2g")
+                        else { cantPay = avail; trace.step("${payer.subject} ${payer.v("has", "have")} only $avail mana available, not enough for ${effect.cost}, so ${payer.subject.lowercase()} can't pay.", "608.2g") }
                     }
                 }
                 if (payer != null && state.willPay.remove(payer.id)) {
@@ -2163,6 +2164,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${payer.subject} ${payer.v("pays", "pay")} ${effect.cost}; ${item.describe} has no further effect."
                 } else {
                     if (payer != null && payer.id in state.wontPay) trace.step("${payer.subject} ${payer.v("declines", "decline")} to pay ${effect.cost}.", "608.2g")
+                    else if (cantPay != null) state.outcomes += "${payer!!.subject} can't pay ${effect.cost} for ${item.describe}: ${payer.subject.lowercase()} ${payer.v("has", "have")} only $cantPay mana available."
                     else state.assumptions += "${payer?.subject ?: "The player"} ${payer?.v("does", "do") ?: "does"} not pay ${effect.cost} for ${item.describe}."
                     applyEffect(effect.effect, item)
                 }
@@ -3885,6 +3887,38 @@ class Engine(val state: GameState) {
         val avail = atCast ?: availableMana(p)
         return "${card.name} costs $printed ${if (tax < 0) "minus" else "plus"} {${kotlin.math.abs(tax)}} (${parts.joinToString("; ")}) — $total mana in all." +
             (if (avail != null) if (avail >= total) " ${p.subject} ${p.v("has", "have")} $avail available, enough." else " ${p.subject} ${p.v("has", "have")} only $avail available, so it can't be cast." else "")
+    }
+
+    /** The mana a spell costs right now (taxes and reductions included, X as 0), or null when it has no mana cost. */
+    fun spellCostTotal(obj: GameObject): Int? {
+        val card = obj.def; val printed = card.manaCost ?: return null
+        val taxes = state.objects.values.filter { it.isOnBattlefield() }
+            .flatMap { o -> o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
+                .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o to it } }
+        val commanderTax = if (obj.commander && obj.commanderCasts > 0) 2 * obj.commanderCasts else 0
+        val tax = taxes.sumOf { it.second.amount } + commanderTax - selfReduction(obj).first
+        val total = maxOf(colouredPips(printed), card.manaValue.toInt() + tax)
+        return costFloor(total)?.second?.amount ?: total
+    }
+
+    /** "Can I cast Wrath and Bolt in the same turn?": their costs against the mana the player has. */
+    fun canCastAll(playerId: String, ids: List<String>): String {
+        val p = state.player(playerId)
+        val objs = ids.map { state.obj(it) }
+        val costs = objs.map { it to (spellCostTotal(it) ?: 0) }
+        val total = costs.sumOf { it.second }
+        val avail = availableMana(p)
+        val limiter = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { e -> e is StaticEffect.SpellsPerTurn && e.count < objs.size && (e.filter == null || objs.all { spellMatches(e.filter, it.def) }) } }
+        val costText = costs.joinToString(" and ") { (o, c) -> "${o.name} (${o.def.manaCost ?: "no mana cost"}, $c)" }
+        val sorceries = objs.filter { !it.def.isInstantOrSorcery || "Sorcery" in it.def.types }
+        val timing = if (sorceries.isNotEmpty()) " ${sorceries.joinToString(" and ") { it.name }} ${if (sorceries.size == 1) "has" else "have"} sorcery timing, so ${if (sorceries.size == 1) "it goes" else "they go"} in a main phase with an empty stack; an instant can be cast any time ${p.subject.lowercase()} ${p.v("has", "have")} priority." else ""
+        if (limiter != null) { trace.step("${limiter.name} limits how many spells can be cast each turn, so ${p.subject.lowercase()} can't cast both.", "601.2e"); return "No: ${limiter.name} allows only ${(limiter.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.SpellsPerTurn>().first().count)} spell${if (limiter.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.SpellsPerTurn>().first().count == 1) "" else "s"} per turn, so ${p.subject.lowercase()} can't cast both this turn however much mana ${p.subject.lowercase()} ${p.v("has", "have")}." }
+        trace.step("$costText cost $total mana together${if (avail != null) ", and ${p.subject.lowercase()} ${p.v("has", "have")} $avail available" else ""}. Nothing limits how many spells a player casts in a turn; each just has to be paid for and cast at a legal time.", "601.2f", "307.1", "304.1")
+        return when {
+            avail == null -> "$costText cost $total mana together; whether ${p.subject.lowercase()} can cast both depends on having that much mana, which wasn't stated.$timing"
+            avail >= total -> "Yes: $costText cost $total mana together, and ${p.subject.lowercase()} ${p.v("has", "have")} $avail available. There's no limit on spells per turn; each just has to be paid for.$timing"
+            else -> { val fits = costs.filter { it.second <= avail }.map { it.first.name }; "No: $costText cost $total mana together, and ${p.subject.lowercase()} ${p.v("has", "have")} only $avail available${if (fits.isNotEmpty()) "; ${p.subject.lowercase()} can cast ${fits.joinToString(" or ")} but not both" else ""}.$timing" }
+        }
     }
 
     /** What a player can pay with: the mana the situation states (or their untapped mana sources), plus what is floating in the pool. */
