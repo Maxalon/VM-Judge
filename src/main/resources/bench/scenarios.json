@@ -27223,5 +27223,97 @@
     "notExpect": [
       "Not understood"
     ]
+  },
+  {
+    "id": "leyline-can-i-target-their-creature-instead",
+    "text": "I cast Lightning Bolt at my opponent. They have Leyline of Sanctity. Can I target their creature instead?",
+    "expect": [
+      "Lightning Bolt can't target opponent.",
+      "Yes. Leyline of Sanctity gives its controller hexproof, not their permanents (702.11c): their creatures can still be targeted, so Lightning Bolt can be aimed at one of them (a creature is \"any target\", 115.4). The player themselves stays off limits."
+    ]
+  },
+  {
+    "id": "which-to-block-least-damage",
+    "text": "My opponent attacks me with a 3/3 and a 2/2. I have one 4/4. Which should I block to take the least damage?",
+    "expect": [
+      "Blocking a 3/3 creature with a 4/4 creature: saves you 3 damage; a 4/4 creature survives and a 3/3 creature dies.",
+      "Blocking a 2/2 creature with a 4/4 creature: saves you 2 damage; a 4/4 creature survives and a 2/2 creature dies."
+    ]
+  },
+  {
+    "id": "rancor-fizzles-where-does-it-go",
+    "text": "I have Grizzly Bears and cast Rancor on it. My opponent responds with Lightning Bolt on the Bears. Where does Rancor go?",
+    "expect": [
+      "Rancor doesn't resolve (all targets illegal).",
+      "Rancor is in your graveyard. It stays there: its return-to-hand ability triggers only when it goes to a graveyard from the battlefield, and it went there from the stack (countered, or with no legal target) without ever being on the battlefield (603.6c, 603.10)."
+    ]
+  },
+  {
+    "id": "rancor-countered-does-it-come-back",
+    "text": "My opponent casts Counterspell on my Rancor. Does Rancor come back to my hand?",
+    "expect": [
+      "Rancor is countered.",
+      "No: Rancor is in your graveyard. It stays there: its return-to-hand ability triggers only when it goes to a graveyard from the battlefield"
+    ]
+  },
+  {
+    "id": "sword-stays-when-bearer-dies",
+    "text": "I control Sword of Fire and Ice equipped to Grizzly Bears. My opponent casts Doom Blade on the Bears. What happens to the Sword?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Sword of Fire and Ice stays on the battlefield, unattached."
+    ]
+  },
+  {
+    "id": "bolt-the-batterskull-germ",
+    "text": "I have Batterskull with its Germ token. My opponent casts Lightning Bolt on the Germ. What happens?",
+    "expect": [
+      "Phyrexian Germ token has 3 damage marked."
+    ],
+    "notExpect": [
+      "You take 3 damage"
+    ]
+  },
+  {
+    "id": "naturalize-batterskull-germ-dies",
+    "text": "My opponent casts Naturalize on my Batterskull. Does the Germ die?",
+    "expect": [
+      "Batterskull: the battlefield → your graveyard.",
+      "Yes: Phyrexian Germ token died, and as a token it then ceased to exist (704.5d)."
+    ]
+  },
+  {
+    "id": "attack-with-batterskull-germ",
+    "text": "I attack with a Germ token equipped with Batterskull. How much damage does it deal?",
+    "expect": [
+      "opponent takes 4 damage."
+    ],
+    "notExpect": [
+      "can't attack",
+      "Not understood"
+    ]
+  },
+  {
+    "id": "pay-one-to-equip-bonesplitter",
+    "text": "I have Bonesplitter and pay 1 to equip it to my Grizzly Bears. How big is the Bears?",
+    "expect": [
+      "Bonesplitter is attached to Grizzly Bears.",
+      "Grizzly Bears is 4/2 (2/2 base, +2/+0 from Bonesplitter)."
+    ]
+  },
+  {
+    "id": "shatter-equipped-bonesplitter",
+    "text": "My opponent casts Shatter on my Bonesplitter equipped to my Bears. How big is the Bears now?",
+    "expect": [
+      "Bonesplitter: the battlefield → your graveyard.",
+      "Grizzly Bears is 2/2."
+    ]
+  },
+  {
+    "id": "greaves-blocks-own-equip",
+    "text": "I have Lightning Greaves on Grizzly Bears and want to equip Bonesplitter to the Bears. Can I?",
+    "expect": [
+      "Bonesplitter's ability can't target Grizzly Bears."
+    ]
   }
 ]
