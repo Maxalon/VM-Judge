@@ -1129,6 +1129,17 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(my |the )?(c\d+) (?:equipped|attached) (?:to|onto) (?:my |the )?(c\d+|\d+/\d+)\b""", RegexOption.IGNORE_CASE), "$1$2, i have $1$2 on my $3")
             // "I attack with a Germ token equipped with Batterskull": the living weapon and its Germ, then the attack.
         t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent) attacks? with (?:an? |the |my )?germ(?: token)? (?:equipped with|carrying|wearing|holding|with) (?:an? |the |my )?(c\d+)\b""", RegexOption.IGNORE_CASE), "$1 have $2 with its germ token, $1 attack with the germ token")
+            // "I have Umezawa's Jitte with two counters on a 2/2": the Equipment on the creature, counters and all.
+        t2 = t2.replace(Regex("""\b(have|has|control|controls) (?:an? |the |my )?(c\d+) with (\d+|one|two|three|four|five) (?:charge )?counters? on (?:an? |my |the )?(\d+/\d+|c\d+)(?: and (?:it's|it is|it gets|it was) blocked by (an? \d+/\d+(?: [a-z]+)*?))?(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE)) { r ->
+            "${r.groupValues[1]} ${r.groupValues[2]} on my ${r.groupValues[4]} with ${r.groupValues[3]} charge counters" + (if (r.groupValues[5].isNotEmpty()) ", i attack with my ${r.groupValues[4]} and they block it with ${r.groupValues[5]}" else "") }
+            // "Can I move the Bonesplitter in response?": equip is sorcery-speed.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:move|re-?equip|equip|switch|swap) (?:the |my )?(?:c\d+|it|that|the equipment|my equipment) (?:in response|at instant speed|during combat|right now|before it resolves|first)(?: to (?:my |another |the other )?(?:c\d+|creature|\d+/\d+))?\??$""", RegexOption.IGNORE_CASE), "equip-in-response-question")
+            // "gains control of the Bears with Control Magic": the spell cast at it.
+        t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) (?:gains?|gets?|takes?|steals?) control of (?:my |the |their )?(c\d+|\d+/\d+|it|that) (?:with|using|via|through) (?:an? |the |my |their )?(c\d+)\b""", RegexOption.IGNORE_CASE), "$1 casts $3 on $2")
+            // "Do my Equipment cards die too?" (Wrath): what the sweeper reaches.
+        t2 = t2.let { t0 -> Regex("""^(?:do|does|will|would) (?:my|our|the) (equipment|equipments|artifacts|enchantments|lands|planeswalkers|auras|noncreature permanents)(?: cards?)? (?:die|get destroyed|get hit|go too|die too|also die|get destroyed too|blow up|get wiped|get swept)(?: too| as well| also)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r -> "sweepscope-question-${r.groupValues[1].lowercase().removeSuffix("s").replace(" ", "_")}" } }
+            // "Can I put Batterskull onto the battlefield with it this turn?" (Stoneforge Mystic): a {T} ability the turn it came in.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:put|drop|cheat) (?:an? |the |my )?(c\d+) (?:onto the battlefield|into play|in|out) (?:with|using|off) (?:it|that|him|her|(?:my |the )?(c\d+))(?:'s ability)? (?:this turn|right away|immediately|now|the same turn)\??$""", RegexOption.IGNORE_CASE), "tapability-thisturn-question $1 $2")
             // "Does the counter save it?": whether it survives.
         t2 = t2.replace(Regex("""\b(?:does|do|will|would) (?:the|a|its|my|that|those) (?:[+-]\d/[+-]\d )?counters? (?:save|help|protect|keep) (it|him|her|them|(?:my |the )?c\d+)(?: alive)?\??$""", RegexOption.IGNORE_CASE), "does $1 survive")
             // "How big is Tarmogoyf after?": the trailing "after" adds nothing.
@@ -2727,6 +2738,18 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:Yes. ${ley?.card?.name ?: "That card"} gives its controller ${if (shroud) "shroud" else "hexproof"}, not their permanents (${if (shroud) "702.18a" else "702.11c"}): their creatures can still be targeted, so ${ctx.lastCastEntry?.display ?: "the spell"} can be aimed at one of them (a creature is \"any target\", 115.4). The player themselves stays off limits.")
             return true
         }
+        if (clause0 == "equip-in-response-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. Equip is an activated ability that can be activated only as a sorcery: in your own main phase, with the stack empty (702.6a, 702.6b). With a spell on the stack, or during combat, the Equipment can't be moved; ${ctx.lastCastEntry?.display ?: "the spell"} resolves first.")
+            return true
+        }
+        Regex("""^sweepscope-question-([a-z_]+)$""").find(clause0)?.let { r -> ctx.asks += EventSpec("ask", player = "me", to = "sweepScope:${r.groupValues[1].replace("_", " ")}"); return true }
+        Regex("""^tapability-thisturn-question (c\d+) ?(c\d+)?$""").find(clause0)?.let { r ->
+            val card = m.cards.getValue(r.groupValues[1])
+            val src = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { m.cards.getValue(it) }?.let { objectIdFor(it, ctx) }
+                ?: ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" && it.card?.name != null }?.card?.name?.let { slug(it) } ?: return@let
+            val cid = ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "hand" && it.card.name == card.display }?.id ?: addObject(card, "me", false, ctx, zone = "hand", allowDuplicate = true)
+            ctx.asks += EventSpec("ask", obj = src, to = "tapAbilityThisTurn", targets = listOf(cid)); return true
+        }
         if (clause0 == "unanimated-note") { ctx.notes += "The land wasn't animated, so it's a land and nothing more when the spell resolves."; return true }
         if (clause0 == "landcount-question") { ctx.asks += EventSpec("ask", player = "me", to = "landCount"); return true }
         if (clause0 == "saveteam-question") {
@@ -3332,6 +3355,12 @@ class SituationParser(private val names: NameIndex) {
     /** Equipment, Vehicles and "tap X with Icy": activations said as what they do to another permanent. Split out of
      * readClause0 to keep that method under the JVM's 64KB limit. */
     private fun readEquipStatements(c: String, actor: String?, subject: String?, m: Marked, ctx: Ctx): Boolean {
+        // "they block with a 1/1 and then equip Bonesplitter to it": equip is sorcery-speed, so it can't happen in combat.
+        if (Regex("""^(?:then |and then |and )?(?:casts? |pays? |uses? |activates? )?equips? """).containsMatchIn(c) && ctx.events.any { it.verb == "block" || it.verb == "attack" || it.verb == "attackAll" } && ctx.events.none { it.verb == "step" && ctx.events.indexOf(it) > ctx.events.indexOfLast { e -> e.verb == "block" || e.verb == "attack" || e.verb == "attackAll" } }) {
+            ctx.asks += EventSpec("ask", to = "text:No, that isn't legal: Equip can be activated only as a sorcery — in its controller's main phase with the stack empty (702.6a, 702.6b) — so nothing can be equipped during combat. The block stands as it was declared, and the Equipment stays where it is until a main phase.")
+            ctx.notes += "\"${restore(c, m)}\" during combat is ruled out; the combat is shown without it."
+            return true
+        }
         // "cast equip on Bonesplitter targeting it" / "equip Bonesplitter to the Bears" / "pay equip for it onto Bears": the Equipment's equip ability.
         Regex("""^(?:casts? |pays? |uses? |activates? )?equips? (?:on |for |with |the )?(?:an? |the |my )?(c\d+)(?:'s equip(?: ability)?)? (?:targeting|to|onto|on) (?:an? |the |my )?(c\d+|it|that)$""").find(c)?.let { r ->
             val who = actor ?: subject ?: "me"

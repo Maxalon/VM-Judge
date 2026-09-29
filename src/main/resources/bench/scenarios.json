@@ -27315,5 +27315,93 @@
     "expect": [
       "Bonesplitter's ability can't target Grizzly Bears."
     ]
+  },
+  {
+    "id": "sword-of-feast-and-famine-vs-green-blocker",
+    "text": "My opponent equips Sword of Feast and Famine to a 1/1 and attacks. I block with Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears can't block a 1/1 creature (protection).",
+      "You take 3 damage.",
+      "You discard 1 card."
+    ]
+  },
+  {
+    "id": "ancient-grudge-vs-sword-of-fire-and-ice",
+    "text": "My opponent casts Ancient Grudge on my Sword of Fire and Ice. What happens?",
+    "expect": [
+      "Ancient Grudge can't target Sword of Fire and Ice.",
+      "Why: Sword of Fire and Ice has protection from red, so it can't be targeted by that spell."
+    ]
+  },
+  {
+    "id": "move-equipment-in-response-no",
+    "text": "I have a 2/2 with Bonesplitter and my opponent casts Doom Blade on it. Can I move the Bonesplitter in response?",
+    "expect": [
+      "No. Equip is an activated ability that can be activated only as a sorcery: in your own main phase, with the stack empty (702.6a, 702.6b)."
+    ],
+    "cite": [
+      "702.6a"
+    ]
+  },
+  {
+    "id": "sword-of-body-and-mind-connects",
+    "text": "I attack with a 2/2 equipped with Sword of Body and Mind and my opponent doesn't block. What happens?",
+    "expect": [
+      "opponent takes 4 damage.",
+      "You get a Wolf token.",
+      "opponent mills 10 cards."
+    ]
+  },
+  {
+    "id": "equip-during-combat-illegal",
+    "text": "My opponent blocks my 3/3 with a 1/1 and then equips Bonesplitter to their 1/1. Is that legal?",
+    "expect": [
+      "a 1/1 creature: the battlefield → opponent's graveyard.",
+      "No, that isn't legal: Equip can be activated only as a sorcery — in its controller's main phase with the stack empty (702.6a, 702.6b) — so nothing can be equipped during combat."
+    ],
+    "cite": [
+      "702.6a"
+    ]
+  },
+  {
+    "id": "skullclamp-on-a-one-one",
+    "text": "I have Skullclamp and equip it to my 1/1. What happens?",
+    "expect": [
+      "a 1/1 creature: the battlefield → your graveyard.",
+      "You draw 2 cards."
+    ]
+  },
+  {
+    "id": "control-magic-on-equipped-bears-who-controls-equipment",
+    "text": "I control Bonesplitter attached to Grizzly Bears. My opponent gains control of the Bears with Control Magic. Who controls Bonesplitter?",
+    "expect": [
+      "opponent controls Grizzly Bears.",
+      "Bonesplitter is under your control."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "wrath-do-my-equipment-die-too",
+    "text": "My opponent casts Wrath of God. Do my Equipment cards die too?",
+    "expect": [
+      "No: Wrath of God destroys only creatures, and your Equipment aren't creatures — your Equipment stay on the battlefield (an Equipment left behind is simply unattached, 301.5c)."
+    ]
+  },
+  {
+    "id": "greaves-shroud-stops-own-giant-growth",
+    "text": "I have Lightning Greaves on a 2/2. Can I still cast Giant Growth on it?",
+    "expect": [
+      "Giant Growth can't target a 2/2 creature.",
+      "Why: a 2/2 creature has shroud and can't be the target of spells or abilities."
+    ]
+  },
+  {
+    "id": "stoneforge-put-batterskull-in-this-turn",
+    "text": "I cast Stoneforge Mystic. Can I put Batterskull onto the battlefield with it this turn?",
+    "expect": [
+      "No, not this turn: \"{1}{W}, {T}\" has {T} in its cost, and a creature can't pay {T} unless it has been under your control continuously since your most recent turn began (302.6, \"summoning sickness\"). Stoneforge Mystic came in this turn, so Batterskull waits for your next turn (or can simply be cast). Haste would change that (702.10b)."
+    ]
   }
 ]
