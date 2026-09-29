@@ -289,7 +289,18 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val overloadInferred = e.to == null && castTargets1.isEmpty() && e.targets.isEmpty() && Regex("""(?im)^overload\b""").containsMatchIn(def.oracleText) &&
                     curEvents.count { a -> a.verb == "ask" && a.to in setOf("die", "survive") && a.obj?.let { id -> state.objects[id]?.let { o -> o.controller != player && o.isOnBattlefield() } } == true } >= 2
                 if (overloadInferred) state.assumptions += "${def.name} is cast for its overload cost, since more than one creature is asked about and no single target was named; say \"not overloaded\" if it was cast on one."
-                engine.cast(player, def, castTargets1, existing?.id, modes, overload = e.to == "overload" || overloadInferred, x = e.amount, kicked = e.to == "kicked", evoked = e.to == "evoke", flashback = e.to == "flashback", alternative = e.to == "altcost", choice = e.to?.takeIf { it.startsWith("copy:") || it == "revolt" } ?: e.to?.takeIf { it.startsWith("copytarget:") }?.removePrefix("copytarget:") ?: e.to?.takeIf { it.startsWith("name:") }?.removePrefix("name:") ?: e.to?.takeIf { it == "revolt" || it == "spellmastery" } ?: e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:"), payLife = e.payLife)
+                val castItem = engine.cast(player, def, castTargets1, existing?.id, modes, overload = e.to == "overload" || overloadInferred, x = e.amount, kicked = e.to == "kicked", evoked = e.to == "evoke", flashback = e.to == "flashback", alternative = e.to == "altcost", choice = e.to?.takeIf { it.startsWith("copy:") || it == "revolt" } ?: e.to?.takeIf { it.startsWith("copytarget:") }?.removePrefix("copytarget:") ?: e.to?.takeIf { it.startsWith("name:") }?.removePrefix("name:") ?: e.to?.takeIf { it == "revolt" || it == "spellmastery" } ?: e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:"), payLife = e.payLife)
+                // "They cast Fireball at me but I have Circle of Protection: Red": the Circle is activated against the spell.
+                if (castItem != null) for (t in castItem.targets) {
+                    val pid = (t as? Ref.Player)?.id ?: continue
+                    if (pid == player) continue
+                    val cop = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.controller == pid && Regex("""(?i)the next time an? (white|blue|black|red|green|artifact|black or red) source of your choice would deal damage to you this turn, prevent that damage""").find(o.def.oracleText)?.let { mm ->
+                        val want = mm.groupValues[1].lowercase(); want == "artifact" && "Artifact" in def.types || def.colors.any { c -> want.contains(engine.colorName(c)) } } == true } ?: continue
+                    val idx = cop.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { it.effect is Effect.CreateShield }.takeIf { it >= 0 } ?: continue
+                    if (curEvents.any { it.verb == "activate" && it.obj == cop.id }) continue
+                    state.assumptions += "${cop.name} is activated against ${def.name} (its controller has the mana, and the situation gave no other reason to hold it)."
+                    engine.activate(pid, cop.id, idx, listOf(Ref.Obj(castItem.source.id)))
+                }
             }
             "draw" -> engine.draw(e.player ?: throw JudgeException("draw needs a player"), e.amount ?: 1)
             // "Grizzly Bears fights Hill Giant": the fight itself, with no card making it happen (701.14a).
@@ -737,6 +748,23 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         state.outcomes += if (e.to == "die") "Yes: $nm died, and as a token it then ceased to exist (704.5d)." else "No: $nm died, and as a token it then ceased to exist (704.5d)."
                         return
                     }
+                }
+                if (e.to == "whichBlock") {
+                    val p = state.player(e.player ?: "me")
+                    val attackers = state.objects.values.filter { a -> a.isOnBattlefield() && (a.attacking as? Ref.Player)?.id == p.id }
+                    val blockers = state.objects.values.filter { b -> b.isOnBattlefield() && b.controller == p.id && (b.def.isCreature || b.animatedAs != null) && b.tapped != true }
+                    if (attackers.isEmpty() || blockers.isEmpty()) { state.outcomes += "Nothing is attacking ${p.subject.lowercase()} with a blocker of ${p.possessive} untapped, so there is no block to choose."; return }
+                    val b = blockers.maxByOrNull { it.toughness ?: 0 }!!
+                    val lines = attackers.map { a ->
+                        val ap = a.power ?: 0; val at = a.toughness ?: 0; val bp = b.power ?: 0; val bt = b.toughness ?: 0
+                        val kills = bp >= at || state.hasKeyword(b, "deathtouch") && bp > 0
+                        val dies = ap >= bt || state.hasKeyword(a, "deathtouch") && ap > 0
+                        val saved = if (state.hasKeyword(a, "trample")) maxOf(0, ap - bt) .let { over -> "saves ${ap - over} of its $ap damage (trample lets $over through)" } else "saves you $ap damage"
+                        "Blocking ${a.name} with ${b.name}: $saved; ${b.name} ${if (dies) "dies" else "survives"} and ${a.name} ${if (kills) "dies" else "survives"}."
+                    }
+                    state.outcomes += lines
+                    state.outcomes += "Unblocked, ${p.subject.lowercase()} ${p.v("takes", "take")} ${attackers.sumOf { it.power ?: 0 }} in all; which trade is best is yours to weigh, and the rules don't require a block (509.1a)."
+                    return
                 }
                 if (e.to == "allCreaturesDie") {
                     val castEv = curEvents.lastOrNull { it.verb == "cast" } ?: throw JudgeException("no spell cast")

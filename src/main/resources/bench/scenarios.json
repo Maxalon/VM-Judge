@@ -19890,7 +19890,7 @@
     "id": "damaged-creature-gets-plus-0-plus-2",
     "text": "my creature has 2 damage on it and gets +0/+2, is it fine",
     "expect": [
-      "Yes: a creature is still on the battlefield."
+      "Yes: a 3/3 creature is still on the battlefield."
     ]
   },
   {
@@ -25113,6 +25113,118 @@
     "text": "they play Torpor Orb, does my Eternal Witness still get its card back",
     "expect": [
       "No: Torpor Orb stops it. Eternal Witness entering doesn't cause any ability to trigger, its own included."
+    ]
+  },
+  {
+    "id": "bolt-growth-then-shock-does-it-die",
+    "text": "I have a 2/2 and they cast Lightning Bolt on it. I respond with Giant Growth. Then they Shock it. Does it die?",
+    "expect": [
+      "a 2/2 creature is 5/5 until end of turn.",
+      "Yes: a 2/2 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "which-should-i-block-6-6-and-1-1",
+    "text": "They attack me with a 6/6 and a 1/1. I have one 3/3. Which should I block?",
+    "expect": [
+      "Blocking a 6/6 creature with a 3/3 creature: saves you 6 damage; a 3/3 creature dies and a 6/6 creature survives.",
+      "Blocking a 1/1 creature with a 3/3 creature: saves you 1 damage; a 3/3 creature survives and a 1/1 creature dies.",
+      "Unblocked, you take 7 in all; which trade is best is yours to weigh, and the rules don't require a block (509.1a)."
+    ]
+  },
+  {
+    "id": "at-4-two-2-2s-one-4-4-can-i-survive",
+    "text": "I'm at 4 and they have two 2/2s. I have one 4/4 untapped. If they attack with both, can I survive?",
+    "expect": [
+      "You take 2 damage.",
+      "Yes: You are still in the game at 2 life."
+    ]
+  },
+  {
+    "id": "unsummon-my-bears-in-response-to-doom-blade",
+    "text": "I have Grizzly Bears and they cast Doom Blade. Before it resolves I cast Unsummon on my Bears. What happens to Doom Blade?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your hand.",
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "608.2b"
+    ]
+  },
+  {
+    "id": "bolt-my-3-3-with-2-damage",
+    "text": "They cast Lightning Bolt at my 3/3 with 2 damage on it. Does it die?",
+    "expect": [
+      "a 3/3 creature has 5 damage marked.",
+      "Yes: a 3/3 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "damage-still-there-next-turn",
+    "text": "My creature has 3 damage and it's now my next turn. Is the damage still there?",
+    "expect": [
+      "No. Damage marked on a creature is removed in the cleanup step of each turn (514.2), so by the next turn it is gone; only counters, or an effect that says otherwise, carry over."
+    ],
+    "notExpect": [
+      "a creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "growth-on-their-blocker-who-dies",
+    "text": "I attack with a 3/3. They block with a 2/2 and then cast Giant Growth on their blocker. Who dies?",
+    "expect": [
+      "No: a 2/2 creature is still on the battlefield.",
+      "Yes: a 3/3 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "1-1-lifelink-deathtouch-blocks-5-5",
+    "text": "I have a 1/1 with lifelink and deathtouch. It blocks a 5/5. What happens?",
+    "expect": [
+      "You gain 1 life.",
+      "a 5/5 creature: the battlefield → opponent's graveyard.",
+      "a 1/1 creature with lifelink, deathtouch: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "702.2b"
+    ]
+  },
+  {
+    "id": "terminate-my-regenerating-creature-can-i-regenerate",
+    "text": "They cast Terminate on my regenerating creature. Can I regenerate?",
+    "expect": [
+      "No: Terminate says the creature can't be regenerated, so a regeneration shield can't replace the destruction (701.19c, 614.8)."
+    ],
+    "cite": [
+      "701.19c"
+    ]
+  },
+  {
+    "id": "bolt-their-kird-ape-with-one-forest",
+    "text": "I cast Lightning Bolt at their Kird Ape with one Forest. Does it die?",
+    "expect": [
+      "Yes: Kird Ape died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "fireball-for-5-vs-cop-red",
+    "text": "I have 5 life. They cast Fireball for 5 at me but I have Circle of Protection: Red. Do I survive?",
+    "expect": [
+      "Damage to you from Fireball is prevented.",
+      "Yes: You are still in the game at 5 life."
+    ],
+    "cite": [
+      "615.1"
+    ]
+  },
+  {
+    "id": "hymn-vs-bolt-and-bears-in-hand",
+    "text": "They cast Hymn to Tourach and I have Bolt and Bears in hand. What do I discard?",
+    "expect": [
+      "You discard Lightning Bolt and Grizzly Bears."
+    ],
+    "notExpect": [
+      "You discard nothing to hand size (0 cards, maximum seven)."
     ]
   }
 ]

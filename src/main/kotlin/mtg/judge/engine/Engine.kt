@@ -712,6 +712,9 @@ class Engine(val state: GameState) {
         val divided = ability.effect as? Effect.DamageDivided ?: (ability.effect as? Effect.Seq)?.effects?.filterIsInstance<Effect.DamageDivided>()?.firstOrNull()
         if (unmodeledTarget) trace.step("${obj.name}'s ability names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the ability does to it is reported as unsupported.", "601.2c")
         else if (divided != null && targets.isNotEmpty() && (divided.maxTargets == null || targets.size <= divided.maxTargets)) Unit
+        // Circle of Protection: "a source of your choice" is chosen as the ability resolves, not targeted; a source named
+        // with the activation is that choice and rides along.
+        else if (needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && ability.effect is Effect.CreateShield && obj.def.oracleText.contains("source of your choice", true)) Unit
         else if (needed.size != targets.size && !(needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Player && targetsAPlayer(ability.effect))) {
             state.clarifications += Clarification("${obj.name}'s ability target", "The ability needs ${needed.size} target(s) (${needed.joinToString("; ") { it.raw }}) but ${targets.size} given (602.2b, 601.2c).")
             // Deathrite Shaman "tapped for mana": an ability with a target isn't a mana ability, however much mana it makes.
@@ -2832,6 +2835,12 @@ class Engine(val state: GameState) {
                 val n = if (effect.x) (item.x ?: 0) else effect.count
                 if (effect.x && item.x == null) state.clarifications += Clarification("${item.source.name}'s X", "${item.source.name} makes a player discard X cards; what was X? (assuming 0)")
                 val hand = p.handSize
+                // "They Hymn me and I have Bolt and Bears in hand": every card the hand is known to hold goes when the count covers it.
+                val known = state.objects.values.filter { it.zone == Zone.HAND && it.owner == p.id }
+                if (known.isNotEmpty() && n >= known.size && (hand == null || hand <= known.size)) {
+                    for (c in known.toList()) move(c, Zone.GRAVEYARD, "${p.subject} ${p.v("discards", "discard")} ${c.name}${if (effect.random) " (at random, but with $n to discard from ${known.size} in hand every card goes)" else ""}.", "701.9a")
+                    p.handSize = 0; state.outcomes += "${p.subject} ${p.v("discards", "discard")} ${known.joinToString(" and ") { it.name }}."; continue
+                }
                 if (hand == null) { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"} (${p.possessive} hand size wasn't given).", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}." }
                 else { val d = minOf(n, hand); p.handSize = hand - d; trace.step("${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"}${if (d < n) " (only $hand in hand)" else ""}, leaving ${p.handSize} in hand.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"} ($hand → ${p.handSize} in hand)." }
             }
@@ -4299,6 +4308,7 @@ class Engine(val state: GameState) {
     }
     private fun unparsedText(e: Effect): String = when (e) { is Effect.Unparsed -> e.text; is Effect.May -> unparsedText(e.effect); is Effect.UnlessPays -> unparsedText(e.effect); is Effect.Seq -> e.effects.filter { it.hasUnparsed() }.joinToString(" | ") { unparsedText(it) }; is Effect.Modal -> e.modes.filter { it.hasUnparsed() }.joinToString(" | ") { "mode \"" + unparsedText(it) + "\"" }; else -> "" }
     private fun signed(n: Int) = if (n >= 0) "+$n" else "$n"
+    fun colorName(c: Char) = colorWord(c)
     private fun colorWord(c: Char) = when (c) { 'W' -> "white"; 'U' -> "blue"; 'B' -> "black"; 'R' -> "red"; 'G' -> "green"; else -> c.toString() }
     private fun withArticle(s: String) = if (Regex("""^(?:a|an|the) """).containsMatchIn(s)) s else (if (s.firstOrNull()?.lowercaseChar() in setOf('a', 'e', 'i', 'o', 'u')) "an " else "a ") + s
     private fun freshObjectId(name: String): String { val base = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_'); var id = base; var i = 2; while (state.objects.containsKey(id)) id = "${base}_${i++}"; return id }

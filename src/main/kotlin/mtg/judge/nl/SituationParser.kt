@@ -192,6 +192,20 @@ class SituationParser(private val names: NameIndex) {
             ctx.events.add(lastOther + 1, EventSpec("cast", player = who, obj = held.id))
             ctx.notes += "${card.display} is in ${if (who == "me") "your" else (ctx.players[who] ?: "your opponent") + "'s"} hand; assuming ${if (who == "me") "you cast" else "they cast"} it in response. Say it stays in hand if not."
         }
+        // "I'm at 4, they have two 2/2s and I have a 4/4. If they attack with both, can I survive?": asked whether they live,
+        // the asker's untapped creatures block (one attacker each), since that is the choice the question is about.
+        if (ctx.asks.any { it.to in setOf("playerSurvive", "playerDie") && it.player == "me" } && ctx.events.none { it.verb == "block" && it.player == "me" }) {
+            val attackers = ctx.events.filter { it.verb == "attack" && it.player != "me" && it.targets.firstOrNull() == "me" }.mapNotNull { it.obj } +
+                ctx.events.filter { it.verb == "attackAll" && it.player != "me" }.flatMap { a -> ctx.objects.values.filter { it.controller == a.player && it.zone == "battlefield" && isCreatureName(it.card.name) }.map { it.id } }
+            val mine = ctx.objects.values.filter { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) && it.tapped != true && ctx.events.none { e -> e.verb == "attack" && e.obj == it.id } }
+            if (attackers.isNotEmpty() && mine.isNotEmpty() && ctx.events.none { it.verb in setOf("cast", "activate") }) {
+                val sorted = attackers.distinct().sortedByDescending { a -> Regex("""(\d+)/""").find(ctx.objects[a]?.card?.name ?: "")?.groupValues?.get(1)?.toIntOrNull() ?: 1 }
+                val at = ctx.events.indexOfLast { it.verb == "attack" || it.verb == "attackAll" } + 1
+                var k = 0
+                for ((i, b) in mine.withIndex()) { val a = sorted.getOrNull(i) ?: break; ctx.events.add(at + k, EventSpec("block", player = "me", obj = b.id, targets = listOf(a))); k++ }
+                ctx.notes += "Asked whether you survive, your untapped creature${if (mine.size == 1) "" else "s"} ${if (mine.size == 1) "is" else "are"} read as blocking (the biggest attacker first); say \"I don't block\" for the other answer."
+            }
+        }
         // "They have Maze of Ith. I attack. Does my creature deal damage?": a Maze on the other side is used on the one
         // attacker, in the declare-blockers step, and the answer says so.
         for (maze in ctx.objects.values.filter { o -> o.zone == "battlefield" && o.card.name in setOf("Maze of Ith", "Kor Haven") }) {
@@ -626,6 +640,8 @@ class SituationParser(private val names: NameIndex) {
             // "I'm the monarch" / "who is the monarch now?": the contraction and the "now" add nothing.
         t2 = t2.replace(Regex("""\b(i)'m the monarch\b""", RegexOption.IGNORE_CASE), "$1 am the monarch").replace(Regex("""\b(they|we)'re the monarch\b""", RegexOption.IGNORE_CASE), "$1 are the monarch").replace(Regex("""\b(he|she)'s the monarch\b""", RegexOption.IGNORE_CASE), "$1 is the monarch")
         t2 = t2.replace(Regex("""\bwho(?:'s| is) the monarch (?:now|then|after that|after this|at the end)\b""", RegexOption.IGNORE_CASE), "who is the monarch")
+            // "they cast Fireball for 5 at me": X, said before the target.
+        t2 = t2.replace(Regex("""\b(casts? (?:an? |the )?c\d+) for (\d+) (at|targeting|on) (me|them|him|her|my face|their face|@\w+|my c\d+|their c\d+|my \d+/\d+|their \d+/\d+)\b""", RegexOption.IGNORE_CASE), "$1 $3 $4 with x = $2")
             // "someone casts Wrath": a player nobody named, on the other side of the table.
         t2 = t2.replace(Regex("""\b(?:someone|somebody|another player|one player) (casts?|plays?|attacks?|activates?)\b""", RegexOption.IGNORE_CASE), "my opponent $1")
             // "I attack them with my commander": the rule reads the commander first, then whom it attacks.
@@ -2813,6 +2829,22 @@ class SituationParser(private val names: NameIndex) {
             ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(slug(name) + ":spell"))
             ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Spellskite targeting $name; the outcome says where the spell ends up aimed."; return true
         }
+        // "They attack with a 6/6 and a 1/1. I have one 3/3. Which should I block?": the trades, one per attacker.
+        Regex("""^(?:which|which one|what|who) (?:should|do|can|would) (?:i|we) block(?: with (?:it|my creature|my \d+/\d+))?$|^(?:what|which) (?:is|'s) (?:the )?(?:best|right|correct) block$""").find(clause0)?.let {
+            if (ctx.events.none { it.verb == "attack" || it.verb == "attackAll" }) return@let
+            ctx.asks += EventSpec("ask", player = "me", to = "whichBlock"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "My creature has 3 damage and it's now my next turn. Is the damage still there?": damage wears off at cleanup.
+        Regex("""^(?:is|does) (?:the|that|its|this) damage (?:still (?:there|marked|on it|on the creature)|stay|stick|carry over|remain|wear off|go away|last)(?: on it| into (?:my|the) next turn| until (?:my|the) next turn)?$""").find(clause0)?.let {
+            val turned = ctx.nextTurn || ctx.events.any { it.verb == "step" && it.to in setOf("cleanup", "untap", "upkeep") } || Regex("""\bnext turn\b""").containsMatchIn(m.text)
+            ctx.asks += EventSpec("ask", to = "text:" + (if (turned) "No. Damage marked on a creature is removed in the cleanup step of each turn (514.2), so by the next turn it is gone; only counters, or an effect that says otherwise, carry over." else "Yes, for now: damage stays marked on a creature until the cleanup step of the turn it was dealt (514.2), and is removed then. Until then more damage adds to it (704.5g).")); return true
+        }
+        // "They Terminate my regenerating creature. Can I regenerate?": the creature the spell was aimed at.
+        Regex("""^can (?:i|we) (?:still )?(?:regenerate|regen)(?: it| that| in response)?$""").find(clause0)?.let {
+            val id = ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull { it in ctx.objects && isCreatureName(ctx.objects.getValue(it).card.name) }
+                ?: ctx.lastMentioned?.takeIf { it in ctx.objects && isCreatureName(ctx.objects.getValue(it).card.name) } ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "regenerateVs"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
         // "Someone casts Wrath in a four player game. Do all creatures die?": whose creatures the sweeper reaches.
         Regex("""^(?:do|does|will|would) (?:all|every|everyone's|all the|all of the) creatures? (?:die|get destroyed|go|get wiped)(?: too| as well)?$""").find(clause0)?.let {
             if (ctx.events.none { it.verb == "cast" }) return@let
@@ -3187,6 +3219,15 @@ class SituationParser(private val names: NameIndex) {
             ctx.activePlayer = who
             if (ctx.events.lastOrNull()?.let { it.verb == "step" && it.to == step && it.player == who } != true) ctx.events += EventSpec("step", player = who, to = step)
             return true
+        }
+        // "it's now my next turn": a whole clause saying a turn has passed; read before the "next turn" tail is stripped.
+        Regex("""^(?:it is|it's|now it is|now it's|it is now|it's now) (?:now )?(my|their|his|her) (?:next )?turn(?: now| again)?$""").find(clauseIn.trim())?.let { r ->
+            val who = if (r.groupValues[1] == "my") "me" else pronounPlayer(ctx, "their")
+            ctx.objects.keys.toList().forEach { id -> ctx.objects[id] = ctx.objects.getValue(id).copy(summoningSick = false) }
+            if (ctx.events.lastOrNull()?.verb in setOf("cast", "activate", "trigger")) ctx.events += EventSpec("resolveAll")
+            ctx.events += EventSpec("step", player = ctx.activePlayer ?: ctx.other(who) ?: who, to = "cleanup"); ctx.events += EventSpec("step", player = who, to = "untap")
+            ctx.nextTurn = true; ctx.activePlayer = who; ctx.note(who)
+            ctx.notes += "A turn has passed: nothing is summoning sick any more, and until-end-of-turn effects and damage from earlier are gone."; return true
         }
         // "… next turn" / "on my next turn": a turn has passed, so nothing is summoning sick any more.
         Regex("""\s+(?:next turn|on my next turn|the next turn|the turn after|a turn later|on their next turn)$""").find(clauseIn)?.let { r ->
@@ -5710,6 +5751,8 @@ class SituationParser(private val names: NameIndex) {
                 else -> m.cards[w]?.let { card -> objectIdFor(card, ctx) ?: addObject(card, who, false, ctx) } ?: return@let
             }
             val n = r.groupValues[2].toIntOrNull() ?: return@let
+            // "my creature has 3 damage": a creature nobody sized is at least big enough to be carrying it.
+            if (ctx.objects[id]?.card?.name == "a creature" && n >= 1) { ctx.objects[id] = ctx.objects.getValue(id).copy(card = CardRef(name = "a ${n + 1}/${n + 1} creature")); ctx.notes += "The creature wasn't sized; it is read as a ${n + 1}/${n + 1} so the $n damage doesn't kill it outright." }
             if (r.groupValues[3].trim() in setOf("last turn", "on their turn", "on my turn", "last combat")) {
                 ctx.notes += "Damage dealt ${r.groupValues[3].trim()} was removed at that turn's cleanup step (514.2), so none of it is marked on ${ctx.objects[id]?.card?.name ?: id} now."
             } else ctx.objects[id] = ctx.objects.getValue(id).let { o -> o.copy(damage = o.damage + n) }
@@ -7575,7 +7618,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"${restore(clause0, m)}?\" is answered for each of the two creatures in the outcome below."; return true
         }
         // "do I die?" / "do they lose?" / "am I dead?" / "does Bob survive?"
-        Regex("""^(?:do|does|will|would|am|is|are) (i|they|my opponent|the opponent|opponent|he|she|@\w+) (?:still |then |also )?(die|dies|lose|loses|lose the game|survive|survives|dead|alive|win|wins|make it|live|lives)(?: the game)?(?: (?:this|next) turn| now| here)?$""").find(clause0)?.let { q ->
+        Regex("""^(?:do|does|will|would|am|is|are|can|could) (i|they|my opponent|the opponent|opponent|he|she|@\w+) (?:still |then |also |even )?(die|dies|lose|loses|lose the game|survive|survives|dead|alive|win|wins|make it|live|lives)(?: the game| this| that)?(?: (?:this|next) turn| now| here)?$""").find(clause0)?.let { q ->
             // "does he die?" with a Jace or a Liliana on the table: the planeswalker, not a player.
             if (q.groupValues[1] in setOf("he", "she") && q.groupValues[2] !in setOf("win", "wins", "lose the game")) planeswalkerFor(if (q.groupValues[1] == "he") "him" else "her", ctx)?.let { pw ->
                 ctx.asks += EventSpec("ask", obj = pw, to = if (q.groupValues[2] in setOf("die", "dies", "dead", "lose", "loses")) "die" else "survive")
@@ -7631,6 +7674,8 @@ class SituationParser(private val names: NameIndex) {
         // "what do I discard?" / "how many cards do I discard?" at the end of a turn: the cleanup step is played out.
         Regex("""^(?:what|how many(?: cards)?|do|does|will|must) (?:do |does |will |must )?(i|they|my opponent|the opponent|opponent|he|she|@\w+) (?:have to |need to )?discard(?: down to| to hand size| at cleanup| at end of turn)?$""").find(clause0)?.let { q ->
             val who = when (val w = q.groupValues[1]) { "i" -> "me"; else -> if (w.startsWith("@")) w.removePrefix("@") else pronounPlayer(ctx, w.substringAfterLast(' ')) }
+            // "They cast Hymn to Tourach. What do I discard?": the spell says, not the cleanup step.
+            if (ctx.events.any { it.verb == "cast" }) { ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true }
             ctx.events += EventSpec("resolveAll"); ctx.events += EventSpec("step", player = ctx.activePlayer ?: who, to = "cleanup"); ctx.explicitResolve = true; ctx.note(who)
             ctx.notes += "\"${restore(clause0, m)}?\" is answered by playing the turn out to its cleanup step, where hand size is checked (514.1)."; return true
         }
@@ -8209,6 +8254,16 @@ class SituationParser(private val names: NameIndex) {
                 var id = slug(kind); var k = 2; while (ctx.objects.containsKey(id)) id = slug(kind) + "_" + (k++)
                 ctx.objects[id] = ObjectSpec(id, CardRef(name = name), controller = owner); ctx.note(owner); id
             }
+            out += id; return out
+        }
+        // "Terminate on my regenerating creature" / "Bolt their flying creature": a described creature by a keyword said as an adjective.
+        Regex("""^(my|their|his|her|an?|the) (regenerating|flying|indestructible|hexproof|lifelinking|trampling|deathtouch|first strike|vigilant|hasty) (creature|guy|dude|\d+/\d+)$""").find(seg)?.let { r ->
+            val caster = ctx.clauseActor ?: ctx.lastActor ?: "me"
+            val owner = when (r.groupValues[1]) { "my" -> "me"; "their", "his", "her" -> ctx.other("me") ?: "opp"; else -> ctx.other(caster) ?: "opp" }
+            val kw = when (r.groupValues[2]) { "regenerating" -> "regenerate"; "lifelinking" -> "lifelink"; "trampling" -> "trample"; "vigilant" -> "vigilance"; "hasty" -> "haste"; else -> r.groupValues[2] }
+            val pt = r.groupValues[3].takeIf { it.contains('/') } ?: ""
+            val id = ctx.objects.values.lastOrNull { o -> o.controller == owner && o.zone == "battlefield" && (o.card.name ?: "").contains(kw) && (pt.isEmpty() || (o.card.name ?: "").contains(pt)) }?.id
+                ?: describedCreatures("a ", pt, "creature", owner, ctx, kw).firstOrNull() ?: return@let
             out += id; return out
         }
         // "Doom Blade on Alice's black creature": a described creature of a named player's.
