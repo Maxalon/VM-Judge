@@ -775,8 +775,8 @@ object OracleParser {
         if (Regex("""^(?:if [^,]+, )?you may .+? rather than pay (?:~'s|this spell's) mana cost\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("118.9", "601.3")))
         Regex("""^If you control a creature, damage that would reduce your life total to less than (\d+) reduces it to \1 instead\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m -> return listOf(StaticEffect.LifeFloorIfCreature(m.groupValues[1].toInt())) }
         // Kira, Great Glass-Spinner: "Creatures you control have "Whenever …, …""
-        Regex("""^((?:creatures|artifacts|lands|permanents|enchantments)(?: you control)?) have "(.+)"\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
-            val inner = parseTriggered(m.groupValues[2].trimEnd('.').replace("this creature", "~").replace("this permanent", "~"))
+        Regex("""^(?:all |each )?((?:creatures|artifacts|lands|permanents|enchantments)(?: you control)?) have "(.+)"\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val inner = parseTriggered(m.groupValues[2].trimEnd('.').replace("this creature", "~").replace("this permanent", "~").replace("this artifact", "~").replace("this enchantment", "~").replace("this land", "~"))
             if (inner is TriggeredAbility) return listOf(StaticEffect.GrantTriggered(parseFilter(m.groupValues[1].lowercase().replace(Regex("""s(?= you control|$)"""), ""), Kind.PERMANENT), inner))
             // Cryptolith Rite: the quoted text is an activated ability.
             if (m.groupValues[2].contains(':')) { val act = parseActivated(m.groupValues[2].trimEnd('.').replace("this creature", "~").replace("this permanent", "~")); if (act is ActivatedAbility) return listOf(StaticEffect.GrantActivated(parseFilter(m.groupValues[1].lowercase().replace(Regex("""s(?= you control|$)"""), ""), Kind.PERMANENT), act)) }
@@ -1477,7 +1477,7 @@ object OracleParser {
             val f = parseFilter(m.groupValues[2], Kind.CREATURE); if (f.verifiable) return Effect.ForAll(f, "damage", m.groupValues[1].toInt())
         }
         // "sacrifice it" / "its controller sacrifices it" in a trigger on the permanent itself.
-        if (Regex("""^(?:its controller sacrifices|sacrifice) (?:~|it|this creature|this permanent)\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.SacrificeSource
+        if (Regex("""^(?:its controller sacrifices|sacrifice) (?:~|it|this creature|this permanent|this artifact|this enchantment|this land|this planeswalker)\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.SacrificeSource
         Regex("""^(?:that source's controller|that player|that creature's controller) sacrifices that many (permanents?|creatures?|lands?|artifacts?)(?: of (?:their|his or her) choice)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             return Effect.SacrificeThatMany(Who.THAT_PLAYER, parseFilter(m.groupValues[1].removeSuffix("s"), Kind.PERMANENT))
         }
@@ -1647,6 +1647,15 @@ object OracleParser {
         Regex("""^(?:you |target player |each player )?draws? a card for each (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val who = when (m.groupValues[0].lowercase().substringBefore(" draw")) { "target player" -> Who.TARGET_PLAYER; "each player" -> Who.EACH_PLAYER; else -> Who.YOU }
             forEachCount(m.groupValues[1])?.let { c -> return Effect.Draw(who, 0, countBy = c) }
+        }
+        // "Sacrifice ~ unless you pay {1}" (Kataki's granted upkeep): the unless-payment wraps a modeled effect, so it is
+        // read as one before the narrated "sacrifice …" pattern swallows it.
+        unlessRe.matchEntire(s)?.let { m ->
+            val inner = parseSentence(m.groupValues[1])
+            if (inner !is Effect.Unparsed && inner !is Effect.Narrated) {
+                val payer = when (m.groupValues[2].lowercase()) { "you" -> Who.YOU; "an opponent" -> Who.OPPONENT; "target player" -> Who.TARGET_PLAYER; "its controller" -> Who.CONTROLLER_OF_TARGET; else -> Who.THAT_PLAYER }
+                return Effect.UnlessPays(inner, payer, m.groupValues[3].replace(Regex(""", where X is (.+)$"""), " (X = $1)"))
+            }
         }
         for ((re, rules) in narratedRes) if (re.matches(s)) return Effect.Narrated(s.trimEnd('.'), rules)
         // "You draw a card and you lose 1 life." / "Each opponent loses 1 life and you gain 1 life.": two effects joined by "and".

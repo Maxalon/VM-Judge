@@ -26399,5 +26399,95 @@
       "Emrakul, the Aeons Torn isn't countered (it can't be).",
       "Emrakul, the Aeons Torn enters the battlefield."
     ]
+  },
+  {
+    "id": "kataki-sol-ring-upkeep-pays",
+    "text": "I control Kataki, War's Wage. My opponent has Sol Ring. What happens at their upkeep?",
+    "expect": [
+      "opponent pays {1}; Sol Ring's triggered ability has no further effect."
+    ],
+    "notExpect": [
+      "not tracked in detail",
+      "Nothing changes"
+    ]
+  },
+  {
+    "id": "two-attackers-block-the-bigger-damage-taken",
+    "text": "I attack with a 2/2 and a 3/3. My opponent has one 4/4 and blocks the 3/3. How much damage do they take?",
+    "expect": [
+      "a 3/3 creature: the battlefield → your graveyard.",
+      "Yes: opponent takes 2 damage in all."
+    ]
+  },
+  {
+    "id": "bolt-in-hand-opp-at-four-cant-win",
+    "text": "I have Lightning Bolt and my opponent is at 4 with a Grizzly Bears. Can I win this turn?",
+    "expect": [
+      "opponent takes 3 damage.",
+      "No: You haven't won; you are still in the game.",
+      "opponent goes from 4 to 1 life."
+    ]
+  },
+  {
+    "id": "bolt-in-hand-opp-at-three-win",
+    "text": "I have Lightning Bolt and my opponent is at 3. Can I win this turn?",
+    "expect": [
+      "Yes: You have won the game.",
+      "opponent goes from 3 to 0 life."
+    ]
+  },
+  {
+    "id": "path-do-i-have-to-search",
+    "text": "My opponent casts Path to Exile on my Grizzly Bears. Do I have to search for the land?",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile.",
+      "No: Path to Exile says \"may search\", so you choose whether to search at all (you usually should: the land is free). If you do search, you may also fail to find, since the card looked for isn't revealed until chosen (701.19b)."
+    ]
+  },
+  {
+    "id": "doom-blade-cant-target-nighthawk",
+    "text": "I cast Doom Blade on my opponent's Vampire Nighthawk. What happens?",
+    "expect": [
+      "Doom Blade can't target Vampire Nighthawk (not a nonblack creature)."
+    ]
+  },
+  {
+    "id": "terminate-kills-nighthawk",
+    "text": "I cast Terminate on my opponent's Vampire Nighthawk. What happens?",
+    "expect": [
+      "Vampire Nighthawk: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "damage-wears-off-at-end-of-turn",
+    "text": "I control Grizzly Bears and it has 1 damage on it. At end of turn what happens?",
+    "expect": [
+      "Grizzly Bears's until-end-of-turn effects and damage are gone (cleanup)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "torpor-orb-snapcaster-no-trigger",
+    "text": "My opponent has Torpor Orb. I cast Snapcaster Mage. Does it trigger?",
+    "expect": [
+      "No: Torpor Orb stops it. Snapcaster Mage entering doesn't cause any ability to trigger, its own included."
+    ]
+  },
+  {
+    "id": "overrun-two-bears-how-much-if-i-attack",
+    "text": "I have two Grizzly Bears and cast Overrun. How much damage do I deal if I attack?",
+    "expect": [
+      "Grizzly Bears is 5/5 with trample until end of turn. (×2)",
+      "Yes: opponent takes 10 damage in all."
+    ]
+  },
+  {
+    "id": "settle-the-wreckage-what-if-i-cast-it",
+    "text": "My opponent attacks with a 2/2 and I have Settle the Wreckage. What happens if I cast it?",
+    "expect": [
+      "a 2/2 creature: the battlefield → exile."
+    ]
   }
 ]

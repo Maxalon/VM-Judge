@@ -1088,6 +1088,10 @@ class SituationParser(private val names: NameIndex) {
             // "Can I put Grizzly Bears onto the battlefield with it?" (Aether Vial): the Vial's activation.
         t2 = t2.let { t0 -> Regex("""\b(can (?:i|we) |i |we )?put (?:my |the |an? )?(c\d+) (?:onto the battlefield|into play|in|out) (?:with|off|using|via) (?:it|that|the vial|my vial|the |my )?(?:vial|aether vial|c\d+)?(?=\?|$|,)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name ?: "").contains("Vial", true) } || m.cards.values.any { it.display.contains("Vial", true) }) "${r.groupValues[1]}vial in ${r.groupValues[2]}" else r.value } }
+            // "At end of turn, what happens?" (damage wearing off): the cleanup step.
+        t2 = t2.replace(Regex("""^at (?:the )?end of (?:the |my |this )?turn,? what happens(?: to (?:it|the damage|my creature))?\??$""", RegexOption.IGNORE_CASE), "in the cleanup step, what happens")
+            // "How much damage do I deal if I attack?": everything attacks, and the question is what they take.
+        t2 = t2.replace(Regex("""^how much (?:damage )?(?:do|would|can|will) (?:i|we) (?:deal|do|hit for|swing for) if (?:i|we) attack(?: with (?:everything|everyone|all of them|both|all my creatures|my team))?\??$""", RegexOption.IGNORE_CASE), "i attack with everything, how much damage do they take")
             // "Can I Stifle the tap ability?": the other player activates it, then the counter is cast at the ability.
         t2 = t2.let { t0 -> Regex("""^can (i|we) (?:cast )?(c\d+) (?:on |at |targeting )?(?:the|its|their|his|her|that) (tap|\{t\}|first|second|third|last|loyalty|activated|triggered) ability\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (m.cards[r.groupValues[2]]?.isSpellOnly != true) r.value
@@ -2845,6 +2849,21 @@ class SituationParser(private val names: NameIndex) {
             ctx.events.add(at + 1, EventSpec("choose", player = who, obj = srcId, to = "put:$cid"))
             ctx.notes += "${card.display} is in your library and is what ${ctx.objects[srcId]?.card?.name ?: srcEv.card?.name ?: "the search"} looks for; the outcome says whether it qualifies."
             ctx.lastMentioned = cid; return true
+        }
+        // "I have Lightning Bolt and they're at 4. Can I win this turn?": the held spell is cast at them, then the question.
+        Regex("""^can (?:i|we) (?:win|kill (?:them|him|her|my opponent)|finish (?:them|him|her) off|close (?:it|the game) out|get (?:them|him|her) dead)(?: this turn| now| here| right now| from here)?$""").find(clause0)?.let {
+            if (ctx.events.any { it.verb != "manaNow" }) return@let
+            val held = ctx.objects.values.filter { it.controller == "me" && it.zone == "hand" }.mapNotNull { o -> names.lookup(Names.normalize(o.card.name ?: ""))?.takeIf { it.isSpellOnly } }
+            if (held.size != 1) return@let
+            emitCast("me", held[0], "targeting them", m, ctx)
+            ctx.notes += "${held[0].display} is the spell in hand, so it's cast at your opponent to see whether that wins."
+            ctx.asks += EventSpec("ask", player = "me", to = "playerWin"); ctx.note("me"); return true
+        }
+        // "They Path my Bears. Do I have to search for the land?": whether the search is optional.
+        Regex("""^(?:do|does) (i|we|they|he|she|my opponent|the opponent) (?:have to|need to|got to) (?:search|fetch|get|take|find|go get)(?: for)? (?:the|a|my|their) (?:basic )?land(?: card)?$|^is (?:the|that) (?:search|land) (optional|mandatory|forced|required)$|^can (i|we|they) (?:skip|decline|refuse) (?:the|that) (?:search|land)$""").find(clause0)?.let { r ->
+            val w = r.groupValues[1].ifEmpty { r.groupValues[3] }.ifEmpty { "i" }
+            val who = when (w) { "i", "we" -> "me"; else -> pronounPlayer(ctx, w.substringAfterLast(' ')) }
+            ctx.asks += EventSpec("ask", player = who, to = "optionalSearch"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "I Show and Tell Emrakul. Do I get the extra turn?": whether a cast trigger happened.
         Regex("""^(?:do|does|will|would) (i|we|they|he|she|my opponent|the opponent) (?:still |even |actually )?(?:get|take|receive) (?:the|an|its|my|their|that|another) (?:extra|additional) turn$""").find(clause0)?.let { r ->
