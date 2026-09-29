@@ -277,10 +277,19 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     state.assumptions += "${o.name} is read as a card in ${state.player(o.owner).possessive} graveyard, since ${def.name} targets one there and nothing said where it was." } }
                 // "I have two 1/1s and they cast Electrickery. Do both die?": a spell with overload cast at nothing named,
                 // with two or more of the other side's creatures asked about, is cast for its overload cost.
-                val overloadInferred = e.to == null && castTargets.isEmpty() && e.targets.isEmpty() && Regex("""(?im)^overload\b""").containsMatchIn(def.oracleText) &&
+                // "I cast Pacifism on their 4/4. They Disenchant it": a spell aimed at an Aura, artifact or enchantment that is
+                // still a spell on the stack is cast once that spell has resolved. A creature spell is left as it is, since
+                // "a creature spell isn't a creature" is the lesson those questions are usually after.
+                val stackPerms = castTargets.mapNotNull { t -> (t as? Ref.Stack)?.let { r -> state.stack.firstOrNull { it.id == r.id } } }.filter { it.kind == StackKind.SPELL && !it.source.def.isInstantOrSorcery && !it.source.def.isCreature && it.controller != player }
+                val castTargets1 = if (stackPerms.isNotEmpty() && needed.none { it.raw.contains("spell", true) }) {
+                    state.assumptions += "${def.name} is cast once ${stackPerms.joinToString(" and ") { it.source.name }} has resolved: it targets a permanent, and a spell on the stack isn't one yet."
+                    engine.resolveAll()
+                    castTargets.map { t -> (t as? Ref.Stack)?.let { r -> stackPerms.firstOrNull { it.id == r.id }?.let { Ref.Obj(it.source.id) } } ?: t }
+                } else castTargets
+                val overloadInferred = e.to == null && castTargets1.isEmpty() && e.targets.isEmpty() && Regex("""(?im)^overload\b""").containsMatchIn(def.oracleText) &&
                     curEvents.count { a -> a.verb == "ask" && a.to in setOf("die", "survive") && a.obj?.let { id -> state.objects[id]?.let { o -> o.controller != player && o.isOnBattlefield() } } == true } >= 2
                 if (overloadInferred) state.assumptions += "${def.name} is cast for its overload cost, since more than one creature is asked about and no single target was named; say \"not overloaded\" if it was cast on one."
-                engine.cast(player, def, castTargets, existing?.id, modes, overload = e.to == "overload" || overloadInferred, x = e.amount, kicked = e.to == "kicked", evoked = e.to == "evoke", flashback = e.to == "flashback", alternative = e.to == "altcost", choice = e.to?.takeIf { it.startsWith("copy:") || it == "revolt" } ?: e.to?.takeIf { it.startsWith("copytarget:") }?.removePrefix("copytarget:") ?: e.to?.takeIf { it.startsWith("name:") }?.removePrefix("name:") ?: e.to?.takeIf { it == "revolt" || it == "spellmastery" } ?: e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:"), payLife = e.payLife)
+                engine.cast(player, def, castTargets1, existing?.id, modes, overload = e.to == "overload" || overloadInferred, x = e.amount, kicked = e.to == "kicked", evoked = e.to == "evoke", flashback = e.to == "flashback", alternative = e.to == "altcost", choice = e.to?.takeIf { it.startsWith("copy:") || it == "revolt" } ?: e.to?.takeIf { it.startsWith("copytarget:") }?.removePrefix("copytarget:") ?: e.to?.takeIf { it.startsWith("name:") }?.removePrefix("name:") ?: e.to?.takeIf { it == "revolt" || it == "spellmastery" } ?: e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:"), payLife = e.payLife)
             }
             "draw" -> engine.draw(e.player ?: throw JudgeException("draw needs a player"), e.amount ?: 1)
             // "Grizzly Bears fights Hill Giant": the fight itself, with no card making it happen (701.14a).

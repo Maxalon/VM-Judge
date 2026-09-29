@@ -2850,7 +2850,7 @@ class Engine(val state: GameState) {
                 val p = resolveWho(effect.who, item) ?: state.player(item.controller)
                 val card = state.lastRevealed
                 if (card == null) { trace.step("No revealed card is known, so how much life is lost can't be worked out.", "608.2h"); state.clarifications += Clarification("the revealed card", "${item.source.name} takes life equal to the revealed card's mana value; which card was it?") }
-                else { val mv = card.def.manaValue.toInt(); trace.step("${card.name} has mana value $mv, so ${p.subject.lowercase()} ${p.v("loses", "lose")} $mv life.", "202.3"); p.life = p.life?.minus(mv); if (mv > 0) { trace.step("${p.subject} ${p.v("loses", "lose")} $mv life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $mv life (${card.name}'s mana value)." } else state.outcomes += "${p.subject} ${p.v("loses", "lose")} no life (${card.name} has mana value 0)." }
+                else { val mv = card.def.manaValue.toInt(); trace.step("${card.name} has mana value $mv, so that is the life to be lost.", "202.3"); p.life = p.life?.minus(mv); if (mv > 0) { trace.step("${p.subject} ${p.v("loses", "lose")} $mv life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $mv life (${card.name}'s mana value)." } else state.outcomes += "${p.subject} ${p.v("loses", "lose")} no life (${card.name} has mana value 0)." }
             }
             is Effect.PutSelfOnLibraryTop -> {
                 val o = item.source

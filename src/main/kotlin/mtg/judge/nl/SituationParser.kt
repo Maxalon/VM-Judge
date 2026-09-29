@@ -621,6 +621,8 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(?:does|will|would) (my|their) (c\d+) still (?:hit|go through|connect|resolve|work|happen|land)\b""", RegexOption.IGNORE_CASE), "is $1 $2 countered")
             // "I've cast it twice before": the commander tax, said in the active voice.
         t2 = t2.replace(Regex("""\b(?:i|we)(?:'ve| have)? (?:already )?cast (it|him|her|my commander) (once|twice|three times|four times|\d+ times)(?: before| already| so far| this game| from the command zone)*(?=,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1 has been cast $2")
+            // "do I take 5?": how much damage the asker takes.
+        t2 = t2.replace(Regex("""\bdo (i|we) (?:still |even )?take (?:the )?\d+(?: damage)?\??$""", RegexOption.IGNORE_CASE), "how much damage do i take")
             // "how much damage?" on its own, after a held spell: what the other player takes.
         t2 = t2.replace(Regex("""(?<=[,.] )how much damage\??$""", RegexOption.IGNORE_CASE), "how much damage do they take")
         t2 = t2.replace(Regex("""^how much damage\??$""", RegexOption.IGNORE_CASE), "how much damage do they take")
@@ -2003,6 +2005,8 @@ class SituationParser(private val names: NameIndex) {
         }
         // "they reveal Counterspell and Forest" / "my hand is Bolt, Bears and Forest": cards in hand, kept together before the clause split.
         Regex("""\b(?:reveals?|revealing|shows? me|(?:my|their|his|her) hand (?:is|has|contains)|(?:i'm|i am|they're|they are) holding|holds?|holding) ((?:an? |the |two |three |four |\d+ )?c\d+s?(?:,? (?:and )?(?:an? |the |two |three |four |\d+ )?c\d+s?)*)$""").find(t2)?.let { r ->
+            // "I have Dark Confidant and reveal Emrakul": a creature's reveal is from the library, read clause by clause.
+            if (Regex("""\bhave (c\d+) and reveals? c\d+$""").find(t2)?.let { h -> m.cards[h.groupValues[1]]?.typeLine?.contains("Creature") } == true) return@let
             val before = t2.substring(0, r.range.first)
             val lastWord = Regex("""\b(i|my|i'm|i am|i've|we|they|their|he|she|his|her|my opponent|the opponent|opponent)\b""").findAll(before).lastOrNull()?.groupValues?.get(1)
             val who = (lastWord?.let { w -> if (w in setOf("i", "my", "i'm", "i am", "i've", "we")) "me" else pronounPlayer(ctx, "they") })
@@ -4684,7 +4688,7 @@ class SituationParser(private val names: NameIndex) {
         }
         // "tap Llanowar Elves for mana", "tap Sol Ring for {C}{C}"
         // "can I tap it for mana this turn?": the tail adds nothing the activation doesn't check.
-        Regex("""^(?:still )?taps? (?:an? |the |my |their |his |her |our )?(c\d+|it) for (?:mana|\{.*|[a-z]+ mana|[a-z]+)(?: in response(?: to (?:it|that))?| this turn| right now| now| yet)?$""").find(c)?.let { r ->
+        Regex("""^(?:still )?taps? (?:an? |the |my |their |his |her |our )?(c\d+|it) (?:first )?for (?:mana|\{.*|[a-z]+ mana|[a-z]+)(?: in response(?: to (?:it|that))?| this turn| right now| now| yet| first| before it resolves| before that resolves| beforehand| before it dies)?$""").find(c)?.let { r ->
             val who = actor ?: subject ?: "me"
             // "it" is the tapper's own permanent: the last one mentioned, unless that belongs to someone else.
             // "I cast Llanowar Elves and tap it for mana": the Elves has to resolve first, and once it has, it is
@@ -5443,6 +5447,40 @@ class SituationParser(private val names: NameIndex) {
             var id = slug(kind); var k = 2; while (ctx.objects.containsKey(id)) id = slug(kind) + "_" + (k++)
             ctx.objects[id] = ObjectSpec(id, CardRef(name = src.card.name), controller = who); ctx.note(who)
             ctx.lastMentioned = id; ctx.lastOwner = who; ctx.lastVerb = "have"; return true
+        }
+        // "My Grizzly Bears has Rancor": an Aura or Equipment on the creature.
+        Regex("""^(?:(my|their|his|her) )?(c\d+) (?:has|wears|is enchanted with|is equipped with|carries|with) (?:an? |the )?(c\d+)(?: on it| attached| equipped)?$""").find(c)?.let { r ->
+            val att = m.cards.getValue(r.groupValues[3]); val host = m.cards.getValue(r.groupValues[2])
+            if (!(att.typeLine.contains("Aura") || att.typeLine.contains("Equipment"))) return@let
+            val who = when (r.groupValues[1]) { "their", "his", "her" -> pronounPlayer(ctx, "their"); else -> actor ?: ctx.lastOwner ?: "me" }
+            val hostId = objectIdFor(host, ctx) ?: addObject(host, who, false, ctx)
+            val attId = objectIdFor(att, ctx) ?: addObject(att, who, false, ctx)
+            ctx.objects[attId] = ctx.objects.getValue(attId).copy(attachedTo = hostId)
+            ctx.lastVerb = "have"; ctx.lastOwner = who; ctx.lastMentioned = hostId; return true
+        }
+        // "I have Sakura-Tribe Elder blocking a 5/5": their creature attacks and the named one blocks it.
+        Regex("""^(?:(?:i |we )?have |my )?(c\d+|\d+/\d+) (?:is )?(?:blocking|that is blocking|that's blocking) (?:an? |their |the )?(\d+/\d+)((?: with [a-z ]+)?)(?: creature)?$""").find(c)?.let { r ->
+            val who = actor ?: "me"; val opp = ctx.other(who) ?: "opp"
+            val blocker = m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) ?: addObject(it, who, false, ctx) }
+                ?: describedCreatures("a ", r.groupValues[1], "creature", who, ctx).firstOrNull() ?: return@let
+            val attacker = describedCreatures("a ", r.groupValues[2], "creature", opp, ctx, r.groupValues[3].trim().removePrefix("with ").trim()).firstOrNull() ?: return@let
+            ctx.events += EventSpec("attack", player = opp, obj = attacker, targets = listOf(who))
+            ctx.events += EventSpec("block", player = who, obj = blocker, targets = listOf(attacker))
+            ctx.lastVerb = "block"; ctx.lastActor = who; ctx.lastMentioned = blocker; ctx.note(opp); return true
+        }
+        // "Emrakul is on top of my library": the card the next reveal or draw finds.
+        Regex("""^(?:an? |my |the )?(c\d+) is (?:on (?:the )?top of|the top card of|on top of) (?:my|their|his|her) library$""").find(c)?.let { r ->
+            val who = if (Regex("""\b(?:their|his|her) library$""").containsMatchIn(c)) pronounPlayer(ctx, "their") else actor ?: "me"
+            val id = addObject(m.cards.getValue(r.groupValues[1]), who, false, ctx, zone = "library", allowDuplicate = true)
+            ctx.notes += "${m.cards.getValue(r.groupValues[1]).display} is read as the top card of ${if (who == "me") "your" else "their"} library."; ctx.lastMentioned = id; return true
+        }
+        // "I have Dark Confidant and reveal Emrakul": the revealed card was the top of the library; the upkeep trigger does the rest.
+        Regex("""^(?:and )?reveals? (?:an? |the )?(c\d+)(?: (?:with|to|off|from) (?:my |the )?(?:c\d+|it))?$""").find(c)?.let { r ->
+            val who = actor ?: ctx.lastActor ?: "me"
+            if (ctx.objects.values.none { it.controller == who && it.zone == "battlefield" && it.card.oracleId != null }) return@let
+            val id = addObject(m.cards.getValue(r.groupValues[1]), who, false, ctx, zone = "library", allowDuplicate = true)
+            if (ctx.events.none { it.verb == "step" }) { ctx.events += EventSpec("step", player = who, to = "upkeep"); ctx.activePlayer = who }
+            ctx.notes += "\"reveal ${m.cards.getValue(r.groupValues[1]).display}\" is read as it being the top card of ${if (who == "me") "your" else "their"} library when the upkeep trigger reveals it."; ctx.lastMentioned = id; return true
         }
         // "…and Thalia in hand": a card said to be in hand, with no verb of its own after the "and".
         Regex("""^(?:an? |my |their )?(c\d+) (?:in|is in|'s in) (?:my |their |his |her )?hand$""").find(c)?.let { r ->

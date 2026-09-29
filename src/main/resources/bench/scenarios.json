@@ -24913,5 +24913,121 @@
     "notExpect": [
       "Preordain is cast at a time a sorcery spell normally can't be (no flash); assuming something allows it."
     ]
+  },
+  {
+    "id": "pacifism-then-disenchant-can-it-attack",
+    "text": "I cast Pacifism on their 4/4. They Disenchant it. Can it attack again this turn?",
+    "expect": [
+      "Pacifism: the battlefield → your graveyard.",
+      "You take 4 damage."
+    ],
+    "notExpect": [
+      "Disenchant doesn't resolve (all targets illegal)."
+    ]
+  },
+  {
+    "id": "flash-in-ambush-viper-and-block-3-3",
+    "text": "They attack with a 3/3. I flash in Ambush Viper and block. What happens?",
+    "expect": [
+      "a 3/3 creature: the battlefield → opponent's graveyard.",
+      "Ambush Viper: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "702.2b"
+    ]
+  },
+  {
+    "id": "finks-with-counter-dies-no-persist",
+    "text": "I have Kitchen Finks with a -1/-1 counter. It dies. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it."
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "cloudshift-wall-of-blossoms-draw",
+    "text": "I have Wall of Blossoms and cast Cloudshift on it. Do I draw?",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ]
+  },
+  {
+    "id": "sakura-blocking-5-5-sacrificed-do-i-take-5",
+    "text": "I have Sakura-Tribe Elder blocking a 5/5 and sacrifice it before damage. Do I take 5?",
+    "expect": [
+      "a 5/5 creature deals no combat damage: its blocker left combat and it stays blocked.",
+      "No: you take no damage."
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "bears-with-rancor-blocked-by-2-2-who-dies",
+    "text": "My Grizzly Bears has Rancor. It attacks and they block with a 2/2. Who dies?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "Yes: a 2/2 creature died (it's in the graveyard).",
+      "Yes: Grizzly Bears died (it's in the graveyard).",
+      "Rancor: your graveyard → your hand."
+    ],
+    "cite": [
+      "702.19b"
+    ]
+  },
+  {
+    "id": "two-soul-wardens-cast-a-creature",
+    "text": "I have two Soul Wardens and cast a creature. How much life do I gain?",
+    "expect": [
+      "You gain 2 life in all."
+    ]
+  },
+  {
+    "id": "ancient-grudge-sol-ring-tap-first",
+    "text": "They cast Ancient Grudge on my Sol Ring. Can I tap it first for mana?",
+    "expect": [
+      "Sol Ring's mana ability: add {C}{C}.",
+      "Sol Ring: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "nighthawk-blocked-by-4-4-ground",
+    "text": "I attack with Vampire Nighthawk and they block with a 4/4. What happens?",
+    "expect": [
+      "a 4/4 creature can't block Vampire Nighthawk (flying).",
+      "opponent takes 2 damage.",
+      "You gain 2 life."
+    ]
+  },
+  {
+    "id": "diabolic-edict-3-3-and-token",
+    "text": "I have a 3/3 and they cast Diabolic Edict. I also have a 1/1 token. What do I sacrifice?",
+    "expect": [
+      "a 1/1 token: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "a 3/3 creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "boros-charm-vs-wrath",
+    "text": "They cast Wrath of God and I have Boros Charm. Can I save my creatures?",
+    "expect": [
+      "a creature has indestructible until end of turn.",
+      "a creature is indestructible and isn't destroyed."
+    ]
+  },
+  {
+    "id": "dark-confidant-reveals-emrakul",
+    "text": "I have Dark Confidant and reveal Emrakul. How much life do I lose?",
+    "expect": [
+      "You lose 15 life (Emrakul, the Aeons Torn's mana value).",
+      "You lose 15 life in all."
+    ],
+    "cite": [
+      "202.3"
+    ]
   }
 ]

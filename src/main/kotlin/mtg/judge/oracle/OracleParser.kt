@@ -1287,7 +1287,7 @@ object OracleParser {
             return Effect.PhaseOutAll(parseFilter(m.groupValues[1].removePrefix("all "), Kind.PERMANENT))
         }
         // Liliana of the Veil: "Target player sacrifices a creature."
-        Regex("""^(target player|target opponent|that player) sacrifices (a|an|one|two|three|\d+) ([a-z ]+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m ->
+        Regex("""^(target player|target opponent|that player) sacrifices (a|an|one|two|three|\d+) ([a-z ]+?)(?: of (?:their|his or her) choice)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m ->
             val f = parseFilter(m.groupValues[3].replace(Regex("""^(creature|permanent|artifact|enchantment|land)s$"""), "$1"), Kind.CREATURE)
             if (f.verifiable) return Effect.SacrificeEach(if (m.groupValues[1].lowercase() == "that player") Who.THAT_PLAYER else Who.TARGET_PLAYER, f, count = number(m.groupValues[2]) ?: 1)
         }
