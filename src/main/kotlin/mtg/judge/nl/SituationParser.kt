@@ -2796,6 +2796,24 @@ class SituationParser(private val names: NameIndex) {
             ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(slug(name) + ":spell"))
             ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Spellskite targeting $name; the outcome says where the spell ends up aimed."; return true
         }
+        // "They attack with a 2/2 with menace. Can I block with just one?": the one blocker is declared and the outcome says.
+        Regex("""^can (?:i|we) block (?:it |that |him |her )?with (?:just|only) (?:one|a single one|one creature|one blocker|the one)$""").find(clause0)?.let {
+            if (ctx.asks.any { it.to == "block" }) return@let
+            val att = ctx.events.lastOrNull { it.verb == "attack" && it.player != "me" }?.obj
+                ?: ctx.events.lastOrNull { it.verb == "attackAll" && it.player != "me" }?.let { a -> ctx.objects.values.firstOrNull { it.controller == a.player && it.zone == "battlefield" && isCreatureName(it.card.name) }?.id } ?: return@let
+            val mine = ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }?.id ?: return@let
+            ctx.events += EventSpec("block", player = "me", obj = mine, targets = listOf(att))
+            ctx.asks += EventSpec("ask", obj = mine, to = "block"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "My opponent is at 1 and I have Prodigal Sorcerer. Can I ping them for the win?": the pinger's ability at them.
+        Regex("""^can (?:i|we) (?:ping|shoot|zap|tim|plink|bolt) (them|him|her|my opponent|the opponent|their face|@\w+)(?: for (?:the win|lethal|the last point|the kill|one|1)| to (?:kill|finish) (?:them|him|her|it off))?(?: with (?:my |the )?(c\d+|it))?$""").find(clause0)?.let { r ->
+            val victim = if (r.groupValues[1].startsWith("@")) r.groupValues[1].removePrefix("@") else pronounPlayer(ctx, "their")
+            val src = r.groupValues[2].takeIf { it.isNotEmpty() && it != "it" }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) ?: addObject(it, "me", false, ctx) }
+                ?: ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.oracleId != null } ?.id ?: return@let
+            ctx.events += EventSpec("activate", player = "me", obj = src, targets = listOf(victim))
+            ctx.asks += EventSpec("ask", player = victim, to = "playerDie"); ctx.note(victim)
+            ctx.notes += "\"${restore(clause0, m)}?\" is read as activating ${ctx.objects.getValue(src).card.name} at ${if (victim == "me") "you" else ctx.players[victim] ?: "your opponent"}; the outcome says."; return true
+        }
         // "I control Thalia and cast Lightning Bolt. Does my own Thalia tax me?": the cost of the spell just cast.
         Regex("""^(?:does|will|would) (?:my own |my |their |the )?(c\d+|it|that|she|he) (?:still |also |even )?(?:tax|taxes|taxing|make it cost more|raise the cost|apply to|hit|affect) (?:me|us|it|that|my spells?|my own spells?|my bolt|this|my stuff|myself|my c\d+)(?: too| as well| also)?$""").find(clause0)?.let {
             val last = ctx.events.lastOrNull { it.verb == "cast" } ?: return@let
@@ -5784,7 +5802,12 @@ class SituationParser(private val names: NameIndex) {
                     }
                     if (actor != null) { ctx.lastOwner = actor; ctx.lastActor = actor }; return true
                 }
-                "cast" -> { if (Regex("""^(?:their|my|his|her|the|an?) """).containsMatchIn(clauseIn.trim())) { addObject(card, if (clauseIn.trim().startsWith("my")) (ctx.lastActor ?: "me") else ctx.other(ctx.lastActor) ?: "opp", isTapped, ctx); return true }; emitCast(subject ?: "opp", card, "", m, ctx); return true }
+                "cast" -> { if (Regex("""^(?:their|my|his|her|the|an?) """).containsMatchIn(clauseIn.trim())) { addObject(card, if (clauseIn.trim().startsWith("my")) (ctx.lastActor ?: "me") else ctx.other(ctx.lastActor) ?: "opp", isTapped, ctx); return true }
+                    // "I cast Ponder and Preordain": the second sorcery waits for the first to resolve (it can't be cast with a spell on the stack).
+                    val who = subject ?: ctx.lastActor ?: "opp"
+                    val last = ctx.events.lastOrNull()
+                    if (last?.verb == "cast" && last.player == who && !card.typeLine.contains("Instant") && !clauseIn.contains("in response")) ctx.events += EventSpec("resolveAll")
+                    emitCast(who, card, "", m, ctx); return true }
                 "attack" -> { val who = ctx.lastActor ?: "me"; val id = objectIdFor(card, ctx) ?: addObject(card, who, false, ctx); ctx.events += EventSpec("attack", player = who, obj = id, targets = listOf(ctx.other(who) ?: "opp")); return true }
                 "block" -> { val who = ctx.lastActor ?: "opp"; val id = ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.controller == who }?.id ?: addObject(card, who, false, ctx, allowDuplicate = true); val attacker = ctx.events.lastOrNull { it.verb == "attack" && who in it.targets }?.obj ?: ctx.events.lastOrNull { it.verb == "attack" }?.obj; ctx.events += EventSpec("block", player = who, obj = id, targets = listOfNotNull(attacker)); return true }
                 // "My opponent Wraths": an instant or sorcery standing alone, with nothing before it to continue.

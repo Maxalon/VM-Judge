@@ -24807,5 +24807,111 @@
     "expect": [
       "a 1/1 creature is 3/3 (1/1 base, +1/+1 from Glorious Anthem, +1/+1 from Glorious Anthem)."
     ]
+  },
+  {
+    "id": "menace-can-i-block-with-just-one",
+    "text": "I have a 2/2 and they have a 2/2 with menace. They attack. Can I block with just one?",
+    "expect": [
+      "No: a 2/2 creature with menace has menace and can't be blocked except by two or more creatures, and a 2/2 creature is the only one that could (702.111b)."
+    ],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "wrath-with-avacyn-what-survives",
+    "text": "I cast Wrath of God with Avacyn, Angel of Hope out. What survives?",
+    "expect": [
+      "Avacyn, Angel of Hope is indestructible and isn't destroyed."
+    ],
+    "cite": [
+      "702.12b"
+    ]
+  },
+  {
+    "id": "goblin-grenade-sacrificing-one-of-three",
+    "text": "I have three 1/1 Goblins and cast Goblin Grenade sacrificing one. How much damage to them?",
+    "expect": [
+      "opponent takes 5 damage."
+    ]
+  },
+  {
+    "id": "path-on-my-token-do-i-get-a-land",
+    "text": "They cast Path to Exile on my token. Do I get a land?",
+    "expect": [
+      "a 1/1 token ceases to exist; it doesn't stay in the zone it went to.",
+      "Yes: the search is yours. The card gives it to the exiled creature's controller, which is you; you may search for a basic land card and put it onto the battlefield tapped."
+    ]
+  },
+  {
+    "id": "tarmogoyf-empty-graveyards",
+    "text": "I have Tarmogoyf and my graveyard is empty. How big is it?",
+    "expect": [
+      "Tarmogoyf is 0/1 (0/1 base, base set by its own ability (layer 7a: 0 card types in graveyards))."
+    ]
+  },
+  {
+    "id": "bolt-their-blocker-before-damage-1-1s",
+    "text": "I attack with a 1/1 and they block with a 1/1. Then I cast Lightning Bolt on their blocker before damage. What happens?",
+    "expect": [
+      "a 1/1 creature: the battlefield → opponent's graveyard.",
+      "a 1/1 creature deals no combat damage: its blocker left combat and it stays blocked."
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-empty-hand-vs-1-1",
+    "text": "They have Ensnaring Bridge with 0 cards in hand. Can I attack with a 1/1?",
+    "expect": [
+      "a 1/1 creature can't attack (Ensnaring Bridge)."
+    ]
+  },
+  {
+    "id": "hypnotic-specter-hits-what-do-they-discard",
+    "text": "I have Hypnotic Specter and hit them. What do they discard?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "opponent discards 1 card."
+    ]
+  },
+  {
+    "id": "prodigal-sorcerer-ping-for-the-win",
+    "text": "My opponent is at 1 and I have Prodigal Sorcerer. Can I ping them for the win?",
+    "expect": [
+      "opponent takes 1 damage.",
+      "Yes: opponent has lost the game."
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wall-of-omens-can-it-attack",
+    "text": "I have a Wall of Omens. Can it attack?",
+    "expect": [
+      "Wall of Omens can't attack (defender)."
+    ],
+    "cite": [
+      "702.3b"
+    ]
+  },
+  {
+    "id": "mind-rot-with-two-cards",
+    "text": "They cast Mind Rot on me. I have 2 cards. What's left?",
+    "expect": [
+      "You discard 2 cards (2 → 0 in hand)."
+    ]
+  },
+  {
+    "id": "ponder-and-preordain-how-many-draw",
+    "text": "I cast Ponder and Preordain. How many cards do I draw?",
+    "expect": [
+      "You draw 2 cards in all."
+    ],
+    "notExpect": [
+      "Preordain is cast at a time a sorcery spell normally can't be (no flash); assuming something allows it."
+    ]
   }
 ]
