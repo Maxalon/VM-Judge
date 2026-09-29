@@ -28080,5 +28080,94 @@
       "Grizzly Bears has protection from red until end of turn.",
       "Lightning Bolt doesn't resolve (all targets illegal)."
     ]
+  },
+  {
+    "id": "blood-artist-vs-damnation-count",
+    "text": "I have a Blood Artist and three creatures. My opponent casts Damnation. How much life do they lose?",
+    "expect": [
+      "opponent loses 4 life in all."
+    ]
+  },
+  {
+    "id": "wall-of-omens-blocks-3-3",
+    "text": "My opponent attacks with a 3/3. I block with Wall of Omens. Does anything die?",
+    "expect": [
+      "No: Wall of Omens is still on the battlefield.",
+      "No: a 3/3 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "thoughtseize-life",
+    "text": "I cast Thoughtseize. What happens to my life total?",
+    "expect": [
+      "You lose 2 life."
+    ]
+  },
+  {
+    "id": "sylvan-library-pay-question",
+    "text": "I have Sylvan Library. Do I have to pay life?",
+    "expect": [
+      "Paying is optional and per card"
+    ]
+  },
+  {
+    "id": "vindicate-vs-darksteel-citadel",
+    "text": "My opponent casts Vindicate on my Darksteel Citadel. What happens?",
+    "expect": [
+      "Darksteel Citadel is indestructible and isn't destroyed."
+    ]
+  },
+  {
+    "id": "baneslayer-vs-dragon-token-thats-5-5",
+    "text": "I attack with Baneslayer Angel and my opponent blocks with a Dragon token that's 5/5. What happens?",
+    "expect": [
+      "Dragon token can't block Baneslayer Angel (flying).",
+      "You gain 5 life."
+    ]
+  },
+  {
+    "id": "baneslayer-vs-flying-dragon-token",
+    "text": "I attack with Baneslayer Angel and my opponent blocks with a 5/5 flying Dragon token. What happens?",
+    "expect": [
+      "Dragon token: the battlefield → opponent's graveyard.",
+      "You gain 5 life."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-empty-hand",
+    "text": "My opponent has Ensnaring Bridge and no cards in hand. Can I attack with a 1/1?",
+    "expect": [
+      "a 1/1 creature can't attack (Ensnaring Bridge)."
+    ]
+  },
+  {
+    "id": "kira-vs-doom-blade",
+    "text": "I have Kira, Great Glass-Spinner. My opponent casts Doom Blade on it. Does it die?",
+    "expect": [
+      "Doom Blade is countered.",
+      "No: Kira, Great Glass-Spinner is still on the battlefield."
+    ]
+  },
+  {
+    "id": "path-to-exile-who-searches",
+    "text": "My opponent casts Path to Exile on my Grizzly Bears. Do I get a land?",
+    "expect": [
+      "Yes: the search is yours."
+    ]
+  },
+  {
+    "id": "eidolon-vs-bolt",
+    "text": "I control Eidolon of the Great Revel. My opponent casts Lightning Bolt. What happens?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "You take 3 damage."
+    ]
+  },
+  {
+    "id": "chalice-one-vs-bolt-countered-by",
+    "text": "I have a Chalice of the Void with one counter. My opponent casts Lightning Bolt. Is it countered?",
+    "expect": [
+      "Yes: Lightning Bolt is countered (by Chalice of the Void)."
+    ]
   }
 ]

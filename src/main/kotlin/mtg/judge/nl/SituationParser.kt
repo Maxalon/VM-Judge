@@ -1278,6 +1278,10 @@ class SituationParser(private val names: NameIndex) {
             // "they redirect it to Spellskite" / "I redirect the Bolt to my Spellskite": Spellskite's ability, activated at the spell.
         t2 = t2.let { t0 -> Regex("""\b(i|we|they|he|she|my opponent|the opponent) (?:then )?(?:redirects?|moves?|points?|deflects?) (it|that|the spell|(?:the |their |my |my opponent's )?c\d+) (?:to|onto|at) (?:their |my |his |her |the )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (m.cards[r.groupValues[3]]?.display == "Spellskite") "${r.groupValues[1]} activate ${r.groupValues[3]} targeting ${r.groupValues[2]}" else r.value } }
+            // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
+        t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
+            // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Sylvan Library" } && Regex("""^(?:do|does|will|would|must) (?:i|we) (?:have to |need to |really have to )?pay (?:the |any )?(?:life|\d+ life|life for (?:it|them|the cards|each card))\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "sylvan-pay-question"
             // "a Tarmogoyf that's a 4/5": the size, said after the name, goes in front of it.
         t2 = t2.let { t0 -> Regex("""\b(an? |my |their |his |her |the )?(c\d+) (?:that's|that is|which is|who is|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (m.cards[r.groupValues[2]]?.typeLine?.contains("Creature") == true) "${r.groupValues[1]}${r.groupValues[3]} ${r.groupValues[2]}" else r.value } }
@@ -2794,6 +2798,10 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         // "My opponent casts Lightning Bolt. Can they?": whether the cast just described was allowed.
+        if (clause0 == "sylvan-pay-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. Sylvan Library's trigger at the beginning of your draw step lets you draw two extra cards; then, for each of those cards still in your hand, you choose: pay 4 life to keep it, or put it on top of your library. Paying is optional and per card: put both back and pay nothing (you keep your normal draw), pay 4 to keep one, or pay 8 to keep both. You can also decline the extra draws altogether (\"you may\").")
+            return true
+        }
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
