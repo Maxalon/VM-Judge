@@ -773,15 +773,21 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val attackers = state.objects.values.filter { a -> a.isOnBattlefield() && (a.attacking as? Ref.Player)?.id == p.id }
                     val blockers = state.objects.values.filter { b -> b.isOnBattlefield() && b.controller == p.id && (b.def.isCreature || b.animatedAs != null) && b.tapped != true }
                     if (attackers.isEmpty() || blockers.isEmpty()) { state.outcomes += "Nothing is attacking ${p.subject.lowercase()} with a blocker of ${p.possessive} untapped, so there is no block to choose."; return }
-                    val b = blockers.maxByOrNull { it.toughness ?: 0 }!!
-                    val lines = attackers.map { a ->
+                    val best = blockers.maxByOrNull { it.toughness ?: 0 }!!
+                    fun canBlock(a: mtg.judge.engine.GameObject, b: mtg.judge.engine.GameObject) = !(state.hasKeyword(a, "flying") && !state.hasKeyword(b, "flying") && !state.hasKeyword(b, "reach")) && !state.hasKeyword(b, "cant-block")
+                    // One attacker and several possible blockers: each of them is weighed; several attackers: the sturdiest blocker against each.
+                    val pairs = if (attackers.size == 1) blockers.map { attackers[0] to it } else attackers.map { it to best }
+                    val results = pairs.map { (a, b) ->
                         val ap = a.power ?: 0; val at = a.toughness ?: 0; val bp = b.power ?: 0; val bt = b.toughness ?: 0
-                        val kills = bp >= at || state.hasKeyword(b, "deathtouch") && bp > 0
-                        val dies = ap >= bt || state.hasKeyword(a, "deathtouch") && ap > 0
+                        val kills = (bp >= at || state.hasKeyword(b, "deathtouch") && bp > 0) && !state.hasKeyword(a, "indestructible")
+                        val dies = (ap >= bt || state.hasKeyword(a, "deathtouch") && ap > 0) && !state.hasKeyword(b, "indestructible")
                         val saved = if (state.hasKeyword(a, "trample")) maxOf(0, ap - bt) .let { over -> "saves ${ap - over} of its $ap damage (trample lets $over through)" } else "saves you $ap damage"
-                        "Blocking ${a.name} with ${b.name}: $saved; ${b.name} ${if (dies) "dies" else "survives"} and ${a.name} ${if (kills) "dies" else "survives"}."
+                        Triple(a to b, kills to dies, if (!canBlock(a, b)) "${b.name} can't block ${a.name} (${a.name} has flying and ${b.name} has neither flying nor reach)." else "Blocking ${a.name} with ${b.name}: $saved; ${b.name} ${if (dies) "dies" else "survives"} and ${a.name} ${if (kills) "dies" else "survives"}.")
                     }
-                    state.outcomes += lines
+                    state.outcomes += results.map { it.third }
+                    if (attackers.size == 1) results.filter { (ab, kd, _) -> canBlock(ab.first, ab.second) && kd.first && !kd.second }.map { it.first.second.name }.takeIf { it.isNotEmpty() }?.let { names ->
+                        state.outcomes += "${names.joinToString(" or ")} ${if (names.size == 1) "is" else "are"} the block${if (names.size == 1) "" else "s"} that kill${if (names.size == 1) "s" else ""} ${attackers[0].name} and survive${if (names.size == 1) "s" else ""}."
+                    }
                     state.outcomes += "Unblocked, ${p.subject.lowercase()} ${p.v("takes", "take")} ${attackers.sumOf { it.power ?: 0 }} in all; which trade is best is yours to weigh, and the rules don't require a block (509.1a)."
                     return
                 }

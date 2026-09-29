@@ -811,6 +811,7 @@ class Engine(val state: GameState) {
 
     fun enter(objectId: String, choice: String? = null) {
         val obj = state.obj(objectId)
+        if (obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
         obj.zone = Zone.BATTLEFIELD; obj.tapped = false; obj.timestamp = state.tick()
         // It has just come under its controller's control, so it is summoning sick — which matters for a creature
         // land played this turn (Dryad Arbor attacked the turn it was played) as much as for a creature.
@@ -2043,6 +2044,11 @@ class Engine(val state: GameState) {
                     state.outcomes += "${obj.name}'s trigger has no legal target (${rip.name} keeps graveyards empty) and does nothing."
                     return null
                 }
+            }
+            if (inferred == null && targets.isEmpty() && spec.filter.inGraveyard && obj.enteredFrom == Zone.GRAVEYARD && ability.trigger == Trigger.ThisEnters) {
+                trace.step("${obj.name}'s triggered ability needs a target (${spec.raw}). ${obj.name} itself was the card in ${state.player(obj.controller).possessive} graveyard, and it has left it to enter the battlefield; nothing else described is there, so the ability has no legal target and is removed from the stack.", "603.3d", "400.7")
+                state.outcomes += "${obj.name}'s trigger has nothing to target: it was the only ${spec.raw.substringBefore(" in ")} described in ${state.player(obj.controller).possessive} graveyard and it's on the battlefield now, so the trigger is removed from the stack (603.3d). Name another creature card there for it to return one."
+                return null
             }
             if (inferred == null && targets.isEmpty() && state.clarifications.none { it.about == "${obj.name}'s triggered ability's target" }) {
                 state.clarifications += Clarification("${obj.name}'s triggered ability's target",
@@ -3452,6 +3458,7 @@ class Engine(val state: GameState) {
     }
 
     private fun moveRaw(obj: GameObject, to: Zone) {
+        if (to == Zone.BATTLEFIELD && obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
         if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.def !== obj.printedDef) {
             trace.step("${obj.printedDef.name} was a copy of ${obj.def.name}; the copy effect ends as it leaves the battlefield, so in its new zone it is ${obj.printedDef.name} again, a new object with no memory of what it was.", "400.7", "707.2")
             state.outcomes += "${obj.printedDef.name} stops being a copy of ${obj.def.name} as it leaves the battlefield."

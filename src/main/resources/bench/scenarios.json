@@ -25914,5 +25914,101 @@
     "notExpect": [
       "no creature was sacrificed"
     ]
+  },
+  {
+    "id": "thalia-taxes-counterspell",
+    "text": "I control Thalia, Guardian of Thraben. How much does my opponent's Counterspell cost?",
+    "expect": [
+      "Counterspell costs {U}{U} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 3 mana in all."
+    ]
+  },
+  {
+    "id": "path-cant-target-a-spell-on-the-stack",
+    "text": "My opponent casts Blightsteel Colossus and I cast Path to Exile on it. What happens?",
+    "expect": [
+      "Path to Exile can't target Blightsteel Colossus while it's still a spell on the stack.",
+      "Blightsteel Colossus enters the battlefield."
+    ]
+  },
+  {
+    "id": "darksteel-colossus-vs-terminate",
+    "text": "I have Darksteel Colossus and my opponent casts Terminate on it. Does it die?",
+    "expect": [
+      "Darksteel Colossus is indestructible and isn't destroyed.",
+      "No: Darksteel Colossus is still on the battlefield."
+    ]
+  },
+  {
+    "id": "which-should-i-block-with-skyfisher-or-wall",
+    "text": "My opponent attacks me with a 2/2 and I have Kor Skyfisher and a Wall of Omens untapped. Which should I block with?",
+    "expect": [
+      "Blocking a 2/2 creature with Kor Skyfisher: saves you 2 damage; Kor Skyfisher survives and a 2/2 creature dies.",
+      "Blocking a 2/2 creature with Wall of Omens: saves you 2 damage; Wall of Omens survives and a 2/2 creature survives.",
+      "Kor Skyfisher is the block that kills a 2/2 creature and survives."
+    ]
+  },
+  {
+    "id": "path-own-bears-get-the-land",
+    "text": "I cast Path to Exile on my own Grizzly Bears. Do I get the land?",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile.",
+      "Yes: the search is yours. The card gives it to the exiled creature's controller, which is you; you may search for a basic land card and put it onto the battlefield tapped."
+    ]
+  },
+  {
+    "id": "leyline-of-the-void-where-does-it-go",
+    "text": "I control Leyline of the Void. My opponent's creature dies. Where does it go?",
+    "expect": [
+      "a creature: the battlefield → exile (replaced by Leyline of the Void)."
+    ]
+  },
+  {
+    "id": "two-bears-one-blocked-by-three-three",
+    "text": "I attack with two 2/2s. My opponent has one 3/3. What happens if they block one?",
+    "expect": [
+      "a 3/3 creature has 2 damage marked.",
+      "opponent takes 2 damage.",
+      "a 2/2 creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "ancestral-at-me-two-cards-left",
+    "text": "My opponent casts Ancestral Recall targeting me and I have 2 cards in my library. Do I lose?",
+    "expect": [
+      "You draw 2 cards and can't draw the rest (empty library).",
+      "Yes: You have lost the game."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-one-card-one-and-three",
+    "text": "I have Ensnaring Bridge and 1 card in hand. My opponent attacks with a 1/1 and a 3/3. What happens?",
+    "expect": [
+      "a 3/3 creature can't attack (Ensnaring Bridge).",
+      "You take 1 damage."
+    ]
+  },
+  {
+    "id": "healing-salve-gaining-three-in-response",
+    "text": "I cast Lightning Bolt at my opponent's face while they're at 3. They cast Healing Salve gaining 3 in response. Do they die?",
+    "expect": [
+      "opponent gains 3 life.",
+      "opponent takes 3 damage.",
+      "No: opponent is still in the game at 3 life."
+    ],
+    "notExpect": [
+      "prevention shield"
+    ]
+  },
+  {
+    "id": "karmic-guide-reanimated-alone-no-target",
+    "text": "I have Karmic Guide in my graveyard and cast Reanimate on it. What happens?",
+    "expect": [
+      "Karmic Guide enters the battlefield.",
+      "Karmic Guide's trigger has nothing to target: it was the only creature card described in your graveyard and it's on the battlefield now, so the trigger is removed from the stack (603.3d). Name another creature card there for it to return one.",
+      "You lose 5 life (Karmic Guide's mana value)."
+    ],
+    "cite": [
+      "603.3d"
+    ]
   }
 ]

@@ -68,6 +68,8 @@ class GameObject(
     var chosenName: String? = null,
     /** Targets named for a permanent spell that itself targets nothing: they go to its enters-the-battlefield trigger (603.3d). */
     var etbTargets: List<Ref>? = null,
+    /** The zone this came to the battlefield from, for a trigger that looks back there (Karmic Guide reanimated). */
+    var enteredFrom: Zone? = null,
     /** X chosen when this was cast ("enters with X counters"). */
     var x: Int? = null,
     /** Whether the spell that became this permanent was kicked (702.33d): "if this was kicked, it enters with …". */
