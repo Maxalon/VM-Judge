@@ -376,6 +376,8 @@ class GameState(
         null -> null
         is CountExpr.Permanents -> objects.values.count { matches(expr.filter, it, obj.controller, obj) }
         is CountExpr.CardTypesInGraveyards -> cardTypesInGraveyards().size
+        // A graveyard nobody described is unknown, not empty: the size stays unknown rather than guessed.
+        is CountExpr.CardsInGraveyard -> objects.values.count { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) && matches(expr.filter, it, obj.controller, obj, anyZone = true) }.takeIf { objects.values.any { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) } }
         is CountExpr.CardsInHand -> players.firstOrNull { it.id == obj.controller }?.handSize
         is CountExpr.YourLifeTotal -> players.firstOrNull { it.id == obj.controller }?.life
         is CountExpr.CountersOn -> obj.counters[expr.kind] ?: 0

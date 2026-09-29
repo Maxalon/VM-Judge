@@ -2979,6 +2979,11 @@ class SituationParser(private val names: NameIndex) {
                 ctx.asks += EventSpec("ask", obj = gid, to = if (clause0.contains("survive") || clause0.contains("alive") || clause0.contains("live")) "survive" else "die"); return true
             }
         }
+        // "How many creatures do I lose?": the count that left the battlefield.
+        Regex("""^how many (?:of my )?(creatures|permanents|lands|artifacts|tokens|guys)(?: of mine)? (?:do|did|will|would) (?:i|we) lose$|^how many (creatures|permanents|lands|artifacts|tokens) (?:do|did|will|would) (?:they|he|she|my opponent) lose$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1].isNotEmpty()) "me" else pronounPlayer(ctx, "they")
+            ctx.asks += EventSpec("ask", player = who, to = "lostCount:${r.groupValues[1].ifEmpty { r.groupValues[2] }}"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
         // "Where does Rancor go?" / "does Rancor come back to my hand?": the card's zone at the end, and why its return did or didn't happen.
         Regex("""^(?:where does|where did|where will|where's) (?:it|that|(?:my |the )?(c\d+)) (?:go|end up|go to|land)(?: to| now| then)?$|^(?:does|will|did) (?:it|that|(?:my |the )?(c\d+)) (?:still )?(?:come back|return|go back|bounce back)(?: to (?:my|its owner's|the) hand)?$""").find(clause0)?.let { r ->
             val ph = r.groupValues[1].ifEmpty { r.groupValues[2] }
@@ -6763,6 +6768,19 @@ class SituationParser(private val names: NameIndex) {
             ctx.blockersOffered += who
             ctx.lastOwner = who; ctx.lastVerb = "have"; ctx.lastMentioned = ids.last(); return true
         }
+        // "and one blue card" (Force of Will's other cost): noted, nothing more.
+        if (Regex("""^(?:and |plus |with )?(?:one|a|an|another|two|\d+) (?:other )?(?:blue|red|green|white|black) cards?(?: in (?:my |their )?hand| to pitch| to exile)?$""").matches(c)) {
+            ctx.notes += "The extra coloured card in hand is noted (an alternative cost like Force of Will's can be paid)."; return true
+        }
+        // "I tap their team in response to the attack" (Cryptic Command in hand): the spell, choosing its tap mode.
+        Regex("""^(?:i |we )?taps? (?:their|my opponent's|the opponent's|his|her) (?:team|creatures|board|guys|dudes|attackers|whole team)(?: in response(?: to (?:the attack|attackers|it|that))?| with (?:it|that|(?:my |the )?c\d+)| during (?:combat|declare attackers))?$""").find(c)?.let {
+            val who = actor ?: subject ?: "me"
+            val held = ctx.objects.values.filter { it.controller == who && it.zone == "hand" }.mapNotNull { o -> names.lookup(Names.normalize(o.card.name ?: "")) }.firstOrNull { it.isSpellOnly }
+                ?: m.cards.values.firstOrNull { it.isSpellOnly && it.display.contains("Cryptic", true) } ?: return@let
+            emitCast(who, held, "choosing tap", m, ctx)
+            ctx.notes += "\"tap their team\" is read as casting ${held.display}, choosing the mode that taps their creatures."
+            return true
+        }
         // "Graveyards are empty" / "there's nothing in my graveyard": nothing to add, and nothing left unread.
         if (Regex("""^(?:both |all |the |my |their |our |each )?graveyards? (?:are|is) (?:both |all )?empty$|^(?:there is|there's|there are) (?:nothing|no cards?) in (?:any|either|both|all|my|their|the) graveyards?$|^(?:no|neither) graveyard has anything in it$""").matches(c)) {
             ctx.notes += "The graveyards are empty: nothing is counted there."; return true
@@ -7845,8 +7863,13 @@ class SituationParser(private val names: NameIndex) {
     /** "does X trigger?" / "does X survive / die?": queues an explicit yes/no answer for after everything has resolved. */
     private fun askQuestion(clause0: String, m: Marked, ctx: Ctx): Boolean {
         // "Can I respond?" after a spell: whether anything can be done before it resolves (split second says no).
-        Regex("""^can (i|we|they|my opponent|the opponent|opponent|he|she|@\w+) (?:even |still )?respond(?: to (?:it|that|this|the spell|the ability|the trigger))?$""").find(clause0)?.let { q ->
+        Regex("""^can (i|we|they|my opponent|the opponent|opponent|he|she|@\w+) (?:even |still )?respond(?: to (?:it|that|this|the spell|the ability|the trigger))?(?: with (?:my |the )?(c\d+|it|that))?$""").find(clause0)?.let { q ->
             val who = when (val w = q.groupValues[1]) { "i", "we" -> "me"; "they", "he", "she", "my opponent", "the opponent", "opponent" -> ctx.other(ctx.lastActor ?: "me") ?: "opp"; else -> w.removePrefix("@") }
+            // "Can I respond with Wrath of God?" / "… with it" (a card in hand): a sorcery-speed card is what the answer weighs; an instant is cast instead (the rules below).
+            val namedCard = q.groupValues[2].takeIf { it.isNotEmpty() }?.let { ph -> if (ph == "it" || ph == "that") ctx.objects.values.lastOrNull { it.controller == who && it.zone == "hand" }?.let { o -> names.lookup(Names.normalize(o.card.name ?: "")) } else m.cards[ph] }
+            if (q.groupValues[2] in setOf("it", "that") && namedCard == null) return@let
+            if (namedCard != null && (namedCard.typeLine.contains("Instant") || namedCard.typeLine.contains("Flash") || namedCard.typeLine.contains("Land") || ctx.objects.values.any { it.zone == "battlefield" && it.card.name == namedCard.display })) return@let
+            if (namedCard != null && ctx.objects.values.none { it.controller == who && it.zone == "hand" && it.card.name == namedCard.display }) addObject(namedCard, who, false, ctx, zone = "hand", allowDuplicate = true)
             ctx.asks += EventSpec("ask", player = who, to = "respond"); ctx.note(who); return true
         }
         // "My opponent casts Toxic Deluge for 3. Does my 4/4 die?": a creature the question gives by its size is

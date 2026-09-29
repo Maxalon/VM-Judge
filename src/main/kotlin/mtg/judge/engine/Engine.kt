@@ -2214,7 +2214,7 @@ class Engine(val state: GameState) {
                 val o = item.source
                 val x = when (val c = effect.count) {
                     is CountExpr.Permanents -> state.objects.values.count { state.matches(c.filter, it, item.controller, o) }
-                    is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size
+                    is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInGraveyard -> state.objects.values.count { it.zone == Zone.GRAVEYARD && (c.who != Who.YOU || it.owner == item.controller) && state.matches(c.filter, it, item.controller, anyZone = true) }
                     is CountExpr.CardsInHand -> state.player(item.controller).handSize; is CountExpr.YourLifeTotal -> state.player(item.controller).life
                     is CountExpr.CountersOn -> item.source.counters[c.kind] ?: 0
                     is CountExpr.Unknown -> null
@@ -2303,7 +2303,7 @@ class Engine(val state: GameState) {
                     "exile" -> move(o, Zone.EXILE, "${o.name} is exiled.", "701.13a")
                     "bounce" -> move(o, Zone.HAND, "${o.name} is returned to its owner's hand.", "400.7")
                     "tuck" -> move(o, Zone.LIBRARY, "${o.name} is put on the bottom of its owner's library. It isn't destroyed, so indestructible doesn't help, and it isn't a death, so \"when this dies\" abilities don't trigger.", "400.7")
-                    "tap" -> { o.tapped = true; trace.step("${o.name} becomes tapped.", "701.26a"); state.outcomes += "${o.name} is tapped." }
+                    "tap" -> { o.tapped = true; trace.step("${o.name} becomes tapped.", "701.26a"); state.outcomes += "${o.name} is tapped."; if (o.attacking != null) { trace.step("${o.name} is attacking; tapping an attacking creature doesn't remove it from combat, so it still deals its combat damage.", "506.4"); state.outcomes += "${o.name} stays attacking: tapping doesn't remove a creature from combat (506.4), so it still deals damage." } }
                     // "Each creature deals damage to itself equal to its power": its own power, as a source of damage to itself.
                     "selfdamage" -> { val n = o.power ?: 0; if (n > 0) applyDamage(o.name, Ref.Obj(o.id), n, o) else trace.step("${o.name} has power $n, so it deals no damage to itself.", "120.1") }
                     else -> state.unsupported += Unsupported(item.describe, "Unknown action ${effect.action}")
@@ -2567,7 +2567,7 @@ class Engine(val state: GameState) {
                 resolvePlayers(effect.who, item).forEach { p -> p.life = p.life?.minus(n); trace.step("${p.subject} ${p.v("loses", "lose")} $n life (that much)${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $n life." }
             }
             is Effect.PumpAllCount -> {
-                val x = when (val c = effect.count) { is CountExpr.Permanents -> state.objects.values.count { state.matches(c.filter, it, item.controller) }; is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInHand -> state.player(item.controller).handSize; is CountExpr.YourLifeTotal -> state.player(item.controller).life; is CountExpr.CountersOn -> item.source.counters[c.kind] ?: 0; is CountExpr.Unknown -> null }
+                val x = when (val c = effect.count) { is CountExpr.Permanents -> state.objects.values.count { state.matches(c.filter, it, item.controller) }; is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInGraveyard -> state.objects.values.count { it.zone == Zone.GRAVEYARD && (c.who != Who.YOU || it.owner == item.controller) && state.matches(c.filter, it, item.controller, anyZone = true) }; is CountExpr.CardsInHand -> state.player(item.controller).handSize; is CountExpr.YourLifeTotal -> state.player(item.controller).life; is CountExpr.CountersOn -> item.source.counters[c.kind] ?: 0; is CountExpr.Unknown -> null }
                 if (x == null) { state.unsupported += Unsupported(item.describe, "Couldn't count X."); return }
                 trace.step("X is $x (counted as the effect resolves).", "608.2h")
                 applyEffect(Effect.PumpAll(effect.filter, x, x, effect.keywords), item)
@@ -2577,7 +2577,7 @@ class Engine(val state: GameState) {
                 val who = resolveWho(effect.who, item) ?: run { state.unsupported += Unsupported(item.describe, "Couldn't work out who creates the token."); return }
                 val def = Generic.token(effect.token) ?: run { state.unsupported += Unsupported(item.describe, "Couldn't read the token \"${effect.token}\"."); return }
                 if (effect.x) trace.step("X is ${item.x ?: 0}, so ${item.x ?: 0} token${if ((item.x ?: 0) == 1) "" else "s"} ${if ((item.x ?: 0) == 1) "is" else "are"} created.", "107.3a")
-                var n = (if (effect.x) (item.x ?: 0) else null) ?: effect.countBy?.let { c -> when (c) { is CountExpr.CountersOn -> (item.source.counters[c.kind] ?: 0).also { trace.step("${item.source.name} had $it ${c.kind} counter${if (it == 1) "" else "s"} on it (last known information if it has left the battlefield), so that many tokens are created.", "608.2h") }; is CountExpr.Permanents -> state.objects.values.count { state.matches(c.filter, it, item.controller) }.also { trace.step("X is $it: the number of ${c.filter.raw}${if (c.filter.raw.endsWith("control", true)) "" else " ${who.subject.lowercase()} ${who.v("controls", "control")}"} as the ability resolves.", "608.2h") }; is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInHand -> (state.player(item.controller).handSize ?: 0); is CountExpr.YourLifeTotal -> (state.player(item.controller).life ?: 0); is CountExpr.Unknown -> { state.clarifications += Clarification("${item.describe}'s X", "X is \"${c.text}\", which isn't tracked; assuming 0."); 0 } } } ?: effect.count
+                var n = (if (effect.x) (item.x ?: 0) else null) ?: effect.countBy?.let { c -> when (c) { is CountExpr.CountersOn -> (item.source.counters[c.kind] ?: 0).also { trace.step("${item.source.name} had $it ${c.kind} counter${if (it == 1) "" else "s"} on it (last known information if it has left the battlefield), so that many tokens are created.", "608.2h") }; is CountExpr.Permanents -> state.objects.values.count { state.matches(c.filter, it, item.controller) }.also { trace.step("X is $it: the number of ${c.filter.raw}${if (c.filter.raw.endsWith("control", true)) "" else " ${who.subject.lowercase()} ${who.v("controls", "control")}"} as the ability resolves.", "608.2h") }; is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInGraveyard -> state.objects.values.count { it.zone == Zone.GRAVEYARD && (c.who != Who.YOU || it.owner == item.controller) && state.matches(c.filter, it, item.controller, anyZone = true) }; is CountExpr.CardsInHand -> (state.player(item.controller).handSize ?: 0); is CountExpr.YourLifeTotal -> (state.player(item.controller).life ?: 0); is CountExpr.Unknown -> { state.clarifications += Clarification("${item.describe}'s X", "X is \"${c.text}\", which isn't tracked; assuming 0."); 0 } } } ?: effect.count
                 state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.TokenMultiplier }.filter { it.anyPlayer || o.controller == who.id }.map { o to it } }
                     .forEach { (o, m) -> trace.step("${o.name} replaces the token creation: ${n * m.factor} tokens instead of $n.", "614.1a", "614.6"); n *= m.factor }
                 repeat(n) {
@@ -2834,7 +2834,7 @@ class Engine(val state: GameState) {
             is Effect.Blink -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 blinkObject(o, if (effect.ownersControl) o.owner else item.controller)
             } }
-            is Effect.Tap -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { trace.step("${it.name} becomes tapped.", "701.26a"); tap(it); state.outcomes += "${it.name} is tapped." } }
+            is Effect.Tap -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { trace.step("${it.name} becomes tapped.", "701.26a"); tap(it); state.outcomes += "${it.name} is tapped."; if (it.attacking != null) { trace.step("${it.name} is attacking; tapping an attacking creature doesn't remove it from combat, so it still deals its combat damage.", "506.4"); state.outcomes += "${it.name} stays attacking: tapping doesn't remove a creature from combat (506.4), so it still deals damage." } } }
             is Effect.Untap -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { it.tapped = false; trace.step("${it.name} becomes untapped.", "701.26b"); state.outcomes += "${it.name} is untapped." } }
             is Effect.Pump -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let {
                 it.pumps += effect.power to effect.toughness
@@ -3267,7 +3267,7 @@ class Engine(val state: GameState) {
                     "exile" -> move(o, Zone.EXILE, "${o.name} is exiled.", "701.13a")
                     "bounce" -> move(o, Zone.HAND, "${o.name} is returned to its owner's hand.", "400.7")
                     "tuck" -> move(o, Zone.LIBRARY, "${o.name} is put on the bottom of its owner's library. It isn't destroyed, so indestructible doesn't help, and it isn't a death, so \"when this dies\" abilities don't trigger.", "400.7")
-                    "tap" -> { o.tapped = true; trace.step("${o.name} becomes tapped.", "701.26a"); state.outcomes += "${o.name} is tapped." }
+                    "tap" -> { o.tapped = true; trace.step("${o.name} becomes tapped.", "701.26a"); state.outcomes += "${o.name} is tapped."; if (o.attacking != null) { trace.step("${o.name} is attacking; tapping an attacking creature doesn't remove it from combat, so it still deals its combat damage.", "506.4"); state.outcomes += "${o.name} stays attacking: tapping doesn't remove a creature from combat (506.4), so it still deals damage." } }
                     "untap" -> { o.tapped = false; trace.step("${o.name} becomes untapped.", "701.26b") }
                     "damage" -> { applyDamage(item.source.name, Ref.Obj(o.id), effect.amount, item.source); item.damaged += o.id }
                     // "Each creature deals damage to itself equal to its power": its own power, as a source of damage to itself.
@@ -3462,7 +3462,7 @@ class Engine(val state: GameState) {
             } else if (e.per != null) {
                 val x = when (val c = e.per) {
                     is CountExpr.Permanents -> state.objects.values.count { state.matches(c.filter, it, o.controller, o) }
-                    is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size
+                    is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInGraveyard -> state.objects.values.count { it.zone == Zone.GRAVEYARD && (c.who != Who.YOU || it.owner == o.controller) && state.matches(c.filter, it, o.controller, anyZone = true) }
                     is CountExpr.CardsInHand -> state.player(o.controller).handSize; is CountExpr.YourLifeTotal -> state.player(o.controller).life
                     is CountExpr.CountersOn -> o.counters[c.kind] ?: 0
                     is CountExpr.Unknown -> null
@@ -4006,7 +4006,7 @@ class Engine(val state: GameState) {
         val per = r.per ?: return r.amount to "a flat {${r.amount}}"
         val n = when (per) {
             is CountExpr.Permanents -> state.objects.values.count { it.isOnBattlefield() && state.matches(per.filter, it, obj.controller) }
-            is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size
+            is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInGraveyard -> state.objects.values.count { it.zone == Zone.GRAVEYARD && (per.who != Who.YOU || it.owner == obj.controller) && state.matches(per.filter, it, obj.controller, anyZone = true) }
             is CountExpr.CardsInHand -> state.player(obj.controller).handSize ?: 0; is CountExpr.YourLifeTotal -> state.player(obj.controller).life ?: 0
             is CountExpr.CountersOn -> obj.counters[per.kind] ?: 0
             is CountExpr.Unknown -> return 0 to ""

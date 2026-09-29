@@ -27403,5 +27403,100 @@
     "expect": [
       "No, not this turn: \"{1}{W}, {T}\" has {T} in its cost, and a creature can't pay {T} unless it has been under your control continuously since your most recent turn began (302.6, \"summoning sickness\"). Stoneforge Mystic came in this turn, so Batterskull waits for your next turn (or can simply be cast). Haste would change that (702.10b)."
     ]
+  },
+  {
+    "id": "bolt-goyf-with-land-and-creature-in-yard",
+    "text": "I cast Lightning Bolt on my opponent's Tarmogoyf. Their graveyard has a land and a creature. Does it die?",
+    "expect": [
+      "Tarmogoyf has 3 damage marked.",
+      "No: Tarmogoyf is still on the battlefield."
+    ]
+  },
+  {
+    "id": "force-of-will-cant-counter-emrakul",
+    "text": "I have Force of Will in hand and one blue card. My opponent casts Emrakul, the Aeons Torn. Can I counter it?",
+    "expect": [
+      "Emrakul, the Aeons Torn isn't countered (it can't be).",
+      "Emrakul, the Aeons Torn enters the battlefield."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "cryptic-tap-their-team-after-attackers",
+    "text": "My opponent attacks me with a 2/2 and I have Cryptic Command. I tap their team in response to the attack. What happens?",
+    "expect": [
+      "a 2/2 creature is tapped.",
+      "a 2/2 creature stays attacking: tapping doesn't remove a creature from combat (506.4), so it still deals damage.",
+      "You take 2 damage."
+    ],
+    "cite": [
+      "506.4"
+    ]
+  },
+  {
+    "id": "knight-of-the-reliquary-sac-forest",
+    "text": "I control Knight of the Reliquary and sacrifice a Forest. How big is it?",
+    "expect": [
+      "Forest: the battlefield → your graveyard.",
+      "Knight of the Reliquary is 3/3."
+    ],
+    "notExpect": [
+      "not modeled"
+    ]
+  },
+  {
+    "id": "damnation-can-i-respond-with-wrath",
+    "text": "My opponent casts Damnation and I have Wrath of God in hand. Can I respond with it?",
+    "expect": [
+      "No, not with Wrath of God: it's not an instant and a spell without flash, so it can only be cast in your own main phase with an empty stack (307.1)."
+    ]
+  },
+  {
+    "id": "settle-how-many-creatures-do-i-lose",
+    "text": "I attack with two 2/2s. My opponent casts Settle the Wreckage on me. How many creatures do I lose?",
+    "expect": [
+      "You lose 2 creatures: a 2/2 creature, a 2/2 creature."
+    ]
+  },
+  {
+    "id": "bolt-war-who-wins",
+    "text": "My opponent casts Lightning Bolt at my Dark Confidant. I respond with Lightning Bolt at their face and they're at 3. Who wins?",
+    "expect": [
+      "opponent loses the game.",
+      "Yes: You have won the game."
+    ]
+  },
+  {
+    "id": "sudden-shock-no-vines",
+    "text": "I cast Sudden Shock on my opponent's Grizzly Bears. Can they respond with Vines of Vastwood?",
+    "expect": [
+      "Vines of Vastwood can't be cast while Sudden Shock is on the stack (split second).",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "double-block-bolt-one-blocker",
+    "text": "My opponent blocks my 3/3 with a 2/2 and a 1/1. I cast Lightning Bolt on the 2/2 before damage. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → opponent's graveyard.",
+      "a 1/1 creature: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "four-lands-wrath-then-bolt",
+    "text": "I have 4 lands and cast Wrath of God. Can I cast Lightning Bolt in the same turn?",
+    "expect": [
+      "Lightning Bolt can't be cast (costs 1, only 0 mana available)."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-two-cards-two-attackers",
+    "text": "I control Ensnaring Bridge and have 2 cards in hand. My opponent attacks with a 2/2 and a 3/3. What happens?",
+    "expect": [
+      "a 3/3 creature can't attack (Ensnaring Bridge).",
+      "You take 2 damage."
+    ]
   }
 ]

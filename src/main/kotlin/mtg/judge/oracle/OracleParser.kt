@@ -929,6 +929,11 @@ object OracleParser {
             return if (f.verifiable) CountExpr.Permanents(f) else CountExpr.Unknown(t)
         }
         if (Regex("""^the number of card types among cards in all graveyards$""", RegexOption.IGNORE_CASE).matches(t)) return CountExpr.CardTypesInGraveyards
+        // Knight of the Reliquary: "the number of land cards in your graveyard".
+        Regex("""^the number of (.+?) cards? in (your|all|each player's|their) graveyards?$""", RegexOption.IGNORE_CASE).matchEntire(t)?.let { m ->
+            val f = parseFilter(m.groupValues[1], Kind.PERMANENT)
+            return if (f.verifiable) CountExpr.CardsInGraveyard(f.copy(inGraveyard = true), if (m.groupValues[2].lowercase() == "your") Who.YOU else Who.EACH_PLAYER) else CountExpr.Unknown(t)
+        }
         if (Regex("""^your life total$""", RegexOption.IGNORE_CASE).matches(t)) return CountExpr.YourLifeTotal
         Regex("""^the number of (.+?) on the battlefield$""", RegexOption.IGNORE_CASE).matchEntire(t)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.PERMANENT)

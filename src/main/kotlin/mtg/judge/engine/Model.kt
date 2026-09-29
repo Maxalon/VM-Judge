@@ -441,6 +441,8 @@ sealed interface CountExpr {
     data class CountersOn(val kind: String) : CountExpr
     /** Tarmogoyf: "the number of card types among cards in all graveyards". */
     data object CardTypesInGraveyards : CountExpr
+    /** Knight of the Reliquary: "for each land card in your graveyard". */
+    data class CardsInGraveyard(val filter: ObjFilter, val who: Who) : CountExpr
     /** "for each card in your hand". */
     data class CardsInHand(val who: Who) : CountExpr
     /** Death's Shadow: "your life total". */
