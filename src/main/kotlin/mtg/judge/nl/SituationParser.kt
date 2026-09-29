@@ -650,6 +650,10 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\bhow much loyalty (?:does|will) (?:it|that|he|she) (?:enter|come in|come down|start) with\b""", RegexOption.IGNORE_CASE), "how many counters does it have")
             // "does my Eternal Witness still get its card back?" under Torpor Orb: it is cast, and the trigger is asked about.
         t2 = t2.replace(Regex("""\b(?:does|will|would) my (c\d+) still (?:get (?:its|the|a) (?:card|land|token|creature) back|get (?:its|the) trigger|trigger|work|draw me a card|make (?:its|a) token)\b""", RegexOption.IGNORE_CASE), "i cast $1, does its ability trigger")
+            // "does Doom Blade still kill it?": whether the creature dies.
+        t2 = t2.replace(Regex("""\b(?:does|will|would) (?:c\d+|it|that|the spell) still (?:kill|destroy|get) (it|that|them|the creature|my c\d+|their c\d+)\b""", RegexOption.IGNORE_CASE), "does $1 die")
+            // "can Mother save the Bears?": whatever the asker has that would save it is tried, Mother included.
+        t2 = t2.replace(Regex("""\bcan (?:my |the )?(?:c\d+|mother|mom|it|that|she|he) save (the |my )?(c\d+|it|them)\b""", RegexOption.IGNORE_CASE), "can i save $1$2")
             // "do I take 5?": how much damage the asker takes.
         t2 = t2.replace(Regex("""\bdo (i|we) (?:still |even )?take (?:the )?\d+(?: damage)?\??$""", RegexOption.IGNORE_CASE), "how much damage do i take")
             // "how much damage?" on its own, after a held spell: what the other player takes.
@@ -6125,7 +6129,10 @@ class SituationParser(private val names: NameIndex) {
                 else -> targetsIn("targeting $w", m, ctx).firstOrNull()
             } ?: return@let
             Regex("""\bwith (?:my |the )?(c\d+)$""").find(c)?.let { s -> m.cards[s.groupValues[1]]?.let { card -> emitCast(who, card, " targeting $id", m, ctx); return true } }
-            ctx.events += EventSpec("save", player = who, obj = id); ctx.lastActor = who; return true
+            ctx.events += EventSpec("save", player = who, obj = id); ctx.lastActor = who
+            // "Can I save it?" is a yes-or-no question: whether it is still there is asked once everything has played out.
+            if (ctx.asks.none { it.obj == id && it.to in setOf("survive", "die") } && c.contains("save")) ctx.asks += EventSpec("ask", obj = id, to = "survive")
+            return true
         }
         Regex("""^(?:eats?|munch(?:es)?|exiles?|snacks? on) (it|that|the card|that card|(?:the |their |my )?c\d+)(?: from (?:the |their |my )?graveyard)?(?: with (?:my |the )?(c\d+))?$""").find(c)?.let { r ->
             val who = actor ?: subject ?: "me"
@@ -7585,6 +7592,14 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^(?:am|are) (i|we|they|he|she|my opponent|the opponent) (?:still |now )?(?:winning|ahead|in the lead)(?: now| then| here| after that| after this)?$""").find(clause0)?.let { r ->
             val who = if (r.groupValues[1] in setOf("i", "we")) "me" else pronounPlayer(ctx, "their")
             ctx.asks += EventSpec("ask", player = who, to = "ahead"); ctx.note(who); return true
+        }
+        // "They cast Pyroclasm. I have a 2/2 and a 3/3. What survives?": each creature on the battlefield, asked about.
+        Regex("""^(?:what|which(?: ones?| creatures?)?) (?:survives?|lives?|is left|makes it|dies|gets? destroyed|is destroyed)(?: here| then| now| the sweeper| the wrath)?$""").find(clause0)?.let { q ->
+            val ids = ctx.objects.values.filter { it.zone == "battlefield" && isCreatureName(it.card.name) }.map { it.id }
+            if (ids.isEmpty()) return@let
+            val to = if (Regex("""dies|destroyed""").containsMatchIn(q.value)) "die" else "survive"
+            for (id in ids) ctx.asks += EventSpec("ask", obj = id, to = to)
+            ctx.notes += "\"${restore(clause0, m)}?\" is answered for each creature below."; return true
         }
         // "who dies?" / "who wins?" / "who loses?": every player's fate, one answer each.
         Regex("""^who (dies|loses|wins|survives|is dead|is alive|comes out ahead)(?: here| then| the game| now)?$|^does (?:anything|anyone|any creature|something|either|either one|either creature) (die|survive)(?: here| then| now)?$""").find(clause0)?.let { q0 ->

@@ -418,8 +418,11 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val (o, a) = onBoard
                     val idx = o.def.abilities.filterIsInstance<ActivatedAbility>().indexOf(a)
                     // Mother of Runes: the colour chosen is the colour of the spell aimed at the creature.
-                    val threat = state.stack.lastOrNull { s -> s.targets.any { t -> t is Ref.Obj && t.id == target.id } }
+                    // With nothing aimed at the creature (Wrath of God), the colour is the sweeper's, and the answer says protection
+                    // doesn't stop a spell that neither targets nor deals damage.
+                    val threat = state.stack.lastOrNull { s -> s.targets.any { t -> t is Ref.Obj && t.id == target.id } } ?: state.stack.lastOrNull { s -> s.kind == StackKind.SPELL && s.controller != player }
                     val colour = threat?.source?.def?.colors?.singleOrNull()?.let { c -> mapOf('W' to "white", 'U' to "blue", 'B' to "black", 'R' to "red", 'G' to "green")[c] }
+                    if (threat != null && threat.targets.none { t -> t is Ref.Obj && t.id == target.id } && (a.text.contains("protection", true))) state.trace.step("${threat.source.name} doesn't target ${target.name} and deals no damage to it: protection stops targeting, damage, enchanting/equipping and blocking (702.16b), so it won't save ${target.name} from \"destroy all creatures\".", "702.16b", "701.8a")
                     val choosesColour = a.text.contains("color of your choice", true) || a.text.contains("colour of your choice", true)
                     state.trace.step("\"Can ${state.player(player).subject.lowercase()} save ${target.name}?\": ${o.name} has \"${a.text.replace("~", o.name)}\", which would protect it, so it's activated${if (targeted(a.effect)) " targeting ${target.name}" else ""} in response${if (choosesColour && colour != null) ", choosing $colour (${threat.source.name}'s colour)" else ""}.", "117.3c", "602.2")
                     engine.activate(player, o.id, idx, if (targeted(a.effect)) listOf(Ref.Obj(target.id)) else emptyList(), choice = if (choosesColour) colour else null)

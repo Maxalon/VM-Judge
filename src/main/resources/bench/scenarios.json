@@ -25226,5 +25226,111 @@
     "notExpect": [
       "You discard nothing to hand size (0 cards, maximum seven)."
     ]
+  },
+  {
+    "id": "two-2-2s-they-block-one-with-3-3-damage",
+    "text": "I attack with two 2/2s. They have one 3/3. They block one. How much damage do they take?",
+    "expect": [
+      "Yes: opponent takes 2 damage in all.",
+      "a 2/2 creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "hexproof-5-5-vs-wrath",
+    "text": "I have a 5/5 with hexproof and they cast Wrath of God. Does it survive?",
+    "expect": [
+      "No: a 5/5 creature with hexproof is in the graveyard."
+    ]
+  },
+  {
+    "id": "bolt-vs-pro-red-2-2-can-i",
+    "text": "They have a 2/2 with protection from red. I cast Lightning Bolt at it. Can I?",
+    "expect": [
+      "Lightning Bolt can't target a 2/2 creature with protection from red."
+    ],
+    "cite": [
+      "702.16b"
+    ]
+  },
+  {
+    "id": "giant-growth-twice-on-bears-how-big",
+    "text": "I have Grizzly Bears and cast Giant Growth on it twice. How big is it?",
+    "expect": [
+      "Grizzly Bears is 8/8 (2/2 base, +6/+6 until end of turn)."
+    ]
+  },
+  {
+    "id": "first-strike-2-2-vs-deathtouch-2-2-blocker",
+    "text": "They attack with a 2/2 with first strike and I block with a 2/2 with deathtouch. Who dies?",
+    "expect": [
+      "Yes: a 2/2 creature with deathtouch died (it's in the graveyard).",
+      "No: a 2/2 creature with first strike is still on the battlefield."
+    ],
+    "cite": [
+      "702.7b"
+    ]
+  },
+  {
+    "id": "doom-blade-vs-giant-growth-response-still-kills",
+    "text": "I cast Doom Blade on their Grizzly Bears and they respond with Giant Growth. Does Doom Blade still kill it?",
+    "expect": [
+      "Grizzly Bears is 5/5 until end of turn.",
+      "Yes: Grizzly Bears died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "bolt-their-4-4-blocker-after-blocks-who-dies",
+    "text": "I have a 4/4 and they have a 4/4. I attack, they block, and I cast Lightning Bolt on theirs after blocks. Who dies?",
+    "expect": [
+      "Yes: opponent's 4/4 creature died (it's in the graveyard).",
+      "Yes: your 4/4 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "pyroclasm-2-2-and-3-3-what-survives",
+    "text": "They cast Pyroclasm. I have a 2/2 and a 3/3. What survives?",
+    "expect": [
+      "No: a 2/2 creature is in the graveyard.",
+      "Yes: a 3/3 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "three-lands-two-spells-can-i-cast-a-third",
+    "text": "I have 3 lands and cast a 2 mana spell and then a 1 mana spell. Can I also cast a 1 mana spell?",
+    "expect": [
+      "a 1 mana spell can't be cast (costs 1, only 0 mana available)."
+    ],
+    "notExpect": [
+      "a 1 mana spell costs {1} — 1 mana. Nothing on the battlefield changes it. You have 1 available, enough."
+    ]
+  },
+  {
+    "id": "infect-1-1-blocked-by-3-3-counters",
+    "text": "I have a 1/1 with infect and they block with a 3/3. What happens to the 3/3?",
+    "expect": [
+      "a 3/3 creature has 1 -1/-1 counter(s)."
+    ],
+    "cite": [
+      "702.90c"
+    ]
+  },
+  {
+    "id": "kor-skyfisher-can-block-3-3",
+    "text": "They attack me with a 3/3 and I have Kor Skyfisher. Can I block?",
+    "expect": [
+      "Yes: Kor Skyfisher can block a 3/3 creature.",
+      "Kor Skyfisher: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "can-mother-save-bears-from-wrath",
+    "text": "I have Mother of Runes and Grizzly Bears. They cast Wrath of God. Can Mother save the Bears?",
+    "expect": [
+      "Grizzly Bears has protection from white until end of turn.",
+      "No: Grizzly Bears is in the graveyard."
+    ],
+    "cite": [
+      "702.16b"
+    ]
   }
 ]
