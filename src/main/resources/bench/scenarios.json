@@ -25676,5 +25676,149 @@
     "cite": [
       "104.3b"
     ]
+  },
+  {
+    "id": "giant-growth-before-damage-kills-blocker",
+    "text": "I attack with a 3/3 and my opponent blocks with a 2/2. Before damage I cast Giant Growth on my 3/3. Does the 2/2 die?",
+    "expect": [
+      "a 3/3 creature is 6/6 until end of turn.",
+      "Yes: a 2/2 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "leyline-of-sanctity-vs-thoughtseize-what-happens",
+    "text": "My opponent casts Thoughtseize on me. I have Leyline of Sanctity. What happens?",
+    "expect": [
+      "Thoughtseize can't target you.",
+      "Why: you have hexproof (Leyline of Sanctity) and can't be the target of spells or abilities an opponent controls."
+    ]
+  },
+  {
+    "id": "aetherflux-at-sixty-kills",
+    "text": "I have Aetherflux Reservoir and I'm at 60 life. Can I kill my opponent at 20?",
+    "expect": [
+      "You pay 50 life.",
+      "opponent takes 50 damage.",
+      "Yes: opponent has lost the game."
+    ]
+  },
+  {
+    "id": "trample-over-saproling-chump",
+    "text": "My opponent attacks me with a 5/5 trample. I block with a 0/1 Saproling token. How much damage do I take?",
+    "expect": [
+      "Saproling token has 1 damage marked.",
+      "You take 4 damage.",
+      "Yes: you take 4 damage in all."
+    ]
+  },
+  {
+    "id": "wrath-cant-be-regenerated",
+    "text": "I cast Wrath of God. I control a 2/2 with regenerate. Does it survive?",
+    "expect": [
+      "a 2/2 creature with regenerate's regeneration ability doesn't help: the effect says it can't be regenerated.",
+      "No: a 2/2 creature with regenerate is in the graveyard."
+    ]
+  },
+  {
+    "id": "grafdiggers-cage-vs-reanimate-generic",
+    "text": "I control Grafdigger's Cage. My opponent casts Reanimate on a creature in their graveyard. Does it work?",
+    "expect": [
+      "a creature can't enter the battlefield (Grafdigger's Cage); it stays in opponent's graveyard."
+    ],
+    "notExpect": [
+      "not modeled"
+    ]
+  },
+  {
+    "id": "reanimate-griselbrand-life-loss",
+    "text": "My opponent casts Reanimate targeting Griselbrand in their graveyard. What happens?",
+    "expect": [
+      "Griselbrand enters the battlefield.",
+      "opponent loses 8 life (Griselbrand's mana value)."
+    ],
+    "cite": [
+      "202.3"
+    ]
+  },
+  {
+    "id": "grafdiggers-cage-reanimate-still-loses-life",
+    "text": "I control Grafdigger's Cage. My opponent casts Reanimate on Griselbrand in their graveyard. Do they still lose life?",
+    "expect": [
+      "Griselbrand can't enter the battlefield (Grafdigger's Cage); it stays in opponent's graveyard.",
+      "opponent loses 8 life (Griselbrand's mana value).",
+      "opponent loses 8 life in all."
+    ]
+  },
+  {
+    "id": "reanimate-only-card-in-graveyard-is-target",
+    "text": "Griselbrand is in my graveyard. I cast Reanimate. What happens?",
+    "expect": [
+      "Griselbrand enters the battlefield.",
+      "You lose 8 life (Griselbrand's mana value)."
+    ]
+  },
+  {
+    "id": "sun-titan-when-it-enters-i-return-bears",
+    "text": "I cast Sun Titan. When it enters I return Grizzly Bears from my graveyard. What happens?",
+    "expect": [
+      "Sun Titan enters the battlefield.",
+      "Grizzly Bears enters the battlefield."
+    ],
+    "notExpect": [
+      "doesn't say which"
+    ]
+  },
+  {
+    "id": "sun-titan-return-under-grafdiggers-cage",
+    "text": "My opponent casts Sun Titan. When it enters they return Tarmogoyf from their graveyard. I control Grafdigger's Cage. What happens?",
+    "expect": [
+      "Tarmogoyf can't enter the battlefield (Grafdigger's Cage); it stays in opponent's graveyard."
+    ]
+  },
+  {
+    "id": "blood-moon-steam-vents-what-color-can-i-make",
+    "text": "My opponent controls Blood Moon. I have Steam Vents. What color mana can I make?",
+    "expect": [
+      "Steam Vents is a Mountain with no abilities (Blood Moon).",
+      "Steam Vents is a Mountain under Blood Moon, so it taps for {R} and nothing else."
+    ]
+  },
+  {
+    "id": "torpor-orb-thragtusk-no-life",
+    "text": "I control Torpor Orb. I cast Thragtusk. Do I gain 5 life?",
+    "expect": [
+      "Thragtusk entering the battlefield doesn't trigger any abilities (Torpor Orb).",
+      "No: you gain no life here."
+    ]
+  },
+  {
+    "id": "settle-the-wreckage-exiles-attacker",
+    "text": "I attack with a 2/2 and my opponent has Settle the Wreckage. They cast it. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → exile."
+    ]
+  },
+  {
+    "id": "solemnity-ballista-dies",
+    "text": "I have Solemnity on the battlefield. I cast Walking Ballista for X=2. What happens?",
+    "expect": [
+      "Walking Ballista enters with 0 +1/+1 counters.",
+      "Walking Ballista: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "infect-four-onto-three-poison-not-lethal",
+    "text": "My opponent has 3 poison counters. I attack with a 4/4 with infect and it's unblocked. Do they lose?",
+    "expect": [
+      "opponent has 7 poison counters.",
+      "No: opponent is still in the game."
+    ]
+  },
+  {
+    "id": "kira-counters-doom-blade",
+    "text": "I have Kira, Great Glass-Spinner. My opponent casts Doom Blade on it. What happens?",
+    "expect": [
+      "Doom Blade is countered."
+    ]
   }
 ]
