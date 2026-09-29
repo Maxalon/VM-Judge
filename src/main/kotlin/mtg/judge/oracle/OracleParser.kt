@@ -31,7 +31,11 @@ object OracleParser {
 
     fun parse(oracleId: String, name: String, typeLine: String, manaCost: String?, manaValue: Double, colors: String, power: String?, toughness: String?, keywords: Collection<String>, oracleText: String, loyalty: String? = null): CardDef {
         val (supers, types, subs) = CardDef.splitTypeLine(typeLine)
-        val text = oracleText.substringBefore("\n//\n")   // front face only, for now
+        // A split card (Fire // Ice): its two halves are two modes, chosen as it is cast; a double-faced card keeps its front face only.
+        val halves = typeLine.split(" // ")
+        val text = if (oracleText.contains("\n//\n") && halves.size == 2 && halves.all { it.contains("Instant") || it.contains("Sorcery") })
+                oracleText.split("\n//\n").let { hs -> "Choose one —\n" + hs.joinToString("\n") { h -> "• " + h.lines().map { it.replace(reminder, "").trim() }.filter { it.isNotEmpty() }.joinToString(" ") } }
+            else oracleText.substringBefore("\n//\n")   // front face only, for now
         val rawLines = text.lines().map { it.replace(reminder, "").trim() }.filter { it.isNotEmpty() }
         // Modal text: "Choose one —" followed by "• mode" lines becomes one line the effect parser understands.
         val lines = mutableListOf<String>()
@@ -1786,7 +1790,8 @@ object OracleParser {
     private fun number(s: String): Int? = s.toIntOrNull() ?: numberWords[s.lowercase()]
 
     private fun target(desc: String, defaultKind: Kind? = null): TargetSpec {
-        val d = desc.trim().let { if (it.startsWith("target ", true)) it.drop(7) else it }.trim()
+        // "target instant or sorcery spell, except that the copy is red" (Fork): the rider isn't part of what the target has to be.
+        val d = desc.trim().let { if (it.startsWith("target ", true)) it.drop(7) else it }.trim().replace(Regex("""(?i),?\s*except that\b.*$"""), "").trim()
         return TargetSpec(parseFilter(d, defaultKind), d)
     }
 

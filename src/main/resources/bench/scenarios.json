@@ -25422,5 +25422,111 @@
     "expect": [
       "You can make 7 mana right now: Sol Ring → {C}{C}; Mana Vault → {C}{C}{C}; plus the 2 the situation gives from permanents it didn't name."
     ]
+  },
+  {
+    "id": "bolt-then-fork-it-how-much",
+    "text": "I cast Lightning Bolt at them and then Fork it. How much damage?",
+    "expect": [
+      "A copy of Lightning Bolt is put on the stack targeting opponent.",
+      "Yes: opponent takes 6 damage in all."
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "goblin-electromancer-bolt-cost",
+    "text": "I have Goblin Electromancer and cast Lightning Bolt. How much does it cost?",
+    "expect": [
+      "Lightning Bolt costs {R} minus {1} (Goblin Electromancer makes it cost {1} less) — 1 mana in all."
+    ]
+  },
+  {
+    "id": "rift-bolt-with-suspend-when",
+    "text": "I cast Rift Bolt with suspend. When does it deal damage?",
+    "expect": [
+      "Rift Bolt is exiled with 1 time counter for {R} instead of being cast. At the beginning of each of your upkeeps a counter is removed, and when the last one goes you cast it without paying its mana cost (702.62a): with 1 counter, that is your next upkeep, and it resolves then."
+    ],
+    "notExpect": [
+      "opponent takes 3 damage."
+    ]
+  },
+  {
+    "id": "face-down-morph-bolted-what-is-it",
+    "text": "They have a face-down morph and I Bolt it. What is it?",
+    "expect": [
+      "Face down, it is a 2/2 creature with no name, no mana cost, no creature types and no abilities, colorless (708.2). Whatever card is underneath doesn't matter until it's turned face up; if it leaves the battlefield face down it's revealed as it goes (708.9), and a 2/2 dies to 3 damage.",
+      "a 2/2 creature: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "cycle-miscalculation-do-i-draw",
+    "text": "I cycle Miscalculation. Do I draw?",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ]
+  },
+  {
+    "id": "ninjutsu-ninja-of-the-deep-hours-draw",
+    "text": "I attack with a 2/2 unblocked and ninjutsu in Ninja of the Deep Hours. Do I draw?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your hand.",
+      "opponent takes 2 damage.",
+      "Yes: You draw 1 card in all."
+    ],
+    "cite": [
+      "702.49a"
+    ]
+  },
+  {
+    "id": "burst-lightning-kicked-vs-4-4",
+    "text": "I cast Burst Lightning kicked at their 4/4. Does it die?",
+    "expect": [
+      "Yes: a 4/4 creature died (it's in the graveyard)."
+    ],
+    "cite": [
+      "702.33a"
+    ]
+  },
+  {
+    "id": "fire-ice-choosing-ice-on-bears",
+    "text": "They cast Fire // Ice choosing Ice on my Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears is tapped.",
+      "opponent draws 1 card."
+    ]
+  },
+  {
+    "id": "ad-nauseam-revealing-a-land",
+    "text": "I have 2 life and cast Ad Nauseam revealing a land. What happens?",
+    "expect": [
+      "a basic land: your library → your hand.",
+      "You lose no life (a basic land has mana value 0)."
+    ]
+  },
+  {
+    "id": "gitaxian-probe-paying-life",
+    "text": "I cast Gitaxian Probe paying 2 life. What happens?",
+    "expect": [
+      "You pay 2 life.",
+      "You draw 1 card."
+    ]
+  },
+  {
+    "id": "fog-then-bolt-at-them",
+    "text": "I attack with a 2/2 and they cast Fog. Then I cast Lightning Bolt at them. Does Fog stop it?",
+    "expect": [
+      "Fog doesn't stop Lightning Bolt's damage: it prevents only combat damage.",
+      "opponent takes 3 damage.",
+      "Damage to opponent from a 2/2 creature is prevented."
+    ]
+  },
+  {
+    "id": "thoughtseize-targeting-themselves-allowed",
+    "text": "My opponent casts Thoughtseize targeting themselves. Is that allowed?",
+    "expect": [
+      "opponent loses 2 life.",
+      "Yes. \"Target player\" is any player, its controller included: a spell's controller may choose themselves as the target when the card says \"target player\" (115.1). Thoughtseize then does to them exactly what it would do to an opponent."
+    ]
   }
 ]

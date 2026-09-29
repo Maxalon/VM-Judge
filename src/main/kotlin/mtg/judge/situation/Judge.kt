@@ -231,7 +231,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val modes = (if (e.modes.isEmpty() && e.to?.startsWith("mode:") == true) {
                     val words = e.to.removePrefix("mode:").lowercase().split("|").filter { it.isNotEmpty() }
                     val texts = modalEffect?.modeTexts ?: emptyList()
-                    words.mapNotNull { w -> matchMode(w, texts, def.name)?.plus(1) }
+                    // "Fire // Ice choosing Ice": a half's name is its mode.
+                    val halves = def.name.split(" // ").map { it.lowercase() }
+                    words.mapNotNull { w -> halves.indexOf(w.trim()).takeIf { it >= 0 && halves.size == 2 }?.plus(1) ?: matchMode(w, texts, def.name)?.plus(1) }
                 } else e.modes.filter { i -> modalEffect == null || i <= modalEffect.modes.size }).ifEmpty {
                     // "They cast Healing Salve. Do they gain life?": the question says which mode is meant.
                     if (modalEffect != null && e.to == null && e.modes.isEmpty()) {
@@ -752,6 +754,14 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         return
                     }
                 }
+                if (e.to == "suspendInfo") {
+                    val def = e.card?.let { cardDef(it, state) } ?: throw JudgeException("suspend needs a card")
+                    val p = state.player(e.player ?: "me")
+                    val sus = Regex("""(?i)suspend (\d+)\s*[—-]\s*((?:\{[^}]+\})+)""").find(def.oracleText)
+                    state.outcomes += if (sus == null) "${def.name} doesn't have suspend, so it can't be suspended; it would have to be cast normally."
+                        else { val n = sus.groupValues[1].toInt(); "${def.name} is exiled with $n time counter${if (n == 1) "" else "s"} for ${sus.groupValues[2]} instead of being cast. At the beginning of each of ${p.possessive} upkeeps a counter is removed, and when the last one goes ${p.subject.lowercase()} ${p.v("casts", "cast")} it without paying its mana cost (702.62a): with $n counter${if (n == 1) "" else "s"}, that is ${if (n == 1) "${p.possessive} next upkeep" else "$n upkeeps from now"}, and it resolves then${if (def.isCreature) " (a creature cast this way gets haste)" else ""}." }
+                    return
+                }
                 if (e.to == "untapsOn") {
                     val o = state.obj(e.obj ?: throw JudgeException("ask needs an object")); val c = state.player(o.controller)
                     state.outcomes += "${o.name} untaps during ${c.possessive} untap step: a permanent untaps on its controller's turn (502.3), and control is what changed, not ownership${if (o.owner != o.controller) " (${state.player(o.owner).let { if (it.you) "you" else it.name }} still own${if (state.player(o.owner).you) "" else "s"} it)" else ""}."
@@ -989,7 +999,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 }
             }
             "pass" -> engine.resolveTop()
-            "enter" -> engine.enter(e.obj ?: throw JudgeException("enter needs an object"), e.to)
+            "enter" -> {
+                val objId = e.obj ?: throw JudgeException("enter needs an object")
+                // Ninjutsu: the creature is put onto the battlefield tapped and attacking the player the returned creature attacked.
+                if (e.to?.startsWith("attacking:") == true) {
+                    engine.enter(objId, null)
+                    val o = state.obj(objId); o.tapped = true; o.attacking = Ref.Player(e.to.removePrefix("attacking:"))
+                    state.trace.step("${o.name} enters the battlefield tapped and attacking ${state.nameOf(o.attacking!!)}; it was never declared as an attacker, so \"whenever ~ attacks\" abilities don't trigger for it, but it's an attacking creature for everything else (506.4, 702.49a).", "702.49a", "506.4")
+                } else engine.enter(objId, e.to)
+            }
             // "My opponent gains control of my creature": a control change with no card behind it.
             "gaincontrol" -> engine.gainControl(e.player ?: throw JudgeException("gainControl needs a player"), e.obj ?: throw JudgeException("gainControl needs an object"), e.to == "eot")
             // "I lose the flip": the coin flip a card asks for, said rather than randomised (705.2).
@@ -1087,7 +1105,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "resolveall" -> "everything on the stack resolves"
             "stop" -> "${who ?: "you"} ${if (who == null || who == "you") "try" else "tries"} to stop the spell on the stack"
             "ask" -> if (e.to?.startsWith("text:") == true) "question: answered in the outcome" else if (e.to?.startsWith("compare:") == true) "question: who has more ${e.to.removePrefix("compare:")}?" else if (e.to == "ahead") "question: ${if (who == null || who == "you") "are you" else "is $who"} winning?" else if (e.to == "manaAvailable" || e.to == "manaNextTurn") "question: how much mana ${if (who == null || who == "you") "do you" else "does $who"} ${if (e.to == "manaNextTurn") "get next turn" else "have"}?" else if (e.to == "stillResolves") "question: does ${state.objects[e.obj]?.name ?: e.obj}'s ability still resolve?" else if (e.to == "tokenMade") "question: ${if (who == null || who == "you") "do you" else "does $who"} get ${e.card?.name?.let { "a $it token" } ?: "a token"}?" else if (e.to == "spellCost") "question: how much does ${state.objects[e.obj]?.name ?: e.card?.name ?: "the spell"} cost?" else if (e.to == "countered") "question: is ${e.card?.name ?: "the spell"} countered?" else if (e.to == "untapLands") "question: ${if (who == null || who == "you") "do your" else "do $who's"} lands untap?" else if (e.to == "playerSacrificed") "question: ${if (who == null || who == "you") "do you" else "does $who"} sacrifice anything?" else if (e.to == "unblockedCount") "question: how many attackers get through?" else if (e.to == "respond") "question: can ${if (who == null || who == "you") "you" else who} respond?" else if (e.to == "gotLand") "question: ${if (who == null || who == "you") "do you" else "does $who"} get a land?" else if (e.to == "tokenMade") "question: ${if (who == null || who == "you") "do you" else "does $who"} get ${e.card?.name}?" else if (e.to == "hitsOwn") "question: does ${e.card?.name} hit ${if (who == null || who == "you") "your" else "$who's"} own permanents?" else if (e.to?.startsWith("count:") == true) "question: how many ${e.to.removePrefix("count:")} ${if (who == null || who == "you") "do you" else "does $who"} have?" else if (e.to == "canCounter") "question: can ${if (who == null || who == "you") "you" else who} counter it?" else if (e.to == "playerGain" || e.to == "playerLost") "question: how much life ${if (who == null || who == "you") "do you" else "does $who"} ${if (e.to == "playerGain") "gain" else "lose"}?" else if (e.to == "playerDraw") "question: ${if (who == "you") "do you" else "does $who"} draw?" else if (e.to == "drawCount") "question: how many cards ${if (who == "you") "do you" else "does $who"} draw?" else if (e.to?.startsWith("sizeIs:") == true) "question: is ${state.objects[e.obj]?.name ?: e.obj} still ${e.to.removePrefix("sizeIs:")}?" else if (e.to == "regenerateVs") "question: can ${state.objects[e.obj]?.name ?: e.obj} be regenerated${e.card?.name?.let { " with $it" } ?: ""}?" else if (e.to == "playerLife") "question: what ${if (who == "you") "is your" else "is $who's"} life total?" else if (e.to == "playerSurvive") "question: ${if (who == "you") "do you" else "does $who"} survive?" else if (e.to == "playerDie") "question: ${if (who == "you") "do you" else "does $who"} lose?" else if (e.to == "playerWin") "question: ${if (who == "you") "do you" else "does $who"} win?" else if (e.to == "playerDamage") "question: ${if (who == "you") "do you" else "does $who"} take damage?" else if (e.to == "controller") "question: who controls ${state.objects[e.obj]?.name ?: e.obj}?" else if (e.to == "identity") "question: what is ${state.objects[e.obj]?.name ?: e.obj} now?" else if (e.to == "castNow") "question: can ${if (who == null || who == "you") "you" else who} cast ${state.objects[e.obj]?.name ?: e.obj} now?" else "question: ${if (e.to == "block" || e.to == "attack") "can" else "does"} ${state.objects[e.obj]?.name ?: e.obj} ${if (e.to == "damage") "deal damage to ${e.targets.firstOrNull()?.let { t -> state.players.firstOrNull { it.id == t }?.let { if (it.you) "you" else it.name } } ?: "the player"}" else e.to}?"
-            "enter" -> "${state.objects[e.obj]?.name ?: e.obj} enters the battlefield"
+            "enter" -> "${state.objects[e.obj]?.name ?: e.obj} enters the battlefield${if (e.to?.startsWith("attacking") == true) " attacking" else ""}"
             "playland" -> "${who ?: "you"} play${if (who == null || who == "you") "" else "s"} ${state.objects[e.obj]?.name ?: e.obj}"
             "flip" -> "${who ?: "you"} ${e.to ?: "lose"} the coin flip"
             "gaincontrol" -> "${who ?: "you"} gain${if (who == null || who == "you") "" else "s"} control of ${state.objects[e.obj]?.name ?: e.obj}"
