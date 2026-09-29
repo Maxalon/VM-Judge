@@ -23646,10 +23646,11 @@
     "id": "rest-in-peace-vs-reanimate",
     "text": "I control Rest in Peace. They cast Reanimate. What happens?",
     "expect": [
-      "Reanimate does nothing: Rest in Peace has kept the graveyards empty, so there is no creature to put onto the battlefield."
+      "Reanimate can't be cast: Rest in Peace has kept the graveyards empty, so there is no creature card in a graveyard to target (601.2c)."
     ],
     "cite": [
-      "614.1a"
+      "614.1a",
+      "601.2c"
     ]
   },
   {

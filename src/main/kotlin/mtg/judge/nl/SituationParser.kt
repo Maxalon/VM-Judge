@@ -2769,7 +2769,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.events += EventSpec("token", player = who, card = CardRef(name = desc), amount = n); ctx.lastActor = who; ctx.note(who); return true
         }
         // "Do I gain 5?" / "how much life do they lose?": life gained or lost by that player over everything that happened.
-        Regex("""^(?:(?:do|does|will|would|did) (i|we|they|my opponent|the opponent|opponent|he|she|@\w+) (?:still |even |actually )?(gain|lose) (?:the |any |that |all )?(\d+)?(?: life)?|how much life (?:do|does|did|will|would) (i|we|they|my opponent|the opponent|opponent|he|she|@\w+) (gain|lose)(?: in (?:all|total)| overall| from (?:that|this|it))?)$""").find(clause0)?.let { q ->
+        Regex("""^(?:(?:do|does|will|would|did) (i|we|they|my opponent|the opponent|opponent|he|she|@\w+) (?:still |even |actually )?(gain|lose) (?:(?:the |any |that |all )?(\d+)(?: life)?|(?:any |the |that )?life)|how much life (?:do|does|did|will|would) (i|we|they|my opponent|the opponent|opponent|he|she|@\w+) (gain|lose)(?: in (?:all|total)| overall| from (?:that|this|it))?)$""").find(clause0)?.let { q ->
             val w = q.groupValues[1].ifEmpty { q.groupValues[4] }; val verb = q.groupValues[2].ifEmpty { q.groupValues[5] }
             val who = when (w) { "i", "we" -> "me"; else -> if (w.startsWith("@")) w.removePrefix("@") else pronounPlayer(ctx, w.substringAfterLast(' ')) }
             ctx.asks += EventSpec("ask", player = who, to = if (verb == "gain") "playerGain" else "playerLost", amount = q.groupValues[3].toIntOrNull()); ctx.note(who)
@@ -6500,6 +6500,21 @@ class SituationParser(private val names: NameIndex) {
             val who = actor ?: subject ?: "me"
             return readClause("${when (who) { "me" -> "i"; "opp" -> "they"; else -> "@$who" }} cast ${r.groupValues[2]} targeting ${r.groupValues[1]}", m, ctx)
         }
+        // "When it enters I return Grizzly Bears from my graveyard": the card chosen for the enters-the-battlefield trigger of
+        // the permanent just cast (Sun Titan, Karmic Guide).
+        Regex("""^(?:(?:when|as|once|after) )?(?:it|that|(?:my |the |their )?(c\d+)) (?:enters|comes in|comes into play|resolves|hits the battlefield|lands|etbs),? (?:(?:i|we|they|he|she) )?(?:return|returns|get back|gets back|bring back|brings back|reanimate|reanimates|grab|grabs|take back|takes back|choose|chooses|pick|picks|target|targets) (?:an? |my |their |the )?(c\d+)(?: card)?(?: (?:from|in|out of) (?:my|their|the|his|her) (?:graveyard|yard|grave|bin))?$""").find(c)?.let { r ->
+            val srcCard = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards.getValue(it) } ?: ctx.lastCastEntry ?: return@let
+            val castEv = ctx.events.lastOrNull { it.verb == "cast" && (it.card?.name == srcCard.display || (it.obj != null && ctx.objects[it.obj]?.card?.name == srcCard.display)) } ?: return@let
+            val who = castEv.player ?: "me"
+            val srcId = castEv.obj ?: slug(srcCard.display)
+            val card = m.cards.getValue(r.groupValues[2])
+            val cardId = ctx.objects.values.firstOrNull { it.controller == who && it.zone == "graveyard" && it.card.name == card.display }?.id ?: addObject(card, who, false, ctx, zone = "graveyard", allowDuplicate = true)
+            val choose = EventSpec("choose", player = who, obj = srcId, to = "put:$cardId")
+            val at = ctx.events.indexOf(castEv)
+            if (at >= 0 && at < ctx.events.lastIndex) ctx.events.add(at + 1, choose) else ctx.events += choose
+            ctx.notes += "${card.display} is in ${if (who == "me") "your" else "their"} graveyard and is the card ${srcCard.display}'s enters-the-battlefield trigger is aimed at."
+            ctx.lastActor = who; ctx.lastMentioned = cardId; return true
+        }
         // "put Rakdos onto the battlefield with the trigger" / "with Kaalia's trigger": the choice for that permanent's triggered ability.
         Regex("""^(?:puts?|putting|drops?|cheats?) (?:an? |the |my )?(c\d+) (?:onto the battlefield|into play|out|in)(?: tapped and attacking| attacking| tapped)? (?:with|off|using|via|from) (?:the |its |her |his )?(?:(c\d+)(?:'s)? )?trigger(?:ed ability)?$""").find(c)?.let { r ->
             val who = actor ?: subject ?: "me"
@@ -7793,6 +7808,12 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", obj = id, to = "activate"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "what color mana can it make?" / "what does it tap for?": the permanent's mana abilities as they stand.
+        // "what color mana can I make?" with one land of mine described: the question is about that land.
+        Regex("""^what colou?rs? (?:of )?mana (?:can|do|could) (?:i|we) (?:still |now )?(?:make|produce|add|tap for|get)(?: now| then| with it)?$""").find(clause0)?.let {
+            val lands = ctx.objects.values.filter { it.controller == "me" && it.zone == "battlefield" && names.lookup(Names.normalize(it.card.name ?: ""))?.typeLine?.contains("Land", true) == true }
+            if (lands.size != 1) return@let
+            ctx.asks += EventSpec("ask", obj = lands[0].id, to = "mana"); ctx.notes += "\"${restore(clause0, m)}?\" is asked of ${lands[0].card.name} and answered by the outcome below."; return true
+        }
         Regex("""^(?:(?:what|how much|how many) (?:colou?r )?(?:of )?mana (?:can|does|do|will) (?:it|that|(?:my |their |the |@\w+'s )?(c\d+)) (?:make|produce|add|give|tap for)|what (?:does|do|can) (?:it|that|(?:my |their |the )?(c\d+)) tap for)(?: now| then| for me)?$""").find(clause0)?.let { q ->
             val ph = q.groupValues[1].ifEmpty { q.groupValues[2] }
             // "I control Elvish Archdruid and two other Elves. How much mana does it make?" — "it" is the card

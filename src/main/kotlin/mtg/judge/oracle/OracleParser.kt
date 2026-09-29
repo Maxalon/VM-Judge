@@ -1488,7 +1488,8 @@ object OracleParser {
         // Reanimate, Animate Dead, Exhume: "Put target creature card from a graveyard onto the battlefield…"
         Regex("""^put target (.+?) card from (?:a|your|an opponent's|target player's) graveyard onto the battlefield( tapped)?(?: under your control)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.PERMANENT)
-            if (f.verifiable) return Effect.PutFromHand(f, null, tapped = m.groupValues[2].isNotEmpty(), fromGraveyard = true)
+            val raw = "${m.groupValues[1]} card in a graveyard"
+            if (f.verifiable) return Effect.PutFromHand(f, null, tapped = m.groupValues[2].isNotEmpty(), fromGraveyard = true, target = TargetSpec(f.copy(kinds = if (f.kinds.isEmpty()) setOf(Kind.CARD) else f.kinds, raw = raw, inGraveyard = true), raw))
         }
         zurRe.matchEntire(s)?.let { m -> zurEffect(m)?.let { return it } }
         // Boros Reckoner's cousin: "~ deals that much damage to you" / "to each opponent" / "to that player".
@@ -1522,7 +1523,8 @@ object OracleParser {
         // Sun Titan: "return target permanent card with mana value 3 or less from your graveyard to the battlefield"
         Regex("""^return target (.+?) card(?: with mana value (\d+) or less)? from your graveyard to the battlefield(?: tapped)?(?: under your control)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.PERMANENT)
-            if (f.verifiable) return Effect.PutFromHand(f, null, tapped = s.contains("battlefield tapped", true), fromGraveyard = true, maxMv = m.groupValues[2].toIntOrNull())
+            val raw = "${m.groupValues[1]} card${m.groupValues[2].takeIf { it.isNotEmpty() }?.let { " with mana value $it or less" } ?: ""} in your graveyard"
+            if (f.verifiable) return Effect.PutFromHand(f, null, tapped = s.contains("battlefield tapped", true), fromGraveyard = true, maxMv = m.groupValues[2].toIntOrNull(), target = TargetSpec(f.copy(kinds = if (f.kinds.isEmpty()) setOf(Kind.CARD) else f.kinds, raw = raw, inGraveyard = true, maxManaValue = m.groupValues[2].toIntOrNull() ?: f.maxManaValue), raw))
         }
         Regex("""^you gain (\d+) life for each spell you've cast this turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.GainLifePerSpellThisTurn(Who.YOU, it.groupValues[1].toInt()) }
         // "Target player discards X cards at random" / "each player discards two cards": modeled, so it goes before the narrated table.
@@ -1542,6 +1544,7 @@ object OracleParser {
         Regex("""^~ deals (\d+) damage to you\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.DamagePlayer(Who.YOU, m.groupValues[1].toInt()) }
         if (Regex("""^reveal the top card of your library and put that card into your hand\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.RevealTopToHand(Who.YOU)
         if (Regex("""^you lose life equal to its mana value\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.LoseLifeEqualToRevealedMv(Who.YOU)
+        if (Regex("""^you lose life equal to (?:that card's|its|the exiled card's|that permanent's) mana value\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.LoseLifeEqualToTargetMv(Who.YOU)
         // "Create a token that's a copy of target creature you control(, except …)." (Kiki-Jiki and the 300-odd like it.)
         Regex("""^creates? (a|an|two|three|\d+) tokens? that(?:'s| are) (?:a )?cop(?:y|ies) of (.+)$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             var what = m.groupValues[2].trim().trimEnd('.')
