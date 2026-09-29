@@ -25528,5 +25528,152 @@
       "opponent loses 2 life.",
       "Yes. \"Target player\" is any player, its controller included: a spell's controller may choose themselves as the target when the card says \"target player\" (115.1). Thoughtseize then does to them exactly what it would do to an opponent."
     ]
+  },
+  {
+    "id": "blood-artist-under-wrath-life-lost",
+    "text": "I control Blood Artist and a Grizzly Bears. My opponent casts Wrath of God. How much life do they lose?",
+    "expect": [
+      "opponent loses 2 life in all."
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "first-strike-ground-blocker-vs-flyer",
+    "text": "My opponent attacks me with a 4/4 Serra Angel. I block with a 2/2 with first strike. What happens?",
+    "expect": [
+      "a 2/2 creature with first strike can't block Serra Angel (flying).",
+      "You take 4 damage."
+    ]
+  },
+  {
+    "id": "giant-growth-saves-elves-from-bolt",
+    "text": "I cast Lightning Bolt targeting my opponent's Llanowar Elves. They respond with Giant Growth on it. Does the Elves die?",
+    "expect": [
+      "Llanowar Elves is 4/4 until end of turn.",
+      "No: Llanowar Elves is still on the battlefield."
+    ]
+  },
+  {
+    "id": "fog-do-i-still-deal-damage",
+    "text": "I attack with a Grizzly Bears and my opponent has Fog. If they cast it, do I still deal damage?",
+    "expect": [
+      "Damage to opponent from Grizzly Bears is prevented.",
+      "No: opponent takes no damage"
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-empty-hand-bears",
+    "text": "My opponent controls Ensnaring Bridge and has 0 cards in hand. I have a 2/2 Grizzly Bears. Can I attack?",
+    "expect": [
+      "Grizzly Bears can't attack (Ensnaring Bridge)."
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "rhystic-study-unpaid-draw",
+    "text": "I have Rhystic Study. My opponent casts Llanowar Elves and doesn't pay 1. Do I draw a card?",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ]
+  },
+  {
+    "id": "counter-the-counterspell-bears-resolves",
+    "text": "I cast Counterspell on my opponent's Counterspell that targets my Grizzly Bears. Does my Grizzly Bears resolve?",
+    "expect": [
+      "Counterspell is countered.",
+      "No: Grizzly Bears isn't countered; it resolves."
+    ]
+  },
+  {
+    "id": "propaganda-three-attackers-cost",
+    "text": "My opponent has Propaganda. I want to attack with three creatures. How much mana do I need to pay?",
+    "expect": [
+      "You pay {6} for Propaganda in all — {2} for each of 3 attackers."
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "ghostly-prison-pays-only-two-of-four",
+    "text": "I have Ghostly Prison and my opponent attacks me with two Grizzly Bears and pays only 2. What happens?",
+    "expect": [
+      "opponent pays {2} for Ghostly Prison (Grizzly Bears attacks).",
+      "Grizzly Bears can't attack (can't pay {2} for Ghostly Prison).",
+      "You take 2 damage."
+    ],
+    "notExpect": [
+      "You take 2 damage. (×2)"
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "propaganda-pay-only-four-of-six",
+    "text": "My opponent has Propaganda. I attack with three Grizzly Bears and pay only 4. What happens?",
+    "expect": [
+      "Grizzly Bears can't attack (can't pay {2} for Propaganda).",
+      "opponent takes 2 damage. (×2)"
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "doran-wall-of-omens-defender",
+    "text": "I control Doran, the Siege Tower and attack with a Wall of Omens. How much damage does it deal?",
+    "expect": [
+      "Wall of Omens can't attack (defender).",
+      "No: opponent takes no damage."
+    ],
+    "cite": [
+      "702.3b"
+    ]
+  },
+  {
+    "id": "doran-treefolk-harbinger-deals-three",
+    "text": "I control Doran, the Siege Tower and attack with a Treefolk Harbinger. How much damage does it deal?",
+    "expect": [
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "510.1a"
+    ]
+  },
+  {
+    "id": "doran-glass-cannon-vs-wall",
+    "text": "My opponent controls Doran, the Siege Tower. I attack with a 4/1 creature and they block with a 1/4 wall. What happens?",
+    "expect": [
+      "a 1/4 wall creature has 1 damage marked.",
+      "a 4/1 creature has 4 damage marked.",
+      "a 4/1 creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "avacyn-survives-damnation",
+    "text": "My opponent casts Damnation. I have Avacyn, Angel of Hope on the battlefield. Does Avacyn die?",
+    "expect": [
+      "Avacyn, Angel of Hope is indestructible and isn't destroyed.",
+      "No: Avacyn, Angel of Hope is still on the battlefield."
+    ],
+    "cite": [
+      "702.12b"
+    ]
+  },
+  {
+    "id": "platinum-angel-destroyed-at-zero-life",
+    "text": "I have Platinum Angel and I'm at 0 life. My opponent destroys Platinum Angel with Doom Blade. Do I lose?",
+    "expect": [
+      "Platinum Angel: the battlefield → your graveyard.",
+      "Yes: You have lost the game."
+    ],
+    "cite": [
+      "104.3b"
+    ]
   }
 ]

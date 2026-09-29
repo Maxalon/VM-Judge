@@ -483,6 +483,8 @@ sealed interface StaticEffect {
     data object PlayerHexproof : StaticEffect
     /** Ivory Mask: "You have shroud." — nobody can target the player, its controller included. */
     data object PlayerShroud : StaticEffect
+    /** Doran, the Siege Tower: "Each creature assigns combat damage equal to its toughness rather than its power." */
+    data object DamageByToughness : StaticEffect
     /** "You can't lose the game and your opponents can't win the game" (Platinum Angel). */
     data object CantLose : StaticEffect
     /** "~ can block an additional creature each combat": checked by its words as blockers are declared. */

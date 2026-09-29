@@ -697,6 +697,7 @@ object OracleParser {
         Regex("""^you have no maximum hand size\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NoMaximumHandSize) }
         Regex("""^you have hexproof\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.PlayerHexproof) }
         Regex("""^you have shroud\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.PlayerShroud) }
+        Regex("""^each creature assigns combat damage equal to its toughness rather than its power\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.DamageByToughness) }
         // "You, planeswalkers you control, and other creatures you control have hexproof." (Shalai, Voice of Plenty)
         Regex("""^you(?:, (?:and )?[^,]+?)*,? and (other creatures you control|creatures you control) have hexproof\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.CREATURE).let { if (m.groupValues[1].trim().startsWith("other", true)) it.copy(other = true) else it }

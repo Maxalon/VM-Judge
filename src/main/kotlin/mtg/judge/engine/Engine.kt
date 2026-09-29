@@ -1607,11 +1607,16 @@ class Engine(val state: GameState) {
     private fun dealCombatDamage(attackers: List<GameObject>, deals: (GameObject) -> Boolean) {
         data class Hit(val source: GameObject, val target: Ref, val amount: Int) { var dealt = 0 }
         val hits = mutableListOf<Hit>()
+        // Doran, the Siege Tower: every creature assigns combat damage equal to its toughness instead.
+        val byToughness = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.DamageByToughness } }
+        fun combatPower(o: GameObject): Int = if (byToughness != null) (o.toughness ?: 0) else (o.power ?: 0)
+        if (byToughness != null && attackers.any { it.isOnBattlefield() && it.attacking != null && deals(it) }) trace.step("${byToughness.name} says each creature assigns combat damage equal to its toughness rather than its power, so toughness is used for every attacker and blocker here.", "510.1a")
         for (a in attackers) {
             if (!a.isOnBattlefield() || a.attacking == null) continue
             val blockers = blockersOf(a)
             if (deals(a)) {
-                val power = a.power ?: 0
+                val power = combatPower(a)
+                if (byToughness != null) trace.step("${a.name} is ${a.power ?: 0}/${a.toughness ?: 0}: with ${byToughness.name} it assigns $power combat damage (its toughness).", "510.1a")
                 if (power <= 0) trace.step("${a.name} has power $power and assigns no combat damage.", "510.1a")
                 else if (blockers.isEmpty() && a.wasBlocked) {
                     if (a.has("trample")) { trace.step("${a.name} was blocked but its blocker is gone; it has trample, so it assigns all $power damage to ${state.nameOf(a.attacking!!)}.", "702.19d"); hits += Hit(a, a.attacking!!, power) }
@@ -1640,7 +1645,7 @@ class Engine(val state: GameState) {
                 }
             }
             for (b in blockers) if (deals(b)) {
-                val bp = b.power ?: 0
+                val bp = combatPower(b)
                 if (bp <= 0) trace.step("${b.name} has power $bp and assigns no combat damage.", "510.1a")
                 // A creature blocking two attackers divides its damage as its controller chooses (510.1d); all of it goes to the first one it blocked.
                 else if (a.id in b.alsoBlocking) { trace.step("${b.name} also blocks ${a.name}; its controller divides its damage among the creatures it blocks, and it is assumed to assign all $bp to ${state.objects[b.blocking]?.name ?: "the first"}.", "510.1d"); state.assumptions += "${b.name} blocks two creatures and assigns all its damage to ${state.objects[b.blocking]?.name ?: "the first one"} (510.1d lets its controller divide it)." }

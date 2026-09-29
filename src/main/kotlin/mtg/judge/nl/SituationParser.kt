@@ -2782,6 +2782,12 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = who, to = if (clause0.startsWith("how many")) "drawCount" else "playerDraw"); ctx.note(who)
             ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
+        // "do I still deal damage?" / "does my Bears still hit them?" under a Fog: what the defending player takes.
+        Regex("""^(?:do|does|will|would|did|can) (?:i|we) (?:still |even |actually )?(?:deal|do|get in|connect for|hit for|hit them for|hit (?:them|him|her|my opponent) for) (?:any |the |combat |my )?damage(?: to (?:them|him|her|my opponent|the opponent|@\w+))?$""").find(clause0)?.let {
+            val attack = ctx.events.lastOrNull { it.verb == "attack" || it.verb == "attackAll" } ?: return@let
+            val defender = attack.targets.firstOrNull { t -> t in ctx.playerIds() } ?: ctx.other(attack.player ?: "me") ?: "opp"
+            ctx.asks += EventSpec("ask", player = defender, to = "playerDamage"); ctx.note(defender); return true
+        }
         // "Does damage go through?" after a block: what the defending player takes.
         Regex("""^(?:does|will|would|did) (?:any |the |combat |its |my )?damage (?:go|get|make it|come) through(?: to (?:them|him|her|my opponent|the opponent|me|@\w+))?$""").find(clause0)?.let {
             val attack = ctx.events.lastOrNull { it.verb == "attack" || it.verb == "attackAll" } ?: return@let
@@ -6329,6 +6335,13 @@ class SituationParser(private val names: NameIndex) {
             val pay = EventSpec("pay", player = who, to = if (declines) "no" else "yes")
             // Paying (or not) for an attack tax decides whether the attack happens: it goes before the attack it belongs to.
             val lastAttack = ctx.events.indexOfLast { (it.verb == "attack" || it.verb == "attackAll") && it.player == who }
+            // "attacks with two Bears and pays only 2": the amount is what they have for the tax; the engine pays it per
+            // attacker until it runs out, so only as many attack as it covers.
+            Regex("""^ (?:only |just |merely )?(?:the )?(\d+|one|two|three|four|five|six)(?: mana| generic)?(?: (?:for|to|towards) (?:it|the tax|(?:the |my |their )?c\d+))?$""").find(r.groupValues[2])?.takeIf { !declines && lastAttack >= 0 && ctx.events.drop(lastAttack + 1).all { it.verb == "attack" || it.verb == "attackAll" } }?.let { a ->
+                val n = numberWords[a.groupValues[1]] ?: a.groupValues[1].toIntOrNull() ?: 1
+                val attackers = ctx.events.count { it.verb == "attack" && it.player == who }
+                if (attackers > 1 || ctx.events.any { it.verb == "attackAll" && it.player == who }) { ctx.mana[who] = n; ctx.note(who); ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} $n mana for the attack; each attacker's cost is paid from that until it runs out."; ctx.lastActor = who; return true }
+            }
             if (lastAttack >= 0 && ctx.events.drop(lastAttack + 1).all { it.verb == "attack" || it.verb == "attackAll" }) ctx.events.add(lastAttack, pay)
             // "Then they pay the 1": the payment is part of resolving what's on the stack, so it goes before the "then" resolution.
             else if (ctx.events.lastOrNull()?.verb == "resolveAll" && ctx.events.getOrNull(ctx.events.lastIndex - 1)?.verb in setOf("cast", "activate", "trigger")) ctx.events.add(ctx.events.lastIndex, pay)
@@ -6827,9 +6840,17 @@ class SituationParser(private val names: NameIndex) {
             val what = r.groupValues[4]
             val ids = if (cardRef.matches(what)) {
                 val card = m.cards.getValue(what)
-                val id = objectIdFor(card, ctx) ?: addObject(card, who, false, ctx)
-                if (r.groupValues[3].isNotEmpty()) ctx.objects[id] = ctx.objects.getValue(id).copy(commander = true)
-                listOf(id)
+                // "attacks me with two Grizzly Bears": as many attackers as were counted.
+                val n = r.groupValues[2].trim().let { numberWords[it] ?: it.toIntOrNull() ?: 1 }
+                if (n > 1) {
+                    val existing = ctx.objects.values.filter { o -> o.controller == who && o.zone == "battlefield" && o.card.name == card.display }.map { it.id }
+                    val many = existing.take(n).toMutableList(); while (many.size < n) many += addObject(card, who, false, ctx, allowDuplicate = true)
+                    many
+                } else {
+                    val id = objectIdFor(card, ctx) ?: addObject(card, who, false, ctx)
+                    if (r.groupValues[3].isNotEmpty()) ctx.objects[id] = ctx.objects.getValue(id).copy(commander = true)
+                    listOf(id)
+                }
             } else describedCreatures(r.groupValues[2].ifEmpty { "a " }.let { if (it in setOf("another ", "one more ", "the other ")) "a " else it }, what, r.groupValues[6], who, ctx,
                 r.groupValues[5].let { k -> if (k.isEmpty()) "" else k.removeSuffix("s").replace("flier", "flying").replace("flyer", "flying").replace("trampler", "trample") })
             if (ids.isEmpty()) return@let
