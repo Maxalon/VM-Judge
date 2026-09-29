@@ -26102,5 +26102,116 @@
     "cite": [
       "702.11b"
     ]
+  },
+  {
+    "id": "swords-on-blocked-five-five-gain",
+    "text": "I attack with a 5/5. My opponent blocks with a 2/2 and then casts Swords to Plowshares on my 5/5. How much life do I gain?",
+    "expect": [
+      "a 5/5 creature: the battlefield → exile.",
+      "You gain 5 life in all."
+    ]
+  },
+  {
+    "id": "ghostly-prison-three-lands-two-attackers",
+    "text": "My opponent has Ghostly Prison and I have 3 lands. Can I attack with two creatures?",
+    "expect": [
+      "No: only 1 of your 2 can attack: Ghostly Prison makes each attacker cost {2}, and you have 3 mana (508.1c)."
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "ghostly-prison-four-lands-two-attackers",
+    "text": "My opponent has Ghostly Prison and I have 4 lands. Can I attack with two creatures?",
+    "expect": [
+      "Yes: 2 of your creatures can attack (Ghostly Prison charges {2} each, 4 mana covers 2)."
+    ]
+  },
+  {
+    "id": "brainstorm-one-card-library-loses",
+    "text": "I cast Brainstorm with 1 card in my library. What happens?",
+    "expect": [
+      "You draw 1 card and can't draw the rest (empty library).",
+      "You lose the game (drew from an empty library)."
+    ]
+  },
+  {
+    "id": "wall-of-omens-if-i-block-no-damage",
+    "text": "My opponent attacks me with a 3/3 and I have a Wall of Omens. Do I take damage if I block?",
+    "expect": [
+      "Wall of Omens has 3 damage marked.",
+      "No: you take no damage."
+    ],
+    "notExpect": [
+      "a creature: the battlefield"
+    ]
+  },
+  {
+    "id": "giant-growth-twice-eight-eight",
+    "text": "I control Grizzly Bears and cast Giant Growth on it twice. How big is it?",
+    "expect": [
+      "Grizzly Bears is 8/8 (2/2 base, +6/+6 until end of turn)."
+    ]
+  },
+  {
+    "id": "selfless-spirit-save-my-team",
+    "text": "My opponent casts Damnation. I have Selfless Spirit and a Grizzly Bears. Can I save my team?",
+    "expect": [
+      "Selfless Spirit: the battlefield → your graveyard.",
+      "Grizzly Bears is indestructible and isn't destroyed.",
+      "Yes: sacrifice Selfless Spirit in response, while the sweeper is on the stack; the ability resolves first and your other creatures are indestructible when it resolves. Selfless Spirit itself is gone (it was the cost)."
+    ]
+  },
+  {
+    "id": "vapor-snag-counters-gone",
+    "text": "I have a 2/2 with two +1/+1 counters. My opponent casts Vapor Snag on it. What happens to the counters?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your hand.",
+      "You lose 1 life.",
+      "The counters are gone. When a permanent leaves the battlefield, the counters on it aren't kept: they simply cease to exist with the zone change (122.2), and the card comes back as a new object with no memory of them (400.7)."
+    ]
+  },
+  {
+    "id": "blossoming-defense-fizzles-bolt",
+    "text": "I cast Lightning Bolt targeting my opponent's 3/3. In response they cast Blossoming Defense. What happens?",
+    "expect": [
+      "a 3/3 creature has hexproof until end of turn.",
+      "Lightning Bolt doesn't resolve (all targets illegal)."
+    ]
+  },
+  {
+    "id": "three-three-vs-one-one-first-striker",
+    "text": "I attack with a 3/3 and my opponent blocks with a 1/1 first striker. What happens?",
+    "expect": [
+      "a 3/3 creature has 1 damage marked.",
+      "a 1/1 creature with first strike: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "zur-can-i-get-rest-in-peace",
+    "text": "I control Zur the Enchanter and attack. Can I get Rest in Peace?",
+    "expect": [
+      "Rest in Peace enters the battlefield.",
+      "Rest in Peace exiles nothing now: no cards were described in any graveyard."
+    ],
+    "notExpect": [
+      "which card?"
+    ]
+  },
+  {
+    "id": "zur-cant-get-omniscience",
+    "text": "I control Zur the Enchanter and attack. Can I get Omniscience?",
+    "expect": [
+      "Omniscience can't be put onto the battlefield (mana value too high)."
+    ]
+  },
+  {
+    "id": "goblin-guide-at-two-life",
+    "text": "My opponent has 2 life and I have Goblin Guide. I attack. Do they die?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "Yes: opponent has lost the game."
+    ]
   }
 ]

@@ -37,7 +37,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         return ", " + shown.entries.joinToString(", ") { (k, n) -> "$n $k counter${if (n == 1) "" else "s"}" }
     }
 
-    fun answer(sit: Situation): Answer {
+    fun answer(sit0: Situation): Answer {
+        val sit = saveTeamPrepass(sit0)
         val understood = mutableListOf<String>()
         val state = GameState(sit.players.map { ps -> Player(ps.id, ps.name, ps.life).also { it.poison = ps.poison ?: 0; it.handSize = ps.handSize; it.librarySize = ps.librarySize; it.graveyardSize = ps.graveyardSize; it.commanderDamage.putAll(ps.commanderDamage); it.mana = ps.mana; ps.devotion.forEach { (c, n) -> colourChar(c)?.let { ch -> it.devotion[ch] = n } } } }, LinkedHashMap(), activePlayer = sit.turn.activePlayer, phase = sit.turn.phase, step = sit.turn.step, activePlayerStated = sit.turn.activePlayer != null).also { st ->
             st.turnNumber = sit.turn.number
@@ -564,6 +565,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val mana = p.mana ?: state.objects.values.count { it.isOnBattlefield() && it.controller == p.id && it.tapped != true && "Land" in it.def.types }.takeIf { it > 0 }
                     val sitting = mine.size - able.size
                     val unable = if (sitting > 0) " ($sitting of ${p.possessive} ${mine.size} can't attack at all: tapped, summoning sick or defender.)" else ""
+                    val want = e.amount
+                    val canN = if (taxes.isEmpty() || mana == null) able.size else if (perAttacker == 0) able.size else minOf(able.size, mana / perAttacker)
+                    if (want != null && (taxes.isEmpty() || mana != null)) state.outcomes += if (canN >= want) "Yes: $want of ${p.possessive} creatures can attack${if (taxes.isNotEmpty()) " (${taxes.joinToString(" and ") { (o, _) -> o.name }} ${if (taxes.size == 1) "charges" else "charge"} {$perAttacker} each, ${mana} mana covers $canN)" else ""}." else "No: only $canN of ${p.possessive} ${able.size} can attack${if (taxes.isNotEmpty()) ": ${taxes.joinToString(" and ") { (o, _) -> o.name }} ${if (taxes.size == 1) "makes" else "make"} each attacker cost {$perAttacker}, and ${p.subject.lowercase()} ${p.v("has", "have")} $mana mana (508.1c)" else ""}."
                     state.outcomes += when {
                         taxes.isEmpty() -> "All ${able.size} of ${p.possessive} creatures that can attack may: nothing taxes attacking ${opp.name}.$unable"
                         mana == null -> "${taxes.joinToString(" and ") { (o, t) -> "${o.name} charges ${t.cost}" }} for each creature attacking ${opp.name}, so each attacker costs {$perAttacker}; how many of ${p.possessive} ${able.size} can attack depends on how much mana ${p.subject.lowercase()} ${p.v("has", "have")}, which wasn't stated (508.1c).$unable"
@@ -1055,6 +1059,21 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
      * "I attack with my 2/2, then they attack me": the second attack can only be on the other player's turn, so the
      * earlier combat is finished and that player's turn begins before it is declared.
      */
+    /** "Can I save my team?" with an opposing sweeper on the stack: a permanent of the asker's whose sacrifice makes their creatures indestructible is used in response. */
+    private fun saveTeamPrepass(sit: Situation): Situation {
+        val ask = sit.events.firstOrNull { it.verb == "ask" && it.to == "saveTeam" } ?: return sit
+        val who = ask.player ?: "me"
+        val castIdx = sit.events.indexOfLast { it.verb == "cast" && it.player != who }
+        if (castIdx < 0) return sit
+        val scratch = GameState(emptyList(), LinkedHashMap())
+        val saver = sit.objects.firstOrNull { o -> o.controller == who && o.zone == "battlefield" && cardDef(o.card, scratch)?.abilities?.filterIsInstance<ActivatedAbility>()?.any { a -> a.cost.contains("Sacrifice", true) && a.text.contains("indestructible", true) && a.text.contains("creatures you control", true) } == true }
+        val events = sit.events.toMutableList()
+        events.removeAt(events.indexOf(ask))
+        if (saver == null) { events += EventSpec("ask", to = "text:Nothing described that ${if (who == "me") "you control" else "they control"} saves the team from that: an effect that makes your creatures indestructible (Selfless Spirit, Boros Charm), regenerates them, or gives them protection would; name it for an answer."); return sit.copy(events = events) }
+        events.add(castIdx + 1, EventSpec("activate", player = who, obj = saver.id))
+        events += EventSpec("ask", to = "text:Yes: sacrifice ${saver.card.name} in response, while the sweeper is on the stack; the ability resolves first and your other creatures are indestructible when it resolves. ${saver.card.name} itself is gone (it was the cost).")
+        return sit.copy(events = events)
+    }
     private fun nextTurnIfOtherAttacks(who: String, state: GameState, engine: Engine) {
         val active = state.activePlayer ?: return
         if (active == who) return
