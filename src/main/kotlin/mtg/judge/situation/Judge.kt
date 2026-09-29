@@ -752,6 +752,11 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         return
                     }
                 }
+                if (e.to == "untapsOn") {
+                    val o = state.obj(e.obj ?: throw JudgeException("ask needs an object")); val c = state.player(o.controller)
+                    state.outcomes += "${o.name} untaps during ${c.possessive} untap step: a permanent untaps on its controller's turn (502.3), and control is what changed, not ownership${if (o.owner != o.controller) " (${state.player(o.owner).let { if (it.you) "you" else it.name }} still own${if (state.player(o.owner).you) "" else "s"} it)" else ""}."
+                    return
+                }
                 if (e.to == "whichBlock") {
                     val p = state.player(e.player ?: "me")
                     val attackers = state.objects.values.filter { a -> a.isOnBattlefield() && (a.attacking as? Ref.Player)?.id == p.id }

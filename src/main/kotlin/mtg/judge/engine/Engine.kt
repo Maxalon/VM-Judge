@@ -647,6 +647,9 @@ class Engine(val state: GameState) {
             val made = if (boosts.isNotEmpty()) madeBoost else made0
             trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s mana ability (${ability.cost}). It's a mana ability, so it doesn't use the stack and resolves immediately: ${made ?: describeManaEffect(ability.effect)}.", "605.1a", "605.3b")
             if (ability.cost.contains("{T}")) tap(obj)
+            // Spellskite's {U/P} with no mana: a Phyrexian symbol is paid with 2 life instead (107.4f).
+            val phyrexian = Regex("""\{[WUBRG]/P\}""").findAll(ability.cost).count()
+            if (phyrexian > 0) { val p = state.player(playerId); if (p.mana == 0) { p.life = p.life?.minus(2 * phyrexian); trace.step("${p.subject} ${p.v("has", "have")} no mana, so the ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} in ${obj.name}'s cost is paid with 2 life${if (phyrexian > 1) " each" else ""} (a Phyrexian mana symbol can be paid with either its colour of mana or 2 life).", "107.4f"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} ${2 * phyrexian} life for ${obj.name}'s ${if (phyrexian == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"}." } else trace.step("${obj.name}'s cost includes Phyrexian mana, payable with that colour of mana or 2 life.", "107.4f") }
             state.outcomes += "${obj.name}'s mana ability: ${made ?: describeManaEffect(ability.effect)}."
             // A mana ability that needs working out (devotion, "for each") explains itself in the trace.
             if (ability.effect is Effect.AddManaDevotion) applyEffect(ability.effect, StackItem(state.newStackId(), StackKind.ACTIVATED, playerId, obj, ability.effect, emptyList(), emptyMap(), ability.text, choice = choice))
@@ -700,6 +703,14 @@ class Engine(val state: GameState) {
         if (ability.cost.contains("{T}") && obj.tapped == true) { trace.step("${obj.name} is already tapped, so its {T} ability can't be activated.", "602.2b", "701.26a"); state.outcomes += "${obj.name}'s {T} ability can't be activated (it's already tapped)."; return null }
         if (ability.cost.contains("{T}") && obj.def.isCreature && obj.summoningSick == true && !obj.has("haste")) { trace.step("${obj.name} hasn't been under ${state.player(playerId).possessive} control since the turn began and doesn't have haste, so its {T} ability can't be activated.", "302.6"); state.outcomes += "${obj.name}'s {T} ability can't be activated (summoning sickness)."; return null }
         if (ability.cost.contains("{T}")) tap(obj)
+        // Spellskite's {U/P} with no mana: a Phyrexian symbol is paid with 2 life instead (107.4f).
+        run {
+            val phyrexian = Regex("""\{[WUBRG]/P\}""").findAll(ability.cost).count()
+            if (phyrexian == 0) return@run
+            val p = state.player(playerId)
+            if (p.mana == 0) { p.life = p.life?.minus(2 * phyrexian); trace.step("${p.subject} ${p.v("has", "have")} no mana, so the ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} in ${obj.name}'s cost is paid with 2 life${if (phyrexian > 1) " each" else ""} (a Phyrexian mana symbol can be paid with either its colour of mana or 2 life).", "107.4f"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} ${2 * phyrexian} life for ${obj.name}'s ${if (phyrexian == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"}." }
+            else trace.step("${obj.name}'s cost includes Phyrexian mana, payable with that colour of mana or 2 life.", "107.4f")
+        }
         if (ability.cost.contains("discard this card", true)) onEvent(GameEvent.Cycled(obj))
         val needed = ability.effect.targets()
         // "I activate Spellskite" with nothing named: the one legal target, as for spells.
@@ -2842,6 +2853,7 @@ class Engine(val state: GameState) {
                     p.handSize = 0; state.outcomes += "${p.subject} ${p.v("discards", "discard")} ${known.joinToString(" and ") { it.name }}."; continue
                 }
                 if (hand == null) { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"} (${p.possessive} hand size wasn't given).", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}." }
+                else if (hand == 0) { trace.step("${p.subject} ${p.v("has", "have")} no cards in hand, so nothing is discarded.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} nothing (no cards in hand)." }
                 else { val d = minOf(n, hand); p.handSize = hand - d; trace.step("${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"}${if (d < n) " (only $hand in hand)" else ""}, leaving ${p.handSize} in hand.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"} ($hand → ${p.handSize} in hand)." }
             }
             is Effect.ExileIfDamagedDies -> {
@@ -4003,6 +4015,9 @@ class Engine(val state: GameState) {
         // Veil of Summer: hexproof from a colour, for the player and for their permanents.
         if (ref is Ref.Player && ref.id != controller) state.player(ref.id).hexproofFrom.firstOrNull { it in source.def.colors }?.let { c -> return "${state.nameOf(ref)} ${if (state.player(ref.id).you) "have" else "has"} hexproof from ${colorWord(c)} until end of turn, and ${source.name} is ${colorWord(c)}, so it can't target ${if (state.player(ref.id).you) "you" else "them"}" to "702.11d" }
         if (ref is Ref.Obj) state.objects[ref.id]?.let { o -> if (o.controller != controller) o.tempKeywords.firstOrNull { k -> k.startsWith("hexproof from ") && source.def.colors.any { c -> colorWord(c) == k.removePrefix("hexproof from ") } }?.let { k -> return "${o.name} has $k until end of turn, and ${source.name} is ${k.removePrefix("hexproof from ")}, so it can't be the target of that spell or ability" to "702.11d" } }
+        // Ivory Mask: a player with shroud can't be targeted by anyone, their own spells included.
+        if (ref is Ref.Player) state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == ref.id && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.PlayerShroud } }?.let { mask ->
+            return "${state.nameOf(ref)} ${if (state.player(ref.id).you) "have" else "has"} shroud (${mask.name}) and can't be the target of spells or abilities at all" to "702.18a" }
         if (ref is Ref.Player && ref.id != controller && state.objects.values.any { it.isOnBattlefield() && it.controller == ref.id && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.PlayerHexproof } })
             return "${state.nameOf(ref)} ${if (state.player(ref.id).you) "have" else "has"} hexproof (${state.objects.values.first { it.isOnBattlefield() && it.controller == ref.id && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.PlayerHexproof } }.name}) and can't be the target of spells or abilities an opponent controls" to "702.11c"
         val o = (ref as? Ref.Obj)?.let { state.objects[it.id] } ?: return null

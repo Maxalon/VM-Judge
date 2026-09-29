@@ -19350,7 +19350,7 @@
     "id": "hymn-empty-hand",
     "text": "my opponent has no cards in hand, i cast hymn to tourach, does it do anything",
     "expect": [
-      "opponent discards 0 cards (0 → 0 in hand)."
+      "opponent discards nothing (no cards in hand)."
     ]
   },
   {
@@ -19882,7 +19882,7 @@
     "id": "each-player-discards-with-empty-hand",
     "text": "i cast a spell that says each player discards a card, i have 0 cards, what happens",
     "expect": [
-      "You discard 0 cards (0 → 0 in hand).",
+      "You discard nothing (no cards in hand).",
       "opponent discards 1 card."
     ]
   },
@@ -25331,6 +25331,96 @@
     ],
     "cite": [
       "702.16b"
+    ]
+  },
+  {
+    "id": "royal-assassin-vs-my-attacking-2-2",
+    "text": "I have a 2/2 and they have Royal Assassin. I attack. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "opponent takes 2 damage."
+    ]
+  },
+  {
+    "id": "control-magic-whose-turn-does-it-untap",
+    "text": "They cast Control Magic on my Grizzly Bears. Whose turn does it untap on?",
+    "expect": [
+      "Grizzly Bears untaps during opponent's untap step: a permanent untaps on its controller's turn (502.3), and control is what changed, not ownership (you still own it)."
+    ]
+  },
+  {
+    "id": "ophidian-unblocked-do-i-draw",
+    "text": "I have Ophidian and attack. They don't block. Do I draw?",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ]
+  },
+  {
+    "id": "spellskite-with-no-mana-redirect",
+    "text": "They cast Lightning Bolt at me and I have Spellskite but no mana. Can I redirect?",
+    "expect": [
+      "You pay 2 life for Spellskite's Phyrexian mana symbol.",
+      "Lightning Bolt now targets Spellskite instead of you."
+    ],
+    "cite": [
+      "107.4f"
+    ]
+  },
+  {
+    "id": "evacuation-three-2-2s",
+    "text": "I have three 2/2s and they cast Evacuation. Where do my creatures go?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your hand. (×3)"
+    ]
+  },
+  {
+    "id": "chainers-edict-on-me-with-bears",
+    "text": "I have Grizzly Bears and they cast Chainer's Edict on me. Do I sacrifice?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Yes: you sacrifice 1 permanent here."
+    ]
+  },
+  {
+    "id": "hymn-on-me-with-empty-hand",
+    "text": "They cast Hymn to Tourach on me with an empty hand. What happens?",
+    "expect": [
+      "You discard nothing (no cards in hand)."
+    ]
+  },
+  {
+    "id": "bolt-their-face-vs-ivory-mask",
+    "text": "I cast Lightning Bolt at their face and they have Ivory Mask. Can I?",
+    "expect": [
+      "Lightning Bolt can't target opponent.",
+      "Why: opponent has shroud (Ivory Mask) and can't be the target of spells or abilities at all."
+    ],
+    "cite": [
+      "702.18a"
+    ]
+  },
+  {
+    "id": "naturalize-rancor-where-does-it-go",
+    "text": "I have a Grizzly Bears with a Rancor and they Naturalize the Rancor. Where does Rancor go?",
+    "expect": [
+      "Rancor: the battlefield → your graveyard.",
+      "Rancor: your graveyard → your hand."
+    ]
+  },
+  {
+    "id": "wall-of-denial-blocks-4-4",
+    "text": "They attack with a 4/4 and I block with Wall of Denial. Does the wall survive?",
+    "expect": [
+      "Yes: Wall of Denial is still on the battlefield."
+    ]
+  },
+  {
+    "id": "sol-ring-mana-vault-two-lands",
+    "text": "I have Sol Ring, Mana Vault untapped and 2 lands. How much mana can I make?",
+    "expect": [
+      "You can make 7 mana right now: Sol Ring → {C}{C}; Mana Vault → {C}{C}{C}; plus the 2 the situation gives from permanents it didn't name."
     ]
   }
 ]

@@ -208,7 +208,7 @@ class SituationParser(private val names: NameIndex) {
         }
         // "They have Maze of Ith. I attack. Does my creature deal damage?": a Maze on the other side is used on the one
         // attacker, in the declare-blockers step, and the answer says so.
-        for (maze in ctx.objects.values.filter { o -> o.zone == "battlefield" && o.card.name in setOf("Maze of Ith", "Kor Haven") }) {
+        for (maze in ctx.objects.values.filter { o -> o.zone == "battlefield" && o.card.name in setOf("Maze of Ith", "Kor Haven", "Royal Assassin") }) {
             if (ctx.events.any { it.verb == "activate" && it.obj == maze.id }) continue
             val attacks = ctx.events.withIndex().filter { (_, e) -> e.verb == "attack" && e.player != maze.controller && e.player != null && e.targets.firstOrNull() == maze.controller }
             // "I attack" with one creature: the whole team is that creature.
@@ -220,7 +220,7 @@ class SituationParser(private val names: NameIndex) {
             }
             var at = i + 1; while (at < ctx.events.size && ctx.events[at].verb in setOf("attack", "attackAll")) at++
             ctx.events.add(at, EventSpec("activate", player = maze.controller, obj = maze.id, targets = listOf(target)))
-            ctx.notes += "${maze.card.name} is on ${if (maze.controller == "me") "your" else (ctx.players[maze.controller] ?: "your opponent") + "'s"} side; assuming it is activated on the attacker after blockers are declared. Say it isn't if so."
+            ctx.notes += "${maze.card.name} is on ${if (maze.controller == "me") "your" else (ctx.players[maze.controller] ?: "your opponent") + "'s"} side; assuming it is activated on the attacker once it has attacked. Say it isn't if so."
         }
         ctx.events += ctx.asks
         // Every player that took part; "me" and "opponent" only when the text spoke of them (or named nobody).
@@ -654,6 +654,11 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(?:does|will|would) (?:c\d+|it|that|the spell) still (?:kill|destroy|get) (it|that|them|the creature|my c\d+|their c\d+)\b""", RegexOption.IGNORE_CASE), "does $1 die")
             // "can Mother save the Bears?": whatever the asker has that would save it is tried, Mother included.
         t2 = t2.replace(Regex("""\bcan (?:my |the )?(?:c\d+|mother|mom|it|that|she|he) save (the |my )?(c\d+|it|them)\b""", RegexOption.IGNORE_CASE), "can i save $1$2")
+            // "I have Spellskite but no mana": the mana, said as an afterthought of the same sentence.
+        t2 = t2.replace(Regex("""\b(?:but|and) no mana( (?:open|available|up|left|untapped))?(?=[,.?]|$)""", RegexOption.IGNORE_CASE), ", have no mana")
+            // "Hymn to Tourach on me with an empty hand": the hand is the target's.
+        t2 = t2.replace(Regex("""\b(on|at|targeting) me (?:with|while i have|when i have) (?:an )?empty hand\b""", RegexOption.IGNORE_CASE), "$1 me, i have no cards in hand")
+        t2 = t2.replace(Regex("""\b(on|at|targeting) (them|him|her|my opponent) (?:with|while they have|when they have) (?:an )?empty hand\b""", RegexOption.IGNORE_CASE), "$1 $2, they have no cards in hand")
             // "do I take 5?": how much damage the asker takes.
         t2 = t2.replace(Regex("""\bdo (i|we) (?:still |even )?take (?:the )?\d+(?: damage)?\??$""", RegexOption.IGNORE_CASE), "how much damage do i take")
             // "how much damage?" on its own, after a held spell: what the other player takes.
@@ -2826,12 +2831,20 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:" + (if (creature) "Only in a main phase of your own turn, with the stack empty and the mana to pay for it again (302.1): a creature card can't be cast at instant speed. If ${name} was bounced during your turn, you can recast it in your main phase this turn; if it was bounced on your opponent's turn, it waits for your next turn. It comes back as a new object, summoning sick again (302.6)." else "Only when its timing allows (an instant any time you have priority, anything else in your own main phase with the stack empty, 307.1) and with the mana to pay for it again. It's a new object with no memory of having been on the battlefield (400.7).")); return true
         }
         // "They Bolt my face and I have Spellskite. Can I redirect it?": Spellskite's ability, aimed at the spell.
-        Regex("""^can (?:i|we) (?:still )?(?:redirect|deflect|spellskite|skite) (?:it|that|the spell|the bolt|their spell)(?: (?:to|onto|with|at|into) (?:my |the )?(?:c\d+|it))?$""").find(clause0)?.let {
+        Regex("""^can (?:i|we) (?:still )?(redirect|deflect|spellskite|skite|c\d+)(?: (?:it|that|the spell|the bolt|their spell))?(?: (?:to|onto|with|at|into) (?:my |the )?(?:c\d+|it))?$""").find(clause0)?.let { r ->
+            // "Redirect" is also a card name, so the verb may have been read as one.
+            if (r.groupValues[1].startsWith("c") && m.cards[r.groupValues[1]]?.display != "Redirect") return@let
             val skite = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && (it.card.name ?: "") == "Spellskite" } ?: return@let
             val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
             val name = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: return@let
             ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(slug(name) + ":spell"))
             ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Spellskite targeting $name; the outcome says where the spell ends up aimed."; return true
+        }
+        // "They Control Magic my Bears. Whose turn does it untap on?": its controller's untap step.
+        Regex("""^(?:on )?(?:whose|which player's|who's) turn (?:does|will) (?:it|that|(?:my |the )?(c\d+)) untap(?: on| during)?$|^when (?:does|will) (?:it|that|(?:my |the )?(c\d+)) untap(?: again)?$""").find(clause0)?.let { r ->
+            val id = (r.groupValues[1].ifEmpty { r.groupValues[2] }).takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) }
+                ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull { it in ctx.objects } ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "untapsOn"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "They attack with a 6/6 and a 1/1. I have one 3/3. Which should I block?": the trades, one per attacker.
         Regex("""^(?:which|which one|what|who) (?:should|do|can|would) (?:i|we) block(?: with (?:it|my creature|my \d+/\d+))?$|^(?:what|which) (?:is|'s) (?:the )?(?:best|right|correct) block$""").find(clause0)?.let {

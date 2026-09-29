@@ -481,6 +481,8 @@ sealed interface StaticEffect {
     /** "~ can't block" / "~ can't attack" / "~ can't be countered" / "~ can't be blocked". */
     /** "You have hexproof" (Leyline of Sanctity): the controller can't be targeted by opponents (702.11c). */
     data object PlayerHexproof : StaticEffect
+    /** Ivory Mask: "You have shroud." — nobody can target the player, its controller included. */
+    data object PlayerShroud : StaticEffect
     /** "You can't lose the game and your opponents can't win the game" (Platinum Angel). */
     data object CantLose : StaticEffect
     /** "~ can block an additional creature each combat": checked by its words as blockers are declared. */
