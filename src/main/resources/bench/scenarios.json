@@ -26801,5 +26801,98 @@
       "opponent takes 2 damage.",
       "You gain 2 life."
     ]
+  },
+  {
+    "id": "unsummon-own-attacker-before-damage",
+    "text": "I attack with a 2/2 and my opponent blocks with a 1/1. Before damage I cast Unsummon on my 2/2. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your hand."
+    ]
+  },
+  {
+    "id": "raise-dead-what-can-i-get-back",
+    "text": "My opponent casts Damnation. I have Grizzly Bears and Kor Skyfisher. Then I cast Raise Dead. What can I get back?",
+    "expect": [
+      "Raise Dead could take any one of Grizzly Bears or Kor Skyfisher: each is a legal target, and you choose one as you cast it (601.2c). Grizzly Bears was taken above as an example."
+    ]
+  },
+  {
+    "id": "mana-reflection-forest",
+    "text": "I control Mana Reflection and tap a Forest. How much mana do I get?",
+    "expect": [
+      "Forest's mana ability: add {G}{G}."
+    ]
+  },
+  {
+    "id": "kor-firewalker-at-three-bolted",
+    "text": "My opponent casts Lightning Bolt at me and I'm at 3 with a Kor Firewalker. Do I die?",
+    "expect": [
+      "You gain 1 life.",
+      "You take 3 damage.",
+      "No: You are still in the game at 1 life."
+    ]
+  },
+  {
+    "id": "dryad-arbor-vs-wrath",
+    "text": "I have Dryad Arbor. My opponent casts Wrath of God. What happens?",
+    "expect": [
+      "Dryad Arbor: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "bolt-my-blocker-attacker-stays-blocked",
+    "text": "My opponent attacks with a 2/2 and I block with a 2/2. They cast Lightning Bolt on my blocker before damage. Does their 2/2 deal damage to me?",
+    "expect": [
+      "a 2/2 creature deals no combat damage: its blocker left combat and it stays blocked."
+    ]
+  },
+  {
+    "id": "path-on-token-they-get-a-land",
+    "text": "I cast Path to Exile on my opponent's token. Do they get a land?",
+    "expect": [
+      "a 1/1 token: the battlefield → exile.",
+      "Yes: the search is opponent's. The card gives it to the exiled creature's controller, which is opponent; opponent may search for a basic land card and put it onto the battlefield tapped."
+    ]
+  },
+  {
+    "id": "counter-plus-giant-growth-size",
+    "text": "I control Grizzly Bears with a +1/+1 counter and cast Giant Growth on it. How big is it?",
+    "expect": [
+      "Grizzly Bears is 6/6 (2/2 base, +3/+3 until end of turn, 1 +1/+1 counter)."
+    ]
+  },
+  {
+    "id": "thalia-bears-cost-note",
+    "text": "My opponent has Thalia, Guardian of Thraben. How much does my Grizzly Bears cost?",
+    "expect": [
+      "Thalia, Guardian of Thraben taxes only noncreature spells, and Grizzly Bears isn't one.",
+      "Grizzly Bears costs {1}{G} — 2 mana. Nothing on the battlefield changes it."
+    ]
+  },
+  {
+    "id": "two-lands-bolt-then-counterspell",
+    "text": "I have 2 lands and cast Lightning Bolt. Can I also cast Counterspell this turn?",
+    "expect": [
+      "Counterspell can't be cast (costs 2, only 1 mana available)."
+    ]
+  },
+  {
+    "id": "vines-of-vastwood-vs-doom-blade",
+    "text": "My opponent casts Doom Blade on my Grizzly Bears and I respond with Vines of Vastwood. What happens?",
+    "expect": [
+      "Grizzly Bears has hexproof until end of turn.",
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ],
+    "notExpect": [
+      "not modeled"
+    ]
+  },
+  {
+    "id": "trample-four-four-vs-saproling",
+    "text": "I attack with a 4/4 with trample and my opponent blocks with a 0/1 Saproling. How much damage do they take?",
+    "expect": [
+      "opponent takes 3 damage.",
+      "Yes: opponent takes 3 damage in all."
+    ]
   }
 ]

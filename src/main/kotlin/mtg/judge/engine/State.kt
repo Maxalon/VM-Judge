@@ -273,6 +273,8 @@ class GameState(
     val willPay = mutableSetOf<String>()
     /** Choices announced for a permanent's next triggered ability, by source object id ("put Rakdos with Kaalia's trigger"): an object id. */
     val pendingChoices = mutableMapOf<String, String>()
+    /** "Raise Dead. What can I get back?": every card the last graveyard-targeting spell could have chosen, by name. */
+    var lastGraveyardChoices: Pair<String, List<String>>? = null
     /** Players who said they will not pay the next optional cost asked of them. */
     val wontPay = mutableSetOf<String>()
     val clarifications = mutableListOf<Clarification>()

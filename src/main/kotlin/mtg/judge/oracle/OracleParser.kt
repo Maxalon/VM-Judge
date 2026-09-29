@@ -1543,6 +1543,8 @@ object OracleParser {
         if (Regex("""^put ~ on top of its owner's library\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.PutSelfOnLibraryTop
         Regex("""^~ deals (\d+) damage to you\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.DamagePlayer(Who.YOU, m.groupValues[1].toInt()) }
         if (Regex("""^reveal the top card of your library and put that card into your hand\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.RevealTopToHand(Who.YOU)
+        // Vines of Vastwood: "Target creature can't be the target of spells or abilities your opponents control this turn." (hexproof for the turn)
+        Regex("""^(target creature(?: you control)?) can't be the target of spells or abilities your opponents control this turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.GainKeywords(target(m.groupValues[1]), setOf("hexproof")) }
         if (Regex("""^you lose life equal to its mana value\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.LoseLifeEqualToRevealedMv(Who.YOU)
         if (Regex("""^you lose life equal to (?:that card's|its|the exiled card's|that permanent's) mana value\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.LoseLifeEqualToTargetMv(Who.YOU)
         // "Create a token that's a copy of target creature you control(, except …)." (Kiki-Jiki and the 300-odd like it.)

@@ -2883,6 +2883,11 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.none { it.verb in setOf("cast", "activate") && ctx.events.indexOf(it) > ctx.events.indexOfLast { e -> e.verb == "attack" } }) return@let
             ctx.asks += EventSpec("ask", obj = att, to = "stillAttacking"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
+        // "Then I cast Raise Dead. What can I get back?": every card the spell could have chosen.
+        Regex("""^(?:what|which(?: ones?| cards?| creatures?)?) (?:can|could|may) (?:i|we) (?:get back|return|bring back|reanimate|target|pick|choose|take back|grab|recur)(?: with (?:it|that|(?:my |the )?c\d+))?$""").find(clause0)?.let {
+            if (ctx.events.none { it.verb == "cast" && it.player == "me" }) return@let
+            ctx.asks += EventSpec("ask", player = "me", to = "graveyardChoices"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
         // "Whose graveyard does the Bears go to?": the owner's, whoever controlled it.
         Regex("""^(?:whose|which|what) graveyard (?:does|do|will|would) (?:it|that|they|(?:the |my |their )?(c\d+)|the creature|the bears) (?:go|end up|get put) (?:to|in|into)$|^(?:whose|which) graveyard$""").find(clause0)?.let { r ->
             val id = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) } ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
