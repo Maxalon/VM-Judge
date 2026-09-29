@@ -3901,10 +3901,13 @@ class Engine(val state: GameState) {
                 if (fodder == 0) Triple<GameObject, String, Int?>(o, "nothing right now (nothing to sacrifice)", 0) else Triple<GameObject, String, Int?>(o, "$what per $sacKind sacrificed, $fodder ${sacKind}${if (fodder == 1) "" else "s"} to sacrifice", n * fodder)
             }
         }
-        val total = maxOf(0, sourcesX.filter { it.third != null }.sumOf { it.third ?: 0 } - p.manaSpent) + p.manaPool
+        // "I cast Sol Ring turn one, how much mana do I have?": what paid for the Ring came from a land the situation didn't
+        // name, so it isn't taken off the Ring's own mana; the spent count comes off only a stated count or named lands.
+        val spentHere = if (stated != null || sourcesX.any { "Land" in it.first.def.types }) p.manaSpent else 0
+        val total = maxOf(0, sourcesX.filter { it.third != null }.sumOf { it.third ?: 0 } - spentHere) + p.manaPool
         return "${p.subject} can make ${total + (stated ?: 0)} mana right now: " + sourcesX.joinToString("; ") { (o, what, n) -> "${o.name} → $what" + (if (n == null) "" else "") } +
             (if (p.manaPool > 0) "; plus ${p.poolText()} already in ${p.possessive} mana pool" else "") +
-            (if (p.manaSpent > 0) "; less the ${p.manaSpent} already spent on what was cast" else "") +
+            (if (spentHere > 0) "; less the $spentHere already spent on what was cast" else "") +
             (if (stated != null) "; plus the $stated the situation gives from permanents it didn't name" else "") + "."
     }
 

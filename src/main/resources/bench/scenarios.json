@@ -25029,5 +25029,90 @@
     "cite": [
       "202.3"
     ]
+  },
+  {
+    "id": "cmd-dies-back-to-command-zone",
+    "text": "my commander dies, can i put it back in the command zone",
+    "expect": [
+      "a commander: your graveyard → the command zone (its owner's choice, 903.9a)."
+    ],
+    "cite": [
+      "903.9a"
+    ]
+  },
+  {
+    "id": "cmd-21-commander-damage-am-i-dead",
+    "text": "i have 21 commander damage from their commander over three turns, am i dead",
+    "expect": [
+      "You lose the game (commander damage).",
+      "Yes: You have lost the game."
+    ]
+  },
+  {
+    "id": "cmd-cyclonic-rift-overloaded-lands",
+    "text": "they cast Cyclonic Rift overloaded, do my lands bounce too",
+    "expect": [
+      "Cyclonic Rift affects nothing: nothing on the battlefield is a nonland permanent you don't control to bounce."
+    ]
+  },
+  {
+    "id": "cmd-smothering-tithe-two-draws",
+    "text": "i control Smothering Tithe and they draw two cards, do i get treasures",
+    "expect": [
+      "You get a Treasure token. (×2)"
+    ]
+  },
+  {
+    "id": "cmd-wrath-four-player-all-creatures",
+    "text": "someone casts Wrath in a four player game, do all creatures die",
+    "expect": [
+      "Yes: Wrath of God says \"creatures\", which is every creature on the battlefield, every player's including its caster's; the number of players changes nothing."
+    ]
+  },
+  {
+    "id": "cmd-monarch-taken-by-1-1",
+    "text": "i'm the monarch and they hit me with a 1/1, who is the monarch now",
+    "expect": [
+      "You take 1 damage.",
+      "opponent is the monarch."
+    ]
+  },
+  {
+    "id": "cmd-fog-vs-commander-damage",
+    "text": "i attack them with my commander and they have Fog, does it count as commander damage",
+    "expect": [
+      "No: no damage was dealt by the commander, and only damage actually dealt counts as commander damage — prevented damage adds nothing (704.5v, 615.1)."
+    ]
+  },
+  {
+    "id": "cmd-bribery-what-can-they-take",
+    "text": "my opponent casts Bribery on me, what can they take",
+    "expect": [
+      "Bribery lets opponent search your whole library and choose any creature card in it (they see every card as they search), so anything of that kind in your deck is fair game; the card stays owned by you."
+    ]
+  },
+  {
+    "id": "cmd-doubling-season-planeswalker-3-loyalty",
+    "text": "i have Doubling Season and cast a planeswalker with 3 loyalty, how much loyalty does it enter with",
+    "expect": [
+      "a planeswalker with 3 loyalty has 6 loyalty."
+    ],
+    "cite": [
+      "306.5b"
+    ]
+  },
+  {
+    "id": "cmd-sol-ring-turn-one-mana",
+    "text": "i cast Sol Ring turn one, how much mana do i have available",
+    "expect": [
+      "You can make 2 mana right now: Sol Ring → {C}{C}."
+    ]
+  },
+  {
+    "id": "cmd-torpor-orb-vs-eternal-witness",
+    "text": "they play Torpor Orb, does my Eternal Witness still get its card back",
+    "expect": [
+      "No: Torpor Orb stops it. Eternal Witness entering doesn't cause any ability to trigger, its own included."
+    ]
   }
 ]

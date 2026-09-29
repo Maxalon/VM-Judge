@@ -565,6 +565,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val castEv = curEvents.lastOrNull { it.verb == "cast" && it.player == chooser.id } ?: throw JudgeException("no spell of ${chooser.possessive} to choose with")
                     val def = castEv.card?.let { cardDef(it, state) } ?: castEv.obj?.let { state.objects[it]?.def } ?: throw JudgeException("the spell cast couldn't be read")
                     fun find(eff: Effect?): Effect.DiscardChosen? = when (eff) { is Effect.DiscardChosen -> eff; is Effect.Seq -> eff.effects.firstNotNullOfOrNull { find(it) }; is Effect.May -> find(eff.effect); else -> null }
+                    // "My opponent casts Bribery on me. What can they take?": a search of the library, not a look at the hand.
+                    Regex("""(?i)search target (?:opponent's|player's) library for an? ([a-z ]+?) card""").find(def.oracleText)?.let { sr ->
+                        state.outcomes += "${def.name} lets ${chooser.subject.lowercase()} search your whole library and choose any ${sr.groupValues[1]} card in it (they see every card as they search), so anything of that kind in your deck is fair game; the card stays owned by you."; return
+                    }
                     val dc = find(def.spellEffect) ?: throw JudgeException("${def.name} doesn't have a card chosen from a hand")
                     val victim = state.opponentsOf(chooser.id).firstOrNull() ?: throw JudgeException("no other player")
                     val handThen = curObjects.filter { it.zone == "hand" && it.controller == victim.id }.mapNotNull { state.objects[it.id] }
@@ -733,6 +737,27 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         state.outcomes += if (e.to == "die") "Yes: $nm died, and as a token it then ceased to exist (704.5d)." else "No: $nm died, and as a token it then ceased to exist (704.5d)."
                         return
                     }
+                }
+                if (e.to == "allCreaturesDie") {
+                    val castEv = curEvents.lastOrNull { it.verb == "cast" } ?: throw JudgeException("no spell cast")
+                    val def = castEv.card?.let { cardDef(it, state) } ?: throw JudgeException("the spell cast couldn't be read")
+                    fun sweep(eff: Effect?): Effect.ForAll? = when (eff) { is Effect.ForAll -> eff.takeIf { it.action == "destroy" || it.action == "exile" || it.action == "sacrifice" }; is Effect.Seq -> eff.effects.firstNotNullOfOrNull { sweep(it) }; else -> null }
+                    val sw = sweep(def.spellEffect)
+                    state.outcomes += when {
+                        sw == null -> "${def.name} doesn't say \"all creatures\": it affects only what it targets or names."
+                        sw.filter.controller == null && mtg.judge.engine.Kind.CREATURE in sw.filter.kinds -> "Yes: ${def.name} says \"${sw.filter.raw.ifEmpty { "all creatures" }}\", which is every creature on the battlefield, every player's including its caster's; the number of players changes nothing."
+                        sw.filter.controller != null -> "No: ${def.name} reaches only ${sw.filter.raw} — not every creature at the table."
+                        else -> "${def.name} affects ${sw.filter.raw}, whoever controls them."
+                    }
+                    return
+                }
+                if (e.to == "commanderDamageDealt") {
+                    val p = state.player(e.player ?: state.players.first().id)
+                    val dealt = state.trace.steps.filter { it.text.contains("commander damage") && it.text.contains(p.subject) }
+                    val total = p.commanderDamage.values.sum()
+                    state.outcomes += if (total > 0 || dealt.isNotEmpty()) "Yes: commander damage counts whatever the source of the damage is, as long as the damage is actually dealt; ${p.subject.lowercase()} ${p.v("has", "have")} taken $total in all (704.5v)."
+                        else "No: no damage was dealt by the commander, and only damage actually dealt counts as commander damage — prevented damage adds nothing (704.5v, 615.1)."
+                    return
                 }
                 if (e.to == "tapAbility") {
                     val o = state.obj(e.obj ?: throw JudgeException("ask needs an object"))
