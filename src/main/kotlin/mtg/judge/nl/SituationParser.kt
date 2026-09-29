@@ -2883,6 +2883,17 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.none { it.verb in setOf("cast", "activate") && ctx.events.indexOf(it) > ctx.events.indexOfLast { e -> e.verb == "attack" } }) return@let
             ctx.asks += EventSpec("ask", obj = att, to = "stillAttacking"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
+        // "Whose graveyard does the Bears go to?": the owner's, whoever controlled it.
+        Regex("""^(?:whose|which|what) graveyard (?:does|do|will|would) (?:it|that|they|(?:the |my |their )?(c\d+)|the creature|the bears) (?:go|end up|get put) (?:to|in|into)$|^(?:whose|which) graveyard$""").find(clause0)?.let { r ->
+            val id = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) } ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "whoseGraveyard"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "I have a 2/2 and they have a 3/3. I attack. Should I?": what each of their untapped creatures could do to it.
+        Regex("""^(?:should (?:i|we)|is (?:it|that) (?:a good|a bad|a safe|the right) (?:idea|attack|play|move)|is (?:it|that|this) safe|is (?:it|this) a good attack|(?:is|isn't) (?:that|this) (?:bad|fine|ok|okay))(?: attack| swing| do (?:it|that))?$""").find(clause0)?.let {
+            val att = ctx.events.lastOrNull { it.verb == "attack" && it.player == "me" }?.obj
+                ?: ctx.events.lastOrNull { it.verb == "attackAll" && it.player == "me" }?.let { ctx.objects.values.filter { o -> o.controller == "me" && o.zone == "battlefield" && isCreatureName(o.card.name) }.takeIf { it.size == 1 }?.get(0)?.id } ?: return@let
+            ctx.asks += EventSpec("ask", obj = att, to = "attackAdvice"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
         // "They cast Ponder and I Bolt them in response. What resolves first?": the stack's order.
         Regex("""^(?:what|which|which one|which spell|who|whose) (?:resolves|goes|happens|resolve) first$|^(?:what|which) (?:is|'s) the order(?: of resolution)?$|^in (?:what|which) order do (?:they|these|those|the spells) resolve$""").find(clause0)?.let {
             if (ctx.events.count { it.verb == "cast" || it.verb == "activate" || it.verb == "trigger" } < 2) return@let
@@ -8310,7 +8321,13 @@ class SituationParser(private val names: NameIndex) {
         } else Regex("""\s*\b(?:while |when |sitting )?at (\d+) life\b""").find(rest000000)?.let { r -> ctx.life[who] = r.groupValues[1].toInt(); ctx.note(who); rest000000.removeRange(r.range) } ?: rest000000
         // "flashes in Ambush Viper to block it": the creature blocks once it has resolved.
         val blockAfter = Regex("""\s*\b(?:to|and) (?:chump[- ]?)?blocks? (?:it|that|the attacker|(?:the |my |their )?c\d+)$""").find(rest000)
-        val rest00 = blockAfter?.let { rest000.removeRange(it.range) } ?: rest000
+        // "Ancestral Recall on my opponent who has 1 card in library": the library size, said with the target.
+        val rest000L = Regex("""\s*\b(me|them|him|her|my opponent|the opponent|@\w+)\s*,?\s+(?:who(?:'s| has| have)?|that(?:'s| has)?|with)\s+(?:only |just )?(\d+|one|two|three|no|zero) cards? (?:left )?in (?:their |my |his |her |the )?library\b,?""").find(rest000)?.let { r ->
+            val pl = when (val w = r.groupValues[1]) { "me" -> "me"; else -> if (w.startsWith("@")) w.removePrefix("@") else pronounPlayer(ctx, w.substringAfterLast(' ')) }
+            ctx.librarySize[pl] = numberWords[r.groupValues[2]] ?: r.groupValues[2].toIntOrNull() ?: 0; ctx.note(pl)
+            rest000.replaceRange(r.range, " " + r.groupValues[1])
+        } ?: rest000
+        val rest00 = blockAfter?.let { rest000L.removeRange(it.range) } ?: rest000L
         if (blockAfter != null) {
             emitCast(who, card, rest00, m, ctx)
             val attacker = Regex("""(c\d+)""").find(blockAfter.value)?.groupValues?.get(1)?.let { m.cards.getValue(it) }?.let { objectIdFor(it, ctx) } ?: ctx.events.lastOrNull { it.verb == "attack" }?.obj ?: return

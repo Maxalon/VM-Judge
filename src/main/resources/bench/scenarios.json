@@ -26693,5 +26693,113 @@
       "Ensnaring Bridge: the battlefield → your graveyard.",
       "Yes: after Vindicate is cast its controller gets priority, then each player does in turn; instants can be cast and abilities activated before it resolves (117.3c, 117.4)."
     ]
+  },
+  {
+    "id": "control-magic-then-wrath-whose-graveyard",
+    "text": "I have Grizzly Bears and my opponent casts Control Magic on it. Then I cast Wrath of God. Whose graveyard does the Bears go to?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Grizzly Bears goes to your graveyard: a card put into a graveyard goes to its owner's graveyard, whoever controlled it (400.3)."
+    ],
+    "cite": [
+      "400.3"
+    ]
+  },
+  {
+    "id": "blood-moon-steam-vents-no-shock",
+    "text": "I control Blood Moon. My opponent plays Steam Vents. Do they pay 2 life?",
+    "expect": [
+      "Steam Vents enters untapped under Blood Moon, with nothing to pay: it's a Mountain with no abilities, and its own text doesn't apply as it enters (614.12)."
+    ],
+    "notExpect": [
+      "pays 2 life"
+    ],
+    "cite": [
+      "614.12"
+    ]
+  },
+  {
+    "id": "attacked-creature-tapped-on-their-turn",
+    "text": "I attack with a 3/3 and my opponent takes it. Then they attack me with a 2/2 on their turn. Can my 3/3 block?",
+    "expect": [
+      "a 3/3 creature can't block (tapped).",
+      "You take 2 damage."
+    ]
+  },
+  {
+    "id": "kor-firewalker-bolt-to-face",
+    "text": "My opponent has Kor Firewalker. I cast Lightning Bolt at their face. What happens?",
+    "expect": [
+      "opponent gains 1 life.",
+      "opponent takes 3 damage."
+    ]
+  },
+  {
+    "id": "ancestral-on-opponent-with-one-card",
+    "text": "I cast Ancestral Recall on my opponent who has 1 card in library. What happens?",
+    "expect": [
+      "opponent draws 1 card and can't draw the rest (empty library).",
+      "opponent loses the game (drew from an empty library)."
+    ],
+    "notExpect": [
+      "draws 3 cards"
+    ]
+  },
+  {
+    "id": "sheoldred-vs-brainstorm",
+    "text": "I control Sheoldred, the Apocalypse. My opponent casts Brainstorm. What happens?",
+    "expect": [
+      "opponent draws 3 cards.",
+      "opponent loses 2 life. (×3)"
+    ]
+  },
+  {
+    "id": "growth-then-second-bolt-kills",
+    "text": "My opponent casts Lightning Bolt at my 1/1 and I respond with Giant Growth. Then they cast another Bolt. Does it die?",
+    "expect": [
+      "a 1/1 creature is 4/4 until end of turn.",
+      "a 1/1 creature has 6 damage marked.",
+      "Yes: a 1/1 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "should-i-attack-two-two-into-three-three",
+    "text": "I have a 2/2 and my opponent has a 3/3. I attack. Should I?",
+    "expect": [
+      "If a 3/3 creature blocks: a 2/2 creature dies and a 3/3 creature survives.",
+      "So attacking with a 2/2 creature risks losing it for nothing if opponent blocks; unblocked it deals 2."
+    ]
+  },
+  {
+    "id": "should-i-attack-three-three-into-two-two",
+    "text": "I have a 3/3 and my opponent has a 2/2. I attack. Should I?",
+    "expect": [
+      "If a 2/2 creature blocks: a 3/3 creature survives and a 2/2 creature dies.",
+      "Unblocked it deals 3; blocked, a 3/3 creature comes out no worse than the blocker, so the attack is safe by the numbers."
+    ]
+  },
+  {
+    "id": "cryptic-tap-and-draw-no-creatures",
+    "text": "I cast Cryptic Command choosing tap all creatures your opponents control and draw a card. What happens?",
+    "expect": [
+      "Cryptic Command affects nothing: no creatures your opponents control are on the battlefield to tap.",
+      "You draw 1 card."
+    ]
+  },
+  {
+    "id": "rest-in-peace-where-does-bears-go",
+    "text": "My opponent controls Rest in Peace. My Grizzly Bears dies. Where does it go?",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile (replaced by Rest in Peace)."
+    ]
+  },
+  {
+    "id": "nighthawk-attacks-five-five-cant-block",
+    "text": "I have Vampire Nighthawk and attack. My opponent blocks with a 5/5. What happens?",
+    "expect": [
+      "a 5/5 creature can't block Vampire Nighthawk (flying).",
+      "opponent takes 2 damage.",
+      "You gain 2 life."
+    ]
   }
 ]
