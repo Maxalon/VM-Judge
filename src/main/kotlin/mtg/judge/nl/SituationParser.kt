@@ -616,6 +616,16 @@ class SituationParser(private val names: NameIndex) {
             // "how much damage?" on its own, after a held spell: what the other player takes.
         t2 = t2.replace(Regex("""(?<=[,.] )how much damage\??$""", RegexOption.IGNORE_CASE), "how much damage do they take")
         t2 = t2.replace(Regex("""^how much damage\??$""", RegexOption.IGNORE_CASE), "how much damage do they take")
+            // "I attack with a 3/3 into their 2/2 and 2/2": both of theirs block it.
+        t2 = t2.replace(Regex("""\b(attacks?|swings?)( with (?:my |an? )?\d+/\d+(?: [a-z]+)?)? into (?:their |an? |the )?(\d+/\d+) (?:and|&) (?:their |an? |the )?(\d+/\d+)\b""", RegexOption.IGNORE_CASE), "$1$2, they block with a $3 and a $4")
+            // "am I dead if they cast it?": the cast at the asker, then the question.
+        t2 = t2.replace(Regex("""\b(?:am i|are we) (?:dead|done|finished) if (they|he|she|my opponent|the opponent) casts? (it|that|(?:the |their )?c\d+)(?: at me| on me| at my face)?(?=\?|$)""", RegexOption.IGNORE_CASE), "$1 cast $2 at me, am i dead")
+            // "3 creatures on my side including Blood Artist": the count includes the one named, so two others.
+        t2 = Regex("""\b(\d+|two|three|four|five|six) (creatures?|guys?|dudes?)((?: on my (?:side|board)| in play| on the battlefield| on my side of the board)?) including (?:my )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t2) { r ->
+            val n = (r.groupValues[1].toIntOrNull() ?: mapOf("two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6)[r.groupValues[1].lowercase()] ?: 2) - 1
+            "$n ${if (n == 1) r.groupValues[2].removeSuffix("s") else r.groupValues[2]}${r.groupValues[3]}" }
+            // "how many cards have I drawn?": the count so far.
+        t2 = t2.replace(Regex("""\bhow many cards? (?:have|has) (i|we|they|he|she|my opponent|the opponent) drawn\b""", RegexOption.IGNORE_CASE), "how many cards did $1 draw")
             // "I cast Ajani Goldmane's -1": the planeswalker is cast and then its loyalty ability is activated.
         t2 = t2.replace(Regex("""\b(casts?|plays?) ((?:my |an? |the )?c\d+)'s ([+-]\d+)\b""", RegexOption.IGNORE_CASE), "$1 $2 and $3")
             // "how much mana do I need (for it)?": the cost of the spell just cast.
@@ -2739,6 +2749,13 @@ class SituationParser(private val names: NameIndex) {
             if (i < 0) return@let
             if (ctx.events[i].player != "me") ctx.events[i] = ctx.events[i].copy(player = "me")
             ctx.asks += EventSpec("ask", card = CardRef(name = "a spell"), to = "countered"); ctx.notes += "\"${restore(clause0, m)}?\" is about the spell your counter was protecting; it wasn't named, so it stands in as \"a spell\"."; return true
+        }
+        // "They double block. Can I kill both?": whether each blocker dies to the attacker's damage.
+        Regex("""^can (?:i|we|it|my creature|my \d+/\d+) (?:kill|take out|take down|get) both(?: of them| blockers| of the blockers| creatures)?$""").find(clause0)?.let {
+            val blocks = ctx.events.filter { it.verb == "block" && it.player != "me" }.mapNotNull { it.obj }.distinct().filter { it in ctx.objects }
+            if (blocks.size < 2) return@let
+            for (id in blocks) ctx.asks += EventSpec("ask", obj = id, to = "die")
+            ctx.notes += "\"${restore(clause0, m)}?\" is answered for each blocker below (the attacker's damage is divided as its controller would to kill as many as it can)."; return true
         }
         // "They cast Ancestral Recall targeting me. Do I have to draw?": a draw an effect orders isn't optional.
         Regex("""^(?:do|does) (i|we|they|he|she) (?:have to|need to|got to) draw(?: the cards?| them| all three| those)?$""").find(clause0)?.let { r ->
@@ -5908,7 +5925,7 @@ class SituationParser(private val names: NameIndex) {
         // "counter my Grizzly Bears (with Counterspell)": the spell is cast (by its owner) and then countered, with the named counter or a generic one.
         // "I counter it" / "counter that with Mana Leak": the last spell cast, countered by a named spell or one already in hand.
         // "Can I save it?" / "can I protect my Knight": what the asker has that would protect it is used in response.
-        Regex("""^(?:saves?|protects?|rescues?|keeps? .* alive|saving|protecting) (it|that|them|him|her|(?:my |the )?c\d+|(?:my |the )?\d+/\d+|(?:my |the )?$creatureKinds)(?: (?:somehow|from (?:it|that|dying|the spell|c\d+)|in response|with (?:my |the )?c\d+))?$""").find(c)?.let { r ->
+        Regex("""^(?:saves?|protects?|rescues?|keeps? .* alive|saving|protecting) (it|that|them|him|her|(?:my |the )?c\d+|(?:my |the )?\d+/\d+|(?:my |the )?$creatureKinds)(?: (?:somehow|from (?:it|that|dying|the spell|c\d+)|in response|with (?:my |the )?c\d+|with its own ability|with its ability|with itself|by itself|on its own|by tapping it|by tapping itself))?$""").find(c)?.let { r ->
             val who = actor ?: subject ?: "me"
             val w = r.groupValues[1]
             val id = when {

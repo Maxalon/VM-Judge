@@ -24510,5 +24510,100 @@
     "cite": [
       "302.1"
     ]
+  },
+  {
+    "id": "blood-artist-wrath-three-including-it",
+    "text": "I have Blood Artist and they Wrath with 3 creatures on my side including Blood Artist. How much life do they lose?",
+    "expect": [
+      "opponent loses 3 life in all."
+    ]
+  },
+  {
+    "id": "mother-of-runes-saves-itself-from-bolt",
+    "text": "They cast Lightning Bolt at my Mother of Runes. Can I save it with its own ability?",
+    "expect": [
+      "Mother of Runes has protection from red until end of turn.",
+      "Lightning Bolt doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "702.16b"
+    ]
+  },
+  {
+    "id": "viscera-seer-sac-bears-in-response-to-doom-blade",
+    "text": "I have Viscera Seer and Grizzly Bears. They Doom Blade the Bears. Can I sac it in response?",
+    "expect": [
+      "Viscera Seer: Scry 1 (not tracked in detail).",
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ]
+  },
+  {
+    "id": "at-3-am-i-dead-if-they-bolt",
+    "text": "I'm at 3 and they have Lightning Bolt. Am I dead if they cast it?",
+    "expect": [
+      "You take 3 damage.",
+      "Yes: You have lost the game."
+    ]
+  },
+  {
+    "id": "3-3-into-two-2-2s-can-i-kill-both",
+    "text": "I attack with a 3/3 into their 2/2 and 2/2. They double block. Can I kill both?",
+    "expect": [
+      "Yes: a 2/2 creature died (it's in the graveyard).",
+      "No: a 2/2 creature is still on the battlefield.",
+      "a 3/3 creature: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "darkblast-on-2-2-does-it-die",
+    "text": "I have a 2/2 and they cast Darkblast on it. Does it die?",
+    "expect": [
+      "a 2/2 creature is 1/1 until end of turn.",
+      "No: a 2/2 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "ponder-then-brainstorm-how-many-drawn",
+    "text": "I cast Ponder and then Brainstorm. How many cards have I drawn?",
+    "expect": [
+      "You draw 4 cards in all."
+    ]
+  },
+  {
+    "id": "propaganda-two-lands-two-creatures-attack-both",
+    "text": "They have Propaganda. I have 2 lands and two creatures. Can I attack with both?",
+    "expect": [
+      "You pay {2} for Propaganda (a creature attacks).",
+      "a creature can't attack (can't pay {2} for Propaganda)."
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "soul-warden-they-cast-a-creature",
+    "text": "I have Soul Warden and they cast a creature. Do I gain life?",
+    "expect": [
+      "You gain 1 life in all."
+    ]
+  },
+  {
+    "id": "fog-after-block-2-2-vs-4-4",
+    "text": "My opponent attacks with a 4/4. I block with a 2/2 and cast Fog. Does my 2/2 die?",
+    "expect": [
+      "Damage to a 2/2 creature from a 4/4 creature is prevented.",
+      "No: a 2/2 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "damnation-token-and-real-creature",
+    "text": "They cast Damnation. I have a token and a real creature. Which ones die?",
+    "expect": [
+      "a 1/1 token ceases to exist; it doesn't stay in the zone it went to.",
+      "a creature: the battlefield → your graveyard."
+    ]
   }
 ]

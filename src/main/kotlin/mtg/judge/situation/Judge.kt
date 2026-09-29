@@ -293,7 +293,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (sacAbility >= 0 && o.isOnBattlefield() && gone == null) engine.activate(e.player ?: o.controller, objId, sacAbility, targets)
                 else {
                     if (sacAbility >= 0 && gone != null) state.trace.step("${o.name} has no ability of its own under $gone, so sacrificing it is just that: it goes to the graveyard and nothing else happens.", "613.1f", "701.21a")
-                    engine.sacrifice(e.player ?: o.controller, objId)
+                    // "I have Viscera Seer and Bears; they Doom Blade the Bears, can I sac it?": a sacrifice outlet the player
+                    // controls is what the sacrifice pays for, so its ability is activated rather than the creature just thrown away.
+                    val player = e.player ?: o.controller
+                    val outlet = if (o.def.isCreature) state.objects.values.filter { it.isOnBattlefield() && it.controller == player && it.id != objId }.firstNotNullOfOrNull { src ->
+                        src.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> Regex("""(?i)^sacrifice (?:a|another) creature\b""").containsMatchIn(a.cost) }.takeIf { it >= 0 }?.let { src to it } } else null
+                    if (outlet != null) {
+                        state.assumptions += "${o.name} is sacrificed to ${outlet.first.name}'s ability (the only sacrifice outlet described); say it was sacrificed some other way if not."
+                        engine.activate(player, outlet.first.id, outlet.second, targets, choice = objId)
+                    } else engine.sacrifice(player, objId)
                 }
             }
             "discard" -> { val objId = e.obj ?: throw JudgeException("discard needs an object"); engine.discard(e.player ?: state.obj(objId).owner, objId) }
