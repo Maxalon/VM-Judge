@@ -827,7 +827,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         o.zone == Zone.HAND -> "Yes: ${o.name} is in ${p.possessive} hand and can be cast with the usual timing for its type, mana permitting."
                         else -> "${o.name} is ${if (o.isOnBattlefield()) "on the battlefield" else "in ${o.zone.name.lowercase()}"}, not somewhere it can be cast from."
                     } }
-                    "controller" -> { val p = state.player(o.controller); state.outcomes += "${o.name} is under ${p.possessive} control${if (!o.isOnBattlefield()) " (it's in ${o.zone.name.lowercase().replace('_', ' ')})" else ""}.${o.controlRevertsTo?.let { " That lasts until end of turn, then it goes back to ${state.player(it).possessive} control." } ?: ""}" }
+                    "controller" -> { val p = state.player(o.controller); if (o.owner != o.controller) state.outcomes += "${o.name} is still owned by ${state.player(o.owner).let { if (it.you) "you" else it.name }}: control changed, ownership didn't, so it goes to ${state.player(o.owner).possessive} graveyard if it dies (110.2, 400.3)."; state.outcomes += "${o.name} is under ${p.possessive} control${if (!o.isOnBattlefield()) " (it's in ${o.zone.name.lowercase().replace('_', ' ')})" else ""}.${o.controlRevertsTo?.let { " That lasts until end of turn, then it goes back to ${state.player(it).possessive} control." } ?: ""}" }
                     "control" -> {
                         // "Do I get it back?": the turn is played out to its cleanup step first, once combat is done.
                         if (o.controlRevertsTo != null) engine.beginStep("cleanup", e.targets.firstOrNull()?.takeIf { t -> state.players.any { it.id == t } } ?: state.activePlayer ?: o.controller)

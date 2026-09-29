@@ -24394,5 +24394,121 @@
     "expect": [
       "opponent loses 3 life in all."
     ]
+  },
+  {
+    "id": "they-double-block-my-4-4-who-dies",
+    "text": "I have a 4/4 and they have a 2/2 and a 3/3. I attack and they double block. Who dies?",
+    "expect": [
+      "Yes: a 2/2 creature died (it's in the graveyard).",
+      "No: a 3/3 creature is still on the battlefield.",
+      "Yes: a 4/4 creature died (it's in the graveyard)."
+    ],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "swords-on-goyf-which-is-4-5",
+    "text": "They cast Swords to Plowshares on my Tarmogoyf which is 4/5. How much life do I gain?",
+    "expect": [
+      "Tarmogoyf: the battlefield → exile.",
+      "You gain 4 life in all."
+    ]
+  },
+  {
+    "id": "two-walls-of-omens-vs-wrath-no-draw",
+    "text": "I have two Wall of Omens. They cast Wrath. Do I draw anything?",
+    "expect": [
+      "No: You don't draw."
+    ]
+  },
+  {
+    "id": "bribery-takes-emrakul-whose-is-it",
+    "text": "My opponent casts Bribery and takes my Emrakul. Whose Emrakul is it now?",
+    "expect": [
+      "Emrakul, the Aeons Torn is still owned by you: control changed, ownership didn't, so it goes to your graveyard if it dies (110.2, 400.3).",
+      "Emrakul, the Aeons Torn is under opponent's control."
+    ]
+  },
+  {
+    "id": "kitchen-finks-doom-bladed-comes-back",
+    "text": "I have Kitchen Finks and they Doom Blade it. Does it come back?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "You gain 2 life."
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "ancestral-on-me-do-i-have-to-draw",
+    "text": "They cast Ancestral Recall targeting me. Do I have to draw?",
+    "expect": [
+      "You draw 3 cards.",
+      "Yes. Ancestral Recall says the player draws; an instruction to draw is only optional when it says \"may\", so you draw the cards, one at a time from the top of the library (121.1, 121.2). Drawing from an empty library is allowed, and the player then loses the game when state-based actions are next checked (704.5b)."
+    ],
+    "cite": [
+      "121.1"
+    ]
+  },
+  {
+    "id": "leyline-of-the-void-vs-reanimate-existing-card",
+    "text": "I have Leyline of the Void and they cast Reanimate on a creature in their graveyard. What happens?",
+    "expect": [
+      "a creature enters the battlefield."
+    ]
+  },
+  {
+    "id": "2-2-blocked-by-1-1-deathtouch",
+    "text": "I attack with a 2/2 and they have a 1/1 with deathtouch. They block. Does my 2/2 die?",
+    "expect": [
+      "Yes: a 2/2 creature died (it's in the graveyard).",
+      "a 1/1 creature with deathtouch: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "702.2b"
+    ]
+  },
+  {
+    "id": "duress-vs-only-creatures-in-hand",
+    "text": "They cast Duress on me and I have only creatures in hand. What happens?",
+    "expect": [
+      "You discard nothing (no noncreature, nonland card in hand)."
+    ]
+  },
+  {
+    "id": "snapcaster-flash-back-bolt-at-2-2",
+    "text": "I cast Snapcaster Mage and flash back Lightning Bolt at their 2/2. Does it die?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn.",
+      "Lightning Bolt is exiled (flashback).",
+      "Yes: a 2/2 creature died (it's in the graveyard)."
+    ],
+    "cite": [
+      "702.34a"
+    ]
+  },
+  {
+    "id": "20-life-vs-10-10-double-strike",
+    "text": "I have 20 life and they attack with a 10/10 with double strike. Do I die?",
+    "expect": [
+      "You take 10 damage. (×2)",
+      "Yes: You have lost the game."
+    ],
+    "cite": [
+      "702.4b"
+    ]
+  },
+  {
+    "id": "unsummon-my-bears-can-i-recast-this-turn",
+    "text": "I have Grizzly Bears and they cast Unsummon on it. Can I recast it this turn?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your hand.",
+      "Only in a main phase of your own turn, with the stack empty and the mana to pay for it again (302.1): a creature card can't be cast at instant speed. If Grizzly Bears was bounced during your turn, you can recast it in your main phase this turn; if it was bounced on your opponent's turn, it waits for your next turn. It comes back as a new object, summoning sick again (302.6)."
+    ],
+    "cite": [
+      "302.1"
+    ]
   }
 ]

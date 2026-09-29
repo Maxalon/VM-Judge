@@ -1225,6 +1225,13 @@ class SituationParser(private val names: NameIndex) {
                 else "${r.groupValues[1]} have ${if (r.groupValues[2].startsWith("c")) r.groupValues[2] else "a ${r.groupValues[2]}"}, they cast ${r.groupValues[4]} targeting it, ${r.groupValues[1]} sacrifice it to ${r.groupValues[3]} in response" } }
             // "can I double block?": both of the asker's creatures block.
         t2 = t2.replace(Regex("""\bcan (i|we) double[- ]block(?: it| that| the attacker| him| her)?\b""", RegexOption.IGNORE_CASE), "can $1 block with both")
+            // "they double block" / "I double block": both of that side's creatures block the one attacker.
+        t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent) double[- ]blocks?\b(?! one\b| the first| a single| just one| with)(?: (?:it|that|him|her|the attacker|my creature|my \d+/\d+|my c\d+))?""", RegexOption.IGNORE_CASE), "$1 block with both")
+            // "my Tarmogoyf which is 4/5": the size, stated as a fact about the card before what happens to it.
+        t2 = Regex("""^(.*?\b(?:on|targeting|at) )(my|their|his|her) (c\d+) (?:which|that|who) is (?:an? )?(\d+/\d+)(?=,|\.|\?|$| and\b)""", RegexOption.IGNORE_CASE).replace(t2) { r -> "${r.groupValues[2]} ${r.groupValues[3]} becomes a ${r.groupValues[4]}, ${r.groupValues[1]}${r.groupValues[2]} ${r.groupValues[3]}" }
+            // "I cast Snapcaster Mage and flash back Lightning Bolt at their 2/2": the Bolt is in the graveyard, the Mage targets it.
+        t2 = Regex("""\b(i|we) (?:cast|play) (c\d+) and (?:flash ?back|flashback) (?:the |my )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t2) { r ->
+            if (m.cards[r.groupValues[2]]?.display != "Snapcaster Mage") r.value else "${r.groupValues[1]} have ${r.groupValues[3]} in my graveyard, ${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}, then ${r.groupValues[1]} flashback ${r.groupValues[3]}" }
             // "can I cast two 4 drops in one turn?": each cast in turn, then whether the last can be paid for.
         t2 = t2.let { t0 -> Regex("""\bcan (i|we) cast (\d+) (\d+)[- ](?:mana )?(?:drops?|creatures?|spells?)(?: in (?:one|a|the same) turn| this turn| in a single turn)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 val n = r.groupValues[2].toIntOrNull() ?: 0
@@ -2732,6 +2739,21 @@ class SituationParser(private val names: NameIndex) {
             if (i < 0) return@let
             if (ctx.events[i].player != "me") ctx.events[i] = ctx.events[i].copy(player = "me")
             ctx.asks += EventSpec("ask", card = CardRef(name = "a spell"), to = "countered"); ctx.notes += "\"${restore(clause0, m)}?\" is about the spell your counter was protecting; it wasn't named, so it stands in as \"a spell\"."; return true
+        }
+        // "They cast Ancestral Recall targeting me. Do I have to draw?": a draw an effect orders isn't optional.
+        Regex("""^(?:do|does) (i|we|they|he|she) (?:have to|need to|got to) draw(?: the cards?| them| all three| those)?$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1] in setOf("i", "we")) "me" else ctx.other("me") ?: "opp"
+            val spell = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name
+            if (spell == null) return@let
+            ctx.asks += EventSpec("ask", to = "text:Yes. $spell says the player draws; an instruction to draw is only optional when it says \"may\", so ${if (who == "me") "you draw the cards" else "they draw the cards"}, one at a time from the top of the library (121.1, 121.2). Drawing from an empty library is allowed, and the player then loses the game when state-based actions are next checked (704.5b)."); return true
+        }
+        // "They Unsummon my Bears. Can I recast it this turn?": a creature is cast only in the caster's own main phase.
+        Regex("""^can (?:i|we) (?:re-?cast|cast|play|replay) (?:it|that|my c\d+|the (?:creature|card)|it again)(?: (?:this turn|right away|again this turn|the same turn|now))?$""").find(clause0)?.let {
+            val bounced = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.targets?.firstOrNull { it in ctx.objects }?.let { ctx.objects[it] } ?: return@let
+            val name = bounced.card.name ?: return@let
+            val entry = names.lookup(Names.normalize(name))
+            val creature = entry?.typeLine?.contains("Creature") == true
+            ctx.asks += EventSpec("ask", to = "text:" + (if (creature) "Only in a main phase of your own turn, with the stack empty and the mana to pay for it again (302.1): a creature card can't be cast at instant speed. If ${name} was bounced during your turn, you can recast it in your main phase this turn; if it was bounced on your opponent's turn, it waits for your next turn. It comes back as a new object, summoning sick again (302.6)." else "Only when its timing allows (an instant any time you have priority, anything else in your own main phase with the stack empty, 307.1) and with the mana to pay for it again. It's a new object with no memory of having been on the battlefield (400.7).")); return true
         }
         // "They Bolt my face and I have Spellskite. Can I redirect it?": Spellskite's ability, aimed at the spell.
         Regex("""^can (?:i|we) (?:still )?(?:redirect|deflect|spellskite|skite) (?:it|that|the spell|the bolt|their spell)(?: (?:to|onto|with|at|into) (?:my |the )?(?:c\d+|it))?$""").find(clause0)?.let {
@@ -5349,12 +5371,14 @@ class SituationParser(private val names: NameIndex) {
             ctx.lastMentioned = id; ctx.lastOwner = who; ctx.lastVerb = "have"; return true
         }
         // "I only have lands in hand" / "my hand is all lands": a hand of nothing but lands, for a discard spell to look at.
-        Regex("""^(?:(?:only |just )?(?:have|has|got|'ve got|hold|holds|am holding) (?:only |just |nothing but |all )?lands? in (?:my |their |his |her )?hand|(?:my|their) hand is (?:all|only|just|nothing but) lands)$""").find(c)?.let {
+        Regex("""^(?:(?:only |just )?(?:have|has|got|'ve got|hold|holds|am holding) (?:only |just |nothing but |all )?(lands?|creatures?|instants?|sorcer(?:y|ies)|artifacts?|enchantments?) in (?:my |their |his |her )?hand|(?:my|their) hand is (?:all|only|just|nothing but) (lands?|creatures?|instants?|sorcer(?:y|ies)|artifacts?|enchantments?))$""").find(c)?.let { r ->
             val who = if (Regex("""^(?:their|his|her)\b|\btheir hand""").containsMatchIn(c) || (actor != null && actor != "me" && !c.startsWith("my"))) (actor ?: pronounPlayer(ctx, "their")) else "me"
+            val kind = r.groupValues[1].ifEmpty { r.groupValues[2] }.lowercase().let { w -> when { w.startsWith("land") -> "land"; w.startsWith("creature") -> "creature"; w.startsWith("instant") -> "instant"; w.startsWith("sorcer") -> "sorcery"; w.startsWith("artifact") -> "artifact"; else -> "enchantment" } }
+            val name = if (kind == "land") "a basic land" else (if (kind.first() in "aeiou") "an " else "a ") + kind
             val n = ctx.handSize[who]?.takeIf { it > 0 } ?: 2
-            repeat(n) { var id = slug("a land card"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("a land card") + "_" + (k++); ctx.objects[id] = ObjectSpec(id, CardRef(name = "a basic land"), zone = "hand", controller = who) }
+            repeat(n) { var id = slug("$kind card"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("$kind card") + "_" + (k++); ctx.objects[id] = ObjectSpec(id, CardRef(name = name), zone = "hand", controller = who) }
             ctx.handSize[who] = n; ctx.note(who)
-            ctx.notes += "${if (who == "me") "Your" else (ctx.players[who] ?: "Your opponent") + "'s"} hand is read as $n land cards (the count wasn't given)."; ctx.lastOwner = who; ctx.lastVerb = "have"; return true
+            ctx.notes += "${if (who == "me") "Your" else (ctx.players[who] ?: "Your opponent") + "'s"} hand is read as $n $kind cards (the count wasn't given)."; ctx.lastOwner = who; ctx.lastVerb = "have"; return true
         }
         // "I have a 2/2 in my graveyard", "a creature card in their graveyard": a creature card nobody named, in a graveyard.
         Regex("""^(?:(?:there (?:is|are) )|(?:(?:has|have|got|'ve got|with) ))?(an?|one|two|three|\d+) (?:(\d+/\d+) )?(?:(flying|flier|flyer) )?(?:creature )?(?:cards? )?in ($possPrefix)?(?:graveyard|yard|bin)$""").find(c)?.let { r ->
@@ -8014,6 +8038,18 @@ class SituationParser(private val names: NameIndex) {
                 var id = slug(kind); var k = 2; while (ctx.objects.containsKey(id)) id = slug(kind) + "_" + (k++)
                 ctx.objects[id] = ObjectSpec(id, CardRef(name = name), controller = owner); ctx.note(owner); id
             }
+            out += id; return out
+        }
+        // "Reanimate on a creature in their graveyard": a card nobody named, in that graveyard.
+        Regex("""^(?:an? |the )?(?:(\d+/\d+) )?(creature|instant|sorcery|land|artifact|enchantment|planeswalker)(?: card)? (?:in|from) (my|their|his|her|the|a|any|an opponent's|my opponent's) graveyard$""").find(seg)?.let { r ->
+            val caster = ctx.clauseActor ?: ctx.lastActor ?: "me"
+            val owner = when (r.groupValues[3]) { "my" -> caster; "their", "his", "her", "an opponent's", "my opponent's" -> ctx.other(caster) ?: "opp"; else -> caster }
+            val kind = r.groupValues[2]
+            ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && o.controller == owner && (o.card.name ?: "").let { n -> n.contains(kind) && (r.groupValues[1].isEmpty() || n.contains(r.groupValues[1])) } }?.let { out += it.id; return out }
+            val name = if (kind == "creature") (if (r.groupValues[1].isEmpty()) "a creature" else "a ${r.groupValues[1]} creature") else (if (kind.first() in "aeiou") "an " else "a ") + kind
+            var id = slug("$kind card"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("$kind card") + "_" + (k++)
+            ctx.objects[id] = ObjectSpec(id, CardRef(name = name), zone = "graveyard", controller = owner); ctx.note(owner)
+            ctx.notes += "\"a $kind in ${if (owner == "me") "your" else "their"} graveyard\" is read as an unnamed $kind card there; name it for a precise answer."
             out += id; return out
         }
         // "Divine Verdict on my attacking 3/3": the creature of that side that is attacking (or blocking); if none was
