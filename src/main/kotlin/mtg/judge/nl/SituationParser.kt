@@ -59,6 +59,7 @@ class SituationParser(private val names: NameIndex) {
         var clauseActor: String? = null            // the actor of the clause being read (for "their X" defaults)
         var currentClause: String = ""             // the clause being read, for rules deep in the grammar that need its wording
         var faceDownSeen = false                   // a face-down creature was described, for "what is it?"
+        val blockersOffered = mutableSetOf<String>() // players whose creature was described as a would-be blocker ("a 1/1 to block with")
         val inHand = HashMap<String, MutableList<NameIndex.Entry>>()
         var nextTurn = false   // cards noted as in hand, per player ("I cast it")
         var lastVerb: String? = null               // "have" | "cast" for bare continuations ("… and Smothering Tithe")
@@ -197,16 +198,20 @@ class SituationParser(private val names: NameIndex) {
         }
         // "I'm at 4, they have two 2/2s and I have a 4/4. If they attack with both, can I survive?": asked whether they live,
         // the asker's untapped creatures block (one attacker each), since that is the choice the question is about.
-        if (ctx.asks.any { it.to in setOf("playerSurvive", "playerDie") && it.player == "me" } && ctx.events.none { it.verb == "block" && it.player == "me" }) {
-            val attackers = ctx.events.filter { it.verb == "attack" && it.player != "me" && it.targets.firstOrNull() == "me" }.mapNotNull { it.obj } +
-                ctx.events.filter { it.verb == "attackAll" && it.player != "me" }.flatMap { a -> ctx.objects.values.filter { it.controller == a.player && it.zone == "battlefield" && isCreatureName(it.card.name) }.map { it.id } }
-            val mine = ctx.objects.values.filter { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) && it.tapped != true && ctx.events.none { e -> e.verb == "attack" && e.obj == it.id } }
+        for (askedOf in ctx.asks.filter { it.to in setOf("playerSurvive", "playerDie") }.mapNotNull { it.player }.distinct()) {
+            if (ctx.events.any { it.verb == "block" && it.player == askedOf }) continue
+            // Another player's creatures block only when they were offered as blockers ("they have a 1/1 to block with").
+            if (askedOf != "me" && askedOf !in ctx.blockersOffered) continue
+            val attackers = ctx.events.filter { it.verb == "attack" && it.player != askedOf && it.targets.firstOrNull() == askedOf }.mapNotNull { it.obj } +
+                ctx.events.filter { it.verb == "attackAll" && it.player != askedOf && (it.targets.isEmpty() || it.targets.firstOrNull() == askedOf) }.flatMap { a -> ctx.objects.values.filter { it.controller == a.player && it.zone == "battlefield" && isCreatureName(it.card.name) }.map { it.id } }
+            val mine = ctx.objects.values.filter { it.controller == askedOf && it.zone == "battlefield" && isCreatureName(it.card.name) && it.tapped != true && ctx.events.none { e -> e.verb == "attack" && e.obj == it.id } }
             if (attackers.isNotEmpty() && mine.isNotEmpty() && ctx.events.none { it.verb in setOf("cast", "activate") }) {
                 val sorted = attackers.distinct().sortedByDescending { a -> Regex("""(\d+)/""").find(ctx.objects[a]?.card?.name ?: "")?.groupValues?.get(1)?.toIntOrNull() ?: 1 }
                 val at = ctx.events.indexOfLast { it.verb == "attack" || it.verb == "attackAll" } + 1
                 var k = 0
-                for ((i, b) in mine.withIndex()) { val a = sorted.getOrNull(i) ?: break; ctx.events.add(at + k, EventSpec("block", player = "me", obj = b.id, targets = listOf(a))); k++ }
-                ctx.notes += "Asked whether you survive, your untapped creature${if (mine.size == 1) "" else "s"} ${if (mine.size == 1) "is" else "are"} read as blocking (the biggest attacker first); say \"I don't block\" for the other answer."
+                for ((i, b) in mine.withIndex()) { val a = sorted.getOrNull(i) ?: break; ctx.events.add(at + k, EventSpec("block", player = askedOf, obj = b.id, targets = listOf(a))); k++ }
+                val whose = if (askedOf == "me") "your" else (ctx.players[askedOf]?.let { "$it's" } ?: "their")
+                ctx.notes += "Asked whether ${if (askedOf == "me") "you" else ctx.players[askedOf] ?: "they"} survive, $whose untapped creature${if (mine.size == 1) "" else "s"} ${if (mine.size == 1) "is" else "are"} read as blocking (the biggest attacker first); say \"${if (askedOf == "me") "I don't" else "they don't"} block\" for the other answer."
             }
         }
         // "They have Maze of Ith. I attack. Does my creature deal damage?": a Maze on the other side is used on the one
@@ -805,6 +810,10 @@ class SituationParser(private val names: NameIndex) {
             // "I have a creature that says …, they counter it": a permanent they counter was being cast.
         t2 = t2.let { t0 -> Regex("""\b(i|we) have (an? says-\S+ (?:creature|artifact|enchantment|permanent)), (?:and )?they (counter|c\d+) it\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (r.groupValues[3].lowercase() == "counter" || m.cards[r.groupValues[3]]?.display == "Counterspell") "${r.groupValues[1]} cast ${r.groupValues[2]}, they ${if (r.groupValues[3].lowercase() == "counter") "counter" else "cast ${r.groupValues[3]} targeting"} it" else r.value } }
+            // "how big is the token / my token now?": the token described.
+        t2 = t2.replace(Regex("""\bhow big (?:is|are) (?:the|my|that|those|these) tokens?(?: now| then)?\b""", RegexOption.IGNORE_CASE), "how big is it")
+            // "a 3/3 that gets +2/+2 from Giant Growth after attackers are declared": the attack, then the pump.
+        t2 = t2.replace(Regex("""\b(attacks? with an? \d+/\d+)(?: creature)? (?:that|which|who) gets [+-]?\d+/[+-]?\d+ from (?:an? |my )?(c\d+) (?:after (?:attackers|attacks|blockers|blocks)(?: are declared)?|once (?:it's|it is) attacking|after (?:it|that) attacks)\b""", RegexOption.IGNORE_CASE), "$1, after attackers i cast $2 on it")
             // "how big is their 2/2?" with nothing else said of it: the creature, then the question.
         t2 = t2.let { t0 -> Regex("""\bhow big is (their|my) (\d+/\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> "${if (r.groupValues[1].lowercase() == "my") "i have" else "they have"} a ${r.groupValues[2]}, how big is it" } }
             // "can they double block?"; "can my reach guy block their 2/2?"
@@ -862,6 +871,9 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\bwith (\d+|two|three|four|five|six) creatures on each side\b""", RegexOption.IGNORE_CASE), "with $1 creatures out and they have $1 creatures")
             // "I have 2 permanents and 3 cards": the cards are in hand.
         t2 = t2.replace(Regex("""\b(have|has|with) (\d+|two|three|four|five|six|seven) (permanents|lands|artifacts|creatures) and (\d+|two|three|four|five|six|seven) cards\b(?! in)""", RegexOption.IGNORE_CASE), "$1 $2 $3 and $4 cards in hand")
+            // "Ensnaring Bridge and has 3 cards": a bare card count is the hand.
+        t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|opponent|@\w+) (have|has|am holding|is holding|are holding|holds?) (\d+|one|two|three|four|five|six|seven|no|zero) cards?(?=[.,;!?]|$| and | but | so )""", RegexOption.IGNORE_CASE), "$1 $2 $3 cards in hand")
+        t2 = t2.replace(Regex("""\b(and|but|,|who|that) (have|has|is holding|are holding|holds?) (\d+|one|two|three|four|five|six|seven|no|zero) cards?(?=[.,;!?]|$| and | but | so )""", RegexOption.IGNORE_CASE), "$1 $2 $3 cards in hand")
             // "their commander gets bounced by my Cyclonic Rift": the spell, cast by the other side at the commander.
         t2 = t2.let { t0 -> Regex("""\b(my|their) commander (?:gets|is|was|got) (?:bounced|killed|destroyed|exiled|countered|hit|targeted) by (?:my |their |an? |the )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> "${if (r.groupValues[1].lowercase() == "my") "they" else "i"} cast ${r.groupValues[2]} on ${r.groupValues[1]} commander" } }
             // "they have a 3/3 will it die": the question at the end is its own clause.
@@ -2864,6 +2876,12 @@ class SituationParser(private val names: NameIndex) {
             val w = r.groupValues[1].ifEmpty { r.groupValues[3] }.ifEmpty { "i" }
             val who = when (w) { "i", "we" -> "me"; else -> pronounPlayer(ctx, w.substringAfterLast(' ')) }
             ctx.asks += EventSpec("ask", player = who, to = "optionalSearch"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "Ensnaring Bridge … Giant Growth after attackers. Does it still attack?": restrictions are checked only as attackers are declared.
+        Regex("""^(?:does|is|will|would) (?:it|that|(?:my |the )?c\d+|my \d+/\d+|my creature) (?:still |even )?(?:attack|attacking|stay attacking|keep attacking|remain attacking|get removed from combat|removed from combat)$""").find(clause0)?.let {
+            val att = ctx.events.lastOrNull { it.verb == "attack" && it.player == "me" }?.obj ?: return@let
+            if (ctx.events.none { it.verb in setOf("cast", "activate") && ctx.events.indexOf(it) > ctx.events.indexOfLast { e -> e.verb == "attack" } }) return@let
+            ctx.asks += EventSpec("ask", obj = att, to = "stillAttacking"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "They cast Ponder and I Bolt them in response. What resolves first?": the stack's order.
         Regex("""^(?:what|which|which one|which spell|who|whose) (?:resolves|goes|happens|resolve) first$|^(?:what|which) (?:is|'s) the order(?: of resolution)?$|^in (?:what|which) order do (?:they|these|those|the spells) resolve$""").find(clause0)?.let {
@@ -6593,6 +6611,14 @@ class SituationParser(private val names: NameIndex) {
             if (at >= 0 && at < ctx.events.lastIndex) ctx.events.add(at + 1, choose) else ctx.events += choose
             ctx.notes += "${card.display} is in ${if (who == "me") "your" else "their"} graveyard and is the card ${srcCard.display}'s enters-the-battlefield trigger is aimed at."
             ctx.lastActor = who; ctx.lastMentioned = cardId; return true
+        }
+        // "They have one 1/1 to block with" / "I have a 2/2 to block with": the creature, kept for the block question.
+        Regex("""^(?:have|has|got) (an? |one |two |three |\d+ )?(\d+/\d+)((?: [a-z]+)*?)(?: (?:creature|guy|dude|blocker)s?)? (?:to block with|to chump with|for blocking|that can block|ready to block|untapped to block)$""").find(c)?.let { r ->
+            val who = actor ?: subject ?: ctx.lastActor ?: "me"
+            val ids = describedCreatures(r.groupValues[1].ifEmpty { "a " }, r.groupValues[2], "", who, ctx, r.groupValues[3].trim())
+            if (ids.isEmpty()) return@let
+            ctx.blockersOffered += who
+            ctx.lastOwner = who; ctx.lastVerb = "have"; ctx.lastMentioned = ids.last(); return true
         }
         // "Graveyards are empty" / "there's nothing in my graveyard": nothing to add, and nothing left unread.
         if (Regex("""^(?:both |all |the |my |their |our |each )?graveyards? (?:are|is) (?:both |all )?empty$|^(?:there is|there's|there are) (?:nothing|no cards?) in (?:any|either|both|all|my|their|the) graveyards?$|^(?:no|neither) graveyard has anything in it$""").matches(c)) {

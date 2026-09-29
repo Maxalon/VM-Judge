@@ -26591,5 +26591,107 @@
       "You have 14 poison counters.",
       "Yes: You have lost the game."
     ]
+  },
+  {
+    "id": "four-four-double-blocked-kills-both",
+    "text": "I attack with a 4/4 and my opponent blocks with two 2/2s. Can I kill both?",
+    "expect": [
+      "a 2/2 creature: the battlefield → opponent's graveyard. (×2)",
+      "Yes: a 2/2 creature died (it's in the graveyard). (×2)"
+    ]
+  },
+  {
+    "id": "swords-on-goyf-four-five",
+    "text": "My opponent casts Swords to Plowshares on my Tarmogoyf which is 4/5. How much life do I gain?",
+    "expect": [
+      "Tarmogoyf: the battlefield → exile.",
+      "You gain 4 life in all."
+    ]
+  },
+  {
+    "id": "vial-mother-in-hand-cant-save-summoning-sick",
+    "text": "I have Aether Vial with 1 counter and Mother of Runes in hand. My opponent casts Doom Blade on my Grizzly Bears. Can I save it?",
+    "expect": [
+      "No: you could put Mother of Runes onto the battlefield with Aether Vial in response (mana value 1 matches its 1 counter), but its ability has {T} in the cost, and a creature that came under your control this turn can't pay {T} (302.6, \"summoning sickness\"). Mother of Runes is on the battlefield afterwards, but Grizzly Bears is gone.",
+      "Grizzly Bears: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "Say what you have for an answer"
+    ]
+  },
+  {
+    "id": "flier-attacks-bears-cant-block",
+    "text": "My opponent attacks with a 2/2 flier and I have Grizzly Bears. Can I block?",
+    "expect": [
+      "No: Grizzly Bears can't block a 2/2 creature with flying (flying).",
+      "You take 2 damage."
+    ]
+  },
+  {
+    "id": "bolt-kitchen-finks-persist",
+    "text": "I cast Lightning Bolt on my opponent's Kitchen Finks. What happens?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "opponent gains 2 life."
+    ]
+  },
+  {
+    "id": "rancor-returns-when-bears-dies",
+    "text": "I control Grizzly Bears enchanted with Rancor. My opponent casts Doom Blade on it. Where does Rancor go?",
+    "expect": [
+      "Rancor: the battlefield → your graveyard.",
+      "Rancor: your graveyard → your hand."
+    ]
+  },
+  {
+    "id": "two-three-threes-vs-chump-at-five-life",
+    "text": "My opponent has 5 life and I attack with two 3/3s. They have one 1/1 to block with. Do they die?",
+    "expect": [
+      "a 1/1 creature: the battlefield → opponent's graveyard.",
+      "No: opponent is still in the game at 2 life.",
+      "opponent goes from 5 to 2 life."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "wrath-bears-and-darksteel-colossus",
+    "text": "I cast Wrath of God. I control Grizzly Bears and my opponent controls Darksteel Colossus. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Darksteel Colossus is indestructible and isn't destroyed."
+    ]
+  },
+  {
+    "id": "ensnaring-bridge-pump-after-attackers-still-attacks",
+    "text": "My opponent controls Ensnaring Bridge and has 3 cards. I attack with a 3/3 that gets +2/+2 from Giant Growth after attackers are declared. Does it still attack?",
+    "expect": [
+      "a 3/3 creature is 6/6 until end of turn.",
+      "opponent takes 6 damage.",
+      "Yes: a 3/3 creature is still attacking. Whether a creature may attack is checked only as attackers are declared (508.1c); once it's attacking, growing past Ensnaring Bridge's limit doesn't remove it from combat"
+    ],
+    "notExpect": [
+      "Ensnaring Bridge can't attack",
+      "which wasn't stated"
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "anthem-how-big-is-the-token",
+    "text": "I have a 1/1 Soldier token and cast Glorious Anthem. How big is the token?",
+    "expect": [
+      "Soldier token is 2/2 (1/1 base, +1/+1 from Glorious Anthem)."
+    ]
+  },
+  {
+    "id": "vindicate-on-bridge-can-i-respond",
+    "text": "My opponent casts Vindicate on my Ensnaring Bridge. Can I respond?",
+    "expect": [
+      "Ensnaring Bridge: the battlefield → your graveyard.",
+      "Yes: after Vindicate is cast its controller gets priority, then each player does in turn; instants can be cast and abilities activated before it resolves (117.3c, 117.4)."
+    ]
   }
 ]
