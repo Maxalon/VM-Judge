@@ -214,6 +214,14 @@ class SituationParser(private val names: NameIndex) {
                 ctx.notes += "Asked whether ${if (askedOf == "me") "you" else ctx.players[askedOf] ?: "they"} survive, $whose untapped creature${if (mine.size == 1) "" else "s"} ${if (mine.size == 1) "is" else "are"} read as blocking (the biggest attacker first); say \"${if (askedOf == "me") "I don't" else "they don't"} block\" for the other answer."
             }
         }
+        // "They have Propaganda and I have no mana. Can I attack?": no creature of the asker's was described, so one stands in.
+        for (e in ctx.events.filter { it.verb == "attackAll" }) {
+            val who = e.player ?: "me"
+            if (ctx.objects.values.none { it.controller == who && it.zone == "battlefield" && isCreatureName(it.card.name) }) {
+                describedCreatures("a ", "", "", who, ctx)
+                ctx.notes += "No creature of ${if (who == "me") "yours" else (ctx.players[who] ?: "your opponent") + "'s"} was described, so a creature stands in for the attack."
+            }
+        }
         // "They have Maze of Ith. I attack. Does my creature deal damage?": a Maze on the other side is used on the one
         // attacker, in the declare-blockers step, and the answer says so.
         for (maze in ctx.objects.values.filter { o -> o.zone == "battlefield" && o.card.name in setOf("Maze of Ith", "Kor Haven", "Royal Assassin") }) {
@@ -1102,6 +1110,11 @@ class SituationParser(private val names: NameIndex) {
                 if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name ?: "").contains("Vial", true) } || m.cards.values.any { it.display.contains("Vial", true) }) "${r.groupValues[1]}vial in ${r.groupValues[2]}" else r.value } }
             // "Can I still sacrifice it to my Viscera Seer?": the sacrifice happens, and the answer says why nothing stops it.
         t2 = t2.replace(Regex("""^can (?:i|we) (?:still |even )?(sacrifice|sac) (it|that|(?:my |the )?c\d+) (?:to|with|into) (?:my |the )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "then i $1 $2 to my $3, sacrifice-allowed-question")
+            // "and cast Titanic Growth on it after it's blocked by a 5/5": the block, then the pump.
+        t2 = Regex("""\b(?:and |then |, )?(?:(i|we|they) )?(casts?) ((?:an? |the |my )?c\d+) on (it|that|(?:my |the )?c\d+) (?:after|once|when) (?:it's|it is|it gets|it was|it has been|being|that's) blocked by (an? \d+/\d+(?: [a-z]+)*?)(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE).replace(t2) { r ->
+            val who = r.groupValues[1].ifEmpty { "i" }.lowercase()
+            val tgt = if (r.groupValues[4] == "it" || r.groupValues[4] == "that") "the attacker" else r.groupValues[4]
+            ", ${if (who == "i" || who == "we") "they" else "i"} block ${r.groupValues[4]} with ${r.groupValues[5]}, $who ${r.groupValues[2]} ${r.groupValues[3]} on $tgt" }
             // "Does the counter save it?": whether it survives.
         t2 = t2.replace(Regex("""\b(?:does|do|will|would) (?:the|a|its|my|that|those) (?:[+-]\d/[+-]\d )?counters? (?:save|help|protect|keep) (it|him|her|them|(?:my |the )?c\d+)(?: alive)?\??$""", RegexOption.IGNORE_CASE), "does $1 survive")
             // "How big is Tarmogoyf after?": the trailing "after" adds nothing.
@@ -2193,6 +2206,9 @@ class SituationParser(private val names: NameIndex) {
                 t2 = t2.removeRange(r.range) + cards.joinToString("") { c -> " with ${(own[c] ?: owner)?.let { o -> "@$o's " } ?: ""}$c out" }
             }
         }
+        // "Fireball targeting my opponent and their 2/2": a player and a creature as two targets, kept together too.
+        t2 = t2.replace(Regex("""\b(targeting|at|on) (me|them|him|her|my opponent|the opponent|@\w+)( with x=\d+)? and ((?:their|my|his|her|the|an?) (?:\d+/\d+|c\d+)(?: creature)?)(?=[.,;!?]|$| for | with )""", RegexOption.IGNORE_CASE), "$1 $2 & $4$3")
+        if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("rewritten: [$t2]")
         // "Cryptic Command … on my Bolt and my Bears": two targets of one spell, kept together through the clause split.
         t2 = t2.replace(Regex("""\b(on|targeting|at) (my |their |the )?(c\d+) and (my |their |the )?(c\d+)(?=[.,;?]|$)"""), "$1 $2$3 & $4$5")
         // "has only one untapped creature, Grizzly Bears, and …": the appositive name belongs to the noun before the comma.
@@ -2536,6 +2552,7 @@ class SituationParser(private val names: NameIndex) {
                 // "it" is a would-be blocker, so never one of the creatures attacking.
                 val attacking = ctx.events.filter { it.verb == "attack" }.mapNotNull { it.obj }.toSet()
                 val o = (if (w == "it" || w == "that") ctx.lastMentioned?.takeIf { it in ctx.objects && it !in attacking && ctx.objects.getValue(it).zone == "battlefield" && isCreatureName(ctx.objects.getValue(it).card.name) } else null)
+                    ?: ctx.objects.values.lastOrNull { it.controller != "me" && it.id !in attacking && it.zone == "battlefield" && isManlandName(it.card.name) && !w.contains('/') }?.id
                     ?: ctx.objects.values.lastOrNull { it.controller != "me" && it.id !in attacking && it.zone == "battlefield" && isCreatureName(it.card.name) && (!w.contains('/') || (it.card.name ?: "").contains(Regex("""\d+/\d+""").find(w)!!.value)) }?.id
                 o ?: return@let
                 // The ask is added and the question then also reads as the block itself, so the combat is shown.
@@ -7328,6 +7345,8 @@ class SituationParser(private val names: NameIndex) {
             val id = ctx.lastMentioned?.takeIf { it in ctx.objects && ctx.objects.getValue(it).controller == defender && isCreatureName(ctx.objects.getValue(it).card.name) } ?: ctx.events.lastOrNull { it.verb == "cast" && it.player == defender }?.card?.name?.let { n -> ctx.objects.values.firstOrNull { it.card.name == n }?.id ?: slug(n) }
                 // "they block" when nobody said what they have: a blocker nobody named, rather than dropping the clause.
                 ?: ctx.objects.values.lastOrNull { it.controller == defender && it.id != attackerEvent.obj && isCreatureName(it.card.name) }?.id
+                // "They have Mishra's Factory. They block with it": a land that can become a creature; the judge animates it first.
+                ?: ctx.objects.values.lastOrNull { it.controller == defender && it.zone == "battlefield" && isManlandName(it.card.name) }?.id
                 ?: describedCreatures("a ", "", "creature", defender, ctx, "").firstOrNull()?.also {
                     ctx.notes += "Nothing was said about what ${if (defender == "me") "you" else (ctx.players[defender] ?: "your opponent")} ${if (defender == "me") "block" else "blocks"} with, so the blocker is read as an unnamed creature; name it for a precise answer."
                 } ?: return false
@@ -7528,6 +7547,8 @@ class SituationParser(private val names: NameIndex) {
             // "I swing with two 2/2s into a 3/3, they block one": the block was declared by "into a 3/3" already.
             if (ctx.events.any { e -> e.verb == "block" && e.player == who }) return true
             val blocker = ctx.objects.values.lastOrNull { o -> o.controller == who && o.zone == "battlefield" && isCreatureName(o.card.name) && ctx.events.none { e -> e.verb == "block" && e.obj == o.id } }?.id
+                // "They have Mishra's Factory. They block with it": a land that can become a creature is the blocker; the judge animates it.
+                ?: ctx.objects.values.lastOrNull { o -> o.controller == who && o.zone == "battlefield" && isManlandName(o.card.name) }?.id
                 ?: describedCreatures("a ", "", "creature", who, ctx, "").firstOrNull()?.also {
                     ctx.notes += "Nothing was said about what ${if (who == "me") "you" else "they"} block with, so the blocker is read as an unnamed creature; name it for a precise answer."
                 } ?: return@let
@@ -9030,6 +9051,8 @@ class SituationParser(private val names: NameIndex) {
         val kind = if (colour.isEmpty()) k else "$colour $k"
         return "${if (kind.first() in "aeiou") "an" else "a"} $kind that says \"$body\""
     }
+    /** A land that can become a creature by its own ability, named: it may block or attack once animated. */
+    private fun isManlandName(name: String?): Boolean = name != null && (name.startsWith("Restless ") || name.replace(Regex("""[^A-Za-z ,]"""), "") in setOf("Mishras Factory", "Mutavault", "Treetop Village", "Faerie Conclave", "Blinkmoth Nexus", "Inkmoth Nexus", "Celestial Colonnade", "Raging Ravine", "Creeping Tar Pit", "Lavaclaw Reaches", "Stirring Wildwood", "Shambling Vent", "Hissing Quagmire", "Wandering Fumarole", "Needle Spires", "Lumbering Falls", "Ghitu Encampment", "Spawning Pool", "Forbidding Watchtower", "Svogthos, the Restless Tomb", "Nantuko Monastery", "Frostwalk Bastion", "Hostile Desert", "Cave of the Frost Dragon", "Den of the Bugbear", "Hall of Storm Giants", "Hive of the Eye Tyrant", "Lair of the Hydra", "Crawling Barrens", "Mobilized District"))
     private fun isCreatureName(name: String?): Boolean = name != null && !Regex("""^an? (?:(?:white|blue|black|red|green|colorless) )?(?:spell|instant|sorcery) that says\b""").containsMatchIn(name) && (Regex("""\b\d+/\d+\b|\bcreature\b""").containsMatchIn(name) || names.lookup(Names.normalize(name))?.typeLine?.contains("Creature") == true)
 
     /**

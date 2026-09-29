@@ -803,6 +803,13 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to == "respond") {
                     val ss = state.objects.values.lastOrNull { it.def.has("split second") && it.zone != Zone.HAND && it.zone != Zone.LIBRARY }
                     val last = state.objects.values.lastOrNull { it.def.isInstantOrSorcery && it.zone == Zone.GRAVEYARD }
+                    // "I have Loxodon Smiter in hand. Can I respond?": what's in hand decides.
+                    val asker = e.player ?: "me"
+                    val held = state.objects.values.filter { it.zone == Zone.HAND && it.controller == asker }
+                    if (ss == null && held.isNotEmpty() && held.none { h -> "Instant" in h.def.types || h.def.has("flash") }) {
+                        val flashEnabler = state.objects.values.any { o -> o.isOnBattlefield() && o.controller == asker && o.def.abilities.filterIsInstance<mtg.judge.engine.StaticAbility>().flatMap { it.effects }.any { it is mtg.judge.engine.StaticEffect.CastAsThoughFlash } }
+                        if (!flashEnabler) { state.outcomes += "No, not with ${held.joinToString(" or ") { it.name }}: ${if (held.size == 1) "it's" else "they're"} not ${if (held.size == 1) "an instant and ${if (held[0].def.isCreature) "a creature" else "a spell"} without flash" else "instants"}, so ${if (held.size == 1) "it" else "they"} can only be cast in ${state.player(asker).possessive} own main phase with an empty stack (${if (held.any { it.def.isCreature }) "302.1" else "307.1"}). Only an instant, a spell with flash, or an activated ability could be used while ${last?.name ?: "the spell"} is on the stack (117.1a)."; return }
+                    }
                     state.outcomes += if (ss != null) "No: ${ss.name} has split second, so while it's on the stack players can't cast spells or activate abilities that aren't mana abilities (702.61a). Triggered abilities still trigger, and special actions like turning a morph face up are still allowed."
                         else "Yes: after ${last?.name ?: "a spell"} is cast its controller gets priority, then each player does in turn; instants can be cast and abilities activated before it resolves (117.3c, 117.4)."
                     return
@@ -1137,7 +1144,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             }
             "statecheck" -> engine.stateBasedActions()
             "attack" -> { val objId = e.obj ?: throw JudgeException("attack needs an object"); nextTurnIfOtherAttacks(e.player ?: state.obj(objId).controller, state, engine); engine.declareAttacker(e.player ?: state.obj(objId).controller, objId, targets.firstOrNull() ?: Ref.Player(state.opponentsOf(state.obj(objId).controller).firstOrNull()?.id ?: throw JudgeException("no defending player"))) }
-            "block" -> { val objId = e.obj ?: throw JudgeException("block needs an object"); val att = (targets.firstOrNull() as? Ref.Obj)?.id ?: state.objects.values.lastOrNull { it.attacking != null }?.id ?: throw JudgeException("block needs the attacker"); engine.declareBlocker(e.player ?: state.obj(objId).controller, objId, att) }
+            "block" -> { val objId = e.obj ?: throw JudgeException("block needs an object"); val att = (targets.firstOrNull() as? Ref.Obj)?.id ?: state.objects.values.lastOrNull { it.attacking != null }?.id ?: throw JudgeException("block needs the attacker")
+                // "Can they block with Mishra's Factory?": a land that can become a creature is animated first, then blocks.
+                val blk = state.obj(objId)
+                fun animates(ef: Effect): Boolean = ef is Effect.AnimateSelf || (ef is Effect.Seq && ef.effects.any { animates(it) })
+                if (!blk.def.isCreature && blk.animatedAs == null) blk.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> animates(a.effect) }.takeIf { it >= 0 }?.let { idx ->
+                    state.trace.step("${blk.name} isn't a creature as it stands; to block it must first become one, so its \"${blk.def.abilities.filterIsInstance<ActivatedAbility>()[idx].cost}\" ability is activated in the declare blockers step, before blockers are chosen.", "509.1a", "602.1")
+                    engine.activate(e.player ?: blk.controller, objId, idx, emptyList()); engine.resolveAll()
+                }
+                engine.declareBlocker(e.player ?: state.obj(objId).controller, objId, att) }
             // The stack empties before attackers are declared. Without this a creature cast in the same breath
             // ("I cast Grizzly Bears and attack") was still on the stack, and the answer was that no creatures
             // of yours were described rather than that the one you cast is summoning sick.

@@ -289,6 +289,8 @@ sealed interface Effect {
     data object PutSelfOnLibraryTop : Effect
     /** Dark Confidant: "You lose life equal to its mana value." (the card just revealed) */
     data class LoseLifeEqualToRevealedMv(val who: Who) : Effect
+    /** Ophidian: "this creature assigns no combat damage this turn". */
+    data object NoCombatDamageThisTurn : Effect
     /** Reanimate: "You lose life equal to that card's mana value" — the spell's target, whether or not it moved. */
     data class LoseLifeEqualToTargetMv(val who: Who) : Effect
     /** Condemn: "Put target attacking creature on the bottom of its owner's library." */
@@ -402,7 +404,7 @@ sealed interface Effect {
         is LoseLifeUnlessSacOrDiscard -> emptyList()
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
-        is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
+        is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
     }
 
     fun hasUnparsed(): Boolean = when (this) {

@@ -26993,5 +26993,122 @@
     "expect": [
       "Grafdigger's Cage: no creature card enters the battlefield from Green Sun's Zenith (creature cards in graveyards and libraries can't enter)."
     ]
+  },
+  {
+    "id": "bolt-vs-bolt-to-face-response",
+    "text": "I cast Lightning Bolt targeting my opponent's Grizzly Bears. They respond with Lightning Bolt targeting my face. What happens?",
+    "expect": [
+      "You take 3 damage.",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "mishras-factory-can-they-block-with-it",
+    "text": "My opponent has a Mishra's Factory. I attack with a 2/2. Can they block with it?",
+    "expect": [
+      "Mishra's Factory is a 2/2 creature until end of turn.",
+      "Mishra's Factory has 2 damage marked.",
+      "a 2/2 creature: the battlefield → your graveyard.",
+      "Mishra's Factory: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "a creature has 2 damage"
+    ]
+  },
+  {
+    "id": "ophidian-unblocked-draw-no-damage",
+    "text": "I control Ophidian and attack. My opponent doesn't block. Do I draw a card?",
+    "expect": [
+      "You draw 1 card.",
+      "Ophidian deals no combat damage this turn.",
+      "Yes: You draw 1 card in all."
+    ],
+    "notExpect": [
+      "opponent takes 1 damage",
+      "not modeled"
+    ]
+  },
+  {
+    "id": "wrath-smiter-in-hand-cant-respond",
+    "text": "My opponent casts Wrath of God. I have Loxodon Smiter in hand. Can I respond?",
+    "expect": [
+      "No, not with Loxodon Smiter: it's not an instant and a creature without flash, so it can only be cast in your own main phase with an empty stack (302.1)."
+    ]
+  },
+  {
+    "id": "titanic-growth-after-blocked-by-five-five",
+    "text": "I attack with a 3/3 and cast Titanic Growth on it after it's blocked by a 5/5. What happens?",
+    "expect": [
+      "a 3/3 creature is 7/7 until end of turn.",
+      "a 5/5 creature: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "opponent takes 7 damage"
+    ]
+  },
+  {
+    "id": "threaten-my-bears-attacks-me",
+    "text": "I have Grizzly Bears. My opponent casts Threaten on it and attacks me with it. What happens?",
+    "expect": [
+      "opponent controls Grizzly Bears until end of turn.",
+      "Grizzly Bears has haste until end of turn.",
+      "You take 2 damage."
+    ]
+  },
+  {
+    "id": "bolt-serra-angel-twice",
+    "text": "My opponent controls Serra Angel. I cast Lightning Bolt on it twice. Does it die?",
+    "expect": [
+      "Serra Angel has 6 damage marked.",
+      "Yes: Serra Angel died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "fireball-five-split-player-and-creature",
+    "text": "I cast Fireball with X=5 targeting my opponent and their 2/2. How is the damage split?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "a 2/2 creature has 2 damage marked.",
+      "a 2/2 creature: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "opponent takes 5 damage"
+    ]
+  },
+  {
+    "id": "kira-doom-blade-twice",
+    "text": "My opponent has Kira, Great Glass-Spinner and I cast Doom Blade on it twice. Does the second one work?",
+    "expect": [
+      "Doom Blade is countered.",
+      "Kira, Great Glass-Spinner: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "rancor-bears-blocked-by-two-two",
+    "text": "I control Grizzly Bears with Rancor. My opponent blocks with a 2/2. What happens?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "a 2/2 creature: the battlefield → opponent's graveyard.",
+      "Rancor: your graveyard → your hand."
+    ]
+  },
+  {
+    "id": "propaganda-no-mana-can-i-attack",
+    "text": "My opponent has Propaganda and I have no mana. Can I attack?",
+    "expect": [
+      "a creature can't attack (can't pay {2} for Propaganda)."
+    ],
+    "notExpect": [
+      "Nothing changes"
+    ]
+  },
+  {
+    "id": "mother-cant-save-bears-from-wrath",
+    "text": "I have Mother of Runes and Grizzly Bears. My opponent casts Wrath of God. Can Mother save the Bears?",
+    "expect": [
+      "Grizzly Bears has protection from white until end of turn.",
+      "No: Grizzly Bears is in the graveyard."
+    ]
   }
 ]
