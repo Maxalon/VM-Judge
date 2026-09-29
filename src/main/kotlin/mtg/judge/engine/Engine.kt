@@ -2045,6 +2045,11 @@ class Engine(val state: GameState) {
                     return null
                 }
             }
+            if (inferred == null && targets.isEmpty() && spec.filter.inGraveyard && obj.enteredFrom != Zone.GRAVEYARD && ability.trigger == Trigger.ThisEnters && state.objects.values.none { it.zone == Zone.GRAVEYARD && it.controller == obj.controller }) {
+                trace.step("${obj.name}'s triggered ability needs a target (${spec.raw}), and nothing was described in ${state.player(obj.controller).possessive} graveyard; with no legal target the ability is removed from the stack and does nothing.", "603.3d")
+                state.outcomes += "${obj.name}'s trigger has nothing described to target (${spec.raw}): with no such card in ${state.player(obj.controller).possessive} graveyard it does nothing (603.3d). Name one there if there is."
+                return null
+            }
             if (inferred == null && targets.isEmpty() && spec.filter.inGraveyard && obj.enteredFrom == Zone.GRAVEYARD && ability.trigger == Trigger.ThisEnters) {
                 trace.step("${obj.name}'s triggered ability needs a target (${spec.raw}). ${obj.name} itself was the card in ${state.player(obj.controller).possessive} graveyard, and it has left it to enter the battlefield; nothing else described is there, so the ability has no legal target and is removed from the stack.", "603.3d", "400.7")
                 state.outcomes += "${obj.name}'s trigger has nothing to target: it was the only ${spec.raw.substringBefore(" in ")} described in ${state.player(obj.controller).possessive} graveyard and it's on the battlefield now, so the trigger is removed from the stack (603.3d). Name another creature card there for it to return one."

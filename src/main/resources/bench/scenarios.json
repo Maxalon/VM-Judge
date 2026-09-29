@@ -26213,5 +26213,94 @@
       "opponent takes 2 damage.",
       "Yes: opponent has lost the game."
     ]
+  },
+  {
+    "id": "tarmogoyf-three-types-both-yards",
+    "text": "I have Tarmogoyf and my graveyard has a creature and an instant. Their graveyard has a land. How big is Tarmogoyf?",
+    "expect": [
+      "Tarmogoyf is 3/4"
+    ]
+  },
+  {
+    "id": "snapcaster-flashed-in-to-block-nothing-to-target",
+    "text": "I attack with a 2/2. My opponent flashes in Snapcaster Mage and blocks. What happens?",
+    "expect": [
+      "Snapcaster Mage's trigger has nothing described to target (instant or sorcery card in your graveyard): with no such card in opponent's graveyard it does nothing (603.3d). Name one there if there is.",
+      "a 2/2 creature: the battlefield → your graveyard.",
+      "Snapcaster Mage: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "doesn't say which"
+    ]
+  },
+  {
+    "id": "thoughtseize-on-myself",
+    "text": "I cast Thoughtseize on myself. What happens?",
+    "expect": [
+      "You lose 2 life."
+    ]
+  },
+  {
+    "id": "wrath-vs-sigarda-hexproof",
+    "text": "I cast Wrath of God. My opponent has Sigarda, Host of Herons. Does Sigarda die?",
+    "expect": [
+      "Sigarda, Host of Herons' hexproof doesn't help: Wrath of God doesn't target anything.",
+      "Yes: Sigarda, Host of Herons died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "vial-three-counters-bears-stays",
+    "text": "I have Aether Vial with 3 counters. Can I put Grizzly Bears onto the battlefield with it?",
+    "expect": [
+      "Grizzly Bears stays in hand (mana value 2 ≠ 3 counters)."
+    ],
+    "notExpect": [
+      "Grizzly Bears enters the battlefield"
+    ]
+  },
+  {
+    "id": "vial-two-counters-bears-enters",
+    "text": "I have Aether Vial with 2 counters. Can I put Grizzly Bears onto the battlefield with it?",
+    "expect": [
+      "Grizzly Bears enters the battlefield."
+    ],
+    "notExpect": [
+      "after a spell is cast"
+    ]
+  },
+  {
+    "id": "double-block-four-four-who-dies",
+    "text": "My opponent attacks with a 4/4 and I block with a 2/2 and a 3/3. Who dies?",
+    "expect": [
+      "a 4/4 creature: the battlefield → opponent's graveyard.",
+      "a 2/2 creature: the battlefield → your graveyard.",
+      "No: a 3/3 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "sudden-shock-no-giant-growth",
+    "text": "I cast Sudden Shock on my opponent's Llanowar Elves. Can they respond with Giant Growth?",
+    "expect": [
+      "Giant Growth can't be cast while Sudden Shock is on the stack (split second).",
+      "Llanowar Elves: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "serra-angel-can-it-block-on-their-turn",
+    "text": "I have Serra Angel and attack. Can it block on their turn?",
+    "expect": [
+      "Yes: Serra Angel has vigilance, so attacking doesn't tap it (702.20b); it's untapped on opponent's turn and can block, unless something else taps it."
+    ],
+    "notExpect": [
+      "block needs the attacker"
+    ]
+  },
+  {
+    "id": "phyrexian-arena-upkeep",
+    "text": "I control Phyrexian Arena. What happens at my upkeep?",
+    "expect": [
+      "You draw 1 card.",
+      "You lose 1 life."
+    ]
   }
 ]

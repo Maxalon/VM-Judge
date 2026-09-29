@@ -620,6 +620,8 @@ class SituationParser(private val names: NameIndex) {
             // "can they block with it and still attack next turn?": the block now, then the attack on their turn.
         t2 = t2.replace(Regex("""\bcan (they|i|we|he|she) block (?:with )?(it|that|my creature|their creature|(?:my |their |the )?c\d+|(?:my |their |the )?\d+/\d+) and (?:still |also |then )?attack(?: with it| with that)? (?:next turn|on (?:their|my|his|her) (?:next )?turn|the next turn)\b""", RegexOption.IGNORE_CASE), "$1 block with $2, can $1 attack with it next turn")
             // "can it attack and still block on their turn?": one question about the creature staying untapped, kept in one clause.
+        t2 = t2.let { t0 -> Regex("""\bcan (it|that|(?:my |the )?c\d+|my \d+/\d+) (?:still |then |also )?block (?:on their (?:next )?turn|next turn|on the (?:next|following) turn|during their turn|when they (?:attack|swing)(?: back)?|on (?:the )?(?:crack|swing) back)(?=\?|$|,)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+            if (ctx.events.any { (it.verb == "attack" || it.verb == "attackAll") && it.player == "me" }) "can ${r.groupValues[1]} attackthenblock" else r.value } }
         t2 = t2.replace(Regex("""\bcan (it|that|(?:my |the )?c\d+|my \d+/\d+) (?:attack|swing) and (?:still |also |then )?block(?: on their (?:next )?turn| next turn| later| on the (?:next|following) turn| when they (?:attack|swing)(?: back)?| during their turn)?(?=\?|$|,)""", RegexOption.IGNORE_CASE), "can $1 attackthenblock")
             // "I have a 2/2 and cast Unsummon on it during their combat after they block it": the attack, the block, then the spell.
         t2 = t2.replace(Regex("""\b((?:cast|play) c\d+ on (?:it|that|my creature|my \d+/\d+)) (?:during (?:their|my|the) combat |in combat )?after (?:they|he|she|my opponent) blocks? (?:it|that)\b""", RegexOption.IGNORE_CASE), "attack with it, they block it, and $1")
@@ -1083,6 +1085,9 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\bon a creature that connects\b""", RegexOption.IGNORE_CASE), "on a creature, then i attack with it")
             // "Surgical Extraction on my graveyard's Snapcaster Mage": the card, in that graveyard.
         t2 = t2.replace(Regex("""\b(my|their|his|her) graveyard's (c\d+)\b""", RegexOption.IGNORE_CASE), "$2 in $1 graveyard")
+            // "Can I put Grizzly Bears onto the battlefield with it?" (Aether Vial): the Vial's activation.
+        t2 = t2.let { t0 -> Regex("""\b(can (?:i|we) |i |we )?put (?:my |the |an? )?(c\d+) (?:onto the battlefield|into play|in|out) (?:with|off|using|via) (?:it|that|the vial|my vial|the |my )?(?:vial|aether vial|c\d+)?(?=\?|$|,)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name ?: "").contains("Vial", true) } || m.cards.values.any { it.display.contains("Vial", true) }) "${r.groupValues[1]}vial in ${r.groupValues[2]}" else r.value } }
             // "Can I Stifle the tap ability?": the other player activates it, then the counter is cast at the ability.
         t2 = t2.let { t0 -> Regex("""^can (i|we) (?:cast )?(c\d+) (?:on |at |targeting )?(?:the|its|their|his|her|that) (tap|\{t\}|first|second|third|last|loyalty|activated|triggered) ability\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (m.cards[r.groupValues[2]]?.isSpellOnly != true) r.value
@@ -3069,7 +3074,7 @@ class SituationParser(private val names: NameIndex) {
             if (!inResponse && ctx.events.lastOrNull()?.verb in setOf("cast", "activate", "trigger")) ctx.events += EventSpec("resolveAll")
             ctx.events += EventSpec("choose", player = "me", obj = vial.id, to = "put:$cid")
             ctx.events += EventSpec("activate", player = "me", obj = vial.id)
-            if (clause0.startsWith("can ")) ctx.asks += EventSpec("ask", player = "me", to = "respond")
+            if (clause0.startsWith("can ") && inResponse) ctx.asks += EventSpec("ask", player = "me", to = "respond")
             ctx.notes += "\"${restore(clause0, m)}\" is read as activating ${vial.card.name} to put ${card.display} from your hand onto the battlefield${if (inResponse) " in response" else ""}; the outcome says whether it may."
             ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = cid; return true
         }
