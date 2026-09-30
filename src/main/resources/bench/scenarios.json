@@ -29822,5 +29822,132 @@
       "Lightning Bolt: your graveyard → exile.",
       "Tarmogoyf is 1/2"
     ]
+  },
+  {
+    "id": "thoughtseize-what-can-i-take",
+    "text": "I cast Thoughtseize on my opponent. They have Emrakul, the Aeons Torn and Lightning Bolt in hand. What can I take?",
+    "expect": [
+      "Thoughtseize lets you choose a nonland card from opponent's hand: Emrakul, the Aeons Torn, Lightning Bolt."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goblin-guide-into-wall-of-omens",
+    "text": "My opponent attacks with Goblin Guide. I block with Wall of Omens. Does anything die?",
+    "expect": [
+      "Wall of Omens has 2 damage marked.",
+      "No: Wall of Omens is still on the battlefield.",
+      "Defending player reveals the top card"
+    ],
+    "notExpect": [
+      "defendings"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-reveals-emrakul",
+    "text": "I have Dark Confidant and reveal Emrakul, the Aeons Torn at upkeep. How much life do I lose?",
+    "expect": [
+      "You lose 15 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-finks-persist-question",
+    "text": "I cast Path to Exile on my own Kitchen Finks. Does persist bring it back?",
+    "expect": [
+      "persist returns it only from the graveyard (702.79a)",
+      "No: Kitchen Finks is in exile."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "cavern-thalia-noun-phrase",
+    "text": "My opponent casts Counterspell on my Cavern of Souls Thalia, Guardian of Thraben. Does it work?",
+    "expect": [
+      "Thalia, Guardian of Thraben can't be countered (cast with Cavern of Souls).",
+      "Thalia, Guardian of Thraben enters the battlefield."
+    ],
+    "notExpect": [
+      "is countered."
+    ],
+    "cite": []
+  },
+  {
+    "id": "cast-with-cavern-of-souls",
+    "text": "I cast Thalia, Guardian of Thraben with Cavern of Souls. My opponent casts Counterspell on it. Does it work?",
+    "expect": [
+      "Thalia, Guardian of Thraben isn't countered (it can't be)."
+    ],
+    "notExpect": [
+      "suspend"
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-size-two-types",
+    "text": "I have 3 lands and cast Tarmogoyf. My opponent has an instant and a creature in their graveyard. How big is Goyf?",
+    "expect": [
+      "Tarmogoyf is 2/3"
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-bolted-land-only-yard",
+    "text": "I attack with Tarmogoyf and my opponent Lightning Bolts it in response. Graveyard has only a land. Does Goyf die?",
+    "expect": [
+      "Yes: Tarmogoyf died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spell-pierce-paid",
+    "text": "I cast Spell Pierce on my opponent's Thoughtseize. They have 2 untapped lands. What happens?",
+    "expect": [
+      "opponent pays {2}; Spell Pierce has no further effect."
+    ],
+    "cite": []
+  },
+  {
+    "id": "blood-moon-steam-vents-blue",
+    "text": "My opponent casts Blood Moon. I have Steam Vents untapped. Can I still tap it for blue?",
+    "expect": [
+      "Steam Vents adds {R} (only), because of Blood Moon."
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-in-their-end-step",
+    "text": "I control Aether Vial with 2 counters. Can I put Thalia, Guardian of Thraben in during my opponent's end step?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield."
+    ],
+    "notExpect": [
+      "which card?"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-the-bolt-next-turn",
+    "text": "I cast Snapcaster Mage and target Lightning Bolt in my graveyard. Can I cast the Bolt next turn?",
+    "expect": [
+      "No. Snapcaster Mage gives Lightning Bolt flashback only until end of turn"
+    ],
+    "notExpect": [
+      "Yes: Lightning Bolt has flashback"
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-sanctity-thoughtseize",
+    "text": "My opponent has Leyline of Sanctity. Can I cast Thoughtseize on them?",
+    "expect": [
+      "Thoughtseize can't target opponent.",
+      "opponent has hexproof (Leyline of Sanctity)"
+    ],
+    "cite": []
   }
 ]

@@ -318,6 +318,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     curEvents.count { a -> a.verb == "ask" && a.to in setOf("die", "survive") && a.obj?.let { id -> state.objects[id]?.let { o -> o.controller != player && o.isOnBattlefield() } } == true } >= 2
                 if (overloadInferred) state.assumptions += "${def.name} is cast for its overload cost, since more than one creature is asked about and no single target was named; say \"not overloaded\" if it was cast on one."
                 val castItem = engine.cast(player, def, castTargets1, existing?.id, modes, overload = e.to == "overload" || overloadInferred, x = e.amount, kicked = e.to == "kicked", evoked = e.to == "evoke", flashback = e.to == "flashback", alternative = e.to == "altcost", choice = e.to?.takeIf { it.startsWith("copy:") || it == "revolt" } ?: e.to?.takeIf { it.startsWith("copytarget:") }?.removePrefix("copytarget:") ?: e.to?.takeIf { it.startsWith("name:") }?.removePrefix("name:") ?: e.to?.takeIf { it == "revolt" || it == "spellmastery" } ?: e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:"), payLife = e.payLife)
+                // "cast with Cavern of Souls": mana from the Cavern makes the creature spell uncounterable.
+                if (castItem != null && e.to?.startsWith("cavern:") == true) {
+                    val land = e.to.removePrefix("cavern:")
+                    castItem.cantBeCountered = true
+                    val types = def.subtypes.filter { it.isNotBlank() }
+                    val assume = if (land == "Cavern of Souls" && types.isNotEmpty()) " (assuming the Cavern named ${types.joinToString(" or ")})" else ""
+                    state.trace.step("${def.name} was cast with mana from $land$assume, so it can't be countered: $land's mana says \"That spell can't be countered.\"", "701.6a", "609.3")
+                    state.outcomes += "${def.name} can't be countered (cast with $land)."
+                }
                 // "They cast Fireball at me but I have Circle of Protection: Red": the Circle is activated against the spell.
                 if (castItem != null) for (t in castItem.targets) {
                     val pid = (t as? Ref.Player)?.id ?: continue
