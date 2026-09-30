@@ -214,6 +214,8 @@ class GameState(
     val exiledUntilLeaves: MutableMap<String, MutableList<String>> = mutableMapOf(),
     /** The card most recently exiled by an effect, for "if it was a creature card" (Scavenging Ooze). */
     var lastExiledDef: CardDef? = null,
+    /** Who controls the spell or ability discarding right now (Loxodon Smiter: "a spell or ability an opponent controls causes you to discard"). */
+    var discardCause: String? = null,
     /** Players who can't lose the game this turn (Angel's Grace); cleared in the cleanup step. */
     val cantLoseThisTurn: MutableSet<String> = mutableSetOf(),
     /** Players whose life total damage can't take below the given number this turn (Angel's Grace); cleared in cleanup. */

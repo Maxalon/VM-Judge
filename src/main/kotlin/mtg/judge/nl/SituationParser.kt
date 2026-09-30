@@ -1341,8 +1341,11 @@ class SituationParser(private val names: NameIndex) {
             // "I have Aether Vial on 2 and Meddling Mage in hand. My opponent casts a spell. Can I name it in response?"
         if ((ctx.objects.values.any { o -> o.controller == "me" && o.card.name == "Meddling Mage" } || ctx.inHand["me"]?.any { it.display == "Meddling Mage" } == true) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Aether Vial" } &&
             Regex("""^can (?:i|we) (?:name (?:it|that|the spell|their spell)|vial (?:in )?(?:the )?(?:mage|meddling mage|it)(?: in)?|stop it with (?:the )?(?:mage|meddling mage))(?: in response| with (?:it|the vial|c\d+|the mage|meddling mage))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialmage-question"
+            // "Can I ping their 2/2?" with Grim Lavamancer: its ability at that creature.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Grim Lavamancer" })
+            t2 = t2.replace(Regex("""^can (?:i|we) (?:ping|shoot|hit|zap|burn|kill|lavamancer) (?:their |my opponent's |the |his |her )?(\d+/\d+|c\d+)(?: with (?:it|c\d+|the lavamancer|lavamancer|grim))?\??$""", RegexOption.IGNORE_CASE), "lavaping-question $1")
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
-        t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
+        t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
         if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Sylvan Library" } && Regex("""^(?:do|does|will|would|must) (?:i|we) (?:have to |need to |really have to )?pay (?:the |any )?(?:life|\d+ life|life for (?:it|them|the cards|each card))\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "sylvan-pay-question"
             // "a Tarmogoyf that's a 4/5": the size, said after the name, goes in front of it.
@@ -2983,6 +2986,18 @@ class SituationParser(private val names: NameIndex) {
         }
         if (clause0 == "vialmage-question") {
             ctx.asks += EventSpec("ask", to = "text:You can put Meddling Mage in, but it won't stop that spell. Aether Vial's ability is activated at instant speed, so with two counters you can put Meddling Mage onto the battlefield in response, and as it enters you choose a card name (you may name the spell on the stack). But Meddling Mage says spells with the chosen name can't be cast: the spell already on the stack has been cast, so it resolves as normal (601.2, 608.2). Naming it only stops later copies. Name whatever they are most likely to cast next instead.")
+            return true
+        }
+        Regex("""^lavaping-question (\d+/\d+|c\d+)$""").find(clause0)?.let { r ->
+            val lava = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Grim Lavamancer" }
+            val opp = ctx.other("me") ?: "opp"
+            val ph = r.groupValues[1]
+            val tid = if (Regex("""^\d+/\d+$""").matches(ph)) ctx.objects.values.lastOrNull { it.controller == opp && (it.card.name ?: "").startsWith("a $ph") }?.id ?: describedCreatures("a ", ph, "creature", opp, ctx).firstOrNull() ?: return@let
+                      else m.cards[ph]?.let { objectIdFor(it, ctx) ?: addObject(it, opp, false, ctx) } ?: return@let
+            ctx.events += EventSpec("activate", player = "me", obj = lava.id, targets = listOf(tid)); ctx.lastActor = "me"; ctx.lastVerb = "activate"
+            ctx.asks += EventSpec("ask", obj = tid, to = "die"); ctx.lastMentioned = tid
+            val yard = ctx.graveyardSize["me"] ?: ctx.objects.values.count { it.zone == "graveyard" && it.controller == "me" }
+            ctx.notes += "Grim Lavamancer's ability ({R}, {T}, Exile two cards from your graveyard: 2 damage to any target) is activated at ${ctx.objects.getValue(tid).card.name}; it needs {R}, Lavamancer untapped and not summoning sick (302.6), and two cards in your graveyard to exile${if (yard < 2) " — only $yard described, so say what's there" else " ($yard there)"}."
             return true
         }
         if (clause0 == "castallowed-question") {
@@ -8773,6 +8788,8 @@ class SituationParser(private val names: NameIndex) {
     private val modalBlasts = setOf("Red Elemental Blast", "Pyroblast", "Hydroblast", "Blue Elemental Blast")
     private fun needsSpellTarget(card: NameIndex.Entry) = card.display in setOf("Counterspell", "Negate", "Mana Drain", "Force of Will", "Swan Song", "Dovin's Veto", "Arcane Denial", "Mana Leak", "Dispel", "Miscast", "Spell Pierce", "Force of Negation", "Fierce Guardianship", "Mystical Dispute", "Memory Lapse", "Remand", "Daze", "Stubborn Denial", "Cancel", "Dissolve", "Absorb", "Essence Scatter", "Counterflux", "Render Silent", "Disallow", "Void Shatter", "Syncopate", "Power Sink", "Mana Tithe", "Delay", "Rewind", "Hinder", "Spell Snare", "An Offer You Can't Refuse", "Flusterstorm", "Red Elemental Blast", "Pyroblast", "Hydroblast", "Blue Elemental Blast")
 
+    /** Cards whose target, as they're cast or enter, is a card in a graveyard: "targeting my Bolt" means the Bolt there. */
+    private val graveyardReachers = setOf("Snapcaster Mage", "Eternal Witness", "Sun Titan", "Regrowth", "Reanimate", "Animate Dead", "Unearth", "Raise Dead", "Gravedigger", "Karmic Guide", "Noxious Revival", "Reclaim", "Archaeomancer", "Mnemonic Wall", "Timeless Witness", "Torrential Gearhulk", "Necromancy", "Dance of the Dead", "Persist", "Unburial Rites", "Zombify", "Resurrection", "Ghoulcaller's Chant", "Wildest Dreams", "Restock", "Nature's Spiral")
     private fun emitCast(who: String, card: NameIndex.Entry, restIn: String, m: Marked, ctx: Ctx) {
         // "I cast Giant Growth, they Wrath": a sorcery (or a creature without flash) can't be cast in response, so the
         // other player's spell has resolved first. Without this the Wrath went on the stack above the pump and killed
@@ -8782,7 +8799,12 @@ class SituationParser(private val names: NameIndex) {
             if (last.verb == "cast" && last.player != null && last.player != who && !card.typeLine.contains("Instant") && card.isSpellOnly) ctx.events += EventSpec("resolveAll")
         }
         // "cast Snapcaster targeting Bolt in my graveyard": the named card is in that graveyard, and the phrase isn't part of the target.
-        val rest0000 = Regex("""\b(c\d+) (?:that's |that is |which is |sitting )?in (my|their|his|her|the|@\w+'s) graveyard\b""").replace(restIn) { g ->
+        // "cast Snapcaster Mage targeting my Lightning Bolt": a card the caster reaches into a graveyard for is in that graveyard.
+        val restIn0 = if (card.display in graveyardReachers) Regex("""\b(targeting|on|at|getting back|returning|for) (my|their|his|her|the) (c\d+)\b""").replace(restIn) { g ->
+            val tc = m.cards.getValue(g.groupValues[3])
+            if (objectIdFor(tc, ctx) == null && !tc.typeLine.contains("Land")) "${g.groupValues[1]} ${g.groupValues[3]} in ${g.groupValues[2]} graveyard" else g.value
+        } else restIn
+        val rest0000 = Regex("""\b(c\d+) (?:that's |that is |which is |sitting )?in (my|their|his|her|the|@\w+'s) graveyard\b""").replace(restIn0) { g ->
             val gc = m.cards.getValue(g.groupValues[1])
             val owner = when (val w = g.groupValues[2]) { "my" -> "me"; "the" -> who; "their", "his", "her" -> pronounPlayer(ctx, "their"); else -> w.removePrefix("@").removeSuffix("'s") }
             val gid = ctx.objects.values.firstOrNull { it.card.oracleId == gc.oracleId && it.zone == "graveyard" }?.id ?: addObject(gc, owner, false, ctx, zone = "graveyard", allowDuplicate = true)

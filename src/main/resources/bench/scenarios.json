@@ -28870,5 +28870,71 @@
     "expect": [
       "No: Emrakul, the Aeons Torn isn't countered (it can't be)."
     ]
+  },
+  {
+    "id": "bridge-wall-defender",
+    "text": "My opponent has Ensnaring Bridge with 0 cards in hand. I attack with a 0/4 Wall of Omens. Can it attack?",
+    "expect": [
+      "No: Wall of Omens has defender, so it can't attack (702.3b)."
+    ]
+  },
+  {
+    "id": "lavamancer-ping-2-2",
+    "text": "I have Grim Lavamancer and 2 cards in my graveyard. Can I ping their 2/2?",
+    "expect": [
+      "a 2/2 creature has 2 damage marked.",
+      "Yes: a 2/2 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "edict-bears-or-angel",
+    "text": "My opponent casts Diabolic Edict. I have a Grizzly Bears and a Serra Angel. Which do I sacrifice?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "baneslayer-vs-demon-token-flying",
+    "text": "I attack with Baneslayer Angel. My opponent blocks with a Demon token that's 5/5 flying. What happens?",
+    "expect": [
+      "Demon token has 5 damage marked.",
+      "Demon token: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "chalice-one-vs-probe",
+    "text": "I have Chalice of the Void on 1 and my opponent casts Gitaxian Probe paying life. Is it countered?",
+    "expect": [
+      "Yes: Gitaxian Probe is countered (by Chalice of the Void)."
+    ]
+  },
+  {
+    "id": "rip-snapcaster-my-bolt",
+    "text": "I control Rest in Peace. I cast Snapcaster Mage targeting my Lightning Bolt. Does it work?",
+    "expect": [
+      "Snapcaster Mage's triggered ability doesn't resolve (all targets illegal)."
+    ]
+  },
+  {
+    "id": "leyline-doesnt-protect-bears",
+    "text": "I have Lightning Bolt in hand and my opponent has a Leyline of Sanctity. Can I kill their Grizzly Bears?",
+    "expect": [
+      "Leyline of Sanctity doesn't protect Grizzly Bears: it gives its controller hexproof, not their creatures.",
+      "Yes: Grizzly Bears died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "hymn-vs-loxodon-smiter",
+    "text": "My opponent casts Hymn to Tourach on me. I have Loxodon Smiter in hand. What happens?",
+    "expect": [
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)."
+    ]
+  },
+  {
+    "id": "thalia-bolt-and-shock-two-lands",
+    "text": "My opponent has a Thalia, Guardian of Thraben. I have 2 lands. Can I cast Lightning Bolt and Shock?",
+    "expect": [
+      "No: Lightning Bolt ({R}, 2) and Shock ({R}, 2) cost 4 mana together, and you have only 2 available; you can cast Lightning Bolt or Shock but not both."
+    ]
   }
 ]

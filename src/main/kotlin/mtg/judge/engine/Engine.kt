@@ -878,10 +878,23 @@ class Engine(val state: GameState) {
         state.outcomes += "${obj.def.name} is in the graveyard, where its ability applies: $t"
     }
 
+    /** Loxodon Smiter: discarded to an opponent's spell or ability, it enters the battlefield instead (614.1a). True when it did. */
+    private fun discardReplaced(obj: GameObject, p: Player): Boolean {
+        val cause = state.discardCause
+        if (cause == null || cause == obj.owner) return false
+        if (!Regex("""(?i)if a spell or ability an opponent controls causes you to discard (?:this card|~), put it onto the battlefield instead""").containsMatchIn(obj.def.oracleText.replace(obj.def.name, "~"))) return false
+        p.handSize = p.handSize?.minus(1)?.coerceAtLeast(0)
+        obj.controller = obj.owner
+        trace.step("${p.subject} ${p.v("discards", "discard")} ${obj.name} to a spell or ability an opponent controls, and ${obj.name}'s own replacement effect puts it onto the battlefield instead of into the graveyard.", "614.1a", "701.9a")
+        state.outcomes += "${obj.name}: ${p.possessive} hand → the battlefield (its own ability, discarded to an opponent's spell)."
+        enter(obj.id); stateBasedActions(); return true
+    }
+
     fun discard(playerId: String, objectId: String) {
         val obj = state.obj(objectId)
         val p = state.player(playerId)
         if (obj.zone != Zone.HAND) { trace.step("${obj.name} isn't in ${p.possessive} hand, so it can't be discarded.", "701.9a"); state.outcomes += "${obj.name} can't be discarded (it isn't in ${p.possessive} hand)."; return }
+        if (discardReplaced(obj, p)) return
         move(obj, Zone.GRAVEYARD, "${p.subject} ${p.v("discards", "discard")} ${obj.name}: it goes from ${p.possessive} hand to ${p.possessive} graveyard.", "701.9a")
         p.handSize = p.handSize?.minus(1)?.coerceAtLeast(0)
         graveyardAbilityNote(obj)
@@ -1253,6 +1266,7 @@ class Engine(val state: GameState) {
 
     fun resolveTop() {
         val item = state.stack.removeLastOrNull() ?: run { trace.step("The stack is empty; nothing resolves."); return }
+        state.discardCause = item.controller   // whose spell or ability is making anyone discard while this resolves (Loxodon Smiter)
         trace.step("All players pass priority; ${item.describe} (top of the stack) starts to resolve.", "117.4", "608.1")
         // Killing the Top in response to its ability: the ability is already on the stack and exists independently of its source.
         if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
@@ -2677,7 +2691,7 @@ class Engine(val state: GameState) {
                     } else {
                         val pick = legal.maxByOrNull { it.def.manaValue }!!
                         if (legal.size > 1) state.assumptions += "${chooser.subject} ${chooser.v("takes", "take")} ${pick.name} with ${item.source.name}; ${chooser.subject.lowercase()} could take ${legal.filter { it !== pick }.joinToString(" or ") { it.name }} instead."
-                        move(pick, Zone.GRAVEYARD, "${chooser.subject} ${chooser.v("chooses", "choose")} ${pick.name}, and ${p.subject.lowercase()} ${p.v("discards", "discard")} it: it goes from ${p.possessive} hand to ${p.possessive} graveyard.", "701.9a")
+                        if (!discardReplaced(pick, p)) move(pick, Zone.GRAVEYARD, "${chooser.subject} ${chooser.v("chooses", "choose")} ${pick.name}, and ${p.subject.lowercase()} ${p.v("discards", "discard")} it: it goes from ${p.possessive} hand to ${p.possessive} graveyard.", "701.9a")
                     }
                 }
             }
@@ -3228,6 +3242,7 @@ class Engine(val state: GameState) {
     /** The newer one-shot effects, kept out of [applyEffect] so that method stays under the JVM's 64 KB limit. */
     /** Discard effects, kept out of applyEffect so that method stays under the JVM size limit. */
     private fun applyDiscard(effect: Effect.Discard, item: StackItem) {
+        state.discardCause = item.controller
         for (p in resolvePlayers(effect.who, item)) {
                 val n = if (effect.x) (item.x ?: 0) else effect.count
                 if (effect.x && item.x == null) state.clarifications += Clarification("${item.source.name}'s X", "${item.source.name} makes a player discard X cards; what was X? (assuming 0)")
@@ -3235,7 +3250,7 @@ class Engine(val state: GameState) {
                 // "They Hymn me and I have Bolt and Bears in hand": every card the hand is known to hold goes when the count covers it.
                 val known = state.objects.values.filter { it.zone == Zone.HAND && it.owner == p.id }
                 if (known.isNotEmpty() && n >= known.size && (hand == null || hand <= known.size)) {
-                    for (c in known.toList()) move(c, Zone.GRAVEYARD, "${p.subject} ${p.v("discards", "discard")} ${c.name}${if (effect.random) " (at random, but with $n to discard from ${known.size} in hand every card goes)" else ""}.", "701.9a")
+                    for (c in known.toList()) if (!discardReplaced(c, p)) move(c, Zone.GRAVEYARD, "${p.subject} ${p.v("discards", "discard")} ${c.name}${if (effect.random) " (at random, but with $n to discard from ${known.size} in hand every card goes)" else ""}.", "701.9a")
                     p.handSize = 0; state.outcomes += "${p.subject} ${p.v("discards", "discard")} ${known.joinToString(" and ") { it.name }}."; continue
                 }
                 // "They Hymn me and I have Bolt, Counterspell and a Forest": fewer to discard than the hand holds, so which go is random (or the discarder's choice).

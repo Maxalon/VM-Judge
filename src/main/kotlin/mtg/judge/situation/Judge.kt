@@ -72,6 +72,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     }
             }
         }
+        // "I control Rest in Peace. My graveyard has Lightning Bolt": under a graveyard replacement the card is in exile already.
+        state.objects.values.filter { it.isOnBattlefield() && it.def.oracleText.contains("would be put into a graveyard from anywhere, exile it instead", ignoreCase = true) }.forEach { rip ->
+            val opponentsOnly = rip.def.oracleText.contains("opponent's graveyard", ignoreCase = true)
+            for (o in state.objects.values.filter { it.zone == Zone.GRAVEYARD && !it.token && (!opponentsOnly || it.owner != rip.controller) }) {
+                o.zone = Zone.EXILE
+                state.trace.step("${o.name} was said to be in a graveyard, but ${rip.name} replaces going to a graveyard with exile, so it is in exile instead.", "614.1a")
+                state.assumptions += "${o.name} was said to be in a graveyard, but with ${rip.name} on the battlefield it would have been exiled instead (614.1a), so it's read as being in exile."
+            }
+        }
         // "Oblivion Ring on my Grizzly Bears": the Ring isn't attached; the Bears is in exile, held by the Ring's ability.
         for (o0 in state.objects.values.toList()) {
             val other = o0.attachedTo?.let { state.objects[it] } ?: continue
