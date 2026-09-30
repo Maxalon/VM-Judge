@@ -68,6 +68,8 @@ class GameObject(
     var chosenName: String? = null,
     /** Targets named for a permanent spell that itself targets nothing: they go to its enters-the-battlefield trigger (603.3d). */
     var etbTargets: List<Ref>? = null,
+    /** The zone this came to the battlefield from, for a trigger that looks back there (Karmic Guide reanimated). */
+    var enteredFrom: Zone? = null,
     /** X chosen when this was cast ("enters with X counters"). */
     var x: Int? = null,
     /** Whether the spell that became this permanent was kicked (702.33d): "if this was kicked, it enters with …". */
@@ -91,10 +93,14 @@ class GameObject(
     var attachedTo: String? = null
     var attacking: Ref? = null            // what this creature is attacking
     var blocking: String? = null          // id of the attacker this creature blocks
+    /** Further attackers this creature blocks ("can block an additional creature each combat"). */
+    val alsoBlocking = mutableSetOf<String>()
     var wasBlocked = false                // declared blocked this combat: stays blocked even if the blocker leaves (509.1h)
     var dealtDeathtouchDamage = false     // for 704.5h
     /** Set by "if a creature dealt damage this way would die this turn, exile it instead": the effect's name. */
     var exileOnDeath: String? = null
+    /** The object whose effect exiled this one (Oblivion Ring), for "return the exiled card". */
+    var exiledBy: String? = null
     /** Power as it last was on the battlefield (last known information, 113.7a) for "equal to its power" after a zone change. */
     var lkiPower: Int? = null
 
@@ -104,12 +110,20 @@ class GameObject(
     val lostKeywords = mutableSetOf<String>()
     /** The card as printed: a copy effect (Clone) changes [def] only while it is on the battlefield (400.7). */
     val printedDef: CardDef = def
+    /** "It doesn't untap during its controller's next untap step": set by the effect, spent at that step. */
+    var skipNextUntap: Boolean = false
     /** The parser put it on the battlefield only because a spell named it; a graveyard-targeting spell may move it. */
     var assumed = false
     /** Mox Diamond with no land to discard: it never enters, and goes to the graveyard instead. */
     var mustGoToGraveyard = false
     /** The mana its caster could pay with as it was cast, for "can I?" asked afterwards. */
     var manaAvailableAtCast: Int? = null
+    /** "pitching a blue card": the alternative cost this spell was cast for, in the card's words, so "what did it cost?" answers with it. */
+    var castForAlternativeCost: String? = null
+    /** A double-faced card showing its back face (Insectile Aberration); it turns back to the front face when it leaves the battlefield (712.8). */
+    var transformed: Boolean = false
+    /** The cost-raising permanents that applied as it was cast (name to amount), for "how much did it cost?" asked once they have left. */
+    var taxesAtCast: List<Pair<String, Int>>? = null
     /** Monstrous: set by monstrosity and never unset while the permanent stays on the battlefield (701.31b). */
     var monstrous: Boolean = false
     /** Phased out (702.26b): still in the battlefield zone, but treated as though it doesn't exist until it phases in. */
@@ -198,6 +212,14 @@ class GameState(
     var activePlayer: String? = null,
     /** The player who is the monarch, if any (725.1). No monarch until an effect makes one. */
     var monarch: String? = null,
+    /** The creature whose attack began combat, while "at the beginning of combat" triggers choose their targets. */
+    var combatAttackerHint: String? = null,
+    /** "Exile … until ~ leaves the battlefield": the exiled objects, by the id of the permanent whose leaving returns them (610.3). */
+    val exiledUntilLeaves: MutableMap<String, MutableList<String>> = mutableMapOf(),
+    /** The card most recently exiled by an effect, for "if it was a creature card" (Scavenging Ooze). */
+    var lastExiledDef: CardDef? = null,
+    /** Who controls the spell or ability discarding right now (Loxodon Smiter: "a spell or ability an opponent controls causes you to discard"). */
+    var discardCause: String? = null,
     /** Players who can't lose the game this turn (Angel's Grace); cleared in the cleanup step. */
     val cantLoseThisTurn: MutableSet<String> = mutableSetOf(),
     /** Players whose life total damage can't take below the given number this turn (Angel's Grace); cleared in cleanup. */
@@ -227,6 +249,12 @@ class GameState(
 ) {
     val trace = Trace()
     var combatDamageDealt = false
+    /** The question is whether a spell can be paid for ("they have one Mountain … can they?"): then even a single described land is the whole mana base. */
+    var describedLandsAreTheBase = false
+    /** "Can I cast Path to Exile?" with no creature named: the question is whether the cast is allowed, so a stand-in target is fine. */
+    var castabilityAsked = false
+    /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */
+    val ceased = mutableMapOf<String, String>()
     /** The game's turn number, when the situation said so. */
     var turnNumber: Int? = null
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */
@@ -257,6 +285,8 @@ class GameState(
     val willPay = mutableSetOf<String>()
     /** Choices announced for a permanent's next triggered ability, by source object id ("put Rakdos with Kaalia's trigger"): an object id. */
     val pendingChoices = mutableMapOf<String, String>()
+    /** "Raise Dead. What can I get back?": every card the last graveyard-targeting spell could have chosen, by name. */
+    var lastGraveyardChoices: Pair<String, List<String>>? = null
     /** Players who said they will not pay the next optional cost asked of them. */
     val wontPay = mutableSetOf<String>()
     val clarifications = mutableListOf<Clarification>()
@@ -320,12 +350,15 @@ class GameState(
     /** Whether a static ability's condition currently holds for its source. */
     fun conditionHolds(c: Condition?, src: GameObject): Boolean = when (c) {
         null -> true
+        is Condition.TargetIsColor -> false   // needs the target; the engine checks it where the targets are known
         is Condition.LifeAtLeast -> {
             val p = if (c.opponent) players.firstOrNull { it.id != src.controller } else players.firstOrNull { it.id == src.controller }
             p?.life?.let { it >= c.amount } ?: false
         }
         Condition.YourTurn -> activePlayer == src.controller
         Condition.NotYourTurn -> activePlayer != null && activePlayer != src.controller
+        Condition.ExiledWasCreature -> lastExiledDef?.isCreature == true
+        Condition.LandEnteredThisTurn -> (landsPlayed[src.controller] ?: 0) > 0 || objects.values.any { it.isOnBattlefield() && it.controller == src.controller && "Land" in it.def.types && it.enteredFrom != null }
         is Condition.ControlsMatching -> objects.values.count { it !== src && matches(c.filter, it, src.controller, src) || (it === src && matches(c.filter, it, src.controller, src)) } >= c.atLeast
         is Condition.GraveyardAtLeast -> {
             val cards = objects.values.filter { it.zone == Zone.GRAVEYARD && it.controller == src.controller && !it.token }
@@ -341,9 +374,12 @@ class GameState(
 
     /** What a static ability's condition asks for, for traces and for saying why one doesn't apply. */
     fun describeCondition(c: Condition): String = when (c) {
+        is Condition.TargetIsColor -> "the target to be ${when (c.color) { 'W' -> "white"; 'U' -> "blue"; 'B' -> "black"; 'R' -> "red"; else -> "green" }}"
         is Condition.LifeAtLeast -> "${if (c.opponent) "an opponent" else "its controller"} at ${c.amount} or more life"
         Condition.YourTurn -> "it to be its controller's turn"
         Condition.NotYourTurn -> "it to be another player's turn"
+        Condition.LandEnteredThisTurn -> "a land to have entered the battlefield under its controller's control this turn"
+        Condition.ExiledWasCreature -> "the exiled card to have been a creature card"
         is Condition.ControlsMatching -> "its controller to control ${if (c.atLeast > 1) "${c.atLeast} or more " else "a "}${c.filter.raw ?: "matching permanent"}"
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"
@@ -358,6 +394,9 @@ class GameState(
         null -> null
         is CountExpr.Permanents -> objects.values.count { matches(expr.filter, it, obj.controller, obj) }
         is CountExpr.CardTypesInGraveyards -> cardTypesInGraveyards().size
+        // A graveyard nobody described is unknown, not empty: the size stays unknown rather than guessed.
+        is CountExpr.CardsInGraveyard -> objects.values.count { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) && matches(expr.filter, it, obj.controller, obj, anyZone = true) }.takeIf { objects.values.any { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) } }
+        is CountExpr.CardsInHand -> players.firstOrNull { it.id == obj.controller }?.handSize
         is CountExpr.YourLifeTotal -> players.firstOrNull { it.id == obj.controller }?.life
         is CountExpr.CountersOn -> obj.counters[expr.kind] ?: 0
         is CountExpr.Unknown -> null
@@ -493,14 +532,20 @@ class GameState(
         val notSubOk = f.notSubtypes.none { st -> o.def.subtypes.any { it.equals(st, true) } || ((st == "basic" || st == "snow") && o.def.supertypes.any { it.equals(st, true) }) }
         val ctrlOk = when (f.controller) { null -> true; Who.YOU -> o.controller == controller; Who.OPPONENT -> o.controller != controller; else -> true }
         val anim = o.animatedAs
-        fun hasSub(st: String) = o.def.subtypes.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
+        // "instant or sorcery card": the filter parser files card types alongside subtypes; a card type is on the type line.
+        fun hasSub(st: String) = o.def.subtypes.any { it.equals(st, true) } || o.def.types.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
             (o.def.changeling && o.def.isCreature) || anim?.allCreatureTypes == true
         val subOk = if (f.subtypesAny && f.subtypes.isNotEmpty()) f.subtypes.any { st -> hasSub(st) }
                     else f.subtypes.all { st -> hasSub(st) || (st.equals("basic", true) && o.def.supertypes.any { it.equals("Basic", true) }) || (st.equals("snow", true) && o.def.supertypes.any { it.equals("Snow", true) }) }
         val kwOk = f.keywords.all { hasKeyword(o, it) } && f.notKeywords.none { hasKeyword(o, it) }
         val tokenOk = f.token == null || f.token == o.token
         val legOk = f.legendary == null || f.legendary == ("Legendary" in o.def.supertypes)
-        val stateOk = (f.tapped == null || o.tapped == f.tapped) && (f.attacking == null || (o.attacking != null) == f.attacking)
+        // "attacking or blocking creature" (Divine Verdict): either role satisfies the filter.
+        val roleOk = when {
+            f.attacking == true && f.blocking == true -> o.attacking != null || o.blocking != null || o.alsoBlocking.isNotEmpty()
+            else -> (f.attacking == null || (o.attacking != null) == f.attacking) && (f.blocking == null || (o.blocking != null || o.alsoBlocking.isNotEmpty()) == f.blocking)
+        }
+        val stateOk = (f.tapped == null || o.tapped == f.tapped) && roleOk
         val powerOk = (f.minPower == null || (o.power ?: 0) >= f.minPower) && (f.maxPower == null || (o.power ?: 0) <= f.maxPower) && (f.maxManaValue == null || o.def.manaValue.toInt() <= f.maxManaValue) && (f.minManaValue == null || o.def.manaValue.toInt() >= f.minManaValue)
         val cols = colorsOf(o)
         val colorOk = f.colors.all { it in cols } && f.notColors.none { it in cols } && (f.colored == null || f.colored == cols.isNotEmpty())

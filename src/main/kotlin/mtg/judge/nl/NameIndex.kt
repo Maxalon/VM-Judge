@@ -110,7 +110,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             "one", "two", "three", "first", "second", "last", "next", "new", "old", "big", "small", "up", "down", "out", "off", "over", "under", "back", "again", "now", "then", "here", "there",
             "life", "death", "damage", "counter", "target", "attack", "block", "draw", "hand", "deck", "library", "graveyard", "exile", "battlefield", "stack", "response", "trigger", "ability", "poison", "commander", "cards", "card",
             "they", "them", "he", "she", "we", "you", "i", "me", "re", "ve", "ll", "m", "s", "d", "t", "don", "doesn", "can", "won", "isn", "aren")
-        private val stopWords = setOf("speed", 
+        private val stopWords = setOf("lord", "speed", 
             "counter", "target", "turn", "attack", "block", "cast", "play", "draw", "damage", "life", "control", "survive", "survives", "dead", "alive", "die", "dies", "grow", "resolve", "experience", "energy", "storm", "sacrifice", "sacrificed", "top", "bottom", "overload", "overloaded", "kick", "kicked", "evoke", "convoke", "cycle", "flashback", "recast", "replay",
             "creature", "spell", "ability", "trigger", "stack", "response", "resolve", "resolves", "tap", "untap", "exile", "destroy", "sacrifice",
             "discard", "hand", "library", "graveyard", "battlefield", "token", "copy", "end", "step", "upkeep", "combat", "main", "phase", "pay",
@@ -141,6 +141,9 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                     // Jumpstart pack front cards ("Liliana", "Gigantic", "Surprise!") are memorabilia with the type line
                     // "Card" and no game text. Indexed, "Liliana" was one of them instead of a planeswalker.
                     if (rs.getString(6) == "Card") continue
+                    // "The Ring // The Ring Tempts You" is the Lord of the Rings helper card, not a card anyone casts; indexed,
+                    // "the Ring" after an Oblivion Ring was it instead of the Ring just named.
+                    if (rs.getString(2).startsWith("The Ring")) continue
                     val isCard = rs.getString(5) !in mtg.judge.carddb.ingest.ScryfallIngest.nonCardLayouts
                     val e = Entry(rs.getString(2), rs.getString(3), isCard, kind, rs.getString(6) ?: "", power = rs.getString(7), toughness = rs.getString(8))
                     val prev = map[norm]
