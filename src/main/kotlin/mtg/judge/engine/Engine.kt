@@ -206,7 +206,7 @@ class Engine(val state: GameState) {
         // modes ("If you control a commander …, you may choose both instead") makes the spell a Seq, not a Modal.
         // "A source of your choice" (Deflecting Palm) is chosen as the spell resolves, not targeted; a source named
         // with the spell is that choice, not a target the spell doesn't have.
-        else if (needed.size != targets.size && !unmodeledTarget && !isModal(effect) && !(needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Player && effect != null && targetsAPlayer(effect))
+        else if (needed.size != targets.size && !unmodeledTarget && !isModal(effect) && !(needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Player && ((effect != null && targetsAPlayer(effect)) || Regex("""(?i)\btarget (?:player|opponent)\b""").containsMatchIn(card.oracleText)))
                  && !(needed.isEmpty() && targets.size == 1 && card.oracleText.contains("source of your choice", true))
                  && !(needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.EntersAsCopy })) {
             // "I Swords my Mulldrifter in response to Wrath": Wrath has no targets, so a permanent named with it is
@@ -740,6 +740,17 @@ class Engine(val state: GameState) {
             if (lc < 0 && have < -lc) { trace.step("${obj.name} has $have loyalty and can't pay the ${lc} loyalty cost.", "606.6"); state.outcomes += "${obj.name}'s $lc ability can't be activated (not enough loyalty)."; return null }
             obj.counters["loyalty"] = have + lc
             trace.step("${state.player(playerId).subject} ${state.player(playerId).v("activates", "activate")} ${obj.name}'s ${ability.cost} loyalty ability, ${if (lc >= 0) "putting $lc loyalty counter${if (lc == 1) "" else "s"} on it" else "removing ${-lc} loyalty counter${if (lc == -1) "" else "s"} from it"} (now ${obj.counters["loyalty"]}). Loyalty abilities can be activated only at sorcery speed and once per turn per permanent.", "606.4", "606.3")
+        }
+        // "I have Scavenging Ooze and no mana. Can I exile it?": the mana part of the cost against the mana stated (118.3, 602.2b).
+        run {
+            val generic = Regex("""\{(\d+)\}""").findAll(ability.cost).sumOf { it.groupValues[1].toInt() }
+            val coloured = Regex("""\{[WUBRGC]\}""").findAll(ability.cost).count()
+            val p = state.player(playerId); val need = generic + coloured; val have = p.mana
+            if (need > 0 && have != null && have < need) {
+                trace.step("${obj.name}'s ability costs ${ability.cost}, and ${p.subject.lowercase()} ${p.v("has", "have")} ${if (have == 0) "no mana" else "only $have mana"} available, so the cost can't be paid and the ability can't be activated.", "118.3", "602.2b")
+                state.outcomes += "${obj.name}'s ability can't be activated: it costs ${ability.cost} and ${p.subject.lowercase()} ${p.v("has", "have")} ${if (have == 0) "no mana" else "only $have mana"}."
+                return null
+            }
         }
         if (ability.cost.contains("{T}") && obj.tapped == true) { trace.step("${obj.name} is already tapped, so its {T} ability can't be activated.", "602.2b", "701.26a"); state.outcomes += "${obj.name}'s {T} ability can't be activated (it's already tapped)."; return null }
         if (ability.cost.contains("{T}") && obj.def.isCreature && obj.summoningSick == true && !obj.has("haste")) { trace.step("${obj.name} hasn't been under ${state.player(playerId).possessive} control since the turn began and doesn't have haste, so its {T} ability can't be activated.", "302.6"); state.outcomes += "${obj.name}'s {T} ability can't be activated (summoning sickness)."; return null }

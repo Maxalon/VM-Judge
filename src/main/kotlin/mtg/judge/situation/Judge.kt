@@ -1163,7 +1163,17 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val n = e.card?.name ?: throw JudgeException("ask needs a card")
                     val obj = state.objects.values.lastOrNull { it.def.name.equals(n, true) } ?: throw JudgeException("no object for $n")
                     val m2 = Regex("""(?i)search your library for (an? [^.]*?) card(?: with mana value (x|\d+) or less)?""").find(obj.def.oracleText)
-                    if (m2 == null) { state.outcomes += "$n doesn't search a library, so there is nothing to get with it."; return true }
+                    if (m2 == null) {
+                        // Regrowth, Raise Dead: what's in the graveyard that fits.
+                        val g = Regex("""(?i)return (?:target|up to \w+ target) ?([^.]*?) ?cards? from your graveyard to (?:your hand|the battlefield)""").find(obj.def.oracleText)
+                        if (g != null) {
+                            val kind = g.groupValues[1].trim()
+                            val cards = state.objects.values.filter { it.zone == Zone.GRAVEYARD && it.owner == obj.controller && !it.token && it.id != obj.id && (kind == "" || kind.equals("card", true) || kind.split(" or ", " ").any { k -> k.equals("card", true) || it.def.types.any { t -> t.equals(k, true) } || it.def.subtypes.any { t -> t.equals(k, true) } }) }
+                            state.outcomes += if (cards.isEmpty()) "$n can return any ${if (kind.isEmpty()) "" else "$kind "}card in your graveyard; none was described, so name what's there." else "$n can return any of: ${cards.joinToString(", ") { it.name }} (${if (kind.isEmpty()) "any card" else "any $kind card"} in your graveyard); which one is your choice as it's cast, since the card is the target (601.2c)."
+                            return true
+                        }
+                        state.outcomes += "$n doesn't search a library, so there is nothing to get with it."; return true
+                    }
                     val x = e.amount ?: obj.x
                     val bound = m2.groupValues[2].let { b -> if (b.equals("x", true)) (x?.let { "mana value $it or less (X = $it)" } ?: "mana value X or less") else if (b.isNotEmpty()) "mana value $b or less" else "" }
                     state.outcomes += "Any ${m2.groupValues[1].removePrefix("a ").removePrefix("an ")} card in your library${if (bound.isNotEmpty()) " with $bound" else ""}. Which one is your choice as $n resolves (701.19a); the library isn't tracked here, so name the card if the rest of the answer depends on it." +

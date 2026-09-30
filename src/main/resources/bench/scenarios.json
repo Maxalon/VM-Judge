@@ -29730,5 +29730,97 @@
     "expect": [
       "You gain 1 life in all."
     ]
+  },
+  {
+    "id": "giant-growth-after-they-bolt-it",
+    "text": "I have a Grizzly Bears and cast Giant Growth on it after my opponent Bolts it. Does it survive?",
+    "expect": [
+      "Grizzly Bears is 5/5 until end of turn.",
+      "Yes: Grizzly Bears is still on the battlefield."
+    ]
+  },
+  {
+    "id": "best-play-selfless-spirit-finks",
+    "text": "My opponent casts Wrath of God. I have a Kitchen Finks and a Selfless Spirit. What's the best play?",
+    "expect": [
+      "Selfless Spirit: the battlefield → your graveyard.",
+      "Kitchen Finks is indestructible and isn't destroyed.",
+      "Yes: Kitchen Finks is still on the battlefield."
+    ]
+  },
+  {
+    "id": "two-2-2s-into-one-3-3-block-one",
+    "text": "I attack with two 2/2s and my opponent has one 3/3. What happens if they block one?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "a 2/2 creature: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "probe-on-them-leyline",
+    "text": "My opponent has Leyline of Sanctity and I cast Gitaxian Probe on them. Can I?",
+    "expect": [
+      "Gitaxian Probe can't target opponent."
+    ]
+  },
+  {
+    "id": "bolt-3-3-spellskite-around",
+    "text": "I have Lightning Bolt and my opponent has Spellskite and a 3/3. If I Bolt the 3/3, does it die?",
+    "expect": [
+      "Spellskite's controller can respond: paying {U/P} changes Lightning Bolt's target to Spellskite (a 0/4), if Lightning Bolt could target it.",
+      "Yes: a 3/3 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "damnation-avacyn-bears",
+    "text": "My opponent casts Damnation while I have Avacyn, Angel of Hope. Does my Grizzly Bears die?",
+    "expect": [
+      "Grizzly Bears is indestructible and isn't destroyed.",
+      "No: Grizzly Bears is still on the battlefield."
+    ]
+  },
+  {
+    "id": "ooze-no-mana-exile",
+    "text": "I have a Scavenging Ooze and no mana. My opponent's graveyard has a creature. Can I exile it?",
+    "expect": [
+      "Scavenging Ooze's ability can't be activated: it costs {G} and you have no mana."
+    ]
+  },
+  {
+    "id": "best-block-2-2-vs-2-2-and-3-3",
+    "text": "My opponent attacks me with a 2/2 and a 3/3. I have one 2/2. What's my best block?",
+    "expect": [
+      "Blocking a 2/2 creature with a 2/2 creature: saves you 2 damage; a 2/2 creature dies and a 2/2 creature dies.",
+      "Blocking a 3/3 creature with a 2/2 creature: saves you 3 damage; a 2/2 creature dies and a 3/3 creature survives."
+    ]
+  },
+  {
+    "id": "thoughtseize-on-leyline-opponent",
+    "text": "I cast Thoughtseize on my opponent who has Leyline of Sanctity. What happens?",
+    "expect": [
+      "Thoughtseize can't target opponent."
+    ]
+  },
+  {
+    "id": "regrowth-two-rancors-what-can-i-get",
+    "text": "I have two Rancors in my graveyard and cast Regrowth. What can I get?",
+    "expect": [
+      "Regrowth can return any of: Rancor, Rancor (any card in your graveyard)"
+    ]
+  },
+  {
+    "id": "blood-moon-steam-vents-becomes",
+    "text": "My opponent casts Blood Moon. My Steam Vents becomes what?",
+    "expect": [
+      "Steam Vents is a Mountain with no abilities (Blood Moon)."
+    ]
+  },
+  {
+    "id": "surgical-extraction-goyf",
+    "text": "I have Tarmogoyf and a Bolt in my graveyard. My opponent casts Surgical Extraction on the Bolt. How big is Goyf?",
+    "expect": [
+      "Lightning Bolt: your graveyard → exile.",
+      "Tarmogoyf is 1/2"
+    ]
   }
 ]

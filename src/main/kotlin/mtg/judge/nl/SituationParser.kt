@@ -1401,6 +1401,13 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^can (?:i|we) tap (?:the |my )?(c\d+|it|that) to draw(?: a card)?(?: in response| first| before it resolves)?\??$""", RegexOption.IGNORE_CASE), "in response i tap $1")
             // "Can I gain life?" with Deathrite Shaman: its {G} ability at a creature card in a graveyard.
         if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Deathrite Shaman" } && Regex("""^can (?:i|we) gain (?:life|2 life|2|some life)(?: with (?:it|c\d+|the shaman|deathrite))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "deathrite-gain-question"
+            // "My Steam Vents becomes what?": what it is now.
+        t2 = t2.replace(Regex("""^(?:my |their |the )?(c\d+) (?:becomes|is|turns into) what(?: now)?\??$""", RegexOption.IGNORE_CASE), "what is my $1")
+            // "What's the best play?" with Selfless Spirit against their sweeper: sacrifice it in response.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Selfless Spirit" } && ctx.events.lastOrNull { it.verb == "cast" }?.let { it.player != "me" } == true &&
+            Regex("""^(?:what's|what is|whats) (?:my |the )?(?:best|right|correct) (?:play|line|move|response)(?: here)?\??$|^what (?:should|do|can) (?:i|we) do(?: here| in response)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "spiritplay-question"
+            // "Can I exile it?" with Scavenging Ooze: its ability at the creature card in a graveyard.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Scavenging Ooze" } && Regex("""^can (?:i|we) (?:exile|eat|remove) (?:it|that|the creature|(?:their |the )?c\d+)(?: with (?:it|the ooze|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "oozeeat-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3102,6 +3109,22 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"Can I gain life?\" is read as Deathrite Shaman's {G}, {T} ability at ${card.card.name}; it needs {G} and Deathrite untapped and not summoning sick (302.6)."
             return true
         }
+        if (clause0 == "spiritplay-question") {
+            val spirit = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Selfless Spirit" }
+            val spell = ctx.events.last { it.verb == "cast" }.let { it.card?.name ?: it.obj?.let { id -> ctx.objects[id]?.card?.name } ?: "their spell" }
+            ctx.events += EventSpec("sacrifice", player = "me", obj = spirit.id)
+            ctx.objects.values.filter { o -> o.controller == "me" && o.zone == "battlefield" && o.id != spirit.id && isCreatureName(o.card.name) }.forEach { ctx.asks += EventSpec("ask", obj = it.id, to = "survive") }
+            ctx.notes += "Best play: sacrifice Selfless Spirit in response, while $spell is on the stack. Its ability resolves first and your other creatures are indestructible when $spell resolves (a creature that survives that way keeps its counters and never leaves, so persist isn't used up). The outcome below plays that line."
+            return true
+        }
+        if (clause0 == "oozeeat-question") {
+            val ooze = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Scavenging Ooze" }
+            val food = ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && isCreatureName(o.card.name) } ?: ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" }
+                ?: ctx.events.lastOrNull { it.verb == "leave" && it.to == "graveyard" && it.obj != null }?.obj?.let { ctx.objects[it] } ?: return false
+            ctx.events += EventSpec("activate", player = "me", obj = ooze.id, targets = listOf(food.id)); ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = food.id
+            ctx.notes += "\"Can I exile it?\" is read as Scavenging Ooze's ability ({G}: Exile target card from a graveyard) at ${food.card.name}; it needs {G}."
+            return true
+        }
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
@@ -3818,11 +3841,13 @@ class SituationParser(private val names: NameIndex) {
             return readClause(r.groupValues[1], m, ctx)
         }
         // "I have two Lightning Bolts in hand": that many copies, in the hand, not on the battlefield.
-        Regex("""^(?:(i|we|they|he|she|my opponent|the opponent) )?(?:have|has|hold|holds|holding|am holding|is holding|are holding) (\d+|two|three|four|five) (c\d+) in (?:my |their |his |her |the )?hand$""").find(clauseIn.trim().replace(Regex("""^(?:and|then|so|but) """), ""))?.let { r ->
+        Regex("""^(?:(i|we|they|he|she|my opponent|the opponent) )?(?:have|has|hold|holds|holding|am holding|is holding|are holding) (\d+|two|three|four|five) (c\d+)(?:s|es)? in (?:my |their |his |her |the )?(hand|graveyard|yard)$""").find(clauseIn.trim().replace(Regex("""^(?:and|then|so|but) """), ""))?.let { r ->
             val who = when (r.groupValues[1]) { "i", "we" -> "me"; "" -> actorOfClause(clauseIn) ?: ctx.lastOwner ?: "me"; "my opponent", "the opponent" -> ctx.other("me") ?: "opp"; else -> pronounPlayer(ctx, r.groupValues[1]) }
             val n = number(r.groupValues[2]) ?: return@let
-            repeat(n) { addObject(m.cards.getValue(r.groupValues[3]), who, false, ctx, zone = "hand", allowDuplicate = true) }
-            ctx.handSize[who] = maxOf(ctx.handSize[who] ?: 0, n); ctx.lastOwner = who; ctx.lastVerb = "have"; ctx.note(who); return true
+            val zone = if (r.groupValues[4] == "hand") "hand" else "graveyard"
+            repeat(n) { addObject(m.cards.getValue(r.groupValues[3]), who, false, ctx, zone = zone, allowDuplicate = true) }
+            if (zone == "hand") ctx.handSize[who] = maxOf(ctx.handSize[who] ?: 0, n)
+            ctx.lastOwner = who; ctx.lastVerb = "have"; ctx.note(who); return true
         }
         // "I have Reliquary Tower and 9 cards": the bare count after a "have" is the hand.
         Regex("""^(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve) cards$""").find(clauseIn.trim())?.let { r ->
@@ -8903,7 +8928,14 @@ class SituationParser(private val names: NameIndex) {
 
     /** Cards whose target, as they're cast or enter, is a card in a graveyard: "targeting my Bolt" means the Bolt there. */
     private val graveyardReachers = setOf("Snapcaster Mage", "Eternal Witness", "Sun Titan", "Regrowth", "Reanimate", "Animate Dead", "Unearth", "Raise Dead", "Gravedigger", "Karmic Guide", "Noxious Revival", "Reclaim", "Archaeomancer", "Mnemonic Wall", "Timeless Witness", "Torrential Gearhulk", "Necromancy", "Dance of the Dead", "Persist", "Unburial Rites", "Zombify", "Resurrection", "Ghoulcaller's Chant", "Wildest Dreams", "Restock", "Nature's Spiral")
-    private fun emitCast(who: String, card: NameIndex.Entry, restIn: String, m: Marked, ctx: Ctx) {
+    private fun emitCast(who: String, card: NameIndex.Entry, restIn0: String, m: Marked, ctx: Ctx) {
+        // "cast Giant Growth on it after my opponent Bolts it": what came after happened first, and "it" is still the creature.
+        val restIn = Regex("""^(.*?)\s+after ((?:i|we|they|he|she|my opponent|the opponent|@\w+) .+)$""", RegexOption.IGNORE_CASE).find(restIn0)?.let { r ->
+            val keep = ctx.lastMentioned
+            readClause(r.groupValues[2], m, ctx)
+            if (keep != null) ctx.lastMentioned = keep
+            r.groupValues[1]
+        } ?: restIn0
         // "I cast Giant Growth, they Wrath": a sorcery (or a creature without flash) can't be cast in response, so the
         // other player's spell has resolved first. Without this the Wrath went on the stack above the pump and killed
         // the creature before the pump resolved.
