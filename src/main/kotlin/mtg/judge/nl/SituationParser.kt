@@ -1528,6 +1528,16 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^how much (?:damage )?(?:total|in all|altogether|overall)?(?: damage)? if (?:i|we) (?:attack|swing)(?: with (?:everything|everyone|it|all my creatures|my team))?\??$""", RegexOption.IGNORE_CASE), "i attack with everything, how much damage does my opponent take")
         // "Does Cage still work?" under Stony Silence / Null Rod / Karn: only activated abilities are stopped.
         if ((ctx.objects.values.any { it.card.name in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") } || ctx.events.any { e -> e.verb == "cast" && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") }) && Regex("""^does (?:their |my |the )?(c\d+) still (?:work|function|do anything|apply|do its thing)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "stillworks-question " + Regex("""(c\d+)""").find(t2)!!.value
+        // "Do I still get 3 mana from Tower?" under Blood Moon: what the lands make now.
+        t2 = t2.replace(Regex("""^do (?:i|we) (?:still |even )?(?:get|make|have|tap for) (?:\d+|three|two|one) (?:mana )?(?:from|off|out of|with) (?:my |the )?(?:c\d+|it|them|the tower|tron)\??$""", RegexOption.IGNORE_CASE), "how much mana do i have")
+        // "Should I sacrifice it?" with Selfless Spirit alone against a sweeper: nothing to protect.
+        if (ctx.events.any { it.verb == "cast" && it.player != "me" } && ctx.objects.values.count { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) } == 1 && ctx.objects.values.any { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Selfless Spirit" } && Regex("""^should (?:i|we) (?:sacrifice|sac|crack|pop|use) (?:it|that|him|her|(?:the |my )?c\d+)(?: in response| now| anyway| first)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "spiritalone-question"
+        // "They have Snapcaster in hand. Can they still Bolt me?" after their Bolt went to the graveyard: Snapcaster gives it flashback.
+        if (Regex("""^can (?:they|my opponent|the opponent|he|she) (?:still |even )?(?:bolt|burn|shock|c\d+) (?:me|my face|us|me anyway)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())
+            && (ctx.objects.values.any { o -> o.controller != "me" && o.zone == "hand" && o.card.name in setOf("Snapcaster Mage", "Torrential Gearhulk") } || ctx.inHand.any { (who, cs) -> who != "me" && cs.any { it.display in setOf("Snapcaster Mage", "Torrential Gearhulk") } })
+            && ctx.objects.values.any { o -> o.controller != "me" && o.zone != "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }) t2 = "snapbolt-question"
+        // "I have Delver of Secrets and it flipped": the transformed face.
+        t2 = t2.replace(Regex("""\b(it|that|c\d+) (?:flipped|has flipped|is flipped|transformed|has transformed|is transformed|already flipped|flipped already)\b""", RegexOption.IGNORE_CASE), "$1 transforms")
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2736,6 +2746,13 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean {
         if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("early: [$clause0] lastMentioned=${ctx.lastMentioned} lastCast=${ctx.lastCastEntry?.display} objects=${ctx.objects.keys}")
+        // "I have another in hand": a second copy of the card just mentioned, in the speaker's hand.
+        Regex("""^(?:i|we) (?:have|hold|'ve got|got) another(?: one| copy)?(?: of (?:it|that|them|(?:the |my )?c\d+))? in (?:my |our )?hand$""").find(clause0)?.let {
+            val src = Regex("""(c\d+)""").find(clause0)?.value?.let { m.cards[it] }
+                ?: ctx.lastMentioned?.takeIf { it in ctx.objects }?.let { id -> ctx.objects.getValue(id).card.name?.let { n -> names.lookup(Names.normalize(n)) } }
+                ?: ctx.objects.values.lastOrNull()?.card?.name?.let { n -> names.lookup(Names.normalize(n)) } ?: return@let
+            val id = addObject(src, "me", false, ctx, zone = "hand", allowDuplicate = true); ctx.notes += "A second ${src.display} is in your hand."; ctx.lastMentioned = id; return true
+        }
         // "do my tokens die too? they're 1/1s": the size of the creatures just asked about.
         Regex("""^(?:they're|they are|those are|these are|they were) (\d+/\d+)s?$""").find(clause0)?.let { r ->
             val asked = ctx.asks.mapNotNull { it.obj }.filter { it in ctx.objects }.map { ctx.objects.getValue(it) }.filter { it.card.oracleId == null && it.card.name != null }
@@ -3383,6 +3400,32 @@ class SituationParser(private val names: NameIndex) {
             val card = m.cards.getValue(r.groupValues[1])
             val stopper = ctx.objects.values.lastOrNull { it.card.name in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") }?.card?.name ?: ctx.events.lastOrNull { e -> e.verb == "cast" && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") }?.let { e -> e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name } } ?: "Stony Silence"
             ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "stillWorks:$stopper"); return true
+        }
+        if (clause0 == "spiritalone-question") {
+            val spell = ctx.events.last { it.verb == "cast" && it.player != "me" }.let { it.card?.name ?: it.obj?.let { id -> ctx.objects[id]?.card?.name } ?: "their sweeper" }
+            ctx.asks += EventSpec("ask", to = "text:It makes no difference to the board: Selfless Spirit is your only creature, so its sacrifice gives indestructible to nothing that matters, and $spell destroys it if you don't. Sacrificing it in response only changes how it dies (sacrificed rather than destroyed), which matters if something cares about that (a death trigger fires either way, 700.4). Keep the mana and let $spell take it, unless you can flash in another creature first.")
+            return true
+        }
+        // "Do they get that one too?" (Surgical Extraction with another copy in hand): the outcome lists every copy exiled.
+        if (Regex("""^do (?:they|i|we|he|she) (?:also |still )?(?:get|take|exile|grab|hit) (?:that one|the one in my hand|the other one|it|the copy in my hand|both|the second one)(?: too| as well| also)?$""").matches(clause0) && ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Surgical Extraction", "Extirpate", "Lost Legacy", "Cranial Extraction", "Memoricide", "Unmoored Ego") }) {
+            ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below: the spell takes every card with that name from the graveyard, hand and library, the copy in hand included."; return true
+        }
+        if (clause0 == "snapbolt-question") {
+            val opp = ctx.other("me") ?: "opp"
+            val snap = ctx.objects.values.lastOrNull { o -> o.controller != "me" && o.zone == "hand" && o.card.name in setOf("Snapcaster Mage", "Torrential Gearhulk") }
+                ?: ctx.inHand.entries.firstOrNull { (who, cs) -> who != "me" && cs.any { it.display in setOf("Snapcaster Mage", "Torrential Gearhulk") } }?.let { (who, cs) -> val e = cs.last { it.display in setOf("Snapcaster Mage", "Torrential Gearhulk") }; cs.remove(e); ctx.objects.getValue(addObject(e, who, false, ctx, zone = "hand", allowDuplicate = true)) } ?: return true
+            val burn = ctx.objects.values.last { o -> o.controller != "me" && o.zone != "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }
+            ctx.events += EventSpec("cast", player = snap.controller, obj = snap.id, targets = listOf(burn.id))
+            ctx.events += EventSpec("resolve"); ctx.events += EventSpec("resolve")
+            ctx.events += EventSpec("cast", player = snap.controller, obj = burn.id, to = "flashback", targets = listOf("me"))
+            ctx.notes += "\"Can they still ${burn.card.name?.substringBefore(' ')?.lowercase() ?: "burn"} me?\" is read as: they cast ${snap.card.name} (flash) targeting ${burn.card.name} in their graveyard, its trigger gives ${burn.card.name} flashback until end of turn, and they cast it from the graveyard at you. Yes, if they have the mana for both (${snap.card.name} plus ${burn.card.name}'s mana cost)."
+            ctx.lastActor = snap.controller; ctx.lastVerb = "cast"; return true
+        }
+        // "it transforms": a double-faced card turned to its back face.
+        Regex("""^(it|that|(?:my |the |their )?c\d+) transforms$""").find(clause0)?.let { r ->
+            val ph = r.groupValues[1].removePrefix("my ").removePrefix("the ").removePrefix("their ")
+            val id = (if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[ph]?.let { objectIdFor(it, ctx) }) ?: return@let
+            ctx.events += EventSpec("transform", obj = id); ctx.lastMentioned = id; return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
@@ -9294,12 +9337,14 @@ class SituationParser(private val names: NameIndex) {
             val tc = m.cards.getValue(g.groupValues[3])
             if (objectIdFor(tc, ctx) == null && !tc.typeLine.contains("Land")) "${g.groupValues[1]} ${g.groupValues[3]} in ${g.groupValues[2]} graveyard" else g.value
         } else restIn
-        val rest0000 = Regex("""\b(c\d+) (?:that's |that is |which is |sitting )?in (my|their|his|her|the|@\w+'s) graveyard\b""").replace(restIn0) { g ->
-            val gc = m.cards.getValue(g.groupValues[1])
-            val owner = when (val w = g.groupValues[2]) { "my" -> "me"; "the" -> who; "their", "his", "her" -> pronounPlayer(ctx, "their"); else -> w.removePrefix("@").removeSuffix("'s") }
+        val rest0000 = Regex("""\b(?:(my|their|his|her) )?(c\d+) (?:that's |that is |which is |sitting )?in (my|their|his|her|the|@\w+'s) graveyard\b""").replace(restIn0) { g ->
+            val gc = m.cards.getValue(g.groupValues[2])
+            // "on my Snapcaster in the graveyard": "my" says whose graveyard when the zone itself only says "the".
+            val w0 = g.groupValues[3].let { if (it == "the" && g.groupValues[1].isNotEmpty()) g.groupValues[1] else it }
+            val owner = when (val w = w0) { "my" -> "me"; "the" -> who; "their", "his", "her" -> pronounPlayer(ctx, "their"); else -> w.removePrefix("@").removeSuffix("'s") }
             val gid = ctx.objects.values.firstOrNull { it.card.oracleId == gc.oracleId && it.zone == "graveyard" }?.id ?: addObject(gc, owner, false, ctx, zone = "graveyard", allowDuplicate = true)
             ctx.objects[gid] = ctx.objects.getValue(gid).copy(zone = "graveyard"); ctx.lastMentioned = gid
-            g.groupValues[1]
+            g.groupValues[2]
         }
         // "… with revolt" / "revolt is on": Fatal Push's condition has been met.
         val revolt = Regex("""\s*\b(?:with revolt(?: (?:on|active|turned on|enabled))?|revolt (?:on|active)|and revolt is (?:on|active|met))\b""").find(rest0000)

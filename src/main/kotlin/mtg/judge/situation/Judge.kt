@@ -416,6 +416,14 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "poison" -> engine.addPoison(e.player ?: throw JudgeException("poison needs a player"), e.amount ?: 1)
             "gainlife" -> engine.gainLifeEvent(e.player ?: throw JudgeException("gainLife needs a player"), e.amount ?: 1)
             "loselife" -> engine.loseLifeEvent(e.player ?: throw JudgeException("loseLife needs a player"), e.amount ?: 1)
+            // "it flipped": a transforming double-faced card shows its back face from here on.
+            "transform" -> {
+                val o = state.obj(e.obj ?: throw JudgeException("transform needs an object"))
+                val card = cards.byOracleId(o.def.oracleId)
+                val back = card?.let { toFaceDef(it, 1) }
+                if (back == null) state.clarifications += mtg.judge.engine.Clarification("${o.name}'s other face", "${o.name} has no back face to transform to.")
+                else { val was = o.name; o.def = back; state.trace.step("$was is transformed: it's now ${back.name}${if (back.isCreature) " (${back.power}/${back.toughness})" else ""}, with the back face's characteristics (712.8a).", "712.8a"); state.outcomes += "$was is transformed into ${back.name}." }
+            }
             "blink" -> { val o = state.obj(e.obj ?: throw JudgeException("blink needs an object")); engine.blinkObject(o, e.player ?: o.controller) }
             "reanimate" -> { val o = state.obj(e.obj ?: throw JudgeException("reanimate needs an object")); engine.reanimateObject(o, e.player ?: o.owner) }
             "regenerate" -> { val o = state.obj(e.obj ?: throw JudgeException("regenerate needs an object")); state.shields += mtg.judge.engine.Shield(mtg.judge.engine.Replacement.Regenerate, o.id, null, 1, "a regeneration effect") }
@@ -837,6 +845,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "poison" -> "${who ?: "the player"} ${if (who == "you") "get" else "gets"} ${e.amount ?: 1} poison counter${if ((e.amount ?: 1) == 1) "" else "s"}"
             "trigger" -> "${state.objects[e.obj]?.name ?: e.obj}'s ability triggers$tg"
             "choose" -> "${who ?: "controller"} ${if (who == "you") "choose" else "chooses"} ${e.to?.substringAfter(':')?.let { state.objects[it]?.name ?: it } ?: "?"} for ${state.objects[e.obj]?.name ?: e.obj}'s ability"
+            "transform" -> "${state.objects[e.obj]?.name ?: e.obj} transforms"
             "blink" -> "${state.objects[e.obj]?.name ?: e.obj} is exiled and returned to the battlefield"
             "reanimate" -> "${state.objects[e.obj]?.name ?: e.obj} is put from the graveyard onto the battlefield"
             "regenerate" -> "${state.objects[e.obj]?.name ?: e.obj} has a regeneration shield"
@@ -1614,6 +1623,19 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         /** A colour name or mana letter as its mana symbol letter: "blue" is U, not B (black). */
         fun colourChar(name: String): Char? = mapOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G')[name.trim().lowercase()] ?: name.trim().singleOrNull()?.uppercaseChar()?.takeIf { it in "WUBRG" }
 
+        /** One face of a double-faced card as a definition (face 0 is the front, 1 the back); null if the card has no such face. */
+        fun toFaceDef(card: Card, face: Int): CardDef? {
+            if (card.layout !in setOf("transform", "modal_dfc") || card.faces == null) return null
+            return runCatching {
+                val keywords = runCatching { kotlinx.serialization.json.Json.decodeFromString<List<String>>(card.keywords) }.getOrDefault(emptyList())
+                val f = (kotlinx.serialization.json.Json.parseToJsonElement(card.faces) as kotlinx.serialization.json.JsonArray)[face] as kotlinx.serialization.json.JsonObject
+                fun str(k: String) = (f[k] as? kotlinx.serialization.json.JsonPrimitive)?.content
+                val text = str("oracle_text") ?: ""
+                val colors = (f["colors"] as? kotlinx.serialization.json.JsonArray)?.joinToString("") { (it as kotlinx.serialization.json.JsonPrimitive).content } ?: card.colors
+                OracleParser.parse(card.oracleId, str("name") ?: card.name, str("type_line") ?: card.typeLine, str("mana_cost")?.ifEmpty { null } ?: card.manaCost, card.manaValue, colors, str("power"), str("toughness"),
+                    keywords.filter { k -> Regex("""(?i)\b${Regex.escape(k)}\b""").containsMatchIn(text) }, text, str("loyalty") ?: card.loyalty)
+            }.getOrNull()
+        }
         fun toDef(card: Card): CardDef {
             val keywords = runCatching { kotlinx.serialization.json.Json.decodeFromString<List<String>>(card.keywords) }.getOrDefault(emptyList())
             // A transforming double-faced card (Delver of Secrets) is its front face until something transforms it: the back

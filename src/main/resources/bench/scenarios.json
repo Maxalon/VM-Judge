@@ -31031,5 +31031,117 @@
       "Ancient Grudge is countered."
     ],
     "cite": []
+  },
+  {
+    "id": "delver-flipped-blocked-by-2-2",
+    "text": "I have Delver of Secrets and it flipped. My opponent blocks it with a 2/2. Who dies?",
+    "expect": [
+      "Delver of Secrets is transformed into Insectile Aberration.",
+      "a 2/2 creature can't block Insectile Aberration (flying)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spirit-alone-vs-wrath-advice",
+    "text": "My opponent casts Wrath of God. I have Selfless Spirit and no other creatures. Should I sacrifice it?",
+    "expect": [
+      "It makes no difference to the board: Selfless Spirit is your only creature"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-bolt-snapcaster-back",
+    "text": "I cast Thoughtseize and take their Lightning Bolt. They have Snapcaster Mage in hand. Can they still Bolt me?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn.",
+      "You take 3 damage.",
+      "Lightning Bolt is exiled (flashback)."
+    ],
+    "notExpect": [
+      "Snapcaster Mage: opponent's hand → opponent's graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "guide-swiftspear-bolt-after-blockers",
+    "text": "I attack with Goblin Guide and Monastery Swiftspear and cast Lightning Bolt after blockers. How much prowess damage is added?",
+    "expect": [
+      "Monastery Swiftspear is 2/3 until end of turn."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-one-probe-anyway",
+    "text": "My opponent controls Chalice of the Void on 1 and I cast Gitaxian Probe paying life. Is it countered anyway?",
+    "expect": [
+      "Gitaxian Probe is countered."
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-with-counter-pathed",
+    "text": "I have Kitchen Finks with a -1/-1 counter and my opponent casts Path to Exile on it. What happens?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile."
+    ],
+    "notExpect": [
+      "comes back"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-three-cards-goyf-4-5",
+    "text": "My opponent has Ensnaring Bridge with 3 cards in hand. Can my Tarmogoyf at 4/5 attack?",
+    "expect": [
+      "Tarmogoyf can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-own-finks-gain",
+    "text": "I cast Lightning Bolt on my own Kitchen Finks. Do I gain 2 life when it comes back?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "You gain 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-my-snapcaster-another-in-hand",
+    "text": "My opponent casts Surgical Extraction on my Snapcaster Mage in the graveyard. I have another in hand. Do they get that one too?",
+    "expect": [
+      "Snapcaster Mage: your graveyard → exile.",
+      "your graveyard, hand and library is exiled (2 known here)"
+    ],
+    "notExpect": [
+      "opponent's graveyard → exile"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-three-finks-instant",
+    "text": "I have Aether Vial on 3. Can I put in Kitchen Finks at instant speed?",
+    "expect": [
+      "Kitchen Finks enters the battlefield.",
+      "You gain 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "guide-vs-unflipped-delver-block",
+    "text": "My opponent attacks with Goblin Guide and I block with Delver of Secrets unflipped. Does Delver die?",
+    "expect": [
+      "Delver of Secrets: the battlefield → your graveyard.",
+      "Yes: Delver of Secrets died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "moon-tower-still-three",
+    "text": "I control Blood Moon and Urza's Tower. Do I still get 3 mana from Tower?",
+    "expect": [
+      "You can make 1 mana right now: Urza's Tower → {R} (it's a Mountain under Blood Moon)."
+    ],
+    "cite": []
   }
 ]
