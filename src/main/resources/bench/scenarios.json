@@ -28541,5 +28541,88 @@
     "expect": [
       "Yes, if nothing is done about it: tap Deceiver Exarch with Splinter Twin's granted ability"
     ]
+  },
+  {
+    "id": "delver-reveals-bolt-flips",
+    "text": "I have Delver of Secrets. I reveal Lightning Bolt at upkeep. Does it flip?",
+    "expect": [
+      "Yes. Delver of Secrets' upkeep trigger looks at the top card of your library and lets you reveal it; Lightning Bolt is an instant or sorcery card, so Delver transforms into Insectile Aberration"
+    ]
+  },
+  {
+    "id": "delver-reveals-forest-no-flip",
+    "text": "I have Delver of Secrets. I reveal a Forest at upkeep. Does it flip?",
+    "expect": [
+      "No. Delver of Secrets transforms only if the card revealed is an instant or sorcery card"
+    ]
+  },
+  {
+    "id": "thoughtseize-bolt-and-mountain",
+    "text": "My opponent casts Thoughtseize on me. I have Lightning Bolt and a Mountain in hand. What can they take?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain can't be chosen (not nonland card)."
+    ]
+  },
+  {
+    "id": "wild-nacatl-mountain-plains",
+    "text": "I attack with a Wild Nacatl with a Mountain and a Plains out. How big is it?",
+    "expect": [
+      "Wild Nacatl is 3/3"
+    ]
+  },
+  {
+    "id": "mulldrifter-evoke-draws",
+    "text": "I cast Mulldrifter with evoke. Do I draw?",
+    "expect": [
+      "Mulldrifter is sacrificed.",
+      "Yes: You draw 2 cards in all."
+    ]
+  },
+  {
+    "id": "sword-feast-famine-vs-black-blocker",
+    "text": "My opponent has a Sword of Feast and Famine on a Grizzly Bears. I block with a black creature. What happens?",
+    "expect": [
+      "a black creature can't block Grizzly Bears (protection).",
+      "You take 4 damage.",
+      "You discard 1 card."
+    ]
+  },
+  {
+    "id": "inkmoth-fourth-poison",
+    "text": "I have 3 poison counters. My opponent attacks with Inkmoth Nexus and I don't block. How many poison do I have?",
+    "expect": [
+      "Inkmoth Nexus is a 1/1 creature until end of turn.",
+      "You have 4 poison counters."
+    ]
+  },
+  {
+    "id": "blightning-two-cards",
+    "text": "My opponent casts Blightning. I have 2 cards in hand. What happens?",
+    "expect": [
+      "You take 3 damage.",
+      "You discard 2 cards (2 → 0 in hand)."
+    ]
+  },
+  {
+    "id": "goyf-graveyards-list-dismember",
+    "text": "I have Tarmogoyf. Graveyards have a land, an instant and a creature. My opponent casts Dismember on it. Does it die?",
+    "expect": [
+      "Yes: Tarmogoyf died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "finks-cant-block-serra",
+    "text": "My opponent attacks with a Serra Angel. I block with Kitchen Finks. What happens?",
+    "expect": [
+      "Kitchen Finks can't block Serra Angel (flying).",
+      "You take 4 damage."
+    ]
+  },
+  {
+    "id": "ghostly-prison-their-attack-count",
+    "text": "I have Ghostly Prison. My opponent has 4 lands and attacks with 3 creatures. How many can attack?",
+    "expect": [
+      "2 of opponent's 3 attackers can attack: Ghostly Prison charges {2} per attacker, and opponent's mana covered 2 (508.1c)."
+    ]
   }
 ]

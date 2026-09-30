@@ -955,8 +955,8 @@ class SituationParser(private val names: NameIndex) {
             // "can I Vial in a Thalia": Aether Vial's name used as the verb.
         t2 = t2.let { t0 -> Regex("""\b(i|we|they|he|she) (c\d+) in (?:an? |my |the |their )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2]]?.display == "Aether Vial") "${r.groupValues[1]} vial in ${r.groupValues[3]} with ${r.groupValues[2]}" else r.value } }
             // "Graveyards have an instant and a land": the graveyards' contents, said with them as the subject.
-        t2 = t2.replace(Regex("""^(?:the |all |both )?graveyards (?:have|has|contain|hold) (.+?)(?=,|$)""", RegexOption.IGNORE_CASE), "there is $1 in the graveyards")
-        t2 = t2.replace(Regex("""(?<=[,.] )(?:the |all |both )?graveyards (?:have|has|contain|hold) (.+?)(?=,|$)""", RegexOption.IGNORE_CASE), "there is $1 in the graveyards")
+        t2 = t2.replace(Regex("""^(?:the |all |both )?graveyards (?:have|has|contain|hold) ((?:an? |two |three |\d+ )?\w+(?:,? (?:and )?(?:an? |two |three |\d+ )?\w+)*?)(?=\.|\?|$)""", RegexOption.IGNORE_CASE), "there is $1 in the graveyards")
+        t2 = t2.replace(Regex("""(?<=[,.] )(?:the |all |both )?graveyards (?:have|has|contain|hold) ((?:an? |two |three |\d+ )?\w+(?:,? (?:and )?(?:an? |two |three |\d+ )?\w+)*?)(?=\.|\?|$)""", RegexOption.IGNORE_CASE), "there is $1 in the graveyards")
             // "I have 5 life and 2 permanents": the count after the life total is a second statement.
         t2 = t2.let { t0 -> Regex("""\b(?:(i|we|they|he|she|my opponent|the opponent|@\w+) )?(have|has|with|at|am at|is at|'m at) (\d+) life (?:and|with|plus) (\d+|two|three|four|five|six) ((?:nonland |other )?(?:permanents|lands|creatures|artifacts|enchantments|planeswalkers))\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 val subj = r.groupValues[1].lowercase()
@@ -1315,6 +1315,11 @@ class SituationParser(private val names: NameIndex) {
             val twin = ctx.objects.values.firstOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Splinter Twin", "Kiki-Jiki, Mirror Breaker") }
             val partner = ctx.objects.values.firstOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Deceiver Exarch", "Pestermite", "Zealous Conscripts", "Restoration Angel", "Village Bell-Ringer", "Felidar Guardian", "Bounding Krasis", "Combat Celebrant") }
             if (twin != null && partner != null) t2 = "twincombo-question"
+        }
+            // "I have Delver of Secrets. I reveal Lightning Bolt at upkeep. Does it flip?": the transform, in the card's words.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.startsWith("Delver of Secrets") == true }) {
+            t2 = t2.replace(Regex("""^(?:i|we) reveal (?:an? |the )?(c\d+)(?: (?:at|in|during|on) (?:my |the )?(?:next )?upkeep| at the beginning of my upkeep| off the top| on top)?\??$""", RegexOption.IGNORE_CASE), "delver-reveal-question $1")
+            if (ctx.notes.any { it.startsWith("Delver of Secrets transforms") || it.startsWith("Delver of Secrets stays") }) t2 = t2.replace(Regex("""^does (?:it|that|c\d+|delver|the delver) (?:flip|transform|turn over)(?: over)?\??$""", RegexOption.IGNORE_CASE), "delver-flip-question")
         }
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
@@ -2896,6 +2901,16 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:Yes, if nothing is done about it: $loop. Any number of times gives you as many hasty tokens as you like; attack with all of them this turn (they have haste, 702.10b) for lethal. Two things to check: $tapNote; and each activation and each trigger uses the stack, so your opponent can respond at any point (removing $pn or $tw ends the loop, and a token made earlier still gets exiled at the next end step).")
             return true
         }
+        Regex("""^delver-reveal-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards.getValue(r.groupValues[1])
+            val flips = card.typeLine.contains("Instant") || card.typeLine.contains("Sorcery")
+            if (flips) ctx.notes += "Delver of Secrets transforms: ${card.display} is an instant or sorcery card."
+            else ctx.notes += "Delver of Secrets stays a 1/1: ${card.display} isn't an instant or sorcery card."
+            ctx.asks += EventSpec("ask", to = if (flips) "text:Yes. Delver of Secrets' upkeep trigger looks at the top card of your library and lets you reveal it; ${card.display} is an instant or sorcery card, so Delver transforms into Insectile Aberration, a 3/2 with flying (701.27a). It's the same permanent: it keeps any counters, damage and its tapped or untapped state, and it isn't summoning sick again. Revealing is optional (\"you may\")."
+                else "text:No. Delver of Secrets transforms only if the card revealed is an instant or sorcery card; ${card.display} isn't one, so Delver stays a 1/1 Human Wizard this upkeep. The card stays on top of your library (you looked at it, nothing moves it).")
+            return true
+        }
+        if (clause0 == "delver-flip-question") return true
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
@@ -3414,6 +3429,14 @@ class SituationParser(private val names: NameIndex) {
             val have = ctx.objects.values.count { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }
             repeat(maxOf(0, n - have)) { describedCreatures("a ", "", "", "me", ctx) }
             ctx.asks += EventSpec("ask", player = "me", to = "attackCount", amount = n); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "I have Ghostly Prison. My opponent has 4 lands and attacks with 3 creatures. How many can attack?": their count.
+        Regex("""^how many (?:creatures |of them |of their creatures |of theirs |attackers )?(?:can|could|get to|are able to) (?:(?:they|he|she|my opponent|the opponent) )?(?:attack with|swing with|send in|send|attack|swing|actually attack)(?: this turn| into me| at me)?$""").find(clause0)?.let {
+            val opp = ctx.other("me") ?: "opp"
+            val theirs = ctx.events.any { e -> e.verb in setOf("attack", "attackAll") && e.player == opp }
+            if (!theirs && Regex("""\b(?:i|we|my)\b""").containsMatchIn(clause0)) return@let
+            if (!theirs && ctx.objects.values.none { it.controller == opp && it.zone == "battlefield" && isCreatureName(it.card.name) }) return@let
+            ctx.asks += EventSpec("ask", player = opp, to = "attackCount"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "They have Ghostly Prison. I have three creatures and 4 lands. How many can I attack with?"
         Regex("""^how many (?:creatures |of them |of my creatures |of mine |attackers )?can (?:i|we) (?:attack with|swing with|send in|send|attack)(?: this turn| into (?:it|that|them))?$""").find(clause0)?.let {

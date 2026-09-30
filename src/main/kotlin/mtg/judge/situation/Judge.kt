@@ -963,6 +963,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to == "attackCount") {
                     val p = state.player(e.player ?: "me")
                     val opp = state.opponentsOf(p.id).firstOrNull() ?: throw JudgeException("no other player")
+                    // "They attack with 3 creatures. How many can attack?": the attack was played out; count what got through the declaration.
+                    val declared = curEvents.count { it.verb == "attack" && it.player == p.id }
+                    if (declared > 0) {
+                        val refused = state.outcomes.count { Regex("""^.+ can't attack \(""").containsMatchIn(it) }
+                        val n = declared - refused
+                        val taxes0 = state.objects.values.filter { it.isOnBattlefield() && it.controller == opp.id }.flatMap { o -> o.def.abilities.filterIsInstance<mtg.judge.engine.StaticAbility>().flatMap { it.effects }.filterIsInstance<mtg.judge.engine.StaticEffect.AttackTax>().map { o to it } }
+                        state.outcomes += "$n of ${p.possessive} $declared attackers can attack" + (if (taxes0.isNotEmpty()) ": ${taxes0.joinToString(" and ") { (o, t) -> "${o.name} charges ${t.cost}" }} per attacker, and ${p.possessive} mana covered $n (508.1c)." else ".")
+                        return true
+                    }
                     val mine = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && (it.def.isCreature || it.animatedAs != null) }
                     val able = mine.filter { it.tapped != true && !(it.summoningSick == true && !state.hasKeyword(it, "haste")) && !state.hasKeyword(it, "defender") }
                     val taxes = state.objects.values.filter { it.isOnBattlefield() && it.controller == opp.id }.flatMap { o -> o.def.abilities.filterIsInstance<mtg.judge.engine.StaticAbility>().flatMap { it.effects }.filterIsInstance<mtg.judge.engine.StaticEffect.AttackTax>().map { o to it } }
