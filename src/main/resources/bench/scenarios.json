@@ -29368,5 +29368,91 @@
       "a 5/5 creature: the battlefield → opponent's graveyard.",
       "opponent would have to sacrifice 5 permanents but controls none."
     ]
+  },
+  {
+    "id": "cryptic-counter-and-tap-team",
+    "text": "My opponent casts Cryptic Command to counter my Grizzly Bears and tap my team. Can I still block?",
+    "expect": [
+      "Grizzly Bears is countered."
+    ]
+  },
+  {
+    "id": "cloudshift-finks-life",
+    "text": "I have Kitchen Finks and cast Cloudshift on it. How much life do I gain?",
+    "expect": [
+      "Kitchen Finks is exiled and returns as a new object (your control).",
+      "You gain 2 life in all."
+    ]
+  },
+  {
+    "id": "serra-vs-nighthawk-block",
+    "text": "My opponent attacks with a Serra Angel and I block with Vampire Nighthawk. What happens?",
+    "expect": [
+      "Serra Angel: the battlefield → opponent's graveyard.",
+      "Vampire Nighthawk: the battlefield → your graveyard.",
+      "You gain 2 life."
+    ]
+  },
+  {
+    "id": "rip-their-finks-no-life",
+    "text": "I have Rest in Peace and my opponent's Kitchen Finks dies. Do they gain life?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Rest in Peace).",
+      "No: opponent gains no life here."
+    ]
+  },
+  {
+    "id": "canonist-my-second-spell",
+    "text": "I have Ethersworn Canonist and cast Lightning Bolt then Shock. Can I?",
+    "expect": [
+      "No: Shock can't be cast (Ethersworn Canonist)."
+    ]
+  },
+  {
+    "id": "damnation-thrun-two-green",
+    "text": "My opponent casts Damnation with my Thrun, the Last Troll out. I have 2 green open. Does Thrun survive?",
+    "expect": [
+      "Thrun, the Last Troll's regeneration ability doesn't help: the effect says it can't be regenerated.",
+      "No: Thrun, the Last Troll is in the graveyard."
+    ]
+  },
+  {
+    "id": "wrath-vs-blightsteel",
+    "text": "I cast Wrath of God. My opponent has Blightsteel Colossus. Where does it go?",
+    "expect": [
+      "Blightsteel Colossus is indestructible and isn't destroyed.",
+      "Blightsteel Colossus is on the battlefield."
+    ]
+  },
+  {
+    "id": "lifelink-and-infect-attackers",
+    "text": "I have a 2/2 with lifelink and a 2/2 with infect. I attack and they don't block. What happens?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "You gain 2 life.",
+      "opponent has 2 poison counters."
+    ]
+  },
+  {
+    "id": "worship-at-one-bolted",
+    "text": "My opponent has 1 life and Worship with a creature. I Bolt them. Do they die?",
+    "expect": [
+      "opponent stays at 1 life (Worship).",
+      "No: opponent is still in the game at 1 life."
+    ]
+  },
+  {
+    "id": "delver-reveals-a-land",
+    "text": "I have Delver of Secrets and reveal a land. Does it transform?",
+    "expect": [
+      "No. Delver of Secrets transforms only if the card revealed is an instant or sorcery card"
+    ]
+  },
+  {
+    "id": "mana-leak-vs-vision-off-suspend",
+    "text": "My opponent casts Ancestral Vision. Can I counter it with Mana Leak when it comes off suspend?",
+    "expect": [
+      "Ancestral Vision is countered."
+    ]
   }
 ]
