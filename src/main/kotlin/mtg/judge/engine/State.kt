@@ -118,6 +118,8 @@ class GameObject(
     var mustGoToGraveyard = false
     /** The mana its caster could pay with as it was cast, for "can I?" asked afterwards. */
     var manaAvailableAtCast: Int? = null
+    /** "pitching a blue card": the alternative cost this spell was cast for, in the card's words, so "what did it cost?" answers with it. */
+    var castForAlternativeCost: String? = null
     /** The cost-raising permanents that applied as it was cast (name to amount), for "how much did it cost?" asked once they have left. */
     var taxesAtCast: List<Pair<String, Int>>? = null
     /** Monstrous: set by monstrosity and never unset while the permanent stays on the battlefield (701.31b). */

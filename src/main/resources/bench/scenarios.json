@@ -29284,7 +29284,8 @@
     "id": "thalia-force-of-will-pitched",
     "text": "I have Thalia, Guardian of Thraben. My opponent casts Force of Will pitching a card. Do they pay 1 more?",
     "expect": [
-      "Force of Will costs {3}{U}{U} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 6 mana in all. Cast for its alternative cost"
+      "Force of Will was cast for its alternative cost, not its mana cost",
+      "a tax applies to whatever cost is paid (601.2f), so opponent pays {1} on top of that. Yes."
     ]
   },
   {
@@ -30425,6 +30426,96 @@
     "expect": [
       "Ponder: Shuffle (not tracked in detail).",
       "You draw 1 card."
+    ],
+    "cite": []
+  },
+  {
+    "id": "fow-pitching-what-does-it-cost",
+    "text": "I cast Force of Will pitching a blue card. What does it cost me?",
+    "expect": [
+      "You pay 1 life.",
+      "Force of Will was cast for its alternative cost, not its mana cost"
+    ],
+    "notExpect": [
+      "5 mana. Nothing on the battlefield changes it."
+    ],
+    "cite": []
+  },
+  {
+    "id": "sanctum-prelate-one-bolt",
+    "text": "My opponent has Sanctum Prelate on 1. Can I cast Lightning Bolt?",
+    "expect": [
+      "Lightning Bolt can't be cast (Sanctum Prelate)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "swiftspear-bolt-before-damage",
+    "text": "I attack with Monastery Swiftspear and cast Lightning Bolt before damage. How much damage does it deal?",
+    "expect": [
+      "Monastery Swiftspear is 2/3 until end of turn.",
+      "opponent takes 5 damage in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-their-empty-hand-my-3-3",
+    "text": "My opponent casts Ensnaring Bridge. I have 4 cards in hand and they have 0. Can I attack with my 3/3?",
+    "expect": [
+      "No: a 3/3 creature can't attack (Ensnaring Bridge: opponent has 0 cards in hand"
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-void-finks-no-persist",
+    "text": "I have Leyline of the Void. My opponent's Kitchen Finks dies. Does it persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Leyline of the Void).",
+      "No: Kitchen Finks is in exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "reanimate-griselbrand-life",
+    "text": "I cast Reanimate on Griselbrand in my graveyard. How much life do I lose?",
+    "expect": [
+      "You lose 8 life (Griselbrand's mana value)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "mana-leak-two-lands-after-cast",
+    "text": "My opponent casts Mana Leak on my Tarmogoyf and I have 2 lands untapped after casting it. Can I pay?",
+    "expect": [
+      "You can't pay {3} for Mana Leak: you have only 2 mana available.",
+      "Tarmogoyf is countered."
+    ],
+    "notExpect": [
+      "You pay {3}"
+    ],
+    "cite": []
+  },
+  {
+    "id": "mindcensor-fetch-top-four",
+    "text": "My opponent has Aven Mindcensor and I crack Misty Rainforest. Where do I search?",
+    "expect": [
+      "Aven Mindcensor: You look at only the top four cards of your library for a Forest or Island"
+    ],
+    "cite": []
+  },
+  {
+    "id": "eidolon-my-own-bolt",
+    "text": "I have Eidolon of the Great Revel and cast Lightning Bolt. Do I take 2?",
+    "expect": [
+      "Yes: you take 2 damage in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "guide-connect-after-wall-bolted",
+    "text": "My opponent blocks my Goblin Guide with Wall of Omens and I cast Lightning Bolt on the Wall. Does my Guide connect?",
+    "expect": [
+      "No: Goblin Guide dealt no damage to opponent (it was blocked, and a blocked creature stays blocked even if its blocker leaves combat"
     ],
     "cite": []
   }

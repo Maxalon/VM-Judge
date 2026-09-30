@@ -1482,6 +1482,8 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:kill|shoot|ping|bolt|hit|remove) (it|that|(?:their |the |my opponent's )?c\d+) with (?:the|my|her|his|its|c\d+'s) (minus|plus|[+\u2212-]\d+)(?: ability)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             if (ctx.objects.values.none { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Planeswalker") } == true }) t0
             else "pwkill-question ${r.groupValues[2].lowercase().replace('\u2212', '-')} ${r.groupValues[1].replace(Regex("""^(?:their |the |my opponent's )"""), "")}" } ?: t0 }
+        // "Does my Guide connect?" / "does it get through?": whether the attacker dealt damage to the player.
+        t2 = t2.replace(Regex("""^(?:does|will|would|did|can) (?:my |the )?(c\d+|it|that) (?:still |even )?(?:connect|get through|get in|go through|hit them|hit him|hit her|hit my opponent|hit the opponent|hit face|deal damage to them|still hit|hit)\??$""", RegexOption.IGNORE_CASE), "connect-question $1")
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3232,6 +3234,32 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) reveals? (?:a |an )?(?:land|nonland|basic|mountain|island|plains|forest|swamp|c\d+)(?: card)?(?: (?:off|from|to|for|on) (?:it|the top|the trigger|c\d+|the top of (?:their|my) library))?$""").matches(clause0)
             && ctx.events.any { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == "Goblin Guide" }) {
             ctx.notes += "Goblin Guide's trigger: the defending player reveals the top card of their library and, if it's a land card, puts it into their hand."; return true
+        }
+        Regex("""^connect-question (it|that|c\d+)$""").find(clause0)?.let { r ->
+            val atk = (if (cardRef.matches(r.groupValues[1])) m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) } else null)
+                ?: ctx.events.lastOrNull { it.verb == "attack" && it.player == "me" && it.obj != null }?.obj
+                ?: ctx.events.lastOrNull { it.verb == "attack" && it.obj != null }?.obj ?: return@let
+            val attack = ctx.events.lastOrNull { it.verb == "attack" && it.obj == atk }
+            val defender = attack?.targets?.firstOrNull() ?: ctx.other(attack?.player ?: ctx.objects[atk]?.controller ?: "me") ?: "opp"
+            ctx.asks += EventSpec("ask", obj = atk, to = "damage", targets = listOf(defender)); return true
+        }
+        // "pitching a blue card" said as its own clause: the spell just cast was cast for its alternative cost.
+        if (Regex("""^(?:by )?(?:pitching|exiling) (?:a|an|one) (?:blue|red|green|black|white|colou?red|other blue)? ?card(?: from (?:my|their|your|his|her) hand)?(?: to it| for it| to pay for it)?$""").matches(clause0)) {
+            ctx.events.indexOfLast { it.verb == "cast" && it.to == null }.takeIf { it >= 0 }?.let { i -> ctx.events[i] = ctx.events[i].copy(to = "altcost") }
+            return true
+        }
+        // "I have 2 lands untapped after casting it": the mana left once the spell is paid for (what Mana Leak's "unless" is checked against).
+        Regex("""^(i|we|they|he|she|my opponent|the opponent|@\w+) (?:have|has|had|am at|are at|'ve got|got) (\d+|one|two|three|four|five|six) (?:lands?|mana|mana sources?) (?:untapped|open|left|up|available|left over|still untapped|floating) after (?:casting|playing|paying for) (?:it|that|c\d+|my spell|the spell|that spell)$""").find(clause0)?.let { r ->
+            val who = when (r.groupValues[1]) { "i", "we" -> "me"; "they", "he", "she", "my opponent", "the opponent" -> pronounPlayer(ctx, "their"); else -> r.groupValues[1].removePrefix("@") }
+            val n = number(r.groupValues[2]) ?: r.groupValues[2].toIntOrNull() ?: return@let
+            ctx.events += EventSpec("manaNow", player = who, amount = n)
+            ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} $n mana left after casting; an \"unless\" cost or a tax is checked against that."; ctx.note(who); return true
+        }
+        // "Where do I search?" after a fetch: the whole library, or the top four under Aven Mindcensor (the outcome says which).
+        if (Regex("""^where do (?:i|we) (?:search|look|fetch from|search from)\??$""").matches(clause0)) {
+            val censor = ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name == "Aven Mindcensor" }
+            ctx.asks += EventSpec("ask", to = "text:" + (if (censor) "Only the top four cards of your library: Aven Mindcensor says that if an opponent would search a library, that player searches the top four cards of that library instead (614.1a); the rest is off limits, and if the land isn't among those four the search finds nothing (701.19b)." else "Your whole library: a search lets you look at every card in it for what the effect names (701.19a)."))
+            return true
         }
         if (clause0 == "goblinguide-land-question") {
             val def = ctx.events.last { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == "Goblin Guide" }.let { e -> e.targets.firstOrNull() ?: ctx.other(e.player ?: "me") ?: "opp" }

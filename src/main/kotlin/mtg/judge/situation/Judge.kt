@@ -1231,7 +1231,13 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     state.outcomes += if (refused != null) "No: ${refused.removeSuffix(".")}." else if (id != null) engine.spellCost(id) else "Yes: nothing stops $n from being cast."
                     return true
                 }
-                if (e.to == "spellCost") { state.outcomes += engine.spellCost(e.obj ?: e.card?.name?.let { n -> state.objects.values.lastOrNull { it.def.name.equals(n, true) }?.id } ?: throw JudgeException("ask needs an object")); return true }
+                if (e.to == "spellCost") {
+                    // "I cast Force of Will pitching a blue card. What does it cost me?": the object asked about may be the parser's
+                    // hand copy while the cast made its own; the one that was cast for an alternative cost is the one meant.
+                    val name = e.obj?.let { state.objects[it]?.def?.name } ?: e.card?.name
+                    val castAlt = name?.let { n -> state.objects.values.lastOrNull { it.def.name.equals(n, true) && it.castForAlternativeCost != null }?.id }
+                    state.outcomes += engine.spellCost(castAlt ?: e.obj ?: e.card?.name?.let { n -> state.objects.values.lastOrNull { it.def.name.equals(n, true) }?.id } ?: throw JudgeException("ask needs an object")); return true
+                }
                 if (e.to == "identity") { val o = state.obj(e.obj ?: throw JudgeException("ask needs an object")); val where = o.zone.name.lowercase().replace('_', ' '); state.outcomes += "It's ${o.def.name} in ${if (o.zone == Zone.HAND) "${state.player(o.controller).possessive} hand" else where}${if (state.trace.steps.any { it.text.contains("stops being a copy") || it.text.contains("was a copy of") }) ": a copy effect lasts only while the permanent is on the battlefield (400.7)" else ""}."; return true }
                 if (e.to?.startsWith("text:") == true) {
                     val text = e.to.removePrefix("text:"); state.outcomes += text

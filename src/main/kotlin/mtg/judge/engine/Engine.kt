@@ -382,6 +382,7 @@ class Engine(val state: GameState) {
             .firstOrNull { Regex("""rather than pay (?:~'s|this spell's) mana cost""", RegexOption.IGNORE_CASE).containsMatchIn(it) }?.let { altText ->
             val what = Regex("""you may (.+?) rather than pay""", RegexOption.IGNORE_CASE).find(altText)?.groupValues?.get(1) ?: altText
             if (alternative) {
+                obj.castForAlternativeCost = what
                 trace.step("${card.name} is cast for its alternative cost instead of its mana cost: ${player.subject.lowercase()} ${what.replace("your hand", "${player.possessive} hand")}. An alternative cost replaces the mana cost; additional costs and cost increases still apply.", "118.9", "601.2b", "601.2f")
                 Regex("""pay (\d+) life""", RegexOption.IGNORE_CASE).find(what)?.groupValues?.get(1)?.toInt()?.let { n -> if (!lifeCostPaid) { player.life = player.life?.minus(n); state.outcomes += "${player.subject} ${player.v("pays", "pay")} $n life${player.life?.let { l -> " ($l)" } ?: ""}." } }
                 Regex("""exile (an? \w+ card) from your hand""", RegexOption.IGNORE_CASE).find(what)?.groupValues?.get(1)?.let { c -> state.outcomes += "${player.subject} ${player.v("exiles", "exile")} $c from ${player.possessive} hand (${card.name}'s alternative cost)." }
@@ -2165,6 +2166,37 @@ class Engine(val state: GameState) {
         else { attackTaxTotal[key] = n to state.outcomes.size; state.outcomes += line }
     }
 
+    /** "Counter target spell unless its controller pays {3}": the payer's choice, or their mana when it is known. */
+    private fun applyUnlessPays(effect: Effect.UnlessPays, item: StackItem) {
+        val payer = resolveWho(effect.payer, item)
+        trace.step("${payer?.subject ?: "The named player"} may pay ${effect.cost}. If ${if (payer?.you == true) "you do" else "they do"}, nothing more happens; if not: ${describe(effect.effect, item)}.", "608.2g", "117.3d")
+        // "I have 2 lands untapped": with the mana known and enough of it, the player is taken to pay.
+        var cantPay: Int? = null
+        if (payer != null && payer.id !in state.willPay && payer.id !in state.wontPay) {
+            val need = Regex("""\{(\d+)\}""").findAll(effect.cost).sumOf { it.groupValues[1].toInt() } + Regex("""\{[WUBRGC]\}""").findAll(effect.cost).count()
+            val avail = availableMana(payer)
+            if (avail != null && need > 0) {
+                if (avail >= need) { state.willPay += payer.id; trace.step("${payer.subject} ${payer.v("has", "have")} $avail mana available, enough for ${effect.cost}, so ${payer.subject.lowercase()} ${payer.v("pays", "pay")} it (assumed; say otherwise if not).", "608.2g") }
+                else { cantPay = avail; trace.step("${payer.subject} ${payer.v("has", "have")} only $avail mana available, not enough for ${effect.cost}, so ${payer.subject.lowercase()} can't pay.", "608.2g") }
+            }
+        }
+        // "Can I pay?" with the mana known: wanting to pay isn't enough if the mana isn't there.
+        if (payer != null && payer.id in state.willPay) {
+            val need = Regex("""\{(\d+)\}""").findAll(effect.cost).sumOf { it.groupValues[1].toInt() } + Regex("""\{[WUBRGC]\}""").findAll(effect.cost).count()
+            val avail = availableMana(payer)
+            if (avail != null && need > 0 && avail < need) { state.willPay.remove(payer.id); cantPay = avail; trace.step("${payer.subject} ${payer.v("wants", "want")} to pay ${effect.cost}, but ${payer.v("has", "have")} only $avail mana available, so ${payer.subject.lowercase()} can't.", "608.2g") }
+        }
+        if (payer != null && state.willPay.remove(payer.id)) {
+            trace.step("${payer.subject} ${payer.v("pays", "pay")} ${effect.cost}, so ${item.describe} does nothing more.", "608.2g")
+            state.outcomes += "${payer.subject} ${payer.v("pays", "pay")} ${effect.cost}; ${item.describe} has no further effect."
+        } else {
+            if (payer != null && payer.id in state.wontPay) trace.step("${payer.subject} ${payer.v("declines", "decline")} to pay ${effect.cost}.", "608.2g")
+            else if (cantPay != null) state.outcomes += "${payer!!.subject} can't pay ${effect.cost} for ${item.describe}: ${payer.subject.lowercase()} ${payer.v("has", "have")} only $cantPay mana available."
+            else state.assumptions += "${payer?.subject ?: "The player"} ${payer?.v("does", "do") ?: "does"} not pay ${effect.cost} for ${item.describe}."
+            applyEffect(effect.effect, item)
+        }
+    }
+
     private fun applyEffect(effect: Effect, item: StackItem) {
         val you = state.player(item.controller)
         when (effect) {
@@ -2215,29 +2247,7 @@ class Engine(val state: GameState) {
                 state.assumptions += "${chooser.subject} ${chooser.v("chooses", "choose")} to $what (${item.describe} says \"${if (effect.who == Who.YOU) "you may" else "may"}\")."
                 applyEffect(effect.effect, item)
             }
-            is Effect.UnlessPays -> {
-                val payer = resolveWho(effect.payer, item)
-                trace.step("${payer?.subject ?: "The named player"} may pay ${effect.cost}. If ${if (payer?.you == true) "you do" else "they do"}, nothing more happens; if not: ${describe(effect.effect, item)}.", "608.2g", "117.3d")
-                // "I have 2 lands untapped": with the mana known and enough of it, the player is taken to pay.
-                var cantPay: Int? = null
-                if (payer != null && payer.id !in state.willPay && payer.id !in state.wontPay) {
-                    val need = Regex("""\{(\d+)\}""").findAll(effect.cost).sumOf { it.groupValues[1].toInt() } + Regex("""\{[WUBRGC]\}""").findAll(effect.cost).count()
-                    val avail = availableMana(payer)
-                    if (avail != null && need > 0) {
-                        if (avail >= need) { state.willPay += payer.id; trace.step("${payer.subject} ${payer.v("has", "have")} $avail mana available, enough for ${effect.cost}, so ${payer.subject.lowercase()} ${payer.v("pays", "pay")} it (assumed; say otherwise if not).", "608.2g") }
-                        else { cantPay = avail; trace.step("${payer.subject} ${payer.v("has", "have")} only $avail mana available, not enough for ${effect.cost}, so ${payer.subject.lowercase()} can't pay.", "608.2g") }
-                    }
-                }
-                if (payer != null && state.willPay.remove(payer.id)) {
-                    trace.step("${payer.subject} ${payer.v("pays", "pay")} ${effect.cost}, so ${item.describe} does nothing more.", "608.2g")
-                    state.outcomes += "${payer.subject} ${payer.v("pays", "pay")} ${effect.cost}; ${item.describe} has no further effect."
-                } else {
-                    if (payer != null && payer.id in state.wontPay) trace.step("${payer.subject} ${payer.v("declines", "decline")} to pay ${effect.cost}.", "608.2g")
-                    else if (cantPay != null) state.outcomes += "${payer!!.subject} can't pay ${effect.cost} for ${item.describe}: ${payer.subject.lowercase()} ${payer.v("has", "have")} only $cantPay mana available."
-                    else state.assumptions += "${payer?.subject ?: "The player"} ${payer?.v("does", "do") ?: "does"} not pay ${effect.cost} for ${item.describe}."
-                    applyEffect(effect.effect, item)
-                }
-            }
+            is Effect.UnlessPays -> applyUnlessPays(effect, item)
             is Effect.Draw -> applyEffectMore(effect, item)
             is Effect.Damage -> {
                 val sacAmount = if (effect.sacrificedPower) {
@@ -4043,6 +4053,10 @@ class Engine(val state: GameState) {
         // "Thalia is out. How much does my Grizzly Bears cost?": a tax on the battlefield that doesn't reach this spell is named.
         val idle = if (taxes.isEmpty()) state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().map { o to it } } else emptyList()
         if (taxes.isEmpty() && commanderTax == 0 && self.first == 0 && idle.isNotEmpty()) { trace.step("${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes ${t.filter.raw.ifEmpty { "spell" }}s" }}, and ${card.name} isn't one, so its cost is unchanged.", "601.2f"); state.outcomes += "${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes only ${t.filter.raw.ifEmpty { "spell" }}s" }}, and ${card.name} isn't one." }
+        // "I cast Force of Will pitching a blue card. What does it cost me?": the alternative cost it was cast for, plus any tax.
+        obj.castForAlternativeCost?.let { alt -> val what = alt.replace("your hand", "${p.possessive} hand").trimEnd('.')
+            return "${card.name} was cast for its alternative cost, not its mana cost: $what (601.2b). " +
+                (if (tax > 0) "${taxes.joinToString("; ") { (o, t) -> "${o.name} makes it cost {${kotlin.math.abs(t.amount)}} more" }}: a tax applies to whatever cost is paid (601.2f), so ${p.subject.lowercase()} ${p.v("pays", "pay")} {$tax} on top of that. Yes." else "No mana was paid for it; its printed cost, $printed, is what it costs cast normally.") }
         if (taxes.isEmpty() && commanderTax == 0 && self.first == 0) return "${card.name} costs $printed — $total mana. Nothing on the battlefield changes it." +
             // "I have 3 lands untapped, can I pay for Cryptic Command?": the cost alone doesn't answer that.
             ((obj.manaAvailableAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.manaAvailableAtCast }.lastOrNull() ?: availableMana(p))?.let { avail -> if (avail >= total) " ${p.subject} ${p.v("has", "have")} $avail available${poolNote(p)}, enough." else " ${p.subject} ${p.v("has", "have")} only $avail available${poolNote(p)}, so it can't be cast." } ?: "")
