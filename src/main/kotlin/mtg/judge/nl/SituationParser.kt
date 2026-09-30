@@ -1387,6 +1387,10 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(how many [a-z /]+ (?:do|does|did) (?:i|we|they|he|she|my opponent) (?:have|control|get|end up with))(?: after(?: that| this| all that| combat| it resolves)?| afterwards| then| now| in total| in all)\??$""", RegexOption.IGNORE_CASE), "$1")
             // "I have 2 green open": mana by colour, without the word.
         t2 = t2.replace(Regex("""\b(\d+|one|two|three|four|five|six) (white|blue|black|red|green) (open|up|untapped|available|floating)\b""", RegexOption.IGNORE_CASE), "$1 $2 mana $3")
+            // "Does it persist?": whether it comes back.
+        t2 = t2.replace(Regex("""^(?:does|do|will|would) (it|that|(?:my |the |their )?c\d+) (?:still )?(?:persist|undying|come back with persist|return with persist)\??$""", RegexOption.IGNORE_CASE), "does $1 come back")
+            // "I cast Green Sun's Zenith for X=3. What can I get?": what the search may find.
+        if (Regex("""^what can (?:i|we) (?:get|find|fetch|search for|grab|tutor for)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.lastOrNull { it.verb == "cast" }?.let { e -> (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name })?.let { n -> names.lookup(Names.normalize(n)) } }?.let { true } == true) t2 = "searchwhat-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3073,6 +3077,12 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"What comes back?\" is answered creature by creature below."
             return true
         }
+        if (clause0 == "searchwhat-question") {
+            val cast = ctx.events.last { it.verb == "cast" }
+            val name = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: return false
+            ctx.asks += EventSpec("ask", card = CardRef(name = name), to = "searchWhat", amount = cast.amount)
+            return true
+        }
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
@@ -3350,7 +3360,10 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^(?:where does|where did|where will|where's) (?:it|that|(?:my |the )?(c\d+)) (?:go|end up|go to|land)(?: to| now| then)?$|^(?:does|will|did) (?:it|that|(?:my |the )?(c\d+)) (?:still )?(?:come back|return|go back|bounce back)(?: to (?:my|its owner's|the) hand)?$""").find(clause0)?.let { r ->
             val ph = r.groupValues[1].ifEmpty { r.groupValues[2] }
             val id = ph.takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { c -> objectIdFor(c, ctx) ?: ctx.events.lastOrNull { e -> e.verb == "cast" && e.card?.name == c.display }?.let { slug(c.display) } }
-                ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+                ?: ctx.lastMentioned?.takeIf { it in ctx.objects }
+                // "Terminate on it. Does it come back?": the last thing named is the spell; "it" is what that spell was aimed at, or the asker's creature.
+                ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull()?.substringBefore('|')?.takeIf { it in ctx.objects }
+                ?: ctx.objects.values.lastOrNull { o -> o.controller == "me" && isCreatureName(o.card.name) }?.id ?: return@let
             ctx.asks += EventSpec("ask", obj = id, to = if (r.groupValues[1].isNotEmpty() || clause0.startsWith("where")) "whereIs" else "comesBack"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "Then I cast Raise Dead. What can I get back?": every card the spell could have chosen.

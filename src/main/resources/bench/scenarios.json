@@ -29454,5 +29454,103 @@
     "expect": [
       "Ancestral Vision is countered."
     ]
+  },
+  {
+    "id": "finks-terminate-persists",
+    "text": "I have Kitchen Finks and my opponent casts Terminate on it. Does it persist?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "Yes: Kitchen Finks is back on the battlefield"
+    ]
+  },
+  {
+    "id": "maze-of-ith-on-5-5",
+    "text": "My opponent attacks with a 5/5 and I have Maze of Ith. What happens if I use it?",
+    "expect": [
+      "a 5/5 creature's combat damage this turn (dealt and received) is prevented."
+    ]
+  },
+  {
+    "id": "bolt-at-firewalker-can-i",
+    "text": "I cast Lightning Bolt at my opponent's Kor Firewalker. Can I?",
+    "expect": [
+      "No: Lightning Bolt can't target Kor Firewalker."
+    ]
+  },
+  {
+    "id": "torpor-orb-finks-life",
+    "text": "My opponent has Torpor Orb and I cast Kitchen Finks. Do I gain 2 life?",
+    "expect": [
+      "Kitchen Finks entering the battlefield doesn't trigger any abilities (Torpor Orb).",
+      "No: you gain no life here."
+    ]
+  },
+  {
+    "id": "gsz-x3-what-can-i-get",
+    "text": "I have 5 lands and cast Green Sun's Zenith for X=3. What can I get?",
+    "expect": [
+      "Any green creature card in your library with mana value 3 or less (X = 3)."
+    ]
+  },
+  {
+    "id": "elder-sac-in-response-damnation",
+    "text": "My opponent casts Damnation. I have Sakura-Tribe Elder. Can I sac it in response?",
+    "expect": [
+      "Sakura-Tribe Elder: the battlefield → your graveyard.",
+      "a basic land enters the battlefield."
+    ]
+  },
+  {
+    "id": "thalia-path-cost-me",
+    "text": "I have Thalia, Guardian of Thraben and cast Path to Exile. How much does it cost me?",
+    "expect": [
+      "Path to Exile costs {W} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ]
+  },
+  {
+    "id": "crusader-blocked-by-bears",
+    "text": "My opponent blocks my Phyrexian Crusader with a Grizzly Bears. Does the Bears die?",
+    "expect": [
+      "Grizzly Bears has 2 -1/-1 counter(s).",
+      "Yes: Grizzly Bears died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "verdict-vs-thrun-regenerates",
+    "text": "I cast Supreme Verdict. My opponent has Thrun, the Last Troll and regenerates it. Does it die?",
+    "expect": [
+      "Thrun, the Last Troll regenerates.",
+      "No: Thrun, the Last Troll is still on the battlefield."
+    ]
+  },
+  {
+    "id": "vapor-snag-bears",
+    "text": "My opponent casts Vapor Snag on my Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your hand.",
+      "You lose 1 life."
+    ]
+  },
+  {
+    "id": "sword-fire-ice-vs-blue-blocker",
+    "text": "I have Sword of Fire and Ice on a 2/2 and attack. They block with a blue 3/3. What happens?",
+    "expect": [
+      "a 3/3 blue creature can't block a 2/2 creature (protection).",
+      "You draw 1 card."
+    ]
+  },
+  {
+    "id": "bridge-two-cards-goyf-3-4",
+    "text": "My opponent has Ensnaring Bridge with 2 cards in hand. I attack with Tarmogoyf which is 3/4. Can I?",
+    "expect": [
+      "Tarmogoyf can't attack (Ensnaring Bridge)."
+    ]
+  },
+  {
+    "id": "path-their-finks-does-it-persist",
+    "text": "I cast Path to Exile on their Kitchen Finks. Does it persist?",
+    "expect": [
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard, and persist returns it only from the graveyard (702.79a)."
+    ]
   }
 ]
