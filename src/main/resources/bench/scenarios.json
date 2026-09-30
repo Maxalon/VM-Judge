@@ -29026,5 +29026,89 @@
     "expect": [
       "Wall of Omens can't attack (defender)."
     ]
+  },
+  {
+    "id": "anthem-bears-vs-bolt",
+    "text": "I have Glorious Anthem. My opponent casts Lightning Bolt on my Grizzly Bears. Does it die?",
+    "expect": [
+      "Yes: Grizzly Bears died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "thrun-regen-vs-damnation",
+    "text": "My opponent casts Damnation. I have Thrun, the Last Troll and 2 green mana. Can I save it?",
+    "expect": [
+      "Thrun, the Last Troll's regeneration shield doesn't help: the effect says it can't be regenerated (701.19c).",
+      "No: Thrun, the Last Troll is in the graveyard."
+    ]
+  },
+  {
+    "id": "brute-force-after-they-block",
+    "text": "I attack with a 2/2 into their 3/3 and cast Brute Force after they block. Who dies?",
+    "expect": [
+      "a 2/2 creature is 5/5 until end of turn.",
+      "a 3/3 creature: the battlefield → opponent's graveyard.",
+      "No: a 2/2 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "meddling-mage-bolt-vs-chain-lightning",
+    "text": "My opponent has a Meddling Mage naming Lightning Bolt. Can I cast Chain Lightning?",
+    "expect": [
+      "opponent takes 3 damage."
+    ]
+  },
+  {
+    "id": "settle-the-wreckage-vs-2-2",
+    "text": "My opponent attacks me with a 2/2 and I have Settle the Wreckage. What happens if I cast it?",
+    "expect": [
+      "a 2/2 creature: the battlefield → exile."
+    ]
+  },
+  {
+    "id": "kor-firewalker-vs-pyroclasm",
+    "text": "I have Kor Firewalker and my opponent casts Pyroclasm. What happens?",
+    "expect": [
+      "You gain 1 life.",
+      "Damage to Kor Firewalker from Pyroclasm is prevented (protection)."
+    ]
+  },
+  {
+    "id": "doom-blade-vs-baneslayer",
+    "text": "My opponent has a Baneslayer Angel. I cast Doom Blade on it. Does it die?",
+    "expect": [
+      "Yes: Baneslayer Angel died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "leyline-target-their-bears-instead",
+    "text": "I cast Lightning Bolt on my opponent who has Leyline of Sanctity. Can I target their Grizzly Bears instead?",
+    "expect": [
+      "Lightning Bolt can't target opponent.",
+      "Yes. Leyline of Sanctity gives its controller hexproof, not their permanents (702.11c)"
+    ]
+  },
+  {
+    "id": "nighthawk-blocked-by-1-1-life",
+    "text": "I have Vampire Nighthawk and attack. They block with a 1/1. How much life do I gain?",
+    "expect": [
+      "a 1/1 creature can't block Vampire Nighthawk (flying).",
+      "You gain 2 life in all."
+    ]
+  },
+  {
+    "id": "boros-charm-vs-wrath-nothing",
+    "text": "My opponent casts Wrath of God. I respond with Boros Charm choosing indestructible. What happens?",
+    "expect": [
+      "Boros Charm had nothing to protect: no permanents of yours were described. Any there are would have indestructible until end of turn."
+    ]
+  },
+  {
+    "id": "electrolyze-kill-both-bears",
+    "text": "I have two Grizzly Bears and my opponent casts Electrolyze. Can they kill both?",
+    "expect": [
+      "Grizzly Bears has 1 damage marked. (×2)",
+      "No: Grizzly Bears is still on the battlefield. (×2)"
+    ]
   }
 ]

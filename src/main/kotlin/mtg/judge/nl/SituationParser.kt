@@ -1097,6 +1097,11 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(i |we |they |he |she |my opponent |the opponent )?(attacks?|swings?) with (c\d+) with (\d+|two|three|four|five|six|seven) (\+1/\+1 counters?)\b""", RegexOption.IGNORE_CASE), "$1have $3 with $4 $5, $1$2 with it")
             // "a 2/2 with reach and a 5/5 without": the second has no reach; the word adds nothing.
         t2 = t2.replace(Regex("""\b(\d+/\d+) without\b(?=[.,;]|$)""", RegexOption.IGNORE_CASE), "$1")
+            // "I attack with a 2/2 into their 3/3 and cast Brute Force after blockers": the attack, then their block, as clauses.
+        t2 = t2.let { t0 -> Regex("""\b(?:(i|we) )?(attacks?|swings?)( with (?:my |an? )?(?:\d+/\d+(?: [a-z]+)?|c\d+)) into (?:their |his |her |an? |the )?(\d+/\d+|c\d+)((?: (?:$kwNouns))?)(?: (?:blocker|creature|guy|dude))?\b(?! (?:and|&) (?:their |an? |the )?\d+/\d+)( and (?=(?:cast|casts|play|plays|pump|bolt|sac|sacrifice|flash|use|activate|tap|kill|bounce|blink|flicker)\b))?""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                val subj = r.groupValues[1].ifEmpty { "i" }
+                "${if (r.groupValues[1].isNotEmpty()) r.groupValues[1] + " " else ""}${r.groupValues[2]}${r.groupValues[3]}, they block with ${if (r.groupValues[4].startsWith("c")) "their " else "a "}${r.groupValues[4]}${r.groupValues[5]}" +
+                    (if (r.groupValues[6].isNotEmpty()) ", $subj " else "") } }
             // "my 2/2 double strike attacks into a 3/3": it attacks, and the 3/3 blocks it.
         t2 = t2.replace(Regex("""\b(attacks?|swings?) into (an? |their |the )?(\d+/\d+)((?: (?:$kwNouns))?)\b(?! (?:with|and) )""", RegexOption.IGNORE_CASE), "$1, they block with $2$3$4")
             // "can't be blocked except by two or more creatures": menace, in its own words.
@@ -1136,7 +1141,7 @@ class SituationParser(private val names: NameIndex) {
             // "I haven't animated it": nothing happens, and nothing is left unread.
         t2 = t2.replace(Regex("""\b(?:but |and )?(?:i|we) (?:haven't|have not|didn't|did not|don't|do not) (?:animated?|activated?|turned? (?:it|c\d+) on)(?: (?:it|that|c\d+))?(?=[.,;!?]|$)""", RegexOption.IGNORE_CASE), "unanimated-note")
             // "Can I target their creature instead?" after a spell bounced off a player's hexproof: the creature is fair game.
-        t2 = t2.replace(Regex("""^can (?:i|we) (?:target|hit|bolt|aim at|go after) (?:their|his|her|one of their|a) creatures?(?: instead| then)?\??$""", RegexOption.IGNORE_CASE), "leyline-creature-question")
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:target|hit|bolt|aim at|go after) (?:their|his|her|one of their|a) (?:creatures?|c\d+)(?: instead| then)?\??$""", RegexOption.IGNORE_CASE), "leyline-creature-question")
             // "pay 1 to equip it to my Bears": the equip.
         t2 = t2.replace(Regex("""\b(?:and )?pays? (?:\d+|one|two|three|the equip cost) to equip (it|that|(?:my |the )?c\d+) (?:to|onto|on) (?:my |the )?(c\d+|\d+/\d+)\b""", RegexOption.IGNORE_CASE), ", equip $1 to my $2")
             // "my Bonesplitter equipped to my Bears": the attachment, said the other way round.
@@ -1346,6 +1351,15 @@ class SituationParser(private val names: NameIndex) {
             t2 = t2.replace(Regex("""^can (?:i|we) (?:ping|shoot|hit|zap|burn|kill|lavamancer) (?:their |my opponent's |the |his |her )?(\d+/\d+|c\d+)(?: with (?:it|c\d+|the lavamancer|lavamancer|grim))?\??$""", RegexOption.IGNORE_CASE), "lavaping-question $1")
             // "Does my team survive?" after Selfless Spirit: the save-the-team question.
         t2 = t2.replace(Regex("""^(?:does|do|will|would) my (?:team|board|other creatures|creatures|guys) (?:survive|live|make it|get through)(?: this| that)?\??$""", RegexOption.IGNORE_CASE), "can i save my team")
+            // "I cast Brute Force after they block": a timing phrase, the same as "after blockers".
+        t2 = t2.replace(Regex("""\s+after (?:they|he|she|my opponent|the opponent) (?:blocks?|declares? blockers?)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), " after blockers")
+            // "I cast Lightning Bolt on my opponent who has Leyline of Sanctity": the board first, then the cast.
+        t2 = t2.replace(Regex("""^(i|we) (cast|casts|bolt|play) ((?:an? |the |my )?c\d+) (on|at|targeting) (my opponent|them|him|her) who (?:has|controls|is holding|owns) ((?:an? |the )?c\d+)\b""", RegexOption.IGNORE_CASE), "my opponent has $6, $1 $2 $3 $4 $5")
+            // "I have two Grizzly Bears and my opponent casts Electrolyze. Can they kill both?": the damage divided between them.
+        if (Regex("""^can (?:they|he|she|my opponent|the opponent|it) (?:kill|get|take out) (?:both|both of them|them both|all of them|both bears|both creatures)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.lastOrNull { it.verb == "cast" }?.let { it.player != "me" && it.targets.isEmpty() } == true) t2 = "killboth-question"
+            // "I have Aether Vial with 2 counters. My opponent casts Wrath of God. Can I put a creature in?": timing advice.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Aether Vial" } && ctx.events.lastOrNull { it.verb == "cast" }?.let { it.player != "me" } == true &&
+            Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:a creature|something|a guy|it|that|(?:my |the )?c\d+) in(?: in response| now| with the vial| with it)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialresponse-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3002,6 +3016,22 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", obj = tid, to = "die"); ctx.lastMentioned = tid
             val yard = ctx.graveyardSize["me"] ?: ctx.objects.values.count { it.zone == "graveyard" && it.controller == "me" }
             ctx.notes += "Grim Lavamancer's ability ({R}, {T}, Exile two cards from your graveyard: 2 damage to any target) is activated at ${ctx.objects.getValue(tid).card.name}; it needs {R}, Lavamancer untapped and not summoning sick (302.6), and two cards in your graveyard to exile${if (yard < 2) " — only $yard described, so say what's there" else " ($yard there)"}."
+            return true
+        }
+        if (clause0 == "killboth-question") {
+            val cast = ctx.events.last { it.verb == "cast" }
+            val mine = ctx.objects.values.filter { o -> o.controller == "me" && o.zone == "battlefield" && isCreatureName(o.card.name) }.take(2)
+            if (mine.size < 2) return false
+            val at = ctx.events.indexOf(cast)
+            ctx.events[at] = cast.copy(targets = mine.map { it.id })
+            mine.forEach { ctx.asks += EventSpec("ask", obj = it.id, to = "die") }
+            ctx.notes += "\"Can they kill both?\" is read as ${cast.card?.name ?: "the spell"} aimed at ${mine.joinToString(" and ") { it.card.name ?: "a creature" }} with its damage divided between them; the outcome says whether each dies."
+            return true
+        }
+        if (clause0 == "vialresponse-question") {
+            val spell = ctx.events.last { it.verb == "cast" }.let { it.card?.name ?: it.obj?.let { id -> ctx.objects[id]?.card?.name } ?: "their spell" }
+            val sweeper = spell.let { n -> names.lookup(Names.normalize(n)) }?.let { e -> setOf("Wrath of God", "Damnation", "Day of Judgment", "Supreme Verdict", "Anger of the Gods", "Pyroclasm", "Toxic Deluge", "Terminus", "Languish", "Sweltering Suns", "Slagstorm", "Blasphemous Act", "Austere Command", "Hallowed Burial", "End Hostilities", "Fumigate", "Cleansing Nova", "Shatter the Sky", "Doomskar", "Depopulate", "Farewell", "Ritual of Soot", "Deafening Clarion", "Kozilek's Return", "Firespout", "Volcanic Fallout", "Electrickery", "Radiant Flames", "Sunfall") }?.contains(spell) == true
+            ctx.asks += EventSpec("ask", to = "text:Yes, but not yet. Aether Vial's ability is activated at instant speed, so with $spell on the stack you can put a creature with mana value equal to the counters onto the battlefield in response (602.5)." + (if (sweeper) " Don't: $spell resolves after the Vial's ability, and the creature you just put in is on the battlefield when it does, so it dies with the rest. Let $spell resolve, then activate the Vial afterwards (at their end step, say) and the creature arrives on an empty board." else " Whether that's wise depends on what $spell does once it resolves."))
             return true
         }
         if (clause0 == "castallowed-question") {
