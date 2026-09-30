@@ -72,6 +72,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     }
             }
         }
+        // "Oblivion Ring on my Grizzly Bears": the Ring isn't attached; the Bears is in exile, held by the Ring's ability.
+        for (o0 in state.objects.values.toList()) {
+            val other = o0.attachedTo?.let { state.objects[it] } ?: continue
+            fun isRing(x: GameObject) = x.def.abilities.filterIsInstance<TriggeredAbility>().any { a -> a.effect == Effect.ReturnExiledCard }
+            // Either way round: "Oblivion Ring on my Bears" attaches the Ring to the Bears; "my Bears under their Ring" the reverse.
+            val (ring, o) = when { isRing(other) -> other to o0; isRing(o0) -> o0 to other; else -> continue }
+            ring.attachedTo = null; o.attachedTo = null; o.zone = Zone.EXILE; o.exiledBy = ring.id
+            state.assumptions += "${ring.name} \"on\" ${o.name} is read as ${o.name} exiled by ${ring.name}'s enters-the-battlefield ability; it returns if ${ring.name} leaves the battlefield."
+        }
         for (s in sit.stack) {
             val kind = when (s.kind.lowercase()) { "triggered" -> StackKind.TRIGGERED; "activated" -> StackKind.ACTIVATED; else -> StackKind.SPELL }
             val source = s.source?.let { state.objects[it] } ?: s.card?.let { ref -> cardDef(ref, state)?.let { def -> state.add(GameObject(s.id ?: freshId(state, def.name), def, Zone.STACK, s.controller)) } }
@@ -1045,13 +1054,17 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     return true
                 }
                 if (e.to == "whereIs" || e.to == "comesBack") {
-                    val o = state.objects[e.obj] ?: state.objects.values.lastOrNull { it.def.name.equals(e.obj?.replace('_', ' '), true) } ?: throw JudgeException("ask needs an object")
+                    // A card that came back (Oblivion Ring leaving, persist) is a new object: follow it there.
+                    val o = (state.objects[e.obj] ?: state.objects.values.lastOrNull { it.def.name.equals(e.obj?.replace('_', ' '), true) } ?: throw JudgeException("ask needs an object"))
+                        .let { first -> generateSequence(first) { it.successor?.let { id -> state.objects[id] } }.last() }
                     val owner = state.player(o.owner)
                     val zone = when (o.zone) { Zone.BATTLEFIELD -> "on the battlefield"; Zone.GRAVEYARD -> "in ${owner.possessive} graveyard"; Zone.HAND -> "in ${owner.possessive} hand"; Zone.EXILE -> "in exile"; Zone.LIBRARY -> "in ${owner.possessive} library"; Zone.STACK -> "on the stack"; else -> "in the ${o.zone.name.lowercase()}" }
                     // Rancor: a return that needs "from the battlefield" never happens for a card that was countered or fizzled.
                     val fromBattlefield = Regex("""(?i)when ~ is put into a graveyard from the battlefield, return""").containsMatchIn(o.def.oracleText.replace(o.def.name, "~")) || Regex("""(?i)is put into a graveyard from the battlefield, return""").containsMatchIn(o.def.oracleText)
                     val note = if (o.zone == Zone.GRAVEYARD && fromBattlefield && o.enteredFrom == null) " It stays there: its return-to-hand ability triggers only when it goes to a graveyard from the battlefield, and it went there from the stack (countered, or with no legal target) without ever being on the battlefield (603.6c, 603.10)." else ""
-                    state.outcomes += if (e.to == "whereIs") "${o.name} is $zone.$note" else if (o.zone == Zone.HAND) "Yes: ${o.name} is back in ${owner.possessive} hand." else "No: ${o.name} is $zone.$note"
+                    state.outcomes += if (e.to == "whereIs") "${o.name} is $zone.$note" else if (o.zone == Zone.HAND) "Yes: ${o.name} is back in ${owner.possessive} hand."
+                        else if (o.zone == Zone.BATTLEFIELD && o.id != e.obj) "Yes: ${o.name} is back on the battlefield, as a new object (untapped, no counters or damage, and summoning sick if it's a creature, 400.7)."
+                        else "No: ${o.name} is $zone.$note"
                     return true
                 }
                 if (e.to == "graveyardChoices") {

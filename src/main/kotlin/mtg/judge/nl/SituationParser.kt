@@ -307,13 +307,17 @@ class SituationParser(private val names: NameIndex) {
                 // A nickname ("Jace" for Jace, the Mind Sculptor) isn't a card named in full either: counted as one, it
                 // made "Jace" ambiguous between the Mind Sculptor and the Jace Beleren the question actually named.
                 if (f.end - f.start == 1 && (words.getOrNull(f.start) in NameIndex.aliases || keptWords.getOrNull(f.start) in NameIndex.aliases)) continue
+                // "the Ring" after Oblivion Ring: a multi-word card reached by one bare word ("Ring of the Lucii") wasn't named in full
+                // either, and counted it made "ring" ambiguous with the Ring actually named.
+                if (f.end - f.start == 1 && Names.normalize(f.entry.display).contains(' ')) continue
                 val display = f.entry.display
                 val head = display.substringBefore(",")   // "Jace, the Mind Sculptor" -> "Jace"
                 val nameWords = Names.normalize(display).split(' ').filter { it.isNotEmpty() }
                 val keys = LinkedHashSet<String>()
                 if (head != display) keys += Names.normalize(head)
                 if (nameWords.size > 1) { keys += nameWords.first(); keys += nameWords.last() }
-                for (k in keys) if (k.length >= 3 && k !in shortNameStop) candidates.getOrPut(k) { LinkedHashSet() } += f.entry
+                // A stop word ("ring", "bolt") still names the card when the card was named in full and it is the last word: "the Ring" after Oblivion Ring.
+                for (k in keys) if (k.length >= 3 && (k !in shortNameStop || (f.end - f.start >= 2 && k == nameWords.last()))) candidates.getOrPut(k) { LinkedHashSet() } += f.entry
                 // "the Angel" for Serra Angel: a creature-type word in the name, when only one mentioned card carries it.
                 for (k in nameWords) if (k in typeShortNames && Regex("""(?i)\b${Regex.escape(k)}\b""").containsMatchIn(f.entry.typeLine.substringAfter("—", ""))) typeCandidates.getOrPut(k) { LinkedHashSet() } += f.entry
             }
@@ -1306,6 +1310,12 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash|sneak) (?:it|that|(?:my |the )?c\d+) (?:in|into play|onto the battlefield|out) (?:on|during|in) (?:their|my opponent's|the opponent's|his|her) (?:next |end )?(?:turn|step)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialin-question"
             // "Can I cast it for free?": the card in hand, for its alternative cost.
         if (Regex("""^can (?:i|we) (?:cast|play) (?:it|that) for free\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { it.zone == "hand" && it.controller == "me" }) t2 = "castfree-question"
+            // "I have Splinter Twin on Deceiver Exarch. Can I win this turn?": the combo, in the cards' words.
+        if (Regex("""^can (?:i|we) (?:win|combo off|go infinite|go off|kill them|kill my opponent|win the game)(?: this turn| right now| now| on the spot| from here)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) {
+            val twin = ctx.objects.values.firstOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Splinter Twin", "Kiki-Jiki, Mirror Breaker") }
+            val partner = ctx.objects.values.firstOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Deceiver Exarch", "Pestermite", "Zealous Conscripts", "Restoration Angel", "Village Bell-Ringer", "Felidar Guardian", "Bounding Krasis", "Combat Celebrant") }
+            if (twin != null && partner != null) t2 = "twincombo-question"
+        }
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2876,6 +2886,16 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"Can I cast it for free?\" is read as casting ${held.card.name} for its alternative cost; the outcome says whether that cost is available."
             return true
         }
+        if (clause0 == "twincombo-question") {
+            val twin = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Splinter Twin", "Kiki-Jiki, Mirror Breaker") }
+            val partner = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Deceiver Exarch", "Pestermite", "Zealous Conscripts", "Restoration Angel", "Village Bell-Ringer", "Felidar Guardian", "Bounding Krasis", "Combat Celebrant") }
+            val tw = twin.card.name; val pn = partner.card.name
+            val loop = if (tw == "Splinter Twin") "tap $pn with Splinter Twin's granted ability ({T}: Create a token that's a copy of this creature, except it has haste; exile it at the beginning of the next end step). The token enters, its own enters-the-battlefield ability untaps $pn, and you repeat: each loop is another hasty token"
+                       else "tap Kiki-Jiki to copy $pn (the copy has haste); the copy's enters-the-battlefield ability untaps Kiki-Jiki, and you repeat: each loop is another hasty token"
+            val tapNote = if (tw == "Splinter Twin") "$pn must be able to tap: an ability with {T} in its cost can't be activated if the creature hasn't been under your control continuously since your most recent turn began (302.6), so an Exarch that entered this turn only works with haste" else "Kiki-Jiki must be able to tap (302.6)"
+            ctx.asks += EventSpec("ask", to = "text:Yes, if nothing is done about it: $loop. Any number of times gives you as many hasty tokens as you like; attack with all of them this turn (they have haste, 702.10b) for lethal. Two things to check: $tapNote; and each activation and each trigger uses the stack, so your opponent can respond at any point (removing $pn or $tw ends the loop, and a token made earlier still gets exiled at the next end step).")
+            return true
+        }
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
@@ -3572,6 +3592,13 @@ class SituationParser(private val names: NameIndex) {
         // MTG_DEBUG_CLAUSE=1 prints every clause as the rules see it. A clause that is read by the wrong rule
         // leaves no note behind, so seeing the exact text is the quickest way to find which rule took it.
         if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("clause: [$clauseIn] lastVerb=${ctx.lastVerb} lastActor=${ctx.lastActor}")
+        // "I cast Groundswell on it after a land drop": the land is played first, then the rest of the clause.
+        Regex("""^(.+?),? after (?:a|my|the|another) land drop$""").find(clauseIn.trim())?.let { r ->
+            val keep = ctx.lastMentioned
+            readClause("i play a land", m, ctx)
+            ctx.lastMentioned = keep   // "on it" still means the creature, not the land just played
+            return readClause(r.groupValues[1], m, ctx)
+        }
         // "I have two Lightning Bolts in hand": that many copies, in the hand, not on the battlefield.
         Regex("""^(?:(i|we|they|he|she|my opponent|the opponent) )?(?:have|has|hold|holds|holding|am holding|is holding|are holding) (\d+|two|three|four|five) (c\d+) in (?:my |their |his |her |the )?hand$""").find(clauseIn.trim().replace(Regex("""^(?:and|then|so|but) """), ""))?.let { r ->
             val who = when (r.groupValues[1]) { "i", "we" -> "me"; "" -> actorOfClause(clauseIn) ?: ctx.lastOwner ?: "me"; "my opponent", "the opponent" -> ctx.other("me") ?: "opp"; else -> pronounPlayer(ctx, r.groupValues[1]) }
@@ -4609,6 +4636,8 @@ class SituationParser(private val names: NameIndex) {
         // named. Unread, the creature stayed on the asker's side and the question about it was answered wrong.
         Regex("""^(?:gains?|gained|takes?|took|steals?|stole) (?:control of )?(?:$possPrefix|an? |the )?(c\d+|\d+/\d+|creature|guy|dude|it|that)(?: creature)?(?: (?:until end of turn|this turn|for the turn|permanently))?$""").find(c)?.let { r ->
             if (!Regex("""^(?:gains?|gained|takes?|took|steals?|stole) (?:control|my|their|the|an?|c\d+|\d+/\d+|it|that)""").containsMatchIn(c)) return@let
+            // "I attack and my opponent takes it": the hit, not the creature; the no-block rule reads it.
+            if (Regex("""^(?:takes?|took) (?:it|that)$""").matches(c) && ctx.events.any { e -> e.verb in setOf("attack", "attackAll") && e.player != (actor ?: ctx.lastActor) }) return@let
             val who = actor ?: ctx.lastActor ?: "opp"
             val from = ctx.other(who) ?: "me"
             val ph = r.groupValues[1]
@@ -6105,7 +6134,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.graveyardSize[who] = n; ctx.note(who); return true
         }
         // "… and 6 lands" / "3 untapped lands" as a fragment after a possession: mana available.
-        Regex("""^(?:(?:has|have|with|got|holds?) )?(\d+|two|three|four|five|six|seven|eight|nine|ten) (?:untapped |open )?(?:lands?|mana|mana sources?)(?: untapped| open| available| left| to spend)?$""").find(c)?.let { r ->
+        Regex("""^(?:(?:has|have|with|got|holds?) )?(\d+|two|three|four|five|six|seven|eight|nine|ten) (?:untapped |open )?(?:(?:white|blue|black|red|green|colorless) )?(?:lands?|mana|mana sources?)(?: untapped| open| available| left| to spend| up| floating)?$""").find(c)?.let { r ->
             if (ctx.lastVerb != "have" && actor == null && !Regex("""^(?:has|have|with|got|holds?) """).containsMatchIn(c)) return@let
             val who = actor ?: ctx.lastOwner ?: subject ?: "me"; val n = number(r.groupValues[1]) ?: return@let
             setMana(who, n, ctx); if (actor != null) ctx.lastActor = actor; ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} $n mana available; costs are checked against that."; return true

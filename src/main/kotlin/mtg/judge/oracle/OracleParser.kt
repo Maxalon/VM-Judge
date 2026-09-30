@@ -1082,6 +1082,11 @@ object OracleParser {
                     val prev = out.removeAt(out.lastIndex)
                     out += when (prev) { is Effect.Destroy -> prev.copy(noRegen = true); is Effect.ForAll -> prev.copy(noRegen = true); else -> Effect.Seq(listOf(prev, Effect.Narrated("it can't be regenerated", listOf("701.19c")))) }
                     i++
+                } else if (Regex("""^(?:Landfall\s*[—–-]\s*)?If you had a land enter the battlefield under your control this turn, (.+?) instead\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.isNotEmpty()) {
+                    // Groundswell: the landfall version replaces the sentence before it.
+                    val then = parseSentence(Regex("""^(?:Landfall\s*[—–-]\s*)?If you had a land enter the battlefield under your control this turn, (.+?) instead\.?$""", RegexOption.IGNORE_CASE).find(cur)!!.groupValues[1].replaceFirstChar { it.uppercase() })
+                    val prev = out.removeAt(out.lastIndex)
+                    out += Effect.IfCondition(Condition.LandEnteredThisTurn, then, "you had a land enter the battlefield under your control this turn", otherwise = prev); i++
                 } else { val e = parseSentence(cur); out += e; e.targets().lastOrNull()?.let { lastTarget = it }; i++ }
             }
             return if (out.size == 1) out[0] else Effect.Seq(out)
@@ -1770,6 +1775,9 @@ object OracleParser {
         Regex("""^exile (target .+?), then return (?:that card|it|them|that creature) to the battlefield under (your|its owner's|their owner's) control\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.Blink(target(m.groupValues[1]), ownersControl = !m.groupValues[2].equals("your", true)) }
         // "Exile target creature until ~ leaves the battlefield." (Banisher Priest, Fiend Hunter's current wording)
         Regex("""^exile (target .+?) until ~ leaves the battlefield\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.ExileUntilLeaves(target(it.groupValues[1])) }
+        // Oblivion Ring: "exile another target nonland permanent" (never itself), and its return trigger.
+        Regex("""^exile another target (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> val t = target("target " + m.groupValues[1]); return Effect.Exile(t.copy(filter = t.filter.copy(other = true))) }
+        if (Regex("""^return the exiled card to the battlefield under its owner's control\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ReturnExiledCard
         exileRe.matchEntire(s)?.let { return Effect.Exile(target(it.groupValues[1])) }
         tapRe.matchEntire(s)?.let { return Effect.Tap(target(it.groupValues[1])) }
         // Threaten: "Untap target creature and gain control of it until end of turn."

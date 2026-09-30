@@ -99,6 +99,8 @@ class GameObject(
     var dealtDeathtouchDamage = false     // for 704.5h
     /** Set by "if a creature dealt damage this way would die this turn, exile it instead": the effect's name. */
     var exileOnDeath: String? = null
+    /** The object whose effect exiled this one (Oblivion Ring), for "return the exiled card". */
+    var exiledBy: String? = null
     /** Power as it last was on the battlefield (last known information, 113.7a) for "equal to its power" after a zone change. */
     var lkiPower: Int? = null
 
@@ -345,6 +347,7 @@ class GameState(
         }
         Condition.YourTurn -> activePlayer == src.controller
         Condition.NotYourTurn -> activePlayer != null && activePlayer != src.controller
+        Condition.LandEnteredThisTurn -> (landsPlayed[src.controller] ?: 0) > 0 || objects.values.any { it.isOnBattlefield() && it.controller == src.controller && "Land" in it.def.types && it.enteredFrom != null }
         is Condition.ControlsMatching -> objects.values.count { it !== src && matches(c.filter, it, src.controller, src) || (it === src && matches(c.filter, it, src.controller, src)) } >= c.atLeast
         is Condition.GraveyardAtLeast -> {
             val cards = objects.values.filter { it.zone == Zone.GRAVEYARD && it.controller == src.controller && !it.token }
@@ -364,6 +367,7 @@ class GameState(
         is Condition.LifeAtLeast -> "${if (c.opponent) "an opponent" else "its controller"} at ${c.amount} or more life"
         Condition.YourTurn -> "it to be its controller's turn"
         Condition.NotYourTurn -> "it to be another player's turn"
+        Condition.LandEnteredThisTurn -> "a land to have entered the battlefield under its controller's control this turn"
         is Condition.ControlsMatching -> "its controller to control ${if (c.atLeast > 1) "${c.atLeast} or more " else "a "}${c.filter.raw ?: "matching permanent"}"
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"

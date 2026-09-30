@@ -28436,5 +28436,110 @@
       "Forest enters the battlefield.",
       "You can make 2 mana right now: Forest → {G}; plus 1 mana of any color already in your mana pool."
     ]
+  },
+  {
+    "id": "glistener-groundswell-landfall",
+    "text": "I attack with Glistener Elf and my opponent takes it. I cast Groundswell on it after a land drop. How many poison counters do they get?",
+    "expect": [
+      "Glistener Elf is 5/5 until end of turn.",
+      "opponent has 5 poison counters."
+    ]
+  },
+  {
+    "id": "glistener-groundswell-no-landfall",
+    "text": "I attack with Glistener Elf and my opponent takes it. I cast Groundswell on it. How many poison counters do they get?",
+    "expect": [
+      "Glistener Elf is 3/3 until end of turn.",
+      "opponent has 3 poison counters."
+    ]
+  },
+  {
+    "id": "ancient-grudge-vs-sword-equip-response",
+    "text": "My opponent casts Ancient Grudge on my Sword of Fire and Ice. Can I equip it in response?",
+    "expect": [
+      "Ancient Grudge can't target Sword of Fire and Ice.",
+      "No. Equip is an activated ability that can be activated only as a sorcery"
+    ]
+  },
+  {
+    "id": "elder-sacrificed-after-blocks",
+    "text": "I have a Sakura-Tribe Elder blocking a 5/5. I sacrifice it after blockers. Do I take damage?",
+    "expect": [
+      "No: you take no damage."
+    ]
+  },
+  {
+    "id": "oring-disenchanted-nothing-described",
+    "text": "My opponent casts Disenchant on my Oblivion Ring. What happens to the creature under it?",
+    "expect": [
+      "Oblivion Ring returns the card it exiled to the battlefield under its owner's control"
+    ]
+  },
+  {
+    "id": "oring-on-bears-disenchanted",
+    "text": "My opponent has Oblivion Ring on my Grizzly Bears. I Disenchant the Oblivion Ring. What happens?",
+    "expect": [
+      "Grizzly Bears: exile → the battlefield (your control), returned by Oblivion Ring."
+    ]
+  },
+  {
+    "id": "oring-cast-then-the-ring-disenchanted",
+    "text": "My opponent casts Oblivion Ring targeting my Grizzly Bears. Then I Disenchant the Ring. Does my Bears come back?",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile.",
+      "Grizzly Bears: exile → the battlefield (your control), returned by Oblivion Ring.",
+      "Yes: Grizzly Bears is back on the battlefield"
+    ]
+  },
+  {
+    "id": "spellskite-bears-what-can-they-do",
+    "text": "I have Lightning Bolt and my opponent has a Spellskite and a Grizzly Bears. I Bolt the Bears. What can they do?",
+    "expect": [
+      "Spellskite's controller can respond: paying {U/P} changes Lightning Bolt's target to Spellskite (a 0/4), if Lightning Bolt could target it."
+    ]
+  },
+  {
+    "id": "wall-of-denial-blocks-flier",
+    "text": "My opponent attacks me with a 4/4 flier. I have a Wall of Denial. Can I block?",
+    "expect": [
+      "Yes: Wall of Denial can block a 4/4 creature with flying."
+    ]
+  },
+  {
+    "id": "thrun-green-open-vs-doom-blade",
+    "text": "My opponent has Thrun, the Last Troll and 1 green mana open. I cast Doom Blade on it. Does it die?",
+    "expect": [
+      "Doom Blade can't target Thrun, the Last Troll.",
+      "No: Thrun, the Last Troll is still on the battlefield."
+    ]
+  },
+  {
+    "id": "finks-vs-path-no-persist",
+    "text": "I have Kitchen Finks and my opponent casts Path to Exile on it. Does it persist?",
+    "expect": [
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard, and persist returns it only from the graveyard (702.79a)."
+    ]
+  },
+  {
+    "id": "spirit-of-labyrinth-vs-brainstorm",
+    "text": "My opponent has Spirit of the Labyrinth. Can I cast Brainstorm?",
+    "expect": [
+      "You draw only 1 card of the 3 (Spirit of the Labyrinth).",
+      "You put 2 cards from your hand back on top of your library."
+    ]
+  },
+  {
+    "id": "lifelink-2-2-blocked-gain",
+    "text": "I attack with a 2/2 with lifelink and my opponent blocks with a 2/2. How much life do I gain?",
+    "expect": [
+      "You gain 2 life in all."
+    ]
+  },
+  {
+    "id": "splinter-twin-exarch-win",
+    "text": "I have Splinter Twin on Deceiver Exarch. Can I win this turn?",
+    "expect": [
+      "Yes, if nothing is done about it: tap Deceiver Exarch with Splinter Twin's granted ability"
+    ]
   }
 ]

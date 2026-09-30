@@ -141,6 +141,9 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                     // Jumpstart pack front cards ("Liliana", "Gigantic", "Surprise!") are memorabilia with the type line
                     // "Card" and no game text. Indexed, "Liliana" was one of them instead of a planeswalker.
                     if (rs.getString(6) == "Card") continue
+                    // "The Ring // The Ring Tempts You" is the Lord of the Rings helper card, not a card anyone casts; indexed,
+                    // "the Ring" after an Oblivion Ring was it instead of the Ring just named.
+                    if (rs.getString(2).startsWith("The Ring")) continue
                     val isCard = rs.getString(5) !in mtg.judge.carddb.ingest.ScryfallIngest.nonCardLayouts
                     val e = Entry(rs.getString(2), rs.getString(3), isCard, kind, rs.getString(6) ?: "", power = rs.getString(7), toughness = rs.getString(8))
                     val prev = map[norm]
