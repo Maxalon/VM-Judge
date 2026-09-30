@@ -1394,6 +1394,13 @@ class SituationParser(private val names: NameIndex) {
             // "Does Bolt kill it?" with the Bolt in hand: cast it at the creature and ask.
         t2 = t2.let { t0 -> Regex("""^(?:does|will|would|can) (?:the |my )?(c\d+) kill (it|that|(?:their |my opponent's |the )?c\d+|(?:their |the )?\d+/\d+)\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (m.cards[r.groupValues[1]]?.isSpellOnly == true) "i cast ${r.groupValues[1]} at ${r.groupValues[2]}, does ${if (r.groupValues[2] in setOf("it", "that")) "it" else r.groupValues[2]} die" else r.value } }
+            // "I cast Terminus with a Kitchen Finks on my side": the board first.
+        t2 = t2.replace(Regex("""^(.+?) with ((?:an? |my )?c\d+) on my side\.?$""", RegexOption.IGNORE_CASE), "i have $2, $1")
+        t2 = t2.replace(Regex("""^(.+?) with ((?:an? |their )?c\d+) on their side\.?$""", RegexOption.IGNORE_CASE), "my opponent has $2, $1")
+            // "Can I tap Top to draw?" with their spell on the stack: the Top's {T} ability in response.
+        t2 = t2.replace(Regex("""^can (?:i|we) tap (?:the |my )?(c\d+|it|that) to draw(?: a card)?(?: in response| first| before it resolves)?\??$""", RegexOption.IGNORE_CASE), "in response i tap $1")
+            // "Can I gain life?" with Deathrite Shaman: its {G} ability at a creature card in a graveyard.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Deathrite Shaman" } && Regex("""^can (?:i|we) gain (?:life|2 life|2|some life)(?: with (?:it|c\d+|the shaman|deathrite))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "deathrite-gain-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3085,6 +3092,14 @@ class SituationParser(private val names: NameIndex) {
             val cast = ctx.events.last { it.verb == "cast" }
             val name = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: return false
             ctx.asks += EventSpec("ask", card = CardRef(name = name), to = "searchWhat", amount = cast.amount)
+            return true
+        }
+        if (clause0 == "deathrite-gain-question") {
+            val drs = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Deathrite Shaman" }
+            val card = ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && isCreatureName(o.card.name) }
+            if (card == null) { ctx.asks += EventSpec("ask", to = "text:Only with a creature card in a graveyard: Deathrite Shaman's second ability ({G}, {T}: Exile target creature card from a graveyard. You gain 2 life) needs one to target, and none was described here."); return true }
+            ctx.events += EventSpec("activate", player = "me", obj = drs.id, targets = listOf(card.id)); ctx.lastActor = "me"; ctx.lastVerb = "activate"
+            ctx.notes += "\"Can I gain life?\" is read as Deathrite Shaman's {G}, {T} ability at ${card.card.name}; it needs {G} and Deathrite untapped and not summoning sick (302.6)."
             return true
         }
         if (clause0 == "castallowed-question") {
@@ -5514,7 +5529,7 @@ class SituationParser(private val names: NameIndex) {
             if (lastPlayWasALand(ctx)) { playALand(who, 1, ctx); return true }
             ctx.events += EventSpec("cast", player = who, card = CardRef(name = "a spell")); ctx.lastActor = who; ctx.lastVerb = "cast"; return true
         }
-        Regex("""^(?:$castVerbs)\s+(?:my |their |his |her |the )?(?:(a|an|another|\d+|two|three|four|five)(?: more| other)? )?(spells?|instants?|sorcer(?:y|ies)|creature spells?|creatures?|noncreature spells?|artifacts?|enchantments?|one|(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)(?: one| spell| noncreature spell| creature spell| instant| sorcery| artifact| enchantment)?)(?: this turn| in a row| in one turn| on their turn| on my turn)?((?:,? (?:paying for none of them|paying for nothing|without paying|not paying|and pays? for none|never paying|declining to pay each time|and doesn't pay|and never pays)(?: for (?:any|each|all) of them)?)?)$""").find(c)?.let { r ->
+        Regex("""^(?:$castVerbs)\s+(?:my |their |his |her |the )?(?:(a|an|another|\d+|two|three|four|five)(?: more| other)? )?((?:(?:white|blue|black|red|green) )?(?:spells?|instants?|sorcer(?:y|ies))|creature spells?|creatures?|noncreature spells?|artifacts?|enchantments?|one|(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)(?: one| spell| noncreature spell| creature spell| instant| sorcery| artifact| enchantment)?)(?: this turn| in a row| in one turn| on their turn| on my turn)?((?:,? (?:paying for none of them|paying for nothing|without paying|not paying|and pays? for none|never paying|declining to pay each time|and doesn't pay|and never pays)(?: for (?:any|each|all) of them)?)?)$""").find(c)?.let { r ->
             val who = actor ?: subject ?: "me"
             // "casts their second spell this turn": the ordinal says how many came before it, and this is one cast.
             val ordinal = mapOf("first" to 1, "second" to 2, "third" to 3, "fourth" to 4, "fifth" to 5, "sixth" to 6, "seventh" to 7, "eighth" to 8, "ninth" to 9, "tenth" to 10)[r.groupValues[2].substringBefore(' ')]

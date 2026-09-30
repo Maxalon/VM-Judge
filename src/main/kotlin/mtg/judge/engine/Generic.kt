@@ -41,6 +41,11 @@ object Generic {
             return OracleParser.parse("generic-$mv-mana-$kind", "a $mv mana $kind", type, if (mv == 0) "{0}" else "{$mv}", mv.toDouble(), "", if (type == "Creature") "2" else null, if (type == "Creature") "2" else null, emptyList(), "")
         }
         if (n in setOf("sorcery", "a sorcery", "sorcery spell")) return OracleParser.parse("generic-sorcery", "a sorcery", "Sorcery", "{2}", 2.0, "", null, null, emptyList(), "")
+        // "a red spell", "a blue instant": a spell of that colour with no effect of its own (Kor Firewalker sees the colour).
+        Regex("""^(white|blue|black|red|green) (spell|instant|sorcery)$""").find(n)?.let { m ->
+            val sym = colorMap.getValue(m.groupValues[1]); val type = if (m.groupValues[2] == "sorcery") "Sorcery" else "Instant"
+            return OracleParser.parse("generic-${m.groupValues[1]}-${m.groupValues[2]}", "a ${m.groupValues[1]} ${m.groupValues[2]}", type, "{1}{$sym}", 2.0, sym, null, null, emptyList(), "")
+        }
         if (n in setOf("instant", "an instant", "instant spell")) return OracleParser.parse("generic-instant", "an instant", "Instant", "{2}", 2.0, "", null, null, emptyList(), "")
         if (n in setOf("artifact", "an artifact", "artifact spell")) return OracleParser.parse("generic-artifact", "an artifact", "Artifact", "{2}", 2.0, "", null, null, emptyList(), "")
         if (n in setOf("enchantment", "an enchantment", "enchantment spell")) return OracleParser.parse("generic-enchantment", "an enchantment", "Enchantment", "{2}", 2.0, "", null, null, emptyList(), "")

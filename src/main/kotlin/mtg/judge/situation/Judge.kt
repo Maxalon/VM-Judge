@@ -73,7 +73,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             }
         }
         // "I control Rest in Peace. My graveyard has Lightning Bolt": under a graveyard replacement the card is in exile already.
-        state.objects.values.filter { it.isOnBattlefield() && it.def.oracleText.contains("would be put into a graveyard from anywhere, exile it instead", ignoreCase = true) }.forEach { rip ->
+        state.objects.values.filter { it.isOnBattlefield() && Regex("""(?i)would be put into (?:a|an opponent's) graveyard from anywhere, exile it instead""").containsMatchIn(it.def.oracleText) }.forEach { rip ->
             val opponentsOnly = rip.def.oracleText.contains("opponent's graveyard", ignoreCase = true)
             for (o in state.objects.values.filter { it.zone == Zone.GRAVEYARD && !it.token && (!opponentsOnly || it.owner != rip.controller) }) {
                 o.zone = Zone.EXILE

@@ -2682,7 +2682,9 @@ class Engine(val state: GameState) {
                 if (hand.isEmpty()) {
                     state.clarifications += Clarification("${p.possessive} hand", "${item.source.name} has ${if (p.you) "you" else p.name} reveal ${if (p.you) "your" else "their"} hand and discard ${effect.what}; what is in it?")
                     trace.step("The situation doesn't say what is in ${p.possessive} hand, so which card is discarded can't be said.", "701.9a")
-                    state.outcomes += "${item.source.name}: ${p.subject.lowercase()} ${p.v("discards", "discard")} ${effect.what} (which one depends on ${p.possessive} hand)."
+                    // Leyline of the Void, Rest in Peace: whatever it is, it's exiled rather than put into the graveyard.
+                    val yard = state.objects.values.firstOrNull { it.isOnBattlefield() && Regex("""(?i)would be put into (?:a|an opponent's) graveyard from anywhere, exile it instead""").containsMatchIn(it.def.oracleText) && (!it.def.oracleText.contains("opponent's graveyard", ignoreCase = true) || it.controller != p.id) }
+                    state.outcomes += "${item.source.name}: ${p.subject.lowercase()} ${p.v("discards", "discard")} ${effect.what} (which one depends on ${p.possessive} hand)." + (yard?.let { " It's exiled instead of going to ${p.possessive} graveyard (${it.name}, 614.1a)." } ?: "")
                 } else {
                     val legal = hand.filter { effect.filter == null || state.matches(effect.filter, it, p.id, item.source, anyZone = true) }
                     if (legal.isEmpty()) {

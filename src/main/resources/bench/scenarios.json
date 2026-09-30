@@ -29638,5 +29638,97 @@
     "expect": [
       "Yes, if it has been under your control since the turn began; a {T} ability of a creature needs that or haste (302.6)."
     ]
+  },
+  {
+    "id": "sphere-of-resistance-bolt",
+    "text": "My opponent has Sphere of Resistance. How much does my Lightning Bolt cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Sphere of Resistance makes it cost {1} more) — 2 mana in all."
+    ]
+  },
+  {
+    "id": "nacatl-three-basics",
+    "text": "I have a Wild Nacatl with a Plains, a Mountain and a Forest. How big is it?",
+    "expect": [
+      "Wild Nacatl is 3/3"
+    ]
+  },
+  {
+    "id": "trample-6-6-into-0-4-wall",
+    "text": "My opponent attacks with a 6/6 trample and I block with a 0/4 Wall. How much damage do I take?",
+    "expect": [
+      "Yes: you take 2 damage in all."
+    ]
+  },
+  {
+    "id": "terminus-finks-on-my-side",
+    "text": "I cast Terminus with a Kitchen Finks on my side. Does it persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → your library.",
+      "No: Kitchen Finks is in your library."
+    ]
+  },
+  {
+    "id": "leyline-void-thoughtseize-myself",
+    "text": "My opponent has a Leyline of the Void. I cast Thoughtseize on myself. Where does the card go?",
+    "expect": [
+      "It's exiled instead of going to your graveyard (Leyline of the Void, 614.1a)."
+    ]
+  },
+  {
+    "id": "top-draw-in-response-to-wrath",
+    "text": "I have Sensei's Divining Top and my opponent casts Wrath of God. Can I tap Top to draw?",
+    "expect": [
+      "You draw 1 card.",
+      "Sensei's Divining Top: the battlefield → your library."
+    ]
+  },
+  {
+    "id": "damnation-wall-of-omens-no-draw",
+    "text": "My opponent casts Damnation and I have a Wall of Omens. Do I draw a card?",
+    "expect": [
+      "Wall of Omens: the battlefield → your graveyard.",
+      "No: You don't draw."
+    ]
+  },
+  {
+    "id": "brute-force-on-mine-blocked",
+    "text": "I attack with a 2/2 and my opponent blocks with a 2/2. I cast Brute Force on mine. Who dies?",
+    "expect": [
+      "Yes: opponent's 2/2 creature died (it's in the graveyard).",
+      "No: your 2/2 creature is still on the battlefield."
+    ]
+  },
+  {
+    "id": "meddling-mage-path-vs-swords",
+    "text": "My opponent has a Meddling Mage naming Path to Exile. Can I cast Swords to Plowshares?",
+    "expect": [
+      "Meddling Mage: the battlefield → exile.",
+      "opponent gains 2 life."
+    ]
+  },
+  {
+    "id": "deathrite-gain-life-bears",
+    "text": "I have Deathrite Shaman and my opponent has a Grizzly Bears in their graveyard. Can I gain life?",
+    "expect": [
+      "Grizzly Bears: opponent's graveyard → exile.",
+      "You gain 2 life."
+    ]
+  },
+  {
+    "id": "snakeskin-veil-vs-bolt",
+    "text": "My opponent casts Lightning Bolt at my 2/2 and I cast Snakeskin Veil. What happens?",
+    "expect": [
+      "a 2/2 creature has 1 +1/+1 counter.",
+      "a 2/2 creature has hexproof until end of turn.",
+      "Lightning Bolt doesn't resolve (all targets illegal)."
+    ]
+  },
+  {
+    "id": "kor-firewalker-a-red-spell",
+    "text": "I have Kor Firewalker. My opponent casts a red spell. Do I gain life?",
+    "expect": [
+      "You gain 1 life in all."
+    ]
   }
 ]
