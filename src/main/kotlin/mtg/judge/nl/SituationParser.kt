@@ -1376,6 +1376,12 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\band another (c\d+)(?=[,.?]|$| and\b| that\b| with\b)""", RegexOption.IGNORE_CASE), "and 1 $1")
             // "What comes back?" after a sweeper: each of the asker's creatures, asked about.
         if (Regex("""^(?:what|which(?: ones?)?) (?:comes|come) back\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "whatcomesback-question"
+            // "Do they pay 1 more?" after a taxed cast: the cost question.
+        t2 = t2.replace(Regex("""^(?:do|does|will|would) (?:they|he|she|my opponent|the opponent|i|we) (?:still |even )?(?:have to |need to )?(?:pay|owe) (?:1|one|2|two|\d+) more(?: mana| for it)?\??$""", RegexOption.IGNORE_CASE), "does it cost more")
+            // "I cast Lightning Bolt at it and Lightning Bolt again": two casts.
+        t2 = t2.replace(Regex("""\b(cast|casts|bolt|bolts|play|plays) (c\d+) (at|on|targeting) (it|that|(?:my |their |his |her )?c\d+) and (?:then )?(c\d+) again\b""", RegexOption.IGNORE_CASE), "$1 $2 $3 $4, then $1 $5 $3 $4 again")
+            // "How many Zombies do I have after?": the count, the "after" adding nothing.
+        t2 = t2.replace(Regex("""^(how many [a-z /]+ (?:do|does|did) (?:i|we|they|he|she|my opponent) (?:have|control|get|end up with))(?: after(?: that| this| all that| combat| it resolves)?| afterwards| then| now| in total| in all)\??$""", RegexOption.IGNORE_CASE), "$1")
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.

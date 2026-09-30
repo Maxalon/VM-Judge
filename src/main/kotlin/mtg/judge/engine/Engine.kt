@@ -4036,7 +4036,11 @@ class Engine(val state: GameState) {
         // The cast may have made its own object for the card; the amount recorded as it was cast is on that one.
         val atCast = obj.manaAvailableAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.manaAvailableAtCast }.lastOrNull()
         val avail = atCast ?: availableMana(p)
-        return "${card.name} costs $printed ${if (tax < 0) "minus" else "plus"} {${kotlin.math.abs(tax)}} (${parts.joinToString("; ")}) — $total mana in all." +
+        // Force of Will under Thalia: a tax is added to whatever cost is paid, the alternative one included (601.2f).
+        val altNote = Regex("""(?i)you may ([^.]*?) rather than pay this spell's mana cost""").find(card.oracleText)?.let { a ->
+            if (tax > 0) " Cast for its alternative cost (${a.groupValues[1].trim()}) it still pays the extra {${tax}}: a tax applies to whatever cost is being paid (601.2f)." else ""
+        } ?: ""
+        return "${card.name} costs $printed ${if (tax < 0) "minus" else "plus"} {${kotlin.math.abs(tax)}} (${parts.joinToString("; ")}) — $total mana in all." + altNote +
             (if (avail != null) if (avail >= total) " ${p.subject} ${p.v("has", "have")} $avail available, enough." else " ${p.subject} ${p.v("has", "have")} only $avail available, so it can't be cast." else "")
     }
 
