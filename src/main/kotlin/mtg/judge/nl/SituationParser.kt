@@ -991,7 +991,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(?:can )?(?:my |the )?(c\d+) removes? all (?:the )?counters from (?:an? |my |the |their )?(c\d+)\b""", RegexOption.IGNORE_CASE), "i have $2, i activate $1 targeting $2")
             // "I sacrifice my Elder while it's blocking a 4/4": the attack and the block come first.
         t2 = t2.let { t0 -> Regex("""\b(i|we) (sacrifices?|sacs?|bounces?|blinks?|flickers?) ((?:my |the )?c\d+) (?:while|when|as) (?:it's|it is|he's|she's) blocking (?:an? |the |their )?(\d+/\d+(?: [a-z]+)?|c\d+)(?=,| and\b|$)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
-                "they attack with a ${r.groupValues[4]}, ${r.groupValues[1]} block it with ${r.groupValues[3]}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}"
+                "${if (r.groupValues[4] in setOf("it", "that")) "they attack" else "they attack with a " + r.groupValues[4]}, ${r.groupValues[1]} block it with ${r.groupValues[3]}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}"
             } }
             // "I attack for 5": a creature of that power attacks the opponent.
         t2 = t2.replace(Regex("""\b(i|we) (attacks?|swings?) for (\d+)(?: damage)?(?: unblocked)?(?=,| and\b|$)""", RegexOption.IGNORE_CASE), "$1 $2 them with a $3/$3 creature")
@@ -1344,6 +1344,8 @@ class SituationParser(private val names: NameIndex) {
             // "Can I ping their 2/2?" with Grim Lavamancer: its ability at that creature.
         if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Grim Lavamancer" })
             t2 = t2.replace(Regex("""^can (?:i|we) (?:ping|shoot|hit|zap|burn|kill|lavamancer) (?:their |my opponent's |the |his |her )?(\d+/\d+|c\d+)(?: with (?:it|c\d+|the lavamancer|lavamancer|grim))?\??$""", RegexOption.IGNORE_CASE), "lavaping-question $1")
+            // "Does my team survive?" after Selfless Spirit: the save-the-team question.
+        t2 = t2.replace(Regex("""^(?:does|do|will|would) my (?:team|board|other creatures|creatures|guys) (?:survive|live|make it|get through)(?: this| that)?\??$""", RegexOption.IGNORE_CASE), "can i save my team")
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -1744,7 +1746,9 @@ class SituationParser(private val names: NameIndex) {
             // "can Doom Blade target a black creature": the spell is cast at one and the engine says whether it can.
         t2 = t2.replace(Regex("""^can (c\d+) (?:target|hit|kill|destroy|exile|bounce|be cast on|be used on) (?:a |an |their |my opponent's )([a-z0-9/ ]+?)(?: creature)?\s*\??$""", RegexOption.IGNORE_CASE), "they have a $2 creature, i cast $1 on it")
             // "can I block a pro-green creature with my green creature": their attack, and the asker's block.
-        t2 = t2.replace(Regex("""^can (?:i|we) (?:chump[- ]?)?block (?:a |an |their |the )?([a-z0-9/ ]+?) with (?:my|a|an) ([a-z0-9/ ]+?)\s*\??$""", RegexOption.IGNORE_CASE), "they attack with a $1, i block with a $2")
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:chump[- ]?)?block (?:a |an |their |the )?([a-z0-9/ ]+?) with (?:my|a|an) ([a-z0-9/ ]+?)\s*\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                // "can I block it with my Delver?": "it" is whatever of theirs is attacking, so they attack with everything they have.
+                (if (r.groupValues[1].lowercase() in setOf("it", "that", "him", "her")) "they attack" else "they attack with a ${r.groupValues[1]}") + ", i block with a ${r.groupValues[2]}" } }
             // "a white 3/3", "their green creature": the colour is read after the size, where the description reader looks for it.
         t2 = t2.replace(Regex("""\b(a|an|my|their|his|her|the) (white|blue|black|red|green|colou?rless) (\d+/\d+)\b""", RegexOption.IGNORE_CASE), "$1 $3 $2 creature")
             // "I cast Giant Growth in response to Lightning Bolt on my 2/2": their spell and its target first, then the answer.
@@ -7014,11 +7018,16 @@ class SituationParser(private val names: NameIndex) {
             val trailerKws = Regex("""^ (?:with|that has|which has|having) ((?:hexproof|indestructible|flying|trample|lifelink|deathtouch|haste|vigilance|reach|menace|shroud|unblockable|first strike|double strike|infect|wither|protection from \w+)(?:(?:,| and|, and) (?:hexproof|indestructible|flying|trample|lifelink|deathtouch|haste|vigilance|reach|menace|shroud|unblockable|first strike|double strike|infect|wither|protection from \w+))*)$""").find(rest)?.groupValues?.get(1)?.split(Regex(""",? and |, """))?.map { it.trim() } ?: emptyList()
             (adjectives + trailerKws).filter { it != "tapped" && it != "untapped" }.takeIf { it.isNotEmpty() }?.let { kws -> ctx.objects[hostId] = ctx.objects.getValue(hostId).copy(keywords = ctx.objects.getValue(hostId).keywords + kws); ctx.notes += "${m.cards.getValue(r.groupValues[2]).display} is read as having ${kws.joinToString(" and ")} (from an effect; say what gives it if that matters)." }
             // "Grizzly Bears with Darksteel Plate" / "Bears with Rancor on it": the Equipment or Aura is attached to it.
-            Regex("""^ (?:with|wearing|carrying|equipped with|enchanted with) (?:an? |the |my |their )?(c\d+)(?: attached| equipped| on it| enchanting it)?$""").find(rest)?.let { a ->
-                val eqCard = m.cards.getValue(a.groupValues[1])
+            Regex("""^ (?:with|wearing|carrying|equipped with|enchanted with) (?:an? |the |my |their |(\d+|two|three|four) )?(c\d+)(?:s|es)?(?: attached| equipped| on it| enchanting it)?$""").find(rest)?.let { a ->
+                val eqCard = m.cards.getValue(a.groupValues[2])
                 if (eqCard.typeLine.contains("Equipment") || eqCard.typeLine.contains("Aura")) {
-                    val eq = objectIdFor(eqCard, ctx) ?: addObject(eqCard, owner, false, ctx)
-                    ctx.objects[eq] = ctx.objects.getValue(eq).copy(attachedTo = hostId); ctx.lastVerb = "have"; ctx.lastOwner = owner; ctx.lastActor = owner; ctx.lastMentioned = hostId; return true
+                    // "a Runeclaw Bear with two Rancors": that many, each attached.
+                    val n = a.groupValues[1].takeIf { it.isNotEmpty() }?.let { number(it) } ?: 1
+                    repeat(n) { i ->
+                        val eq = (if (i == 0) objectIdFor(eqCard, ctx) else null) ?: addObject(eqCard, owner, false, ctx, allowDuplicate = n > 1)
+                        ctx.objects[eq] = ctx.objects.getValue(eq).copy(attachedTo = hostId)
+                    }
+                    ctx.lastVerb = "have"; ctx.lastOwner = owner; ctx.lastActor = owner; ctx.lastMentioned = hostId; return true
                 }
             }
             // "has Ophidian Eye on my opponent's creature" / "has Rancor on my 2/2": the host is described, not named.

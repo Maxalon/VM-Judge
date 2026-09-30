@@ -28936,5 +28936,95 @@
     "expect": [
       "No: Lightning Bolt ({R}, 2) and Shock ({R}, 2) cost 4 mana together, and you have only 2 available; you can cast Lightning Bolt or Shock but not both."
     ]
+  },
+  {
+    "id": "finks-counter-bolted-no-return",
+    "text": "I have a Kitchen Finks with a -1/-1 counter and my opponent Bolts it. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it."
+    ]
+  },
+  {
+    "id": "anger-vs-finks-and-voice",
+    "text": "My opponent casts Anger of the Gods. I have Kitchen Finks and Voice of Resurgence. What happens?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Anger of the Gods's \"exile it instead\").",
+      "Voice of Resurgence: the battlefield → exile (replaced by Anger of the Gods's \"exile it instead\")."
+    ]
+  },
+  {
+    "id": "sword-feast-famine-lands-untap",
+    "text": "I have Sword of Feast and Famine on my 2/2. I attack and they don't block. Do my lands untap?",
+    "expect": [
+      "opponent discards 1 card.",
+      "none were described, and any you do control untap"
+    ]
+  },
+  {
+    "id": "crusader-vs-white-blocker",
+    "text": "My opponent attacks with a Phyrexian Crusader. I block with a 2/2 white creature. What happens?",
+    "expect": [
+      "a 2/2 white creature can't block Phyrexian Crusader (protection).",
+      "You have 2 poison counters."
+    ]
+  },
+  {
+    "id": "runeclaw-two-rancors",
+    "text": "I have a Runeclaw Bear with two Rancors. How big is it?",
+    "expect": [
+      "Runeclaw Bear is 6/2"
+    ]
+  },
+  {
+    "id": "resto-angel-blinks-finks",
+    "text": "I cast Restoration Angel targeting my Kitchen Finks. How much life do I gain?",
+    "expect": [
+      "Kitchen Finks is exiled and returns as a new object (your control).",
+      "You gain 2 life in all."
+    ]
+  },
+  {
+    "id": "torpor-orb-snapcaster",
+    "text": "My opponent has Torpor Orb. I cast Snapcaster Mage. Does my Bolt get flashback?",
+    "expect": [
+      "Snapcaster Mage entering the battlefield doesn't trigger any abilities (Torpor Orb)."
+    ]
+  },
+  {
+    "id": "my-mindcensor-their-misty",
+    "text": "I have Aven Mindcensor. My opponent cracks a Misty Rainforest. What happens?",
+    "expect": [
+      "Aven Mindcensor: opponent looks at only the top four cards of opponent's library for a Forest or Island; if none is there, nothing is found."
+    ]
+  },
+  {
+    "id": "selfless-spirit-team-survive",
+    "text": "My opponent casts Wrath of God and I have Selfless Spirit. I sacrifice it in response. Does my team survive?",
+    "expect": [
+      "Selfless Spirit: the battlefield → your graveyard.",
+      "Any there are would have indestructible until end of turn."
+    ]
+  },
+  {
+    "id": "fog-in-hand-survive",
+    "text": "I attack with a 4/4 and my opponent has 3 life and a Fog in hand. Can they survive?",
+    "expect": [
+      "Damage to opponent from a 4/4 creature is prevented.",
+      "Yes: opponent is still in the game at 3 life."
+    ]
+  },
+  {
+    "id": "delver-vs-sword-bears",
+    "text": "My opponent has a Sword of Fire and Ice on a Grizzly Bears. Can I block it with my Delver of Secrets?",
+    "expect": [
+      "Delver of Secrets // Insectile Aberration can't block Grizzly Bears (protection)."
+    ]
+  },
+  {
+    "id": "doran-wall-still-defender",
+    "text": "I have Doran, the Siege Tower and a Wall of Omens. I attack with the Wall. How much damage does it deal?",
+    "expect": [
+      "Wall of Omens can't attack (defender)."
+    ]
   }
 ]
