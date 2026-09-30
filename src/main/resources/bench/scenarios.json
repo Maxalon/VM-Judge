@@ -30309,5 +30309,123 @@
       "No: Karn, the Great Creator says Aether Vial's activated abilities can't be activated."
     ],
     "cite": []
+  },
+  {
+    "id": "chord-x3-what-can-i-find",
+    "text": "I cast Chord of Calling for X=3 with convoke, tapping three creatures. What can I find?",
+    "expect": [
+      "Any creature card in your library with mana value 3 or less (X = 3)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "anger-finks-no-persist",
+    "text": "My opponent casts Anger of the Gods. I have Kitchen Finks. Does it persist?",
+    "expect": [
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard",
+      "No: Kitchen Finks is in exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-my-own-bolts-cost-more",
+    "text": "I have Thalia, Guardian of Thraben. Do my own Lightning Bolts cost more?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "goblin-guide-who-gets-the-land",
+    "text": "I attack with Goblin Guide and they reveal a land. Who gets the land?",
+    "expect": [
+      "Your opponent: Goblin Guide's trigger has the defending player reveal the top card of their library",
+      "The land is theirs"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-do-i-have-to-search-bare",
+    "text": "My opponent Path to Exiles my Snapcaster Mage. Do I have to search?",
+    "expect": [
+      "No: Path to Exile says \"may search\", so you choose whether to search at all"
+    ],
+    "cite": []
+  },
+  {
+    "id": "serum-visions-order",
+    "text": "I cast Serum Visions. What order do I scry and draw?",
+    "expect": [
+      "Draw first, then scry: Serum Visions says \"Draw a card. Scry 2\""
+    ],
+    "notExpect": [
+      "(×2)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "preordain-draw-first",
+    "text": "I cast Preordain. Do I draw first?",
+    "expect": [
+      "Scry first, then draw: Preordain says"
+    ],
+    "cite": []
+  },
+  {
+    "id": "wrenn-minus-kills-mom",
+    "text": "I have Wrenn and Six and my opponent has Mother of Runes. Can I kill it with the minus?",
+    "expect": [
+      "Yes: Mother of Runes died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-under-bridge-two-types",
+    "text": "My opponent controls Ensnaring Bridge with 1 card in hand. Can my Tarmogoyf attack with 2 types in the yard?",
+    "expect": [
+      "Tarmogoyf can't attack (Ensnaring Bridge)."
+    ],
+    "notExpect": [
+      "Nothing changes"
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-thalias-legend-rule-cost",
+    "text": "I have two Thalias. How much does Lightning Bolt cost?",
+    "expect": [
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard.",
+      "2 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "mana-tithe-paid",
+    "text": "I cast Lightning Bolt and my opponent responds with Mana Tithe. I have one land untapped. What happens?",
+    "expect": [
+      "You pay {1}; Mana Tithe has no further effect.",
+      "opponent takes 3 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "moon-cast-fetch-basic-island",
+    "text": "My opponent casts Blood Moon. Can I still fetch a basic Island with Flooded Strand?",
+    "expect": [
+      "You can play it, but you can't crack it. Under Blood Moon a nonbasic land is a Mountain"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ponder-may-shuffle",
+    "text": "I cast Ponder. Can I shuffle after looking?",
+    "expect": [
+      "Ponder: Shuffle (not tracked in detail).",
+      "You draw 1 card."
+    ],
+    "cite": []
   }
 ]

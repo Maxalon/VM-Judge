@@ -974,6 +974,11 @@ class SituationParser(private val names: NameIndex) {
             // "can I Vial in a Thalia": Aether Vial's name used as the verb.
         t2 = t2.let { t0 -> Regex("""\b(i|we|they|he|she) (c\d+) in (?:an? |my |the |their )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2]]?.display == "Aether Vial") "${r.groupValues[1]} vial in ${r.groupValues[3]} with ${r.groupValues[2]}" else r.value } }
             // "Graveyards have an instant and a land": the graveyards' contents, said with them as the subject.
+        // "Can my Tarmogoyf attack with 2 types in the yard?": the graveyards are described first, then the question.
+        t2 = t2.let { t0 -> Regex("""^(can (?:my |the )?c\d+ (?:attack|block|swing|get through)) with (\d+|two|three|four|five) (?:card )?types? in (?:the |my |our |all )?(?:yard|graveyard|graveyards|bins?)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val n = number(r.groupValues[2]) ?: r.groupValues[2].toIntOrNull() ?: 2
+            val kinds = listOf("a creature", "an instant", "a land", "a sorcery", "an artifact", "an enchantment").take(n.coerceIn(1, 6))
+            "there is ${kinds.joinToString(" and ")} in the graveyards, ${r.groupValues[1]}" } ?: t0 }
         // "Graveyards have 2 types" (Tarmogoyf): that many different card types, whichever they are.
         t2 = t2.let { t0 -> Regex("""\b(?:the |all |both )?graveyards (?:have|has|contain|hold) (\d+|two|three|four|five|six) (?:card |different )?types?\b(?: of cards?| in them| between them| total)?""", RegexOption.IGNORE_CASE).replace(t0) { r ->
             val n = number(r.groupValues[1]) ?: r.groupValues[1].toIntOrNull() ?: 2
@@ -1393,7 +1398,7 @@ class SituationParser(private val names: NameIndex) {
             // "Boros Charm making their creatures indestructible": the mode, said as its effect.
         t2 = t2.replace(Regex("""\b(?:making|giving|to make|to give) (?:their|my|his|her|our|all their|all my) (?:creatures|team|board|guys|permanents|stuff) indestructible\b""", RegexOption.IGNORE_CASE), "choosing indestructible")
             // "Can I play a fetchland and crack it?" under Blood Moon: a nonbasic land is a Mountain with no abilities.
-        if (ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") } && Regex("""^can (?:i|we) (?:play|drop) (?:a |my |the )?(?:fetch(?:land)?|c\d+) and (?:crack|sac|sacrifice|use|activate|fetch with) it\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "moonfetch-question"
+        if ((ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") } || ctx.events.any { e -> e.verb == "cast" && e.card?.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }) && Regex("""^can (?:i|we) (?:play|drop) (?:a |my |the )?(?:fetch(?:land)?|c\d+) and (?:crack|sac|sacrifice|use|activate|fetch with) it\??$|^can (?:i|we) (?:still )?(?:fetch|find|search for|get|go get|crack for|search up) (?:a |an |my )?(?:basic )?(?:island|mountain|plains|forest|swamp|land|basic|c\d+) (?:with|off|off of|using|from) (?:my |the |a )?(?:fetch(?:land)?|c\d+)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "moonfetch-question"
             // "casts two Lightning Bolts at it": two casts, one after the other.
         t2 = t2.replace(Regex("""\b(casts?|plays?|bolts?) (two|2) ((?:c\d+))s? (at|on|targeting) (it|that|(?:my |their |his |her )?c\d+)\b""", RegexOption.IGNORE_CASE), "$1 $3 $4 $5, then $1 $3 $4 $5 again")
             // "a Kitchen Finks with a -1/-1 counter and a Kitchen Finks without" / "and another Kitchen Finks": one more copy.
@@ -1464,6 +1469,19 @@ class SituationParser(private val names: NameIndex) {
                 ?: ctx.inHand["me"]?.lastOrNull { it.display.startsWith("Leyline of") }?.display
             if (ley != null && ctx.objects.values.none { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" }) t2 = "leyline-hand-question"
         }
+        // "Do my own Lightning Bolts cost more?" (Thalia): the spell's cost.
+        t2 = t2.replace(Regex("""^do (?:my|my own|our|our own) (c\d+)s? cost (?:more|extra|any more|anything more|1 more|\d more|more too)\??$""", RegexOption.IGNORE_CASE), "how much does my $1 cost")
+        // "I attack with Goblin Guide and they reveal a land. Who gets the land?": the defending player keeps it.
+        if (Regex("""^who (?:gets|takes|keeps|draws) (?:the |that )?(?:land|card)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == "Goblin Guide" }) t2 = "goblinguide-land-question"
+        // "What order do I scry and draw?" (Serum Visions): the card's text, in the order written.
+        t2 = t2.let { t0 -> Regex("""^(?:what|which|in what|in which) (c\d+|order|sequence) do (?:i|we) (scry|draw|look|shuffle|discard|mill|gain life|lose life|sacrifice) and (?:then )?(scry|draw|look|shuffle|discard|mill|gain life|lose life|sacrifice)(?: in)?\??$|^do (?:i|we) (scry|draw|look|shuffle|discard|mill) (?:first|before (?:i|we) (?:scry|draw|look|shuffle|discard|mill))\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (r.groupValues[1].startsWith("c") && m.cards[r.groupValues[1]]?.display != "Order") t0
+            else if (r.groupValues[4].isNotEmpty()) "order-question ${r.groupValues[4]} ${Regex("""before (?:i|we) (\w+)""").find(t0)?.groupValues?.get(1) ?: if (r.groupValues[4].lowercase() == "draw") "scry" else "draw"}"
+            else "order-question ${r.groupValues[2]} ${r.groupValues[3]}" } ?: t0 }
+        // "Can I kill it with the minus?" (Wrenn and Six at Mother of Runes): the loyalty ability of that sign, aimed at the creature.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:kill|shoot|ping|bolt|hit|remove) (it|that|(?:their |the |my opponent's )?c\d+) with (?:the|my|her|his|its|c\d+'s) (minus|plus|[+\u2212-]\d+)(?: ability)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (ctx.objects.values.none { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Planeswalker") } == true }) t0
+            else "pwkill-question ${r.groupValues[2].lowercase().replace('\u2212', '-')} ${r.groupValues[1].replace(Regex("""^(?:their |the |my opponent's )"""), "")}" } ?: t0 }
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3089,7 +3107,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = "me", to = "respond"); ctx.notes += "\"${restore(clause0, m).replace("flashin-question ", "can I flash in ")}\" is answered by the outcome below."
             // "during my opponent's draw step": flash works whenever you have priority, which you get in every step after its turn-based actions.
             ctx.events.lastOrNull { it.verb == "step" && it.player != "me" }?.let { st -> val name = ctx.objects[id]?.card?.name ?: "it"
-                ctx.asks += EventSpec("ask", to = "text:Yes. Flash lets you cast $name any time you could cast an instant (702.8a), and you receive priority in your opponent's ${st.to ?: "step"}${if (st.to?.startsWith("draw") == true) " after they've drawn for the turn (504.1, 504.2), so $name sees the card they just drew" else " once its turn-based actions are done"}.") }
+                ctx.asks += EventSpec("ask", to = "text:Yes. Flash lets you cast $name any time you could cast an instant (702.8a), and you receive priority in your opponent's ${when (st.to) { "draw" -> "draw step"; "end" -> "end step"; "combat" -> "beginning of combat step"; "precombat_main" -> "main phase"; null -> "step"; else -> st.to }}${if (st.to?.startsWith("draw") == true) " after they've drawn for the turn (504.1, 504.2), so $name sees the card they just drew" else " once its turn-based actions are done"}.") }
             return true
         }
         if (clause0 == "assigndamage-question") {
@@ -3145,8 +3163,9 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         if (clause0 == "moonfetch-question") {
-            val moon = ctx.objects.values.first { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }
-            ctx.asks += EventSpec("ask", to = "text:You can play it, but you can't crack it. Under ${moon.card.name} a nonbasic land is a Mountain and loses all its other abilities (305.7, 613.1), so a fetchland enters as a Mountain: it has \"{T}: Add {R}\" and nothing else, and the sacrifice-to-search ability isn't there to activate. It still counts as your land drop and taps for red.")
+            val moonName = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }?.card?.name
+                ?: ctx.events.lastOrNull { e -> e.verb == "cast" && e.card?.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }?.card?.name ?: "Blood Moon"
+            ctx.asks += EventSpec("ask", to = "text:You can play it, but you can't crack it. Under $moonName a nonbasic land is a Mountain and loses all its other abilities (305.7, 613.1), so a fetchland enters as a Mountain: it has \"{T}: Add {R}\" and nothing else, and the sacrifice-to-search ability isn't there to activate. It still counts as your land drop and taps for red.")
             return true
         }
         if (clause0 == "whatcomesback-question") {
@@ -3194,6 +3213,37 @@ class SituationParser(private val names: NameIndex) {
         }
         if (Regex("""^(?:(?:a|an|my|their|one|some) )?(?:land|permanent|fetch(?:land)?|creature|artifact|token) (?:was|got|has been|had been) (?:sacrificed|sacked|cracked|killed|destroyed|bounced|exiled|popped)(?: already)?(?: (?:this turn|earlier(?: this turn)?|already|before that|first))?$|^(?:i|we|they|he|she|my opponent) (?:already )?(?:cracked|sacrificed|sacked|popped) (?:a |my |their |an? )?(?:land|permanent|fetch(?:land)?|creature|artifact|token)(?: (?:this turn|earlier(?: this turn)?|already|before that|first))?$|^revolt is (?:on|active|met|turned on|satisfied)$""").matches(clause0)) {
             ctx.revoltSaid = true; return true
+        }
+        Regex("""^pwkill-question (minus|plus|[+-]\d+) (it|that|c\d+)$""").find(clause0)?.let { r ->
+            val pw = ctx.objects.values.last { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Planeswalker") } == true }
+            val tid = (if (cardRef.matches(r.groupValues[2])) m.cards[r.groupValues[2]]?.let { objectIdFor(it, ctx) ?: addObject(it, ctx.other("me") ?: "opp", false, ctx) }
+                       else ctx.lastMentioned?.takeIf { it in ctx.objects && it != pw.id } ?: ctx.objects.values.lastOrNull { o -> o.controller != "me" && o.zone == "battlefield" && isCreatureName(o.card.name) }?.id) ?: return@let
+            ctx.events += EventSpec("activate", player = "me", obj = pw.id, to = r.groupValues[1], targets = listOf(tid)); ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = tid
+            ctx.asks += EventSpec("ask", obj = tid, to = "die")
+            val t = ctx.objects.getValue(tid)
+            if (t.card.name == "Mother of Runes" && t.tapped != true) ctx.notes += "Mother of Runes can answer: with priority after the ability goes on the stack, its controller may tap Mother targeting itself for protection from the colour of their choice (${pw.card.name} is the damage's source, so its colour), and protection prevents the damage (702.16b). The outcome below assumes they don't, or can't (summoning sick or tapped)."
+            return true
+        }
+        // "tapping three creatures" (Chord of Calling with convoke): how the cost was paid, not an event of its own.
+        Regex("""^(?:by )?tapping (\d+|two|three|four|five|six|all my|my) creatures?(?: (?:for|to|with) convoke| to (?:pay for|help pay for|convoke) it)?$""").find(clause0)?.let { r ->
+            ctx.notes += "Convoke: each creature tapped while casting pays for {1} or for one mana of that creature's colour (702.51a); tapping ${r.groupValues[1]} creatures covers that much of the cost, and the rest is paid with mana."; return true
+        }
+        // "they reveal a land" after a Goblin Guide attack: the trigger's reveal, already part of the outcome.
+        if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) reveals? (?:a |an )?(?:land|nonland|basic|mountain|island|plains|forest|swamp|c\d+)(?: card)?(?: (?:off|from|to|for|on) (?:it|the top|the trigger|c\d+|the top of (?:their|my) library))?$""").matches(clause0)
+            && ctx.events.any { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == "Goblin Guide" }) {
+            ctx.notes += "Goblin Guide's trigger: the defending player reveals the top card of their library and, if it's a land card, puts it into their hand."; return true
+        }
+        if (clause0 == "goblinguide-land-question") {
+            val def = ctx.events.last { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == "Goblin Guide" }.let { e -> e.targets.firstOrNull() ?: ctx.other(e.player ?: "me") ?: "opp" }
+            val them = if (def == "me") "you" else "your opponent"
+            ctx.asks += EventSpec("ask", to = "text:${them.replaceFirstChar { it.uppercase() }}: Goblin Guide's trigger has the defending player reveal the top card of their library and, if it's a land card, put it into their hand. The land is ${if (def == "me") "yours" else "theirs"}; Goblin Guide's controller gets nothing from it. Putting it into the hand isn't a draw, so nothing that cares about draws sees it (121.1).")
+            return true
+        }
+        Regex("""^order-question (\w+(?: life)?) (\w+(?: life)?)$""").find(clause0)?.let { r ->
+            val card = ctx.lastCastEntry ?: ctx.events.lastOrNull { it.verb == "cast" }?.card?.name?.let { n -> names.lookup(Names.normalize(n)) } ?: return@let
+            // The cast was only setting the question up: don't also play it out (its own draw would read as a second one).
+            ctx.events.removeAll { it.verb == "draw" && it.player == "me" }
+            ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "order:${r.groupValues[1]}:${r.groupValues[2]}"); return true
         }
         if (clause0 == "leyline-hand-question") {
             val ley = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.card.name?.startsWith("Leyline of") == true }?.card?.name ?: ctx.inHand["me"]?.lastOrNull { it.display.startsWith("Leyline of") }?.display ?: "the Leyline"
@@ -3467,7 +3517,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = "me", to = "playerWin"); ctx.note("me"); return true
         }
         // "They Path my Bears. Do I have to search for the land?": whether the search is optional.
-        Regex("""^(?:do|does) (i|we|they|he|she|my opponent|the opponent) (?:have to|need to|got to) (?:search|fetch|get|take|find|go get)(?: for)? (?:the|a|my|their) (?:basic )?land(?: card)?$|^is (?:the|that) (?:search|land) (optional|mandatory|forced|required)$|^can (i|we|they) (?:skip|decline|refuse) (?:the|that) (?:search|land)$""").find(clause0)?.let { r ->
+        Regex("""^(?:do|does) (i|we|they|he|she|my opponent|the opponent) (?:have to|need to|got to) (?:search|fetch|get|take|find|go get)(?:(?: for)? (?:the|a|my|their) (?:basic )?land(?: card)?| (?:my|their) library| for it)?$|^is (?:the|that) (?:search|land) (optional|mandatory|forced|required)$|^can (i|we|they) (?:skip|decline|refuse) (?:the|that) (?:search|land)$""").find(clause0)?.let { r ->
             val w = r.groupValues[1].ifEmpty { r.groupValues[3] }.ifEmpty { "i" }
             val who = when (w) { "i", "we" -> "me"; else -> pronounPlayer(ctx, w.substringAfterLast(' ')) }
             ctx.asks += EventSpec("ask", player = who, to = "optionalSearch"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
