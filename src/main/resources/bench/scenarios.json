@@ -30636,5 +30636,97 @@
       "Not understood"
     ],
     "cite": []
+  },
+  {
+    "id": "twin-on-pestermite-bolted",
+    "text": "I cast Splinter Twin on Pestermite. My opponent casts Lightning Bolt on Pestermite in response. What happens?",
+    "expect": [
+      "Pestermite: the battlefield → opponent's graveyard.",
+      "Splinter Twin doesn't resolve (all targets illegal)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-pathed-after-blocks",
+    "text": "My opponent attacks with a 2/2. I block with Kitchen Finks and they Path my Finks after blocks. Do I take damage?",
+    "expect": [
+      "a 2/2 creature deals no combat damage: its blocker left combat and it stays blocked.",
+      "No: you take no damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-arena-emrakul-on-top",
+    "text": "I have Dark Confidant and Phyrexian Arena. How much life do I lose at upkeep with Emrakul on top?",
+    "expect": [
+      "You lose 15 life (Emrakul, the Aeons Torn's mana value).",
+      "You lose 16 life in all."
+    ],
+    "notExpect": [
+      "Nothing changes"
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-at-two-life",
+    "text": "I cast Gitaxian Probe paying 2 life at 2 life. Do I die?",
+    "expect": [
+      "Yes: You have lost the game."
+    ],
+    "cite": []
+  },
+  {
+    "id": "liliana-plus-empty-hand",
+    "text": "I have Liliana of the Veil and use the +1. I have no cards in hand. What happens?",
+    "expect": [
+      "You discard nothing (no cards in hand).",
+      "opponent discards 1 card."
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-sanctity-bolt-their-goyf",
+    "text": "My opponent has Leyline of Sanctity. Can I Lightning Bolt their Tarmogoyf?",
+    "expect": [
+      "Leyline of Sanctity doesn't protect Tarmogoyf: it gives its controller hexproof, not their creatures."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-into-wall-bolt-in-hand",
+    "text": "I attack with Tarmogoyf into their untapped Wall of Omens with a Bolt in hand. Can I kill the Wall?",
+    "expect": [
+      "Wall of Omens: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-with-counter-damnation",
+    "text": "My opponent casts Damnation. I have Kitchen Finks with a -1/-1 counter already. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-3-3-past-spellskite",
+    "text": "I have Lightning Bolt and my opponent has Spellskite and a 3/3. Can I kill the 3/3?",
+    "expect": [
+      "Spellskite's controller can respond: paying {U/P} changes Lightning Bolt's target to Spellskite",
+      "Yes: a 3/3 creature died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "moon-colonnade-still-animate",
+    "text": "My opponent casts Blood Moon. I have Celestial Colonnade. Can I still animate it?",
+    "expect": [
+      "Celestial Colonnade is a Mountain with no abilities (Blood Moon).",
+      "can't be activated"
+    ],
+    "cite": []
   }
 ]

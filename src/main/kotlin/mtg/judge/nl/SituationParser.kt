@@ -1493,6 +1493,10 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^((?:my opponent|the opponent|they) (?:have|has|control|controls) (?:an? |the |their )?c\d+) with (\d+|\w+) poison counters? on (me|us)\??$""", RegexOption.IGNORE_CASE), "$1, there are $2 poison counters on $3")
         // "Then they cast another Vexing Devil. Can I say no this time?": each trigger is a fresh choice.
         if ((ctx.objects.values.any { it.card.name == "Vexing Devil" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Vexing Devil" }) && Regex("""^can (?:i|we) (?:say no|decline|refuse|not pay|choose not to|take the (?:4|damage)|let it (?:stay|live)|keep it)(?: this time| again| to (?:the|this) (?:second|new|other) one| now| instead)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "devilchoice-question"
+        // "How much life do I lose at upkeep with Emrakul on top?": the library's top card, the upkeep, then the question.
+        t2 = t2.replace(Regex("""^(how much life do (?:i|we) lose|what do (?:i|we) lose|do (?:i|we) die|am i dead) (?:at|on|in|during) (?:my )?(?:next )?upkeep with (?:an? |the |my )?(c\d+) on top(?: of my library| of the library| of my deck)?\??$""", RegexOption.IGNORE_CASE), "$2 is on top of my library, it's my upkeep, $1")
+        // "I attack with Tarmogoyf into their untapped Wall with a Bolt in hand": the held card is stated first.
+        t2 = t2.replace(Regex("""^((?:i|we) attack with (?:my |an? |the )?(?:c\d+|\d+/\d+) into (?:their|his|her|my opponent's) (?:untapped )?(?:c\d+|\d+/\d+)) with (?:an? |my |the )?(c\d+) in (?:my )?hand\??$""", RegexOption.IGNORE_CASE), "i have $2 in hand, $1")
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3126,7 +3130,7 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         // "Can I animate it?": the manland's own ability.
-        Regex("""^(?:i|we|they|he|she|my opponent) animates? (it|that|(?:my |the |their )?c\d+)$""").find(clause0)?.let { r ->
+        Regex("""^(?:i|we|they|he|she|my opponent) (?:still |even )?animates? (it|that|(?:my |the |their )?c\d+)$""").find(clause0)?.let { r ->
             val ph = r.groupValues[1].removePrefix("my ").removePrefix("the ").removePrefix("their ")
             val id = (if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[ph]?.let { objectIdFor(it, ctx) }) ?: return@let
             val who = ctx.objects.getValue(id).controller
