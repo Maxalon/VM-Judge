@@ -435,6 +435,8 @@ sealed interface Condition {
     data object WasKicked : Condition
     /** Groundswell: "if you had a land enter the battlefield under your control this turn". */
     data object LandEnteredThisTurn : Condition
+    /** Scavenging Ooze: "if it was a creature card" about the card just exiled. */
+    data object ExiledWasCreature : Condition
     /** "if ~ is untapped" (Howling Mine) — about the permanent the ability is on. */
     data class SourceTapped(val tapped: Boolean) : Condition
     /** Pyroblast: "Counter target spell if it's blue" — checked against the target as the spell resolves. */

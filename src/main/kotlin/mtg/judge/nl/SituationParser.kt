@@ -41,6 +41,8 @@ class SituationParser(private val names: NameIndex) {
         val statedPt = LinkedHashMap<String, String>()
         /** "a 5/5 Wurm": creature-type words used for an unnamed creature, so "the Wurm" later means that creature. */
         val genericNouns = LinkedHashSet<String>()
+        /** "with 7 lands including Valakut": the nickname isn't a card name the index knows, so it's remembered here. */
+        var sawValakut = false
         val mana = LinkedHashMap<String, Int>()
         val librarySize = LinkedHashMap<String, Int>()
         val graveyardSize = LinkedHashMap<String, Int>()
@@ -1321,6 +1323,17 @@ class SituationParser(private val names: NameIndex) {
             t2 = t2.replace(Regex("""^(?:i|we) reveal (?:an? |the )?(c\d+)(?: (?:at|in|during|on) (?:my |the )?(?:next )?upkeep| at the beginning of my upkeep| off the top| on top)?\??$""", RegexOption.IGNORE_CASE), "delver-reveal-question $1")
             if (ctx.notes.any { it.startsWith("Delver of Secrets transforms") || it.startsWith("Delver of Secrets stays") }) t2 = t2.replace(Regex("""^does (?:it|that|c\d+|delver|the delver) (?:flip|transform|turn over)(?: over)?\??$""", RegexOption.IGNORE_CASE), "delver-flip-question")
         }
+            // "Can I flash it in?": a response with the creature in hand.
+        t2 = t2.replace(Regex("""^can (?:i|we) flash (it|that|(?:my |the )?c\d+) in(?: in response| now| right now)?\??$""", RegexOption.IGNORE_CASE), "flashin-question $1")
+            // "I have Scapeshift with 7 lands": the hand card, then the lands as their own fragment.
+        t2 = t2.replace(Regex("""^(i|we|they|he|she|my opponent|the opponent) (?:have|has) ((?:an? |the )?c\d+)(?: in hand)? with (\d+|two|three|four|five|six|seven|eight|nine|ten) (?:untapped |open )?lands?\b""", RegexOption.IGNORE_CASE), "$1 have $2 and $3 lands")
+            // "with 7 lands including Valakut": the count is the mana base; Valakut is remembered by name.
+        t2 = t2.let { t0 -> Regex("""\b(\d+|seven|eight|nine|ten) lands?,? (?:including|one of which is|one of them being|with) (?:a |the )?valakut(?:, the molten pinnacle)?\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> ctx.sawValakut = true; "${r.groupValues[1]} lands" } }
+            // "How big can it get?" with Scavenging Ooze: every creature card in a graveyard it can eat, mana allowing.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Scavenging Ooze" } && Regex("""^how (?:big|large) (?:can|could|does|will) (?:it|that|the ooze|my ooze|c\d+) (?:get|grow|become|be|end up)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "oozegrow-question"
+            // "I have Scapeshift with 7 lands including Valakut. How much damage can I do?"
+        if (Regex("""\bvalakut\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) ctx.sawValakut = true
+        if (ctx.sawValakut && (ctx.objects.values.any { o -> o.controller == "me" && o.card.name == "Scapeshift" } || ctx.inHand["me"]?.any { it.display == "Scapeshift" } == true) && Regex("""^how much (?:damage )?can (?:i|we) (?:do|deal)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "scapeshift-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2911,6 +2924,36 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         if (clause0 == "delver-flip-question") return true
+        if (clause0 == "oozegrow-question") {
+            val ooze = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Scavenging Ooze" }
+            val food = ctx.objects.values.filter { o -> o.zone == "graveyard" && isCreatureName(o.card.name) }
+            val mana = ctx.mana["me"]
+            val n = if (mana != null) minOf(mana, food.size) else food.size
+            if (food.isEmpty()) { ctx.asks += EventSpec("ask", obj = ooze.id, to = "pt"); ctx.notes += "No creature card in a graveyard was described, so Scavenging Ooze has nothing to grow from; each creature card it exiles is a +1/+1 counter and 1 life."; return true }
+            for (f in food.take(n)) ctx.events += EventSpec("activate", player = "me", obj = ooze.id, targets = listOf(f.id))
+            ctx.asks += EventSpec("ask", obj = ooze.id, to = "pt")
+            ctx.notes += "Scavenging Ooze is activated ${n} time${if (n == 1) "" else "s"} ({G} each${mana?.let { ", $it mana available" } ?: ""}), each at a creature card in a graveyard; the outcome shows its size."
+            return true
+        }
+        if (clause0 == "scapeshift-question") {
+            val lands = ctx.mana["me"] ?: ctx.objects.values.count { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Land") } == true }
+            val sac = lands - 1   // keep the Valakut already out
+            var best = 0; var bestM = 0; var bestV = 0
+            for (v in 0..sac) { val mtn = sac - v; if (mtn >= 6) { val dmg = 3 * mtn * (1 + v); if (dmg > best) { best = dmg; bestM = mtn; bestV = v } } }
+            val text = if (lands <= 0) "How many lands you control wasn't said; say the number. Scapeshift sacrifices any number of lands and finds that many; with Valakut, the Molten Pinnacle on the battlefield each Mountain that enters alongside at least five other Mountains deals 3 damage."
+                else if (best == 0) "Not enough for Valakut: sacrificing your other $sac land${if (sac == 1) "" else "s"} finds $sac Mountains, and Valakut needs each Mountain to enter with at least five other Mountains under your control, so no trigger happens. You need 7 lands (Valakut plus 6 others) for 18 damage."
+                else "$best damage. Keep Valakut, the Molten Pinnacle and sacrifice your other $sac lands to Scapeshift; find ${bestM} Mountain${if (bestM == 1) "" else "s"}${if (bestV > 0) " and $bestV more Valakut${if (bestV == 1) "" else "s"}" else ""}. The lands enter at the same time, so each Mountain sees the other ${bestM - 1} Mountains (at least five) and triggers each Valakut once: $bestM × ${1 + bestV} trigger${if (bestM * (1 + bestV) == 1) "" else "s"} × 3 = $best, each trigger targeting any target (603.2, 603.10). Your opponent gets priority with the triggers on the stack, so a counter on Scapeshift, a Stifle on a trigger or lifegain can change it."
+            ctx.asks += EventSpec("ask", to = "text:$text"); return true
+        }
+        Regex("""^flashin-question (it|that|(?:my |the )?c\d+)$""").find(clause0)?.let { r ->
+            val ph = r.groupValues[1].removePrefix("my ").removePrefix("the ")
+            val id = (if (ph in setOf("it", "that")) ctx.objects.values.lastOrNull { o -> o.controller == "me" && isCreatureName(o.card.name) }?.id
+                      else m.cards[ph]?.let { objectIdFor(it, ctx) ?: addObject(it, "me", false, ctx, zone = "hand") }) ?: return@let
+            // "I have Vendilion Clique. Can I flash it in?": the card is in hand, whatever "have" made of it.
+            if (ctx.objects.getValue(id).zone != "hand" && ctx.events.none { it.obj == id || id in it.targets }) ctx.objects[id] = ctx.objects.getValue(id).copy(zone = "hand")
+            ctx.asks += EventSpec("ask", player = "me", to = "respond"); ctx.notes += "\"${restore(clause0, m).replace("flashin-question ", "can I flash in ")}\" is answered by the outcome below."
+            return true
+        }
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
@@ -3218,9 +3261,10 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = who, to = "extraTurn"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "Can I cast the Bolt this turn?" after Snapcaster Mage: whether a card in a graveyard or exile can be cast from there.
-        Regex("""^can (i|we|they) (?:still |now |even )?cast (?:the |my |their |that |it |this )?(c\d+)(?: (?:again|now|this turn|right now|from (?:my |the |their )?graveyard|from exile|for its flashback cost|with flashback))*$""").find(clause0)?.let { r ->
+        Regex("""^can (i|we|they) (?:still |now |even )?cast (?:the |my |their |that |this )?(c\d+|it|that)(?: (?:again|now|this turn|right now|from (?:my |the |their )?(?:graveyard|yard)|from there|from exile|for its flashback cost|with flashback))*$""").find(clause0)?.let { r ->
             val who = if (r.groupValues[1] == "they") ctx.other(ctx.lastActor ?: "me") ?: "opp" else "me"
-            val id = m.cards[r.groupValues[2]]?.let { objectIdFor(it, ctx) }?.takeIf { ctx.objects.getValue(it).zone in setOf("graveyard", "exile") } ?: return@let
+            val id = (if (r.groupValues[2] in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[r.groupValues[2]]?.let { objectIdFor(it, ctx) })
+                ?.takeIf { ctx.objects.getValue(it).zone in setOf("graveyard", "exile") } ?: return@let
             ctx.asks += EventSpec("ask", obj = id, player = who, to = "castNow"); return true
         }
         // "They Counterspell my Counterspell. Does my original spell resolve?": the spell nobody named, which the asker's

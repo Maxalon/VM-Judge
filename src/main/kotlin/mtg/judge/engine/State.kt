@@ -212,6 +212,8 @@ class GameState(
     var combatAttackerHint: String? = null,
     /** "Exile … until ~ leaves the battlefield": the exiled objects, by the id of the permanent whose leaving returns them (610.3). */
     val exiledUntilLeaves: MutableMap<String, MutableList<String>> = mutableMapOf(),
+    /** The card most recently exiled by an effect, for "if it was a creature card" (Scavenging Ooze). */
+    var lastExiledDef: CardDef? = null,
     /** Players who can't lose the game this turn (Angel's Grace); cleared in the cleanup step. */
     val cantLoseThisTurn: MutableSet<String> = mutableSetOf(),
     /** Players whose life total damage can't take below the given number this turn (Angel's Grace); cleared in cleanup. */
@@ -347,6 +349,7 @@ class GameState(
         }
         Condition.YourTurn -> activePlayer == src.controller
         Condition.NotYourTurn -> activePlayer != null && activePlayer != src.controller
+        Condition.ExiledWasCreature -> lastExiledDef?.isCreature == true
         Condition.LandEnteredThisTurn -> (landsPlayed[src.controller] ?: 0) > 0 || objects.values.any { it.isOnBattlefield() && it.controller == src.controller && "Land" in it.def.types && it.enteredFrom != null }
         is Condition.ControlsMatching -> objects.values.count { it !== src && matches(c.filter, it, src.controller, src) || (it === src && matches(c.filter, it, src.controller, src)) } >= c.atLeast
         is Condition.GraveyardAtLeast -> {
@@ -368,6 +371,7 @@ class GameState(
         Condition.YourTurn -> "it to be its controller's turn"
         Condition.NotYourTurn -> "it to be another player's turn"
         Condition.LandEnteredThisTurn -> "a land to have entered the battlefield under its controller's control this turn"
+        Condition.ExiledWasCreature -> "the exiled card to have been a creature card"
         is Condition.ControlsMatching -> "its controller to control ${if (c.atLeast > 1) "${c.atLeast} or more " else "a "}${c.filter.raw ?: "matching permanent"}"
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"

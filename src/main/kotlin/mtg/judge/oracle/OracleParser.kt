@@ -1082,6 +1082,10 @@ object OracleParser {
                     val prev = out.removeAt(out.lastIndex)
                     out += when (prev) { is Effect.Destroy -> prev.copy(noRegen = true); is Effect.ForAll -> prev.copy(noRegen = true); else -> Effect.Seq(listOf(prev, Effect.Narrated("it can't be regenerated", listOf("701.19c")))) }
                     i++
+                } else if (Regex("""^If it was a creature card, (.+)$""", RegexOption.IGNORE_CASE).matches(cur) && out.lastOrNull() is Effect.Exile) {
+                    // Scavenging Ooze: what the exiled card was decides the rest.
+                    val then = parseSentence(Regex("""^If it was a creature card, (.+)$""", RegexOption.IGNORE_CASE).find(cur)!!.groupValues[1].replaceFirstChar { it.uppercase() })
+                    out += Effect.IfCondition(Condition.ExiledWasCreature, then, "it was a creature card"); i++
                 } else if (Regex("""^(?:Landfall\s*[—–-]\s*)?If you had a land enter the battlefield under your control this turn, (.+?) instead\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.isNotEmpty()) {
                     // Groundswell: the landfall version replaces the sentence before it.
                     val then = parseSentence(Regex("""^(?:Landfall\s*[—–-]\s*)?If you had a land enter the battlefield under your control this turn, (.+?) instead\.?$""", RegexOption.IGNORE_CASE).find(cur)!!.groupValues[1].replaceFirstChar { it.uppercase() })

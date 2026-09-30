@@ -1277,6 +1277,11 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     // "I have Loxodon Smiter in hand. Can I respond?": what's in hand decides.
                     val asker = e.player ?: "me"
                     val held = state.objects.values.filter { it.zone == Zone.HAND && it.controller == asker }
+                    // "Can I flash it in?": a flash creature held answers itself.
+                    held.firstOrNull { h -> h.def.has("flash") && "Instant" !in h.def.types }?.takeIf { ss == null }?.let { h ->
+                        state.outcomes += "Yes: ${h.name} has flash, so it can be cast any time you could cast an instant (702.8a): in response, before ${state.stack.lastOrNull()?.source?.name ?: "the spell"} resolves, as long as you have the mana for it."
+                        return true
+                    }
                     if (ss == null && held.isNotEmpty() && held.none { h -> "Instant" in h.def.types || h.def.has("flash") }) {
                         val flashEnabler = state.objects.values.any { o -> o.isOnBattlefield() && o.controller == asker && o.def.abilities.filterIsInstance<mtg.judge.engine.StaticAbility>().flatMap { it.effects }.any { it is mtg.judge.engine.StaticEffect.CastAsThoughFlash } }
                         if (!flashEnabler) { state.outcomes += "No, not with ${held.joinToString(" or ") { it.name }}: ${if (held.size == 1) "it's" else "they're"} not ${if (held.size == 1) "an instant and ${if (held[0].def.isCreature) "a creature" else "a spell"} without flash" else "instants"}, so ${if (held.size == 1) "it" else "they"} can only be cast in ${state.player(asker).possessive} own main phase with an empty stack (${if (held.any { it.def.isCreature }) "302.1" else "307.1"}). Only an instant, a spell with flash, or an activated ability could be used while ${last?.name ?: "the spell"} is on the stack (117.1a)."; return true }

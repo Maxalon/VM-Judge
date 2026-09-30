@@ -28624,5 +28624,93 @@
     "expect": [
       "2 of opponent's 3 attackers can attack: Ghostly Prison charges {2} per attacker, and opponent's mana covered 2 (508.1c)."
     ]
+  },
+  {
+    "id": "hymn-three-known-cards",
+    "text": "My opponent casts Hymn to Tourach. I have Lightning Bolt, Mountain and Forest in hand. What do I discard?",
+    "expect": [
+      "You discard 2 of Lightning Bolt, Mountain and Forest at random"
+    ]
+  },
+  {
+    "id": "scavenging-ooze-how-big",
+    "text": "I have Scavenging Ooze and two green mana. My opponent's graveyard has two creatures. How big can it get?",
+    "expect": [
+      "You gain 1 life. (×2)",
+      "Scavenging Ooze is 4/4 (2/2 base, 2 +1/+1 counters)."
+    ]
+  },
+  {
+    "id": "first-striker-1-1-vs-2-2",
+    "text": "My opponent attacks with a 2/2. I block with a 1/1 first striker. Does my creature die?",
+    "expect": [
+      "a 2/2 creature has 1 damage marked.",
+      "Yes: a 1/1 creature with first strike died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "bolt-face-kor-firewalker",
+    "text": "I cast Lightning Bolt at my opponent's face. They have Kor Firewalker. What happens?",
+    "expect": [
+      "opponent gains 1 life.",
+      "opponent takes 3 damage."
+    ]
+  },
+  {
+    "id": "rancor-cast-from-there",
+    "text": "I have a Rancor in my graveyard. Can I cast it from there?",
+    "expect": [
+      "No: Rancor is in your graveyard, and nothing here lets it be cast from there."
+    ]
+  },
+  {
+    "id": "nighthawk-into-2-2-blocker",
+    "text": "I attack with a Vampire Nighthawk into a 2/2 blocker. What happens?",
+    "expect": [
+      "a 2/2 creature can't block Vampire Nighthawk (flying).",
+      "You gain 2 life."
+    ]
+  },
+  {
+    "id": "goyf-after-bolt-empty-yard",
+    "text": "I have Tarmogoyf and a Lightning Bolt. Graveyard is empty. I Bolt my opponent. How big is Goyf after?",
+    "expect": [
+      "Tarmogoyf is 1/2"
+    ]
+  },
+  {
+    "id": "scapeshift-seven-lands-valakut",
+    "text": "I have Scapeshift with 7 lands including Valakut. How much damage can I do?",
+    "expect": [
+      "18 damage. Keep Valakut, the Molten Pinnacle and sacrifice your other 6 lands to Scapeshift; find 6 Mountains."
+    ]
+  },
+  {
+    "id": "scapeshift-eight-lands-valakut",
+    "text": "I have Scapeshift with 8 lands including Valakut. How much damage can I do?",
+    "expect": [
+      "36 damage. Keep Valakut, the Molten Pinnacle and sacrifice your other 7 lands to Scapeshift; find 6 Mountains and 1 more Valakut."
+    ]
+  },
+  {
+    "id": "scapeshift-six-lands-valakut",
+    "text": "I have Scapeshift in hand and 6 lands including Valakut. How much damage can I do?",
+    "expect": [
+      "Not enough for Valakut: sacrificing your other 5 lands finds 5 Mountains"
+    ]
+  },
+  {
+    "id": "chalice-two-vs-counterspell",
+    "text": "My opponent has Chalice of the Void on 2. Can I cast Counterspell?",
+    "expect": [
+      "Counterspell is countered."
+    ]
+  },
+  {
+    "id": "clique-flash-in-response",
+    "text": "I have Vendilion Clique. My opponent casts Ancestral Recall. Can I flash it in?",
+    "expect": [
+      "Yes: Vendilion Clique has flash, so it can be cast any time you could cast an instant (702.8a)"
+    ]
   }
 ]

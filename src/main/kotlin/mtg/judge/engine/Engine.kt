@@ -2841,7 +2841,7 @@ class Engine(val state: GameState) {
                 }}.", "615.1", "615.7", "611.2a"); state.outcomes += "Prevention effect until end of turn (${item.describe})." }
                 else forEachLegalTarget(item, effect.target) { ref -> state.shields += Shield(r, (ref as? Ref.Obj)?.id, (ref as? Ref.Player)?.id, r.amount, item.describe); trace.step("${state.nameOf(ref)} gets a prevention shield: the next ${r.amount?.toString() ?: "all"} damage that would be dealt to it this turn is prevented.", "615.7", "615.1"); state.outcomes += "${state.nameOf(ref)} has a prevention shield (${r.amount?.toString() ?: "all"}) this turn." }
             }
-            is Effect.Exile -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { move(it, Zone.EXILE, "${it.name} is exiled.", "701.13a"); it.exiledBy = item.source.id } }
+            is Effect.Exile -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { move(it, Zone.EXILE, "${it.name} is exiled.", "701.13a"); it.exiledBy = item.source.id; state.lastExiledDef = it.def } }
             is Effect.Blink -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 blinkObject(o, if (effect.ownersControl) o.owner else item.controller)
             } }
