@@ -7232,7 +7232,8 @@
     "id": "redirect-is-a-verb-not-a-card",
     "text": "I have Lightning Bolt and they have Spellskite. I cast Lightning Bolt at their face. Can they redirect it?",
     "expect": [
-      "opponent takes 3 damage"
+      "Lightning Bolt now targets Spellskite instead of opponent.",
+      "Spellskite has 3 damage marked."
     ],
     "notExpect": [
       "Redirect"
@@ -30833,6 +30834,98 @@
     "expect": [
       "Kitchen Finks: the battlefield → your graveyard.",
       "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-grows-before-path-resolves",
+    "text": "I have Tarmogoyf and my opponent casts Path to Exile on it. I respond with Lightning Bolt to their face. Does Goyf get bigger before Path resolves?",
+    "expect": [
+      "Yes. Lightning Bolt was cast in response, so it's above Path to Exile on the stack and resolves first"
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-bolted-twice-no-second-persist",
+    "text": "My opponent has Kitchen Finks. I cast Lightning Bolt then Lightning Bolt again after it persists. Does it come back a second time?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "doesn't come back"
+    ],
+    "notExpect": [
+      "all targets illegal"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ponder-vs-thoughtseize-order",
+    "text": "I cast Ponder and my opponent responds with Thoughtseize. Which resolves first?",
+    "expect": [
+      "Thoughtseize resolves first: it was put on the stack last, and the stack resolves top-down (608.1, 405.2)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-empty-hand-their-guide",
+    "text": "I have Ensnaring Bridge and no cards in hand. Can my opponent's Goblin Guide attack?",
+    "expect": [
+      "Goblin Guide can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spirit-saves-finks-persist-later",
+    "text": "My opponent casts Damnation while I have Selfless Spirit and Kitchen Finks. If I sacrifice Spirit, does Finks still persist later?",
+    "expect": [
+      "Kitchen Finks is indestructible and isn't destroyed.",
+      "Yes. Persist isn't used up by surviving"
+    ],
+    "cite": []
+  },
+  {
+    "id": "their-spellskite-vs-my-push",
+    "text": "My opponent has Spellskite. I cast Fatal Push on their Tarmogoyf. Can they redirect it to Spellskite?",
+    "expect": [
+      "Fatal Push now targets Spellskite instead of Tarmogoyf.",
+      "Spellskite: the battlefield → opponent's graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "guide-vs-flashed-snapcaster-block",
+    "text": "I attack with Goblin Guide and they flash in Snapcaster Mage to block. Does Snapcaster survive?",
+    "expect": [
+      "Snapcaster Mage: the battlefield → opponent's graveyard.",
+      "No: Snapcaster Mage is in the graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-thoughtseize-myself",
+    "text": "My opponent controls Leyline of Sanctity. Can I target myself with Thoughtseize?",
+    "expect": [
+      "Thoughtseize: you discard a nonland card",
+      "You lose 2 life."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "anger-vs-goyf-4-5",
+    "text": "I cast Anger of the Gods. My opponent has Tarmogoyf at 4/5. Does it die?",
+    "expect": [
+      "Tarmogoyf has 3 damage marked.",
+      "No: Tarmogoyf is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "delver-flip-right-away",
+    "text": "I have Delver of Secrets and cast Lightning Bolt. Does Delver flip right away?",
+    "expect": [
+      "No. Delver of Secrets transforms only through its own trigger, at the beginning of your upkeep"
     ],
     "cite": []
   }

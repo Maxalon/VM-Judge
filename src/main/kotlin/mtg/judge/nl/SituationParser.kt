@@ -133,7 +133,9 @@ class SituationParser(private val names: NameIndex) {
             .replace(Regex("""(that says) tap target creature,? (?:and )?it doesn't untap during its controller's next untap step""", RegexOption.IGNORE_CASE), "$1 tap_target_creature._it_doesn't_untap_during_its_controller's_next_untap_step")
         // "Can I plus and then minus in the same turn?": "then" would split the question in two; it's one question about loyalty timing.
         val text2 = text1.replace(Regex("""\b(can (?:i|we) (?:plus|minus|[+\u2212-]\d|(?:use|activate) (?:her|his|its|the) (?:plus|minus|[+\u2212-]\d)|(?:her|his|its) (?:plus|minus)))(?:,)? (?:and then|then|and) (?=(?:plus|minus|[+\u2212-]\d|(?:use|activate) (?:her|his|its|the) (?:plus|minus|[+\u2212-]\d)|(?:her|his|its) (?:plus|minus|other ability)|the other one|another ability)\b)""", RegexOption.IGNORE_CASE), "$1 then_ ")
-        val sentences = splitSentences(if (text2.contains("Divining Top")) text2.replace(Regex("""\bthe Top\b"""), "Sensei's Divining Top") else text2)
+        // "I cast Bolt then Bolt again after it persists": "then" would split it; the two casts are said with a resolve between.
+        val text3 = text2.replace(Regex("""\bcast ([A-Z][\w',-]*(?: [\w',-]+){0,4}?) then (?:cast )?(?:\1|it|another(?: one)?) again after it persists""", RegexOption.IGNORE_CASE), "cast $1 on it. It resolves. I cast $1 on it again")
+        val sentences = splitSentences(if (text3.contains("Divining Top")) text3.replace(Regex("""\bthe Top\b"""), "Sensei's Divining Top") else text3)
         // "I crack a fetchland": the word names a cycle, and every member does something different. Saying which
         // card it was read as would be picking one for the asker, so the answer asks instead.
         for ((word, examples) in landCycles) if (Regex("""(?i)\b${Regex.escape(word)}\b""").containsMatchIn(text)) {
@@ -1506,6 +1508,15 @@ class SituationParser(private val names: NameIndex) {
             && (ctx.objects.values.any { it.card.name in setOf("Field of Ruin", "Ghost Quarter", "Assassin's Trophy") } || ctx.events.any { e -> (e.verb == "cast" || e.verb == "activate") && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) in setOf("Field of Ruin", "Ghost Quarter", "Assassin's Trophy") })) t2 = "getbasic-question"
         // "Do they still pay 1?" (Thalia with a Phyrexian mana spell paid with life): the cost, with the tax.
         if (ctx.lastVerb == "cast" && Regex("""^do (?:they|i|we|he|she) (?:still |also )?(?:pay|owe) (?:1|one|the 1|the tax|the extra|extra|more|1 more|one more)(?: mana)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "how much does it cost"
+        // "I cast Bolt then Bolt again after it persists": two casts at the creature; the persist happens on its own.
+        t2 = t2.replace(Regex("""^(i|we) cast (c\d+)(?: on (it|that|(?:their |the )?c\d+))? then (?:cast )?(?:c\d+|it|another) again after it persists\??$""", RegexOption.IGNORE_CASE), "i cast $2 on it, it resolves, i cast $2 on it again")
+        // "Can I target myself with Thoughtseize?": the spell cast at its own caster.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:target|hit|aim at) (?:myself|me|us|ourselves|my own face) with (?:an? |the |my )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "can i cast $1 targeting me")
+        // "Does Goyf get bigger before Path resolves?": the response resolves first, so yes, though the removal still lands.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|is) (?:my )?(c\d+|it|goyf) (?:get bigger|grow|get pumped|be bigger|count it) before (?:the |their )?(c\d+|it|that|the spell) resolves\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "growbefore-question ${r.groupValues[1]} ${r.groupValues[2]}" } ?: t0 }
+        // "Does Finks still persist later?" after it was saved: persist isn't spent by surviving.
+        // "Does Delver flip right away?" after casting an instant: only its upkeep trigger transforms it.
+        if (ctx.objects.values.any { it.card.name == "Delver of Secrets" } && Regex("""^(?:does|will|can) (?:my )?(?:c\d+|it|delver) (?:flip|transform) (?:right away|now|immediately|right now|this turn|at once|straight away)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "delvernow-question"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3326,6 +3337,29 @@ class SituationParser(private val names: NameIndex) {
             }
             ctx.asks += EventSpec("ask", to = "text:$text"); return true
         }
+        Regex("""^growbefore-question (\S+) (\S+)$""").find(clause0)?.let { r ->
+            val goyf = (if (cardRef.matches(r.groupValues[1])) m.cards[r.groupValues[1]]?.display else null) ?: ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "battlefield" && isCreatureName(o.card.name) }?.card?.name ?: "the creature"
+            val removal = (if (cardRef.matches(r.groupValues[2])) m.cards[r.groupValues[2]]?.display else null) ?: ctx.events.firstOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "their spell"
+            val response = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" }?.card?.name ?: "your response"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $response was cast in response, so it's above $removal on the stack and resolves first (608.1, 405.2); once it has resolved it's in your graveyard, and $goyf's size counts it at once (604.3). That doesn't save $goyf from $removal, though: $removal exiles whatever size the creature is. It only matters if the size is what's being checked (a damage spell, a toughness-based effect).")
+            return true
+        }
+        if (clause0 == "persistlater-question" || Regex("""^(?:does|will|can) (?:my |the )?(?:c\d+|it|finks) (?:still |even )?(?:persist|undying|come back) (?:later|next time|afterwards|after that|the next time it dies|if it dies later)$""").matches(clause0)) {
+            val finks = ctx.objects.values.lastOrNull { o -> o.controller == "me" && isCreatureName(o.card.name) && o.card.name != "Selfless Spirit" }?.card?.name ?: "the creature"
+            ctx.asks += EventSpec("ask", to = "text:Yes. Persist isn't used up by surviving: it triggers whenever $finks dies with no -1/-1 counter on it (702.79a). Being indestructible for the turn just means it doesn't die now; the next time it does die, with no counter, it comes back as usual (once, since it returns with a -1/-1 counter).")
+            return true
+        }
+        if (clause0 == "delvernow-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets transforms only through its own trigger, at the beginning of your upkeep: you look at the top card of your library, may reveal it, and it transforms if that card is an instant or sorcery (701.27a). Casting an instant now doesn't touch it; what matters is the top card of your library at your next upkeep.")
+            return true
+        }
+        // "I cast Bolt on it again": the same spell at whatever the previous one targeted (the judge follows a persisted copy).
+        Regex("""^(?:i|we) (?:cast|casts) (?:another |a second )?(c\d+) (?:on|at|targeting) (?:it|that|the same (?:creature|target|thing)) again$""").find(clause0)?.let { r ->
+            val card = m.cards.getValue(r.groupValues[1])
+            val prev = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" && it.card?.name == card.display && it.targets.isNotEmpty() } ?: return@let
+            ctx.events += EventSpec("cast", player = "me", card = CardRef(name = card.display, oracleId = card.oracleId), targets = prev.targets)
+            ctx.lastActor = "me"; ctx.lastVerb = "cast"; ctx.lastMentioned = prev.targets.first(); return true
+        }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
             return true
@@ -3684,7 +3718,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = who, to = "extraTurn"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "Can I cast the Bolt this turn?" after Snapcaster Mage: whether a card in a graveyard or exile can be cast from there.
-        Regex("""^can (i|we|they) (?:still |now |even )?cast (?:the |my |their |that |this )?(c\d+|it|that)(?: (?:again|now|this turn|right now|from (?:my |the |their )?(?:graveyard|yard)|from there|from exile|for its flashback cost|with flashback))*$""").find(clause0)?.let { r ->
+        Regex("""^can (i|we|they) (?:still |now |even )?cast (?:the |my |their |that |this )?(c\d+|it|that)(?: (?:again|now|this turn|right now|from (?:my |the |their )?(?:graveyard|yard)|from there|from exile|for its flashback cost|with flashback|targeting (?:me|myself|them|it|that|(?:my |their |the )?c\d+)|at (?:me|myself|them|their face|my face)))*$""").find(clause0)?.let { r ->
             val who = if (r.groupValues[1] == "they") ctx.other(ctx.lastActor ?: "me") ?: "opp" else "me"
             val id = (if (r.groupValues[2] in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[r.groupValues[2]]?.let { objectIdFor(it, ctx) })
                 ?.takeIf { ctx.objects.getValue(it).zone in setOf("graveyard", "exile") }
@@ -3732,6 +3766,14 @@ class SituationParser(private val names: NameIndex) {
             val name = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: return@let
             ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(slug(name) + ":spell"))
             ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Spellskite targeting $name; the outcome says where the spell ends up aimed."; return true
+        }
+        // "My opponent has Spellskite. I cast Fatal Push on their Goyf. Can they redirect it?": their Spellskite against your spell.
+        Regex("""^can (?:they|he|she|my opponent|the opponent) (?:still |even )?(?:redirect|deflect|spellskite|skite|move|point) (?:it|that|the spell|my spell|my c\d+|the c\d+)(?: (?:to|onto|at|into) (?:their |the )?(?:c\d+|it|spellskite))?$""").find(clause0)?.let {
+            val skite = ctx.objects.values.lastOrNull { it.controller != "me" && it.zone == "battlefield" && (it.card.name ?: "") == "Spellskite" } ?: return@let
+            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" } ?: return@let
+            val name = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: return@let
+            ctx.events += EventSpec("activate", player = skite.controller, obj = skite.id, targets = listOf(slug(name) + ":spell"))
+            ctx.notes += "\"${restore(clause0, m)}?\" is read as your opponent activating Spellskite targeting $name; the outcome says whether the change of target is legal and where $name ends up aimed."; return true
         }
         // "My opponent casts Thoughtseize targeting themselves. Is that allowed?": a player can target themselves.
         Regex("""^is (?:that|this|it) (?:allowed|legal|ok|okay|fine|even legal|possible)$|^can (?:they|he|she|you|i) (?:even )?do that$""").find(clause0)?.let {
