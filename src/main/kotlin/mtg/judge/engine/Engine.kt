@@ -4334,7 +4334,8 @@ class Engine(val state: GameState) {
     private fun inferTarget(what: String, spec: TargetSpec, controller: String, harmful: Boolean = false, source: GameObject? = null, beneficial: Boolean = false): List<Ref>? {
         if (!spec.filter.verifiable) return null
         val candidates = mutableListOf<Ref>()
-        for (o in state.objects.values) if (o.zone == Zone.BATTLEFIELD || o.zone == Zone.STACK) { val r = Ref.Obj(o.id); if (filterMatches(spec.filter, r, controller, source)) candidates += r }
+        // "Deathrite Shaman with a land in their graveyard, can I tap it for mana?": a "card from a graveyard" target is looked for there.
+        for (o in state.objects.values) if (o.zone == Zone.BATTLEFIELD || o.zone == Zone.STACK || (spec.filter.inGraveyard && o.zone == Zone.GRAVEYARD)) { val r = Ref.Obj(o.id); if (filterMatches(spec.filter, r, controller, source)) candidates += r }
         for (s in state.stack) if (s.kind != StackKind.SPELL) { val r = Ref.Stack(s.id); if (filterMatches(spec.filter, r, controller)) candidates += r }
         if (Kind.PLAYER in spec.filter.kinds) state.players.forEach { candidates += Ref.Player(it.id) }
         var distinct = candidates.distinctBy { when (it) { is Ref.Obj -> "o:" + it.id; is Ref.Stack -> "s:" + it.id; is Ref.Player -> "p:" + it.id } }

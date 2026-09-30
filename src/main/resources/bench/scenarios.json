@@ -29018,7 +29018,7 @@
     "id": "delver-vs-sword-bears",
     "text": "My opponent has a Sword of Fire and Ice on a Grizzly Bears. Can I block it with my Delver of Secrets?",
     "expect": [
-      "Delver of Secrets // Insectile Aberration can't block Grizzly Bears (protection)."
+      "Delver of Secrets can't block Grizzly Bears (protection)."
     ]
   },
   {
@@ -30926,6 +30926,109 @@
     "text": "I have Delver of Secrets and cast Lightning Bolt. Does Delver flip right away?",
     "expect": [
       "No. Delver of Secrets transforms only through its own trigger, at the beginning of your upkeep"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-thalia-vs-cast-damnation",
+    "text": "I have Aether Vial on 2 and Thalia in hand. My opponent casts Damnation. Can I put Thalia in to make it cost more?",
+    "expect": [
+      "No. You can put Thalia, Guardian of Thraben in with Aether Vial in response, but it won't change what Damnation costs"
+    ],
+    "cite": []
+  },
+  {
+    "id": "block-choice-with-types-tail",
+    "text": "My opponent attacks with Tarmogoyf. I have Kitchen Finks and Wall of Omens. Which should I block with if graveyards have 3 types?",
+    "expect": [
+      "Blocking Tarmogoyf with Wall of Omens: saves you 3 damage; Wall of Omens survives"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "kor-firewalker-bolt-face",
+    "text": "I cast Lightning Bolt on my opponent at 3 life while they have Kor Firewalker. Do they gain life?",
+    "expect": [
+      "opponent gains 1 life.",
+      "opponent goes from 3 to 1 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "deathrite-land-in-their-yard",
+    "text": "I have Deathrite Shaman and there is a land in my opponent's graveyard. Can I tap it for mana?",
+    "expect": [
+      "a basic land: opponent's graveyard → exile.",
+      "You have 1 mana of any color in your mana pool."
+    ],
+    "notExpect": [
+      "but 0 given"
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-into-leyline-can-they",
+    "text": "My opponent casts Gitaxian Probe on me with Leyline of Sanctity on my side. Can they?",
+    "expect": [
+      "No: Gitaxian Probe can't target you."
+    ],
+    "cite": []
+  },
+  {
+    "id": "guide-bolt-total-if-attack",
+    "text": "I have a Goblin Guide and cast Lightning Bolt at their face. How much damage total if I attack?",
+    "expect": [
+      "Yes: opponent takes 5 damage in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-two-cards-goyf-2-3",
+    "text": "My opponent has Ensnaring Bridge and 2 cards in hand. Can my Tarmogoyf at 2/3 attack?",
+    "expect": [
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "can't attack"
+    ],
+    "cite": []
+  },
+  {
+    "id": "delver-unflipped-blocked-by-1-1",
+    "text": "I attack with Delver of Secrets unflipped and they block with a 1/1. Who dies?",
+    "expect": [
+      "a 1/1 creature: the battlefield → opponent's graveyard.",
+      "Delver of Secrets: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "(flying)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "stony-silence-cage-still-works",
+    "text": "I cast Stony Silence and they have Grafdigger's Cage. Does Cage still work?",
+    "expect": [
+      "Yes: Stony Silence stops only activated abilities of artifacts, and Grafdigger's Cage has none."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-flashback-bolt-cost",
+    "text": "My opponent has Thalia. I cast Snapcaster Mage and flashback Lightning Bolt. What does the Bolt cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "grudge-flashback-into-chalice-2",
+    "text": "I have Ancient Grudge in my graveyard and my opponent has Chalice of the Void on 2. Can I flashback it?",
+    "expect": [
+      "Ancient Grudge is countered."
     ],
     "cite": []
   }

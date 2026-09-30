@@ -1517,6 +1517,17 @@ class SituationParser(private val names: NameIndex) {
         // "Does Finks still persist later?" after it was saved: persist isn't spent by surviving.
         // "Does Delver flip right away?" after casting an instant: only its upkeep trigger transforms it.
         if (ctx.objects.values.any { it.card.name == "Delver of Secrets" } && Regex("""^(?:does|will|can) (?:my )?(?:c\d+|it|delver) (?:flip|transform) (?:right away|now|immediately|right now|this turn|at once|straight away)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "delvernow-question"
+        // "Which should I block with if graveyards have 3 types?": the graveyards first, then the question.
+        t2 = t2.let { t0 -> Regex("""^(.+?) if (?:the |all |both )?graveyards (?:have|has|contain|hold) (\d+|two|three|four|five) (?:card |different )?types?(?: of cards?)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val n = number(r.groupValues[2]) ?: r.groupValues[2].toIntOrNull() ?: 2
+            val kinds = listOf("a creature", "an instant", "a land", "a sorcery", "an artifact", "an enchantment").take(n.coerceIn(1, 6))
+            "there is ${kinds.joinToString(" and ")} in the graveyards, ${r.groupValues[1]}" } ?: t0 }
+        // "Can I put Thalia in to make it cost more?" with their spell already on the stack: a tax applies only as a spell is cast.
+        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:in )?(?:my |the )?(c\d+)(?: in)? (?:to make it cost more|to tax it|to make (?:it|their spell|that) cost (?:1 )?more|so it costs more|to counter it|in response to make it cost more)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialtax-question " + Regex("""(c\d+)""").find(t2)!!.value
+        // "How much damage total if I attack?" after a burn spell: the attack is made, then the total asked.
+        t2 = t2.replace(Regex("""^how much (?:damage )?(?:total|in all|altogether|overall)?(?: damage)? if (?:i|we) (?:attack|swing)(?: with (?:everything|everyone|it|all my creatures|my team))?\??$""", RegexOption.IGNORE_CASE), "i attack with everything, how much damage does my opponent take")
+        // "Does Cage still work?" under Stony Silence / Null Rod / Karn: only activated abilities are stopped.
+        if ((ctx.objects.values.any { it.card.name in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") } || ctx.events.any { e -> e.verb == "cast" && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") }) && Regex("""^does (?:their |my |the )?(c\d+) still (?:work|function|do anything|apply|do its thing)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "stillworks-question " + Regex("""(c\d+)""").find(t2)!!.value
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2534,6 +2545,8 @@ class SituationParser(private val names: NameIndex) {
         }
         // "Fireball targeting my opponent and their 2/2": a player and a creature as two targets, kept together too.
         t2 = t2.replace(Regex("""\b(targeting|at|on) (me|them|him|her|my opponent|the opponent|@\w+)( with x=\d+)? and ((?:their|my|his|her|the|an?) (?:\d+/\d+|c\d+)(?: creature)?)(?=[.,;!?]|$| for | with )""", RegexOption.IGNORE_CASE), "$1 $2 & $4$3")
+        // "Which should I block with if graveyards have 3 types?": the graveyard phrase was read on its own above; the dangling "if" goes.
+        t2 = t2.replace(Regex("""\s+if\s*\??$""", RegexOption.IGNORE_CASE), "")
         if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("rewritten: [$t2]")
         // "Cryptic Command … on my Bolt and my Bears": two targets of one spell, kept together through the clause split.
         t2 = t2.replace(Regex("""\b(on|targeting|at) (my |their |the )?(c\d+) and (my |their |the )?(c\d+)(?=[.,;?]|$)"""), "$1 $2$3 & $4$5")
@@ -3359,6 +3372,17 @@ class SituationParser(private val names: NameIndex) {
             val prev = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" && it.card?.name == card.display && it.targets.isNotEmpty() } ?: return@let
             ctx.events += EventSpec("cast", player = "me", card = CardRef(name = card.display, oracleId = card.oracleId), targets = prev.targets)
             ctx.lastActor = "me"; ctx.lastVerb = "cast"; ctx.lastMentioned = prev.targets.first(); return true
+        }
+        Regex("""^vialtax-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards.getValue(r.groupValues[1])
+            val spell = ctx.events.last { it.verb == "cast" && it.player != "me" }.let { it.card?.name ?: it.obj?.let { id -> ctx.objects[id]?.card?.name } ?: "their spell" }
+            ctx.asks += EventSpec("ask", to = "text:No. You can put ${card.display} in with Aether Vial in response, but it won't change what $spell costs: a cost-raising effect applies only as a spell is cast, and $spell has already been cast and paid for (601.2f). ${card.display} would arrive in time to be destroyed by it instead. Vial her in only if you want her on the battlefield for later; the tax matters for the spells they cast afterwards.")
+            return true
+        }
+        Regex("""^stillworks-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards.getValue(r.groupValues[1])
+            val stopper = ctx.objects.values.lastOrNull { it.card.name in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") }?.card?.name ?: ctx.events.lastOrNull { e -> e.verb == "cast" && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) in setOf("Stony Silence", "Null Rod", "Karn, the Great Creator", "Collector Ouphe") }?.let { e -> e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name } } ?: "Stony Silence"
+            ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "stillWorks:$stopper"); return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
