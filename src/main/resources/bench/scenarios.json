@@ -28338,5 +28338,103 @@
     "expect": [
       "Mindbreak Trap is cast without paying its mana cost (alternative cost)."
     ]
+  },
+  {
+    "id": "thalia-creature-spell-not-taxed",
+    "text": "I have Thalia, Guardian of Thraben. My opponent casts a creature spell. Does it cost more?",
+    "expect": [
+      "Thalia, Guardian of Thraben taxes only noncreature spells, and a creature spell isn't one."
+    ]
+  },
+  {
+    "id": "leyline-void-vs-persist",
+    "text": "My opponent has a Leyline of the Void. My Kitchen Finks dies. Does it persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Leyline of the Void).",
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard, and persist returns it only from the graveyard (702.79a)."
+    ]
+  },
+  {
+    "id": "bolt-goyf-three-types",
+    "text": "I cast Lightning Bolt at my opponent's Tarmogoyf. They have instant, sorcery and land in the graveyard. Does it die?",
+    "expect": [
+      "Tarmogoyf has 3 damage marked.",
+      "No: Tarmogoyf is still on the battlefield."
+    ]
+  },
+  {
+    "id": "confidant-reveals-a-griselbrand",
+    "text": "I have a Dark Confidant. I reveal a Griselbrand. What happens?",
+    "expect": [
+      "Griselbrand: your library → your hand.",
+      "You lose 8 life (Griselbrand's mana value)."
+    ]
+  },
+  {
+    "id": "trample-double-blocked-damage",
+    "text": "My opponent attacks with a 5/5 trample. I block with a 1/1 and a 2/2. How much damage do I take?",
+    "expect": [
+      "Yes: you take 2 damage in all."
+    ]
+  },
+  {
+    "id": "blood-moon-vs-urzas-saga",
+    "text": "I have Blood Moon. My opponent has an Urza's Saga. What happens?",
+    "expect": [
+      "Urza's Saga is a Mountain with no abilities (Blood Moon).",
+      "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (714.4)."
+    ]
+  },
+  {
+    "id": "double-strike-deathtouch-vs-6-6",
+    "text": "I attack with a creature with double strike and deathtouch. They block with a 6/6. What happens?",
+    "expect": [
+      "a 6/6 creature has 1 damage marked.",
+      "a 6/6 creature: the battlefield → opponent's graveyard."
+    ]
+  },
+  {
+    "id": "counterspell-vs-supreme-verdict",
+    "text": "I cast Supreme Verdict. My opponent casts Counterspell on it. Does it work?",
+    "expect": [
+      "Supreme Verdict isn't countered (it can't be)."
+    ]
+  },
+  {
+    "id": "bridge-two-cards-vs-3-3",
+    "text": "I have Ensnaring Bridge and 2 cards in hand. My opponent attacks with a 3/3. Can they?",
+    "expect": [
+      "a 3/3 creature can't attack (Ensnaring Bridge)."
+    ]
+  },
+  {
+    "id": "gaddock-teeg-vs-wrath",
+    "text": "My opponent has a Gaddock Teeg. Can I cast Wrath of God?",
+    "expect": [
+      "Wrath of God can't be cast (Gaddock Teeg)."
+    ]
+  },
+  {
+    "id": "mindcensor-vs-wooded-foothills",
+    "text": "My opponent has Aven Mindcensor. I crack Wooded Foothills. What happens?",
+    "expect": [
+      "Aven Mindcensor: You look at only the top four cards of your library for a Mountain or Forest; if none is there, nothing is found.",
+      "Mountain enters the battlefield."
+    ]
+  },
+  {
+    "id": "mindcensor-vs-generic-fetchland",
+    "text": "My opponent has Aven Mindcensor. I crack a Fetchland. What happens?",
+    "expect": [
+      "Aven Mindcensor changes the search: you look at only the top four cards of your library instead of the whole library (614.1a)."
+    ]
+  },
+  {
+    "id": "lotus-cobra-misty-rainforest-mana",
+    "text": "I have Lotus Cobra. I crack Misty Rainforest. How much mana do I get?",
+    "expect": [
+      "Forest enters the battlefield.",
+      "You can make 2 mana right now: Forest → {G}; plus 1 mana of any color already in your mana pool."
+    ]
   }
 ]

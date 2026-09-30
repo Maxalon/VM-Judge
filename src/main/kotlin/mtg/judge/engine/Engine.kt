@@ -2713,7 +2713,12 @@ class Engine(val state: GameState) {
                 val chosen = item.targets.filterIsInstance<Ref.Obj>().firstOrNull()?.let { state.objects[it.id] }?.takeIf { it.zone == fromZone }
                     ?: (item.choice ?: state.pendingChoices.remove(item.source.id))?.let { c -> state.objects[c] } ?: state.objects.values.firstOrNull { it.zone == fromZone && it.controller == item.controller && state.matches(effect.filter, it, item.controller, anyZone = true) }
                     // A basic land fetched from the library: nobody needs to name it; assume one is there.
-                    ?: if (effect.fromLibrary && effect.filter.raw.contains("basic land", true)) Generic.spell("basic land")?.let { def -> state.add(GameObject(freshObjectId("basic land"), def, Zone.LIBRARY, item.controller)).also { state.assumptions += "${item.source.name} finds a basic land (${you.possessive} library has one)." } } else null
+                    ?: if (effect.fromLibrary && effect.filter.raw.contains("basic land", true)) Generic.spell("basic land")?.let { def -> state.add(GameObject(freshObjectId("basic land"), def, Zone.LIBRARY, item.controller)).also { state.assumptions += "${item.source.name} finds a basic land (${you.possessive} library has one)." } }
+                    // "Mountain or Forest card" (a fetchland): a basic of the first type named, unless one was described.
+                    else if (effect.fromLibrary && Regex("""^(?:an? )?(?:Plains|Island|Swamp|Mountain|Forest)(?: or (?:Plains|Island|Swamp|Mountain|Forest))*(?: cards?)?$""", RegexOption.IGNORE_CASE).matches(effect.filter.raw.trim())) {
+                        val t = Regex("""\b(Plains|Island|Swamp|Mountain|Forest)\b""", RegexOption.IGNORE_CASE).find(effect.filter.raw)!!.value
+                        Generic.spell(t.lowercase())?.let { def -> state.add(GameObject(freshObjectId(t.lowercase()), def, Zone.LIBRARY, item.controller)).also { state.assumptions += "${item.source.name} finds a $t (${you.possessive} library has one; say the land if it matters which)." } }
+                    } else null
                 if (chosen != null && effect.filter.verifiable && !state.matches(effect.filter, chosen, item.controller, item.source, anyZone = true)) {
                     trace.step("${item.source.name} looks for ${withArticle(effect.filter.raw)}, and ${chosen.name} isn't one, so it can't be found this way.", "701.19a", "608.2c")
                     state.outcomes += "${chosen.name} can't be found with ${item.source.name}: it isn't ${withArticle(effect.filter.raw)}."

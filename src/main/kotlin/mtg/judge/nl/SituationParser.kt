@@ -2214,6 +2214,8 @@ class SituationParser(private val names: NameIndex) {
         Regex("""\b(?:reveals?|revealing|shows? me|(?:my|their|his|her) hand (?:is|has|contains)|(?:i'm|i am|they're|they are) holding|holds?|holding) ((?:an? |the |two |three |four |\d+ )?c\d+s?(?:,? (?:and )?(?:an? |the |two |three |four |\d+ )?c\d+s?)*)$""").find(t2)?.let { r ->
             // "I have Dark Confidant and reveal Emrakul": a creature's reveal is from the library, read clause by clause.
             if (Regex("""\bhave (c\d+) and reveals? c\d+$""").find(t2)?.let { h -> m.cards[h.groupValues[1]]?.typeLine?.contains("Creature") } == true) return@let
+            // "I have a Dark Confidant. I reveal a Griselbrand.": the reveal is Bob's, from the library, not a hand shown.
+            if (Regex("""^(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") }) return@let
             val before = t2.substring(0, r.range.first)
             val lastWord = Regex("""\b(i|my|i'm|i am|i've|we|they|their|he|she|his|her|my opponent|the opponent|opponent)\b""").findAll(before).lastOrNull()?.groupValues?.get(1)
             val who = (lastWord?.let { w -> if (w in setOf("i", "my", "i'm", "i am", "i've", "we")) "me" else pronounPlayer(ctx, "they") })
@@ -2947,7 +2949,14 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         // "fetchland-note": the fetch was read as the land it finds entering the battlefield.
-        if (clause0 == "fetchland-note") { ctx.notes += "Cracking a fetchland finds a land and puts it onto the battlefield; that land entering is what landfall and similar abilities see, and the fetch itself leaving doesn't matter to them (the search is not tracked)."; return true }
+        if (clause0 == "fetchland-note") {
+            ctx.notes += "Cracking a fetchland finds a land and puts it onto the battlefield; that land entering is what landfall and similar abilities see, and the fetch itself leaving doesn't matter to them (the search is not tracked)."
+            // Aven Mindcensor across the table: the search looks at only the top four cards.
+            ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.controller != "me" && o.card.name == "Aven Mindcensor" }?.let { c ->
+                ctx.asks += EventSpec("ask", to = "text:${c.card.name} changes the search: you look at only the top four cards of your library instead of the whole library (614.1a). If none of those is a land the fetch can find, you get nothing, though the fetchland is still sacrificed and the life still paid; either way you shuffle afterwards (701.19a).")
+            }
+            return true
+        }
         // "does their Ensnaring Bridge stop my 2/2?": attack with it and see whether the attack is legal.
         Regex("""^(?:does|will|would|can) (?:their |the |his |her |my opponent's )?(c\d+) (?:stop|prevent|hold back|keep back|lock out|lock down|shut down|shut off) (?:my |the |our )?(c\d+|\d+/\d+|creatures?|team|guys|dudes|board|attackers|attack)(?: from attacking| from swinging| attacking| swinging)?$""").find(clause0)?.let { r ->
             val card = m.cards.getValue(r.groupValues[1])

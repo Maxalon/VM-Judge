@@ -158,6 +158,12 @@ object Generic {
         if (n in setOf("permanent", "a permanent", "nonland permanent", "a nonland permanent")) return OracleParser.parse("generic-permanent", "a permanent", "Artifact", "{1}", 1.0, "", null, null, emptyList(), "")
         if (n in setOf("equipment", "equipment card")) return OracleParser.parse("generic-equipment", "an Equipment", "Artifact — Equipment", "{2}", 2.0, "", null, null, emptyList(), "")
         if (n in setOf("nonbasic land", "a nonbasic land", "non-basic land", "a non-basic land")) return OracleParser.parse("generic-nonbasic-land", "a nonbasic land", "Land", null, 0.0, "", null, null, emptyList(), "{T}: Add one mana of any color.")
+        // "Mountain", "Forest": a basic of that type, for a fetch that names its types rather than "basic land".
+        Regex("""^(plains|island|swamp|mountain|forest)(?: card)?$""").find(n)?.let { m ->
+            val t = m.groupValues[1]; val cap = t.replaceFirstChar { it.uppercase() }
+            val sym = mapOf("plains" to "W", "island" to "U", "swamp" to "B", "mountain" to "R", "forest" to "G").getValue(t)
+            return OracleParser.parse("generic-$t", cap, "Basic Land — $cap", null, 0.0, "", null, null, emptyList(), "({T}: Add {$sym}.)")
+        }
         if (n in setOf("basic land", "land", "a basic land", "basic land card")) return OracleParser.parse("generic-basic-land", "a basic land", if (n.contains("basic")) "Basic Land" else "Land", null, 0.0, "", null, null, emptyList(), "{T}: Add one mana of any color.")
         // "a planeswalker with 3 loyalty": a planeswalker nobody named, with that printed loyalty (so Doubling Season can double it).
         Regex("""^planeswalker with (\d+) loyalty$""").find(n)?.let { r -> return OracleParser.parse("generic-$n", "a $n", "Planeswalker", "{3}", 3.0, "", null, null, emptyList(), "", loyalty = r.groupValues[1]) }
