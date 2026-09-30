@@ -30057,5 +30057,154 @@
       "No: you take no damage."
     ],
     "cite": []
+  },
+  {
+    "id": "delver-reveals-bolt-flip",
+    "text": "I have Delver of Secrets and reveal Lightning Bolt at upkeep. Does it flip?",
+    "expect": [
+      "Yes. Delver of Secrets' upkeep trigger",
+      "transforms into Insectile Aberration"
+    ],
+    "cite": []
+  },
+  {
+    "id": "cage-snapcaster-flashback",
+    "text": "My opponent has Grafdigger's Cage. Can I cast Snapcaster Mage and flashback Bolt?",
+    "expect": [
+      "Lightning Bolt can't be cast from your graveyard (Grafdigger's Cage)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "kcommand-discard-and-shock",
+    "text": "I cast Kolaghan's Command choosing discard and shock my opponent's Snapcaster Mage. What happens?",
+    "expect": [
+      "opponent discards 1 card.",
+      "Snapcaster Mage has 2 damage marked.",
+      "Snapcaster Mage: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "but 2 given"
+    ],
+    "cite": []
+  },
+  {
+    "id": "kcommand-two-modes-two-targets",
+    "text": "I cast Kolaghan's Command choosing discard and deal 2 damage targeting my opponent and their Snapcaster Mage. What happens?",
+    "expect": [
+      "opponent discards 1 card.",
+      "Snapcaster Mage: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "but 2 given",
+      "opponent takes 2 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "liliana-plus-then-minus",
+    "text": "I have Liliana of the Veil with 3 loyalty. Can I plus and then minus in the same turn?",
+    "expect": [
+      "No. Loyalty abilities can be activated only at sorcery speed and only once per turn for each planeswalker",
+      "606.3"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-in-response-to-surgical",
+    "text": "My opponent casts Surgical Extraction on the Bolt in my graveyard. Can I Snapcaster it in response?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn.",
+      "opponent takes 3 damage.",
+      "Surgical Extraction doesn't resolve (all targets illegal)."
+    ],
+    "notExpect": [
+      "targeting Surgical Extraction"
+    ],
+    "cite": []
+  },
+  {
+    "id": "brutality-all-three-modes-cost",
+    "text": "I cast Collective Brutality with escalate. How much does it cost for all three modes?",
+    "expect": [
+      "Collective Brutality with 3 modes costs {1}{B} plus \"discard a card\" twice: discard 2 cards"
+    ],
+    "notExpect": [
+      "Which mode(s)?"
+    ],
+    "cite": []
+  },
+  {
+    "id": "blessed-alliance-three-modes-cost",
+    "text": "How much does Blessed Alliance cost for all three modes?",
+    "expect": [
+      "Blessed Alliance with 3 modes costs {5}{W} (mana cost {1}{W} plus the escalate cost twice)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-snapcaster-nothing",
+    "text": "My opponent has Rest in Peace. I cast Snapcaster Mage. Can I flashback anything?",
+    "expect": [
+      "Snapcaster Mage's trigger has no legal target (Rest in Peace keeps graveyards empty) and does nothing."
+    ],
+    "cite": []
+  },
+  {
+    "id": "hollow-one-vs-goyf-three-types",
+    "text": "I attack with Hollow One and my opponent blocks with Tarmogoyf when the graveyards have 3 types. Who dies?",
+    "expect": [
+      "Yes: Tarmogoyf died (it's in the graveyard).",
+      "No: Hollow One is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "fatal-push-revolt-goyf",
+    "text": "My opponent casts Fatal Push on my Tarmogoyf. A land was sacrificed this turn. Does it die?",
+    "expect": [
+      "Yes: Tarmogoyf died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "eidolon-their-bolt",
+    "text": "I have Eidolon of the Great Revel. My opponent casts Lightning Bolt. Who takes damage?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "You take 3 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "stifle-a-spell",
+    "text": "I cast Lightning Bolt at my opponent and they Stifle it. Does that work?",
+    "expect": [
+      "Stifle can't target Lightning Bolt: it's a spell, not an activated or triggered ability.",
+      "opponent takes 3 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "blood-moon-tron",
+    "text": "My opponent casts Blood Moon and I have Urza's Tower, Urza's Mine and Urza's Power Plant. How much mana do I have?",
+    "expect": [
+      "You can make 3 mana right now"
+    ],
+    "cite": []
+  },
+  {
+    "id": "fatal-push-revolt-said-tks",
+    "text": "My opponent casts Fatal Push on my Thought-Knot Seer. They cracked a fetchland this turn. Does it die?",
+    "expect": [
+      "Yes: Thought-Knot Seer died (it's in the graveyard)."
+    ],
+    "notExpect": [
+      "can't target Thought-Knot Seer"
+    ],
+    "cite": []
   }
 ]

@@ -327,6 +327,10 @@ class Engine(val state: GameState) {
         // "I copy their Grave Titan with Clone": the permanent named is what Clone copies, not a target it doesn't have.
         val copyChoice = if (needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && choice == null && card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.EntersAsCopy }) { trace.step("${card.name} has no targets; ${state.nameOf(targets[0])} named with it is what it will enter as a copy of.", "707.9", "614.1c"); "copy:" + (targets[0] as Ref.Obj).id } else choice
         if (copyChoice != choice) targets = emptyList()
+        // Kolaghan's Command "discard and 2 damage to their Snapcaster": the player named goes with the "target player" mode, which
+        // has no target slot of its own; the other targets line up with the other modes, so the player is moved to the end.
+        val playerModeExtra = modeEffect != null && targetsAPlayer(modeEffect) && targets.size == modeEffect.targets().size + 1 && targets.count { it is Ref.Player } == 1
+        if (playerModeExtra) { val pl = targets.first { it is Ref.Player }; targets = targets.filter { it !is Ref.Player } + pl }
         // Paying: Dark Ritual's mana in the pool goes first, then lands; what the lands paid is remembered so a later
         // "how much mana do I have" or "can I?" doesn't count it again. Recorded before paying, for "can I?" about this spell.
         run {
@@ -350,7 +354,7 @@ class Engine(val state: GameState) {
         else if (effect != null && usesX(effect)) state.clarifications += Clarification("${card.name}'s X", "${card.name} has X in its text; what was X? (assuming 0)")
         trace.step("${player.subject} ${player.v("casts", "cast")} ${card.name}${if (modes.isNotEmpty() && modal != null) " choosing " + modes.joinToString(" and ") { "\"${modal.modeTexts.getOrNull(it - 1)?.replace("~", card.name) ?: "?"}\"" } else ""}${describeTargets(targets)}. It goes on top of the stack.", "601.2a", "405.2", *(if (modal != null) arrayOf("601.2b", "700.2a") else emptyArray()))
         val playerTargetMode = targets.isNotEmpty() && targets.all { it is Ref.Player } && modes.any { modal?.modeTexts?.getOrNull(it - 1)?.lowercase()?.contains("target player") == true }
-        if (modeEffect != null && modeEffect.targets().size != targets.size && !playerTargetMode) state.clarifications += Clarification("${card.name}'s target", "The chosen mode needs ${modeEffect.targets().size} target(s) (${modeEffect.targets().joinToString("; ") { it.raw }}) but ${targets.size} given.")
+        if (modeEffect != null && modeEffect.targets().size != targets.size && !playerTargetMode && !playerModeExtra) state.clarifications += Clarification("${card.name}'s target", "The chosen mode needs ${modeEffect.targets().size} target(s) (${modeEffect.targets().joinToString("; ") { it.raw }}) but ${targets.size} given.")
         var lifeCostPaid = false
         card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostText>().forEach {
             val life = Regex("""(?i)\bpay (X|\d+) life\b""").find(it.text)?.groupValues?.get(1)?.let { n -> if (n.equals("X", true)) x else n.toIntOrNull() }
