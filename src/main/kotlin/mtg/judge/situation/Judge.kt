@@ -145,6 +145,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         val deferredAsks = mutableListOf<Pair<Int, EventSpec>>()
         // "they have one Mountain and Bolt it, can they?": asked whether the spell can be paid for, the lands described are all the mana there is.
         if (sit.events.any { it.verb == "ask" && (it.to == "spellCost" || it.to == "castAllowed") }) state.describedLandsAreTheBase = true
+        if (sit.events.any { it.verb == "ask" && it.to == "castAllowed" }) state.castabilityAsked = true
         var lastStep: EventSpec? = null
         curEvents = sit.events; curObjects = sit.objects
         for ((i, e) in sit.events.withIndex()) {

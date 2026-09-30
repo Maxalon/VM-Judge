@@ -249,6 +249,8 @@ class GameState(
     var combatDamageDealt = false
     /** The question is whether a spell can be paid for ("they have one Mountain … can they?"): then even a single described land is the whole mana base. */
     var describedLandsAreTheBase = false
+    /** "Can I cast Path to Exile?" with no creature named: the question is whether the cast is allowed, so a stand-in target is fine. */
+    var castabilityAsked = false
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */
     val ceased = mutableMapOf<String, String>()
     /** The game's turn number, when the situation said so. */

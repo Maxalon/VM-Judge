@@ -231,6 +231,14 @@ class Engine(val state: GameState) {
                     else -> false
                 }
             }) { if (graveyardTargetImpossible) return null }
+            // "Can I cast Path to Exile?" with nothing to aim it at described: the question is the cast, so a creature of the opponent's stands in.
+            else if (!asked && state.castabilityAsked && needed.size == 1 && Kind.CREATURE in needed[0].filter.kinds && targets.isEmpty() && Generic.creature("a 2/2 creature") != null) {
+                val opp = state.opponentsOf(playerId).firstOrNull()?.id ?: playerId
+                val def = Generic.creature("a 2/2 creature")!!
+                val g = state.add(GameObject(freshObjectId(def.name), def, Zone.BATTLEFIELD, opp))
+                targets = listOf(Ref.Obj(g.id))
+                state.assumptions += "No creature was named for ${card.name}; a 2/2 of ${state.player(opp).possessive} stands in as the target, since the question is whether it can be cast."
+            }
             else if (!asked) state.clarifications += Clarification("${card.name}'s target${if (needed.size == 1) "" else "s"}",
                 "${card.name} needs ${needed.size} target${if (needed.size == 1) "" else "s"} (${needed.joinToString("; ") { it.raw }}) but ${targets.size} ${if (targets.size == 1) "was" else "were"} given (601.2c).")
             if (needed.size > targets.size && (card.isInstantOrSorcery || obj.zone == Zone.HAND)) { targetsUnknown = true; trace.step("${card.name} needs a target that wasn't stated; it's put on the stack anyway so responses to it can be shown, but what it does to its target can't be.", "601.2c") }
@@ -345,6 +353,12 @@ class Engine(val state: GameState) {
         }
         val item = StackItem(state.newStackId(), StackKind.SPELL, playerId, obj, effect, targets, zonesOf(targets), card.oracleText, modes, x = x, kicked = kicked, evoked = evoked && card.has("evoke"), flashback = flashback && obj.has("flashback"), choice = copyChoice, targetsUnknown = targetsUnknown)
         state.stack += item
+        // "Snapcaster with Torpor Orb out. Can I still flash back Bolt?": the trigger that would have granted flashback never happened.
+        if (flashback && !obj.has("flashback") && playerId !in state.castFromGraveyard && state.objects.values.any { o -> o.isOnBattlefield() && Regex("""(?i)entering(?: the battlefield)? don.t cause abilities to trigger""").containsMatchIn(o.def.oracleText) }) {
+            state.stack.remove(item)
+            trace.step("${card.name} has no flashback of its own, and the enters-the-battlefield trigger that would have given it flashback didn't trigger, so ${card.name} can't be cast from the graveyard.", "702.34a", "601.3")
+            state.outcomes += "No: ${card.name} can't be cast from your graveyard. It has no flashback, and the trigger that would have granted it never happened (Torpor Orb)."; return null
+        }
         if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
         if (item.flashback) { obj.zone = Zone.STACK; trace.step("${card.name} is cast from ${player.possessive} graveyard for its flashback cost, an alternative cost paid instead of its mana cost.", "702.34a", "601.2b") }
         if (evoked && !card.has("evoke")) { state.clarifications += Clarification("${card.name}'s evoke", "${card.name} doesn't have evoke, so it can't be cast for an evoke cost; treating it as cast normally.") }

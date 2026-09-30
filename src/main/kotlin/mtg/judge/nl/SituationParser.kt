@@ -43,6 +43,8 @@ class SituationParser(private val names: NameIndex) {
         val genericNouns = LinkedHashSet<String>()
         /** "with 7 lands including Valakut": the nickname isn't a card name the index knows, so it's remembered here. */
         var sawValakut = false
+        /** "how much damage gets through?": the defending player's untapped creatures are taken to block. */
+        var throughAsked = false
         /** "my Cavern of Souls Thalia": creatures said to have been cast with Cavern mana, so their cast can't be countered. */
         val cavernCast = LinkedHashSet<String>()
         /** "A land was sacrificed this turn" said on its own: revolt is on for the spell cast (Fatal Push). */
@@ -221,10 +223,10 @@ class SituationParser(private val names: NameIndex) {
         }
         // "I'm at 4, they have two 2/2s and I have a 4/4. If they attack with both, can I survive?": asked whether they live,
         // the asker's untapped creatures block (one attacker each), since that is the choice the question is about.
-        for (askedOf in ctx.asks.filter { it.to in setOf("playerSurvive", "playerDie") }.mapNotNull { it.player }.distinct()) {
+        for (askedOf in ctx.asks.filter { it.to in setOf("playerSurvive", "playerDie") || (it.to == "playerDamage" && ctx.throughAsked) }.mapNotNull { it.player }.distinct()) {
             if (ctx.events.any { it.verb == "block" && it.player == askedOf }) continue
             // Another player's creatures block only when they were offered as blockers ("they have a 1/1 to block with").
-            if (askedOf != "me" && askedOf !in ctx.blockersOffered) continue
+            if (askedOf != "me" && askedOf !in ctx.blockersOffered && !ctx.throughAsked) continue
             val attackers = ctx.events.filter { it.verb == "attack" && it.player != askedOf && it.targets.firstOrNull() == askedOf }.mapNotNull { it.obj } +
                 ctx.events.filter { it.verb == "attackAll" && it.player != askedOf && (it.targets.isEmpty() || it.targets.firstOrNull() == askedOf) }.flatMap { a -> ctx.objects.values.filter { it.controller == a.player && it.zone == "battlefield" && isCreatureName(it.card.name) }.map { it.id } }
             val mine = ctx.objects.values.filter { it.controller == askedOf && it.zone == "battlefield" && isCreatureName(it.card.name) && it.tapped != true && ctx.events.none { e -> e.verb == "attack" && e.obj == it.id } }
@@ -1497,6 +1499,13 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(how much life do (?:i|we) lose|what do (?:i|we) lose|do (?:i|we) die|am i dead) (?:at|on|in|during) (?:my )?(?:next )?upkeep with (?:an? |the |my )?(c\d+) on top(?: of my library| of the library| of my deck)?\??$""", RegexOption.IGNORE_CASE), "$2 is on top of my library, it's my upkeep, $1")
         // "I attack with Tarmogoyf into their untapped Wall with a Bolt in hand": the held card is stated first.
         t2 = t2.replace(Regex("""^((?:i|we) attack with (?:my |an? |the )?(?:c\d+|\d+/\d+) into (?:their|his|her|my opponent's) (?:untapped )?(?:c\d+|\d+/\d+)) with (?:an? |my |the )?(c\d+) in (?:my )?hand\??$""", RegexOption.IGNORE_CASE), "i have $2 in hand, $1")
+        // "Should I bolt it before blocks or after?": timing a removal spell against an attacker.
+        if (Regex("""^(?:should|do|can) (?:i|we) (?:bolt|kill|shoot|burn|path|remove|respond to|deal with|c\d+) (?:it|that|him|her|(?:the |their )?c\d+) (?:before|after|before or after|during) (?:blocks|blockers|the block|declare blockers|combat damage|damage)(?: or (?:after|before|after blocks|before blocks|after blockers))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "attack" || it.verb == "attackAll" }) t2 = "bolttiming-question"
+        // "Do I get a basic?" after Field of Ruin / Ghost Quarter / Path to Exile.
+        if (Regex("""^do (?:i|we) (?:get|find|fetch|search for|also get|get to search for) (?:a |the |my )?(?:basic|basic land|land)(?: too| as well| out of it)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())
+            && (ctx.objects.values.any { it.card.name in setOf("Field of Ruin", "Ghost Quarter", "Assassin's Trophy") } || ctx.events.any { e -> (e.verb == "cast" || e.verb == "activate") && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) in setOf("Field of Ruin", "Ghost Quarter", "Assassin's Trophy") })) t2 = "getbasic-question"
+        // "Do they still pay 1?" (Thalia with a Phyrexian mana spell paid with life): the cost, with the tax.
+        if (ctx.lastVerb == "cast" && Regex("""^do (?:they|i|we|he|she) (?:still |also )?(?:pay|owe) (?:1|one|the 1|the tax|the extra|extra|more|1 more|one more)(?: mana)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "how much does it cost"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -1881,6 +1890,7 @@ class SituationParser(private val names: NameIndex) {
                 (if (ctx.events.any { it.verb == "attack" || it.verb == "attackAll" }) "" else "i attack with a creature, ") + "${g.groupValues[1]} block with ${g.groupValues[2]}${g.groupValues[3]}" } }
             // "how much tramples over?" / "how much damage gets through?": the damage the defending player takes.
         t2 = t2.let { t0 -> Regex("""^how much (?:damage )?(?:tramples?|goes|gets|comes|carries) (?:over|through)(?: to (?:me|them|my opponent|the opponent|my face|their face))?\??$""", RegexOption.IGNORE_CASE).replace(t0) { _ ->
+                ctx.throughAsked = true
                 val lastAttack = ctx.events.lastOrNull { it.verb == "attack" || it.verb == "attackAll" }
                 if (lastAttack?.player == "me" || lastAttack == null) "how much damage does my opponent take" else "how much damage do i take" } }
             // "they cast Craterhoof with 6 creatures": the creatures are on the board, said without "out".
@@ -3212,6 +3222,11 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "Best play: sacrifice Selfless Spirit in response, while $spell is on the stack. Its ability resolves first and your other creatures are indestructible when $spell resolves (a creature that survives that way keeps its counters and never leaves, so persist isn't used up). The outcome below plays that line."
             return true
         }
+        return readEarlyQuestionsB(clause0, m, ctx)
+    }
+
+    /** The second half of [readEarlyQuestions], split under the JVM method size limit. */
+    private fun readEarlyQuestionsB(clause0: String, m: Marked, ctx: Ctx): Boolean {
         if (clause0 == "oozeeat-question") {
             val ooze = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Scavenging Ooze" }
             val food = ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && isCreatureName(o.card.name) } ?: ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" }
@@ -3292,6 +3307,24 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.any { it.verb == "attack" || it.verb == "attackAll" }) return@let
             ctx.events += EventSpec("leave", obj = devil.id, to = "graveyard")
             ctx.notes += "Vexing Devil's trigger: you chose to have it deal 4 damage to you, so its controller sacrifices it (you're at 4 less)."; ctx.lastMentioned = devil.id; return true
+        }
+        if (clause0 == "bolttiming-question") {
+            val atk = ctx.events.lastOrNull { it.verb == "attack" && it.obj != null }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
+            val spell = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "hand" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.card?.name ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:Either way it dies before it deals combat damage: both the declare attackers step (after any attack trigger has resolved) and the declare blockers step come before combat damage (506.1, 510.1). Killing $atk in the declare attackers step means you never commit a blocker and nothing of yours is in combat; waiting until after blockers are declared lets you see what they do first, and a creature that was blocking it is simply left with nothing to fight. Don't wait past the declare blockers step: once combat damage is dealt, $spell is too late for this combat. One caveat: if they respond with a pump or protection, $spell may fizzle, so the earlier you cast it the less mana they have open for that.")
+            return true
+        }
+        if (clause0 == "getbasic-question") {
+            val src = ctx.events.lastOrNull { it.verb == "activate" || it.verb == "cast" }
+            val name = src?.card?.name ?: src?.obj?.let { ctx.objects[it]?.card?.name } ?: ctx.objects.values.lastOrNull { it.card.name in setOf("Field of Ruin", "Ghost Quarter", "Path to Exile", "Assassin's Trophy", "Swords to Plowshares") }?.card?.name ?: return true.also { ctx.notes += "\"Do I get a basic?\" needs the land or spell that offers the search." }
+            val text = when (name) {
+                "Field of Ruin" -> "Yes. Field of Ruin has each player search their library for a basic land card and put it onto the battlefield untapped, then shuffle: you get a basic to replace the land, and its controller gets one too, so it's a one-for-one that fixes both players' mana."
+                "Ghost Quarter" -> "Yes, if you want it: Ghost Quarter lets the destroyed land's controller search for a basic land card and put it onto the battlefield (\"may\", 701.19a). Ghost Quarter's own controller gets nothing back."
+                "Assassin's Trophy" -> "Yes: Assassin's Trophy has the permanent's controller search for a basic land card and put it onto the battlefield. It's the destroyed permanent's controller who gets the land, not the caster."
+                "Path to Exile", "Swords to Plowshares" -> if (name == "Path to Exile") "Yes, if you want it: Path to Exile lets the exiled creature's controller search for a basic land card and put it onto the battlefield tapped (\"may\", 701.19a). The caster gets nothing." else "No: Swords to Plowshares gives the creature's controller life equal to its power, not a land."
+                else -> "It depends on $name's text: the search goes to whoever the card names (\"its controller may search\", \"each player searches\"), and a \"may\" makes it optional (701.19a)."
+            }
+            ctx.asks += EventSpec("ask", to = "text:$text"); return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
@@ -3654,7 +3687,10 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^can (i|we|they) (?:still |now |even )?cast (?:the |my |their |that |this )?(c\d+|it|that)(?: (?:again|now|this turn|right now|from (?:my |the |their )?(?:graveyard|yard)|from there|from exile|for its flashback cost|with flashback))*$""").find(clause0)?.let { r ->
             val who = if (r.groupValues[1] == "they") ctx.other(ctx.lastActor ?: "me") ?: "opp" else "me"
             val id = (if (r.groupValues[2] in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[r.groupValues[2]]?.let { objectIdFor(it, ctx) })
-                ?.takeIf { ctx.objects.getValue(it).zone in setOf("graveyard", "exile") } ?: return@let
+                ?.takeIf { ctx.objects.getValue(it).zone in setOf("graveyard", "exile") }
+                // "Can I cast Path to Exile?" about a card not in a graveyard: the cast is played out below, and the judge is told the
+                // question is whether it's allowed (so a target nobody named can stand in).
+                ?: run { if (who == "me" && cardRef.matches(r.groupValues[2]) && ctx.asks.none { it.to == "castAllowed" }) m.cards[r.groupValues[2]]?.let { e -> ctx.asks += EventSpec("ask", card = CardRef(name = e.display, oracleId = e.oracleId), to = "castAllowed") }; return@let }
             ctx.asks += EventSpec("ask", obj = id, player = who, to = "castNow"); return true
         }
         // "They Counterspell my Counterspell. Does my original spell resolve?": the spell nobody named, which the asker's

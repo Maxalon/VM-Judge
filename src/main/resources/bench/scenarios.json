@@ -30728,5 +30728,112 @@
       "can't be activated"
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-probe-for-life-still-pays",
+    "text": "I have Thalia, Guardian of Thraben and my opponent casts Gitaxian Probe for 2 life. Do they still pay 1?",
+    "expect": [
+      "Gitaxian Probe costs {U/P} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more)"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-guide-before-or-after-blocks",
+    "text": "My opponent attacks with Goblin Guide and I have Lightning Bolt. Should I bolt it before blocks or after?",
+    "expect": [
+      "Either way it dies before it deals combat damage"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-pierced-two-lands",
+    "text": "I cast Path to Exile on my opponent's Tarmogoyf and they Spell Pierce it. I have 2 lands open. What happens?",
+    "expect": [
+      "You pay {2}; Spell Pierce has no further effect.",
+      "Tarmogoyf: the battlefield → exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-goyf-size",
+    "text": "I have Rest in Peace and Tarmogoyf. How big is it?",
+    "expect": [
+      "Tarmogoyf is 0/1"
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-2-2s-into-one-wall-through",
+    "text": "I attack with two 2/2s and my opponent has one Wall of Omens. How much damage gets through?",
+    "expect": [
+      "Wall of Omens has 2 damage marked.",
+      "opponent takes 2 damage in all."
+    ],
+    "notExpect": [
+      "opponent takes 4 damage in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "serum-visions-thalia-cost",
+    "text": "I cast Serum Visions with Thalia on the battlefield. How much does it cost?",
+    "expect": [
+      "Serum Visions costs {U} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "moon-plains-vents-cast-path",
+    "text": "My opponent has Blood Moon and I have a Plains and Steam Vents. Can I cast Path to Exile?",
+    "expect": [
+      "Steam Vents is a Mountain with no abilities (Blood Moon).",
+      "a 2/2 creature: the battlefield → exile"
+    ],
+    "notExpect": [
+      "but 0 were given"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dismember-four-life-goyf",
+    "text": "I control Tarmogoyf and my opponent casts Dismember on it paying 4 life. What happens?",
+    "expect": [
+      "opponent pays 4 life.",
+      "Tarmogoyf is -5/-4 until end of turn.",
+      "Tarmogoyf: the battlefield → your graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-torpor-orb-flashback",
+    "text": "I cast Snapcaster Mage with Torpor Orb out. Can I still flash back Bolt?",
+    "expect": [
+      "Snapcaster Mage entering the battlefield doesn't trigger any abilities (Torpor Orb).",
+      "No: Lightning Bolt can't be cast from your graveyard."
+    ],
+    "notExpect": [
+      "opponent takes 3 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "field-of-ruin-do-i-get-basic",
+    "text": "My opponent plays Field of Ruin and destroys my Steam Vents. Do I get a basic?",
+    "expect": [
+      "Yes. Field of Ruin has each player search their library for a basic land card"
+    ],
+    "cite": []
+  },
+  {
+    "id": "doom-blade-finks-persists",
+    "text": "I have Kitchen Finks and my opponent casts Doom Blade on it. Does Doom Blade work?",
+    "expect": [
+      "Kitchen Finks: the battlefield → your graveyard.",
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1."
+    ],
+    "cite": []
   }
 ]
