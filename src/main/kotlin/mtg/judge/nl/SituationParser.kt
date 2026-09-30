@@ -1276,7 +1276,7 @@ class SituationParser(private val names: NameIndex) {
             // "Before blockers my opponent casts Fog": the timing phrase moves to the end, where it is read.
         t2 = t2.replace(Regex("""^((?:before|after|during) (?:blockers|blocks|attackers|attacks|combat|combat damage|damage|first strike damage)(?: (?:are|is) (?:declared|dealt))?),? (.+?)\??$""", RegexOption.IGNORE_CASE), "$2 $1")
             // "they redirect it to Spellskite" / "I redirect the Bolt to my Spellskite": Spellskite's ability, activated at the spell.
-        t2 = t2.let { t0 -> Regex("""\b(i|we|they|he|she|my opponent|the opponent) (?:then )?(?:redirects?|moves?|points?|deflects?) (it|that|the spell|(?:the |their |my |my opponent's )?c\d+) (?:to|onto|at) (?:their |my |his |her |the )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+        t2 = t2.let { t0 -> Regex("""(?<!can )(?<!could )\b(i|we|they|he|she|my opponent|the opponent) (?:then )?(?:redirects?|moves?|points?|deflects?) (it|that|the spell|(?:the |their |my |my opponent's )?c\d+) (?:to|onto|at) (?:their |my |his |her |the )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (m.cards[r.groupValues[3]]?.display == "Spellskite") "${r.groupValues[1]} activate ${r.groupValues[3]} targeting ${r.groupValues[2]}" else r.value } }
             // "I attack with Serra Angel. Can I still block with it on their turn?": vigilance decides.
         t2 = t2.replace(Regex("""^can (?:i|we) (?:still |also |then )?block with (it|that|c\d+) (?:on|during|in) (?:their|my opponent's|the opponent's|his|her) (?:next )?turn\??$""", RegexOption.IGNORE_CASE), "blocktheirturn-question $1")
@@ -1285,6 +1285,27 @@ class SituationParser(private val names: NameIndex) {
             t2 = t2.replace(Regex("""^can (?:my opponent|they|he|she|the opponent) (?:still |even )?(?:choose to |opt to |decide to )?take (?:the )?(?:\d+|it|the damage)(?: damage)?(?: (?:with|under) (?:an? |the |my |their )?c\d+(?: out| on the battlefield| in play)?)?\??$""", RegexOption.IGNORE_CASE), "vexing-torpor-question")
             // "I have two Lightning Bolts in hand and 3 Mountains. Can I kill a Baneslayer Angel?": every burn spell held, at it.
         t2 = t2.replace(Regex("""^can (?:i|we) (?:kill|burn out|finish off|deal with|take out|remove) (?:an? |the |their |my opponent's |his |her )?(c\d+)(?: with (?:them|both|those|it|all of them|the bolts|my burn|those spells))?\??$""", RegexOption.IGNORE_CASE), "killwith-question $1")
+            // "Can I tap it in response to a Thoughtseize?": the spell is cast, the tap ability answers it.
+        t2 = t2.let { t0 -> Regex("""^can (i|we) tap (it|that|(?:my )?c\d+) in response(?: to (?:an? |the |their |my opponent's )?(c\d+))?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                val spell = r.groupValues[3]
+                (if (spell.isNotEmpty() && m.cards[spell]?.isSpellOnly == true) "my opponent casts $spell on me, " else "") + "in response ${r.groupValues[1]} tap ${r.groupValues[2]}" } }
+            // "Do I have to return the Mountain?" after Kor Skyfisher: the return isn't optional.
+        if (Regex("""^(?:do|does|must|would) (?:i|we) (?:have to|need to|really have to|got to) (?:return|bounce|pick up) (?:a permanent|a land|something|(?:the |my |an? )?c\d+|it|one)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) &&
+            (ctx.events.lastOrNull { it.verb == "cast" }?.let { e -> (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) } in setOf("Kor Skyfisher", "Whitemane Lion", "Dream Stalker", "Stonecloaker", "Kor Skyfisher"))) t2 = "forcedreturn-question"
+            // "Can I put Batterskull into play at instant speed?" with Stoneforge Mystic: its activated ability, any time you have priority.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:put|drop|cheat|get) (?:in |out )?(?:the |my |an? )?(c\d+) ?(?:into play|onto the battlefield|in|out)? (?:at instant speed|on their turn|during their turn|in response|at (?:the )?end of (?:their )?turn|whenever i want|any time)\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                val equip = m.cards[r.groupValues[1]]?.typeLine?.contains("Equipment") == true
+                val sfm = m.cards.values.any { it.display == "Stoneforge Mystic" } || ctx.objects.values.any { it.card.name == "Stoneforge Mystic" }
+                if (equip && sfm) "stoneforge-instant-question" else r.value } }
+            // "Can I redirect it to Spellskite?" when the spell already targets Spellskite: nothing to change.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:redirect|move|point|send) (?:it|that|the spell|(?:the |their |my opponent's )?c\d+) (?:to|onto|at|towards) (?:my |the )?(c\d+)\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                val sk = ctx.objects.values.firstOrNull { it.card.name == "Spellskite" && it.controller == "me" }
+                val lc = ctx.events.lastOrNull { it.verb == "cast" }
+                if (m.cards[r.groupValues[1]]?.display == "Spellskite" && sk != null && lc != null && lc.player != "me" && sk.id in lc.targets) "spellskite-already-question" else r.value } }
+            // "Can I put it in on their turn?" with Aether Vial: the Vial's ability, at instant speed.
+        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash|sneak) (?:it|that|(?:my |the )?c\d+) (?:in|into play|onto the battlefield|out) (?:on|during|in) (?:their|my opponent's|the opponent's|his|her) (?:next |end )?(?:turn|step)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialin-question"
+            // "Can I cast it for free?": the card in hand, for its alternative cost.
+        if (Regex("""^can (?:i|we) (?:cast|play) (?:it|that) for free\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { it.zone == "hand" && it.controller == "me" }) t2 = "castfree-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2825,6 +2846,32 @@ class SituationParser(private val names: NameIndex) {
             for (b in burn) ctx.events += EventSpec("cast", player = "me", obj = b.id, targets = listOf(tid))
             ctx.asks += EventSpec("ask", obj = tid, to = "die"); ctx.lastMentioned = tid
             ctx.notes += "\"Can you kill it?\" is read as casting ${burn.joinToString(" and ") { it.card.name ?: "the spell" }} at ${target.display}; the outcome says whether it dies."
+            return true
+        }
+        if (clause0 == "forcedreturn-question") {
+            val name = ctx.events.lastOrNull { it.verb == "cast" }?.let { e -> e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name } } ?: "the creature"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $name's enters-the-battlefield ability isn't a \"may\": when it enters you must return a permanent you control to its owner's hand. Which one is your choice as the trigger resolves: the Mountain, another permanent, or $name itself (603.2, 603.3). Only if you control no other permanent is $name the forced pick.")
+            return true
+        }
+        if (clause0 == "stoneforge-instant-question") {
+            ctx.asks += EventSpec("ask", to = "text:Yes. Stoneforge Mystic's second ability ({1}{W}, {T}: You may put an Equipment card from your hand onto the battlefield) is an activated ability with no timing restriction, so you can activate it whenever you have priority: on your opponent's turn, at their end step, or in response to a spell (602.5, 117.1). Stoneforge Mystic itself must be on the battlefield and untapped, and because its cost includes {T} it must have been under your control continuously since your most recent turn began (302.6). The Equipment enters unattached; equipping is still a sorcery-speed action (702.6a).")
+            return true
+        }
+        if (clause0 == "spellskite-already-question") {
+            val lc = ctx.events.lastOrNull { it.verb == "cast" }; val spell = lc?.card?.name ?: lc?.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:There's nothing to redirect: $spell already targets Spellskite. You could still activate Spellskite (choosing the same target again is legal, 115.7), but it changes nothing; Spellskite is 0/4, so 3 damage doesn't kill it. About paying with life: at 2 life you may pay 2 life for {U/P} (119.4), but that leaves you at 0 and you lose as soon as state-based actions are checked (704.5a), so pay {U} if you activate it at all.")
+            return true
+        }
+        if (clause0 == "vialin-question") {
+            val vial = ctx.objects.values.first { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" }
+            ctx.events += EventSpec("activate", player = "me", obj = vial.id)
+            ctx.notes += "Aether Vial's ability is an activated ability with no timing restriction, so it can be activated on your opponent's turn (602.5); the creature's mana value must equal the number of charge counters. The outcome shows it being activated."
+            return true
+        }
+        if (clause0 == "castfree-question") {
+            val held = ctx.objects.values.last { it.zone == "hand" && it.controller == "me" }
+            ctx.events += EventSpec("cast", player = "me", obj = held.id, to = "altcost"); ctx.lastActor = "me"; ctx.lastVerb = "cast"
+            ctx.notes += "\"Can I cast it for free?\" is read as casting ${held.card.name} for its alternative cost; the outcome says whether that cost is available."
             return true
         }
         if (clause0 == "castallowed-question") {
@@ -5393,13 +5440,21 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^taps? (?:an? |the |my |their |his |her )?(c\d+|it|that|\d+/\d+)(?: creature)?(?: down)?$|^(?:my |their |his |her |the |own )?(c\d+|it|that|\d+/\d+|creature|guy|dude|blocker|attacker)(?: creature)? (?:becomes tapped|gets tapped|is tapped|was tapped|got tapped|taps down)$""").find(c)?.let { r ->
             val ph = r.groupValues[1].ifEmpty { r.groupValues[2] }
             val mine = Regex("""\bmy\b""").containsMatchIn(clause0) || (actor != null && actor != "me")
-            val id = if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            val id = if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects }
+                         // "in response I tap it" right after their spell: the last thing named is the spell; "it" is the asker's own permanent.
+                         ?: ctx.objects.values.lastOrNull { o -> o.controller == (actor ?: "me") && o.zone == "battlefield" && r.groupValues[1].isNotEmpty() }?.id ?: return@let
                      else if (Regex("""^\d+/\d+$""").matches(ph)) describedCreatures("a ", ph, "creature", if (mine) "me" else (actor ?: ctx.lastOwner ?: "me"), ctx).firstOrNull() ?: return@let
                      else if (ph in setOf("creature", "guy", "dude", "blocker", "attacker")) describedCreatures("a ", "", "creature", if (Regex("""^(?:their|his|her)\b""").containsMatchIn(clause0)) (ctx.other(actor ?: "me") ?: "opp") else (actor ?: ctx.lastOwner ?: "me"), ctx).firstOrNull() ?: return@let
                      else m.cards[ph]?.let { card -> objectIdFor(card, ctx) ?: addObject(card, actor ?: ctx.lastOwner ?: "me", false, ctx) } ?: return@let
             // "I tap Cabal Coffers" means using its ability, not turning it sideways for nothing. The bare active
             // form is only a tap-down when it says "down" or when it is somebody else's permanent.
-            if (r.groupValues[1].isNotEmpty() && !c.endsWith(" down") && ctx.objects[id]?.controller == (actor ?: "me")) return@let
+            if (r.groupValues[1].isNotEmpty() && !c.endsWith(" down") && ctx.objects[id]?.controller == (actor ?: "me")) {
+                // "I tap Sensei's Divining Top": its {T} ability, not the {1} one; with a target named, the activate rule reads it.
+                if (!Regex("""\b(?:on|at|targeting)\b""").containsMatchIn(c) && ctx.objects[id]?.card?.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.let { t -> t.contains("Artifact") || t.contains("Creature") || t.contains("Land") } } == true) {
+                    ctx.events += EventSpec("activate", player = actor ?: "me", obj = id, to = "tap"); ctx.lastActor = actor ?: "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = id; return true
+                }
+                return@let
+            }
             // Said before anything happens it is board state; said after, it is something that happened.
             if (ctx.events.isEmpty()) ctx.objects[id] = ctx.objects.getValue(id).copy(tapped = true)
             else ctx.events += EventSpec("tap", obj = id)

@@ -28257,5 +28257,86 @@
       "Baneslayer Angel has 6 damage marked.",
       "Yes: Baneslayer Angel died (it's in the graveyard)."
     ]
+  },
+  {
+    "id": "kor-skyfisher-forced-return",
+    "text": "I have Kor Skyfisher in hand and a Mountain. I cast Kor Skyfisher. Do I have to return the Mountain?",
+    "expect": [
+      "Yes. Kor Skyfisher's enters-the-battlefield ability isn't a \"may\""
+    ]
+  },
+  {
+    "id": "stoneforge-instant-speed",
+    "text": "I have a Stoneforge Mystic and Batterskull in hand. Can I put Batterskull into play at instant speed?",
+    "expect": [
+      "Yes. Stoneforge Mystic's second ability"
+    ]
+  },
+  {
+    "id": "path-vs-blightsteel",
+    "text": "My opponent has a Blightsteel Colossus. I cast Path to Exile on it. Where does it go?",
+    "expect": [
+      "Blightsteel Colossus: the battlefield → exile."
+    ]
+  },
+  {
+    "id": "fog-vs-attacker",
+    "text": "I attack with a 2/2 and my opponent has Fog. They cast it. Do I lose my creature?",
+    "expect": [
+      "Damage to opponent from a 2/2 creature is prevented."
+    ]
+  },
+  {
+    "id": "top-tap-in-response-thoughtseize",
+    "text": "I have Sensei's Divining Top. Can I tap it in response to a Thoughtseize?",
+    "expect": [
+      "You draw 1 card.",
+      "Sensei's Divining Top: the battlefield → your library.",
+      "Thoughtseize: you discard a nonland card (which one depends on your hand)."
+    ]
+  },
+  {
+    "id": "spellskite-already-targeted",
+    "text": "My opponent Bolts my Spellskite. I have 2 life. Can I redirect it to Spellskite?",
+    "expect": [
+      "There's nothing to redirect: Lightning Bolt already targets Spellskite."
+    ]
+  },
+  {
+    "id": "vial-flickerwisp-their-turn",
+    "text": "I have Aether Vial with 3 counters and a Flickerwisp in hand. Can I put it in on their turn?",
+    "expect": [
+      "Flickerwisp enters the battlefield."
+    ]
+  },
+  {
+    "id": "mana-leak-vs-suspended-vision",
+    "text": "My opponent casts Ancestral Vision from suspend. Can I counter it with Mana Leak?",
+    "expect": [
+      "Ancestral Vision is countered."
+    ]
+  },
+  {
+    "id": "two-rancors-return",
+    "text": "I have two Rancors on my Grizzly Bears. My opponent kills the Bears. What happens to the Rancors?",
+    "expect": [
+      "Rancor: the battlefield → your graveyard. (×2)",
+      "Rancor: your graveyard → your hand. (×2)"
+    ]
+  },
+  {
+    "id": "cryptic-counter-bounce-modes",
+    "text": "My opponent casts Cryptic Command choosing counter and bounce on my Lightning Bolt and my Grizzly Bears. What happens?",
+    "expect": [
+      "Lightning Bolt is countered.",
+      "Grizzly Bears: the battlefield → your hand."
+    ]
+  },
+  {
+    "id": "mindbreak-trap-cast-it-free",
+    "text": "I have Mindbreak Trap in hand. My opponent casts three spells this turn. Can I cast it for free?",
+    "expect": [
+      "Mindbreak Trap is cast without paying its mana cost (alternative cost)."
+    ]
   }
 ]
