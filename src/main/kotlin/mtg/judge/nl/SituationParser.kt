@@ -1484,6 +1484,15 @@ class SituationParser(private val names: NameIndex) {
             else "pwkill-question ${r.groupValues[2].lowercase().replace('\u2212', '-')} ${r.groupValues[1].replace(Regex("""^(?:their |the |my opponent's )"""), "")}" } ?: t0 }
         // "Does my Guide connect?" / "does it get through?": whether the attacker dealt damage to the player.
         t2 = t2.replace(Regex("""^(?:does|will|would|did|can) (?:my |the )?(c\d+|it|that) (?:still |even )?(?:connect|get through|get in|go through|hit them|hit him|hit her|hit my opponent|hit the opponent|hit face|deal damage to them|still hit|hit)\??$""", RegexOption.IGNORE_CASE), "connect-question $1")
+        // "I have two Aether Vials, one with 1 counter and one with 2": two of the same permanent with their own counters.
+        t2 = t2.replace(Regex("""^(?:i|we) (?:have|control|'ve got|got) (?:two|2) (c\d+)s?,? one (?:with|at|on) (\d+)(?: counters?)? and (?:one|the other|another|the second) (?:with|at|on) (\d+)(?: counters?)?\??$""", RegexOption.IGNORE_CASE), "pair-question $1 $2 $3")
+        // "Can I put in two creatures on their turn?" with two Vials: each Vial is its own ability.
+        if (ctx.objects.values.count { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" } >= 2 && Regex("""^can (?:i|we) (?:put|vial|drop|flash|sneak) (?:in )?(?:two|both|2) creatures?(?: in| into play| onto the battlefield)?(?: (?:on|during|in) (?:their|my opponent's|the opponent's|his|her) (?:next |end )?(?:turn|step))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialtwo-question"
+        // "I have Glistener Elf with 3 poison counters on my opponent": the poison is the opponent's, not counters on the Elf.
+        t2 = t2.replace(Regex("""^((?:i|we) (?:have|control) (?:an? |the |my )?c\d+) with (\d+|\w+) poison counters? on (my opponent|the opponent|them|him|her|opponent|@\w+)\??$""", RegexOption.IGNORE_CASE), "$1, there are $2 poison counters on $3")
+        t2 = t2.replace(Regex("""^((?:my opponent|the opponent|they) (?:have|has|control|controls) (?:an? |the |their )?c\d+) with (\d+|\w+) poison counters? on (me|us)\??$""", RegexOption.IGNORE_CASE), "$1, there are $2 poison counters on $3")
+        // "Then they cast another Vexing Devil. Can I say no this time?": each trigger is a fresh choice.
+        if ((ctx.objects.values.any { it.card.name == "Vexing Devil" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Vexing Devil" }) && Regex("""^can (?:i|we) (?:say no|decline|refuse|not pay|choose not to|take the (?:4|damage)|let it (?:stay|live)|keep it)(?: this time| again| to (?:the|this) (?:second|new|other) one| now| instead)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "devilchoice-question"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3261,6 +3270,29 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:" + (if (censor) "Only the top four cards of your library: Aven Mindcensor says that if an opponent would search a library, that player searches the top four cards of that library instead (614.1a); the rest is off limits, and if the land isn't among those four the search finds nothing (701.19b)." else "Your whole library: a search lets you look at every card in it for what the effect names (701.19a)."))
             return true
         }
+        Regex("""^pair-question (c\d+) (\d+) (\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards.getValue(r.groupValues[1])
+            val kind = if (card.display == "Aether Vial") "charge" else if (card.typeLine.contains("Planeswalker")) "loyalty" else if (isCreatureName(card.display)) "+1/+1" else "charge"
+            for (n in listOf(r.groupValues[2].toInt(), r.groupValues[3].toInt())) { val id = addObject(card, "me", false, ctx, allowDuplicate = true); ctx.objects[id] = ctx.objects.getValue(id).copy(counters = mapOf(kind to n)) }
+            ctx.lastActor = "me"; return true
+        }
+        if (clause0 == "vialtwo-question") {
+            val vials = ctx.objects.values.filter { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" }
+            val counts = vials.map { it.counters["charge"] ?: 0 }.sorted()
+            ctx.asks += EventSpec("ask", to = "text:Yes. Each Aether Vial has its own activated ability ({T}: You may put a creature card with mana value equal to the number of charge counters on Aether Vial from your hand onto the battlefield), with no timing restriction, so on your opponent's turn you can activate both whenever you have priority (602.5, 117.1): one creature with mana value ${counts.getOrNull(0) ?: "?"} for the first Vial and one with mana value ${counts.getOrNull(1) ?: "?"} for the second. Each Vial taps as its cost, so each puts in exactly one creature.")
+            return true
+        }
+        // "My opponent has Vexing Devil and I take 4": the Devil's trigger, with the damage taken, so the Devil is sacrificed.
+        Regex("""^(?:i|we) (?:take|took|eat|ate) (?:the )?(?:4|four|damage|the damage|it)$""").find(clause0)?.let {
+            val devil = ctx.objects.values.lastOrNull { o -> o.controller != "me" && o.zone == "battlefield" && o.card.name == "Vexing Devil" } ?: return@let
+            if (ctx.events.any { it.verb == "attack" || it.verb == "attackAll" }) return@let
+            ctx.events += EventSpec("leave", obj = devil.id, to = "graveyard")
+            ctx.notes += "Vexing Devil's trigger: you chose to have it deal 4 damage to you, so its controller sacrifices it (you're at 4 less)."; ctx.lastMentioned = devil.id; return true
+        }
+        if (clause0 == "devilchoice-question") {
+            ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
+            return true
+        }
         if (clause0 == "goblinguide-land-question") {
             val def = ctx.events.last { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == "Goblin Guide" }.let { e -> e.targets.firstOrNull() ?: ctx.other(e.player ?: "me") ?: "opp" }
             val them = if (def == "me") "you" else "your opponent"
@@ -4427,6 +4459,14 @@ class SituationParser(private val names: NameIndex) {
             // "I have 4 lands and cast Cryptic Command, can I?": whether the spell just cast can be paid for.
             if (Regex("""^(?:i|we)(?: even| still| actually)?(?: cast it| cast that| do that| do this| afford it| afford that| pay for it| pay it| pay that)?$""").matches(r.groupValues[1])) {
                 val lastCast = ctx.events.lastOrNull { it.verb == "cast" }
+                // "They cast Chalice for X=2. I have Snapcaster in hand. Can I cast it?": "it" is the card in hand, and the question is whether the cast is allowed.
+                if (Regex("""\bcast (?:it|that)$""").containsMatchIn(r.groupValues[1]) && lastCast?.player != null && lastCast.player != "me") {
+                    val held = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "hand" }
+                    if (held != null) {
+                        ctx.events += EventSpec("cast", player = "me", obj = held.id); ctx.lastActor = "me"; ctx.lastVerb = "cast"; ctx.lastMentioned = "cast:" + held.id
+                        ctx.asks += EventSpec("ask", card = held.card, to = "castAllowed"); ctx.notes += "\"${restore(clause0, m)}?\" is read as casting ${held.card.name} from your hand; the outcome says whether that's allowed."; return true
+                    }
+                }
                 val card = lastCast?.card?.name?.let { n -> names.lookup(Names.normalize(n)) }
                 // "I cast a 3 mana creature, can I?": a spell known only by its cost has no card to look up; its cost is still the question.
                 if (lastCast?.card != null && card == null && lastCast.card.oracleId == null) { ctx.asks += EventSpec("ask", card = lastCast.card, to = "spellCost"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true }
@@ -4851,6 +4891,14 @@ class SituationParser(private val names: NameIndex) {
         // "I have 4 lands and cast Cryptic Command, can I?": whether the spell just cast can be paid for.
         Regex("""^can (?:i|we)(?: even| still| actually)?(?: cast it| cast that| do that| do this| afford it| afford that| pay for it| pay it| pay that)?$""").find(c)?.let {
             val lastCast = ctx.events.lastOrNull { it.verb == "cast" } ?: return@let
+            // "They cast Chalice for X=2. I have Snapcaster in hand. Can I cast it?": "it" is the card in hand, and the question is whether the cast is allowed.
+            if (Regex("""\bcast (?:it|that)$""").containsMatchIn(c) && lastCast.player != null && lastCast.player != "me") {
+                val held = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "hand" } ?: ctx.inHand["me"]?.lastOrNull()?.let { e -> ctx.objects.values.firstOrNull { it.controller == "me" && it.card.name == e.display } }
+                if (held != null) {
+                    ctx.events += EventSpec("cast", player = "me", obj = held.id); ctx.lastActor = "me"; ctx.lastVerb = "cast"; ctx.lastMentioned = "cast:" + held.id
+                    ctx.asks += EventSpec("ask", card = held.card, to = "castAllowed"); ctx.notes += "\"${restore(clause0, m)}?\" is read as casting ${held.card.name} from your hand; the outcome says whether that's allowed."; return true
+                }
+            }
             // "I cast a 3 mana creature, can I?": a spell known only by its cost has no card to look up; its cost is the question.
             val card = lastCast.card?.name?.let { n -> names.lookup(Names.normalize(n)) }
                 ?: run { if (lastCast.card != null && lastCast.card.oracleId == null) { ctx.asks += EventSpec("ask", card = lastCast.card, to = "spellCost"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true }; return@let }

@@ -431,7 +431,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     state.trace.step("\"Can ${state.player(player).subject.lowercase()} kill ${state.nameOf(victim)}?\": ${o.name} has \"${a.text.replace("~", o.name)}\", which deals damage, so it's activated targeting ${state.nameOf(victim)}.", "602.2")
                     engine.activate(player, o.id, idx, listOf(victim)); return
                 }
+                // "my opponent has Fatal Push, can they kill it?": removal in hand that destroys or exiles a creature counts too.
+                fun removes(eff: Effect?): Boolean = when (eff) { is Effect.Destroy -> true; is Effect.Exile -> true; is Effect.Seq -> eff.effects.any { removes(it) }; is Effect.May -> removes(eff.effect); is Effect.Modal -> eff.modes.any { removes(it) }; is Effect.IfCondition -> removes(eff.then) || removes(eff.otherwise); else -> false }
                 val inHand = state.objects.values.firstOrNull { it.zone == Zone.HAND && it.controller == player && it.def.isInstantOrSorcery && damage(it.def.spellEffect) }
+                    ?: (victim as? Ref.Obj)?.let { v -> state.objects[v.id]?.takeIf { it.def.isCreature } }?.let { state.objects.values.firstOrNull { it.zone == Zone.HAND && it.controller == player && it.def.isInstantOrSorcery && removes(it.def.spellEffect) } }
                 if (inHand != null) { state.trace.step("\"Can ${state.player(player).subject.lowercase()} kill ${state.nameOf(victim)}?\": ${inHand.name} in hand deals damage, so it's cast targeting ${state.nameOf(victim)}.", "601.2"); engine.cast(player, inHand.def, listOf(victim), objectId = inHand.id); return }
                 state.clarifications += mtg.judge.engine.Clarification("killing ${state.nameOf(victim)}", "nothing described that ${state.player(player).subject.lowercase()} ${state.player(player).v("controls", "control")} or ${state.player(player).v("holds", "hold")} deals damage to it. Say what you have for an answer.")
             }

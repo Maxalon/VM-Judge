@@ -30518,5 +30518,123 @@
       "No: Goblin Guide dealt no damage to opponent (it was blocked, and a blocked creature stays blocked even if its blocker leaves combat"
     ],
     "cite": []
+  },
+  {
+    "id": "glistener-elf-pump-poison-count",
+    "text": "I have Glistener Elf with 3 poison counters on my opponent. I cast Might of Old Krosa on it and attack. Do they die?",
+    "expect": [
+      "opponent has 6 poison counters.",
+      "No: opponent is still in the game."
+    ],
+    "notExpect": [
+      "opponent has 3 poison counters."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-two-snapcaster-in-hand",
+    "text": "My opponent casts Chalice of the Void for X=2. I have Snapcaster Mage in hand. Can I cast it?",
+    "expect": [
+      "Snapcaster Mage is countered"
+    ],
+    "notExpect": [
+      "how much does Chalice of the Void cost"
+    ],
+    "cite": []
+  },
+  {
+    "id": "inkmoth-flying-vs-goyf",
+    "text": "I attack with Inkmoth Nexus animated. My opponent blocks with Tarmogoyf. What happens?",
+    "expect": [
+      "Tarmogoyf can't block Inkmoth Nexus (flying).",
+      "opponent has 1 poison counter."
+    ],
+    "cite": []
+  },
+  {
+    "id": "kor-firewalker-bolt",
+    "text": "My opponent has Kor Firewalker. Can I Lightning Bolt it?",
+    "expect": [
+      "Lightning Bolt can't target Kor Firewalker.",
+      "Kor Firewalker has protection from red"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vapor-snag-goyf",
+    "text": "I cast Vapor Snag on my opponent's Tarmogoyf. What happens?",
+    "expect": [
+      "Tarmogoyf: the battlefield → opponent's hand.",
+      "opponent loses 1 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "vexing-devil-second-choice",
+    "text": "My opponent has Vexing Devil and I take 4. Then they cast another. Can I say no this time?",
+    "expect": [
+      "Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice"
+    ],
+    "notExpect": [
+      "Nothing changes"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-vs-path",
+    "text": "I have Spellskite and my opponent casts Path to Exile on my Tarmogoyf. Can I redirect it?",
+    "expect": [
+      "Path to Exile now targets Spellskite instead of Tarmogoyf.",
+      "Spellskite: the battlefield → exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "moon-vs-cavern",
+    "text": "I control Blood Moon and my opponent plays Cavern of Souls. What does it do?",
+    "expect": [
+      "Cavern of Souls is a Mountain with no abilities (Blood Moon)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "push-in-hand-can-they-kill-goyf",
+    "text": "I have Tarmogoyf and my opponent has Fatal Push. The graveyards have 3 types. Can they kill it?",
+    "expect": [
+      "Yes: Tarmogoyf died (it's in the graveyard)."
+    ],
+    "notExpect": [
+      "nothing described that opponent controls or holds deals damage"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-lands-only",
+    "text": "My opponent casts Thoughtseize and I have only lands in hand. What happens?",
+    "expect": [
+      "You discard nothing (no nonland card in hand).",
+      "opponent loses 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "helix-on-canonist",
+    "text": "I cast Lightning Helix on my opponent's Ethersworn Canonist. How much life do I gain?",
+    "expect": [
+      "You gain 3 life in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-vials-two-creatures",
+    "text": "I have two Aether Vials, one with 1 counter and one with 2. Can I put in two creatures on their turn?",
+    "expect": [
+      "Yes. Each Aether Vial has its own activated ability",
+      "one creature with mana value 1 for the first Vial and one with mana value 2 for the second"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
   }
 ]
