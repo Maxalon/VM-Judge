@@ -1072,7 +1072,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val fromBattlefield = Regex("""(?i)when ~ is put into a graveyard from the battlefield, return""").containsMatchIn(o.def.oracleText.replace(o.def.name, "~")) || Regex("""(?i)is put into a graveyard from the battlefield, return""").containsMatchIn(o.def.oracleText)
                     val note = if (o.zone == Zone.GRAVEYARD && fromBattlefield && o.enteredFrom == null) " It stays there: its return-to-hand ability triggers only when it goes to a graveyard from the battlefield, and it went there from the stack (countered, or with no legal target) without ever being on the battlefield (603.6c, 603.10)." else ""
                     state.outcomes += if (e.to == "whereIs") "${o.name} is $zone.$note" else if (o.zone == Zone.HAND) "Yes: ${o.name} is back in ${owner.possessive} hand."
-                        else if (o.zone == Zone.BATTLEFIELD && o.id != e.obj) "Yes: ${o.name} is back on the battlefield, as a new object (untapped, no counters or damage, and summoning sick if it's a creature, 400.7)."
+                        else if (o.zone == Zone.BATTLEFIELD && o.id != e.obj) "Yes: ${o.name} is back on the battlefield, as a new object (untapped, ${o.counters.filterValues { it > 0 }.takeIf { it.isNotEmpty() }?.let { c -> "with ${c.entries.joinToString(" and ") { (k, n) -> "$n $k counter${if (n == 1) "" else "s"}" }} and no damage" } ?: "no counters or damage"}, and summoning sick if it's a creature, 400.7)."
                         else "No: ${o.name} is $zone.$note"
                     return true
                 }
@@ -1313,7 +1313,23 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     }
                     return true
                 }
-                if (e.to == "playerSurvive" || e.to == "playerDie" || e.to == "playerWin") { state.outcomes += playerAnswer(e.to, state.player(e.player ?: throw JudgeException("ask needs a player")), state); return true }
+                if (e.to == "playerSurvive" || e.to == "playerDie" || e.to == "playerWin") {
+                    val p = state.player(e.player ?: throw JudgeException("ask needs a player"))
+                    val answer = playerAnswer(e.to, p, state)
+                    state.outcomes += answer
+                    // "Can I win?" by an unblocked attack while they had a blocker: only if they don't block.
+                    if (e.to == "playerWin" && answer.startsWith("Yes") && curEvents.none { it.verb == "block" }) {
+                        val attackers = curEvents.filter { it.verb == "attack" && it.player == p.id }.mapNotNull { it.obj?.let { id -> state.objects[id] } }
+                            .ifEmpty { if (curEvents.any { it.verb == "attackAll" && it.player == p.id }) state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && (it.def.isCreature || it.animatedAs != null) } else emptyList() }
+                        if (attackers.isNotEmpty()) {
+                            val loser = state.players.firstOrNull { it.id != p.id && (it.lost || (it.life ?: 1) <= 0) }
+                            val blockers = state.objects.values.filter { b -> b.isOnBattlefield() && b.controller != p.id && (b.def.isCreature || b.animatedAs != null) && b.tapped != true }
+                            val pairs = attackers.flatMap { a -> blockers.filter { b -> engine.cantBlockWhy(a, b) == null }.map { b -> a to b } }
+                            if (loser != null && pairs.isNotEmpty()) state.outcomes += "But only if ${loser.subject.lowercase()} ${loser.v("doesn't", "don't")} block: ${pairs.joinToString("; ") { (a, b) -> "${b.name} can block ${a.name}" }}, and a blocked creature without trample deals no damage to the player (510.1c), so an on-damage trigger wouldn't happen either. Assume the block if ${loser.subject.lowercase()} ${loser.v("has", "have")} a reason to make it."
+                        }
+                    }
+                    return true
+                }
                 // "do I draw?" / "how many cards do I draw?": every card that player drew while this played out.
                 if (e.to == "playerDraw" || e.to == "drawCount") {
                     val p = state.player(e.player ?: throw JudgeException("ask needs a player"))

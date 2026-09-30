@@ -28712,5 +28712,81 @@
     "expect": [
       "Yes: Vendilion Clique has flash, so it can be cast any time you could cast an instant (702.8a)"
     ]
+  },
+  {
+    "id": "wrath-finks-comes-back-counter",
+    "text": "My opponent casts Wrath of God. I have Kitchen Finks. Does it come back?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "Yes: Kitchen Finks is back on the battlefield, as a new object (untapped, with 1 -1/-1 counter and no damage, and summoning sick if it's a creature, 400.7)."
+    ]
+  },
+  {
+    "id": "assign-damage-two-blockers",
+    "text": "I attack with a 3/3. My opponent blocks with two 2/2s. How do I assign damage?",
+    "expect": [
+      "As you like. A creature blocked by two or more creatures divides its combat damage among them however its controller chooses (510.1c)"
+    ]
+  },
+  {
+    "id": "blood-moon-colonnade-animate",
+    "text": "My opponent has a Blood Moon. I have a Celestial Colonnade. Can I animate it?",
+    "expect": [
+      "Celestial Colonnade is a Mountain with no abilities (Blood Moon).",
+      "Celestial Colonnade's own ability is gone under Blood Moon, so it can't be activated."
+    ]
+  },
+  {
+    "id": "grave-titan-cloudshift-zombies",
+    "text": "I have Grave Titan and cast Cloudshift on it. How many Zombies do I have?",
+    "expect": [
+      "You get a Zombie token. (×2)",
+      "You have 2 zombies."
+    ]
+  },
+  {
+    "id": "menace-one-blocker",
+    "text": "My opponent attacks with a creature with menace. I have one blocker. Can I block?",
+    "expect": [
+      "No: a creature with menace has menace and can't be blocked except by two or more creatures, and a creature is the only one that could (702.111b)."
+    ]
+  },
+  {
+    "id": "terminus-progenitus-bears",
+    "text": "I cast Terminus. My opponent has a Progenitus and a Grizzly Bears. Where do they go?",
+    "expect": [
+      "Progenitus: the battlefield → opponent's library.",
+      "Grizzly Bears: the battlefield → opponent's library."
+    ]
+  },
+  {
+    "id": "liliana-plus-one",
+    "text": "I have Liliana of the Veil. I use her +1. What happens?",
+    "expect": [
+      "You discard 1 card.",
+      "opponent discards 1 card."
+    ]
+  },
+  {
+    "id": "platinum-angel-opponent-bolted",
+    "text": "My opponent has 2 life and Platinum Angel. I Bolt them. Do they lose?",
+    "expect": [
+      "No: opponent is still in the game at -1 life."
+    ]
+  },
+  {
+    "id": "kira-vs-bolt",
+    "text": "My opponent casts Lightning Bolt at my Kira, Great Glass-Spinner. What happens?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ]
+  },
+  {
+    "id": "sword-bears-vs-wall-can-i-win",
+    "text": "I have a Sword of Fire and Ice on my Grizzly Bears. I attack and my opponent has a Wall of Omens and 3 life. Can I win?",
+    "expect": [
+      "Yes: You have won the game.",
+      "But only if opponent doesn't block: Wall of Omens can block Grizzly Bears"
+    ]
   }
 ]

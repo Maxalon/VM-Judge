@@ -1334,6 +1334,8 @@ class SituationParser(private val names: NameIndex) {
             // "I have Scapeshift with 7 lands including Valakut. How much damage can I do?"
         if (Regex("""\bvalakut\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) ctx.sawValakut = true
         if (ctx.sawValakut && (ctx.objects.values.any { o -> o.controller == "me" && o.card.name == "Scapeshift" } || ctx.inHand["me"]?.any { it.display == "Scapeshift" } == true) && Regex("""^how much (?:damage )?can (?:i|we) (?:do|deal)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "scapeshift-question"
+            // "How do I assign damage?" with two blockers: the current rule, alongside the outcome.
+        if (Regex("""^how (?:do|should|would|can|must) (?:i|we) (?:assign|divide|split|order|distribute) (?:the |my |its |combat )?damage(?: (?:between|among|to) (?:them|the blockers|both))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "assigndamage-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2952,6 +2954,18 @@ class SituationParser(private val names: NameIndex) {
             // "I have Vendilion Clique. Can I flash it in?": the card is in hand, whatever "have" made of it.
             if (ctx.objects.getValue(id).zone != "hand" && ctx.events.none { it.obj == id || id in it.targets }) ctx.objects[id] = ctx.objects.getValue(id).copy(zone = "hand")
             ctx.asks += EventSpec("ask", player = "me", to = "respond"); ctx.notes += "\"${restore(clause0, m).replace("flashin-question ", "can I flash in ")}\" is answered by the outcome below."
+            return true
+        }
+        if (clause0 == "assigndamage-question") {
+            ctx.asks += EventSpec("ask", to = "text:As you like. A creature blocked by two or more creatures divides its combat damage among them however its controller chooses (510.1c); there is no longer a damage assignment order and no requirement to assign lethal damage to one before moving to the next. The outcome above shows one split (killing what it can first). The blockers each deal their full damage to the attacker (510.1d), all at the same time (510.2).")
+            return true
+        }
+        // "Can I animate it?": the manland's own ability.
+        Regex("""^(?:i|we|they|he|she|my opponent) animates? (it|that|(?:my |the |their )?c\d+)$""").find(clause0)?.let { r ->
+            val ph = r.groupValues[1].removePrefix("my ").removePrefix("the ").removePrefix("their ")
+            val id = (if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[ph]?.let { objectIdFor(it, ctx) }) ?: return@let
+            val who = ctx.objects.getValue(id).controller
+            ctx.events += EventSpec("activate", player = who, obj = id, to = "animate"); ctx.lastActor = who; ctx.lastVerb = "activate"; ctx.lastMentioned = id
             return true
         }
         if (clause0 == "castallowed-question") {
