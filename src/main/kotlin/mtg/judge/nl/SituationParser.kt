@@ -1278,6 +1278,13 @@ class SituationParser(private val names: NameIndex) {
             // "they redirect it to Spellskite" / "I redirect the Bolt to my Spellskite": Spellskite's ability, activated at the spell.
         t2 = t2.let { t0 -> Regex("""\b(i|we|they|he|she|my opponent|the opponent) (?:then )?(?:redirects?|moves?|points?|deflects?) (it|that|the spell|(?:the |their |my |my opponent's )?c\d+) (?:to|onto|at) (?:their |my |his |her |the )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 if (m.cards[r.groupValues[3]]?.display == "Spellskite") "${r.groupValues[1]} activate ${r.groupValues[3]} targeting ${r.groupValues[2]}" else r.value } }
+            // "I attack with Serra Angel. Can I still block with it on their turn?": vigilance decides.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:still |also |then )?block with (it|that|c\d+) (?:on|during|in) (?:their|my opponent's|the opponent's|his|her) (?:next )?turn\??$""", RegexOption.IGNORE_CASE), "blocktheirturn-question $1")
+            // "Can my opponent choose to take 4 with Torpor Orb out?": Vexing Devil's trigger never happens.
+        if ((m.cards.values.any { it.display == "Vexing Devil" } || ctx.objects.values.any { it.card.name == "Vexing Devil" }) && (m.cards.values.any { it.display == "Torpor Orb" } || ctx.objects.values.any { it.card.name == "Torpor Orb" }))
+            t2 = t2.replace(Regex("""^can (?:my opponent|they|he|she|the opponent) (?:still |even )?(?:choose to |opt to |decide to )?take (?:the )?(?:\d+|it|the damage)(?: damage)?(?: (?:with|under) (?:an? |the |my |their )?c\d+(?: out| on the battlefield| in play)?)?\??$""", RegexOption.IGNORE_CASE), "vexing-torpor-question")
+            // "I have two Lightning Bolts in hand and 3 Mountains. Can I kill a Baneslayer Angel?": every burn spell held, at it.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:kill|burn out|finish off|deal with|take out|remove) (?:an? |the |their |my opponent's |his |her )?(c\d+)(?: with (?:them|both|those|it|all of them|the bolts|my burn|those spells))?\??$""", RegexOption.IGNORE_CASE), "killwith-question $1")
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2802,6 +2809,24 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:No. Sylvan Library's trigger at the beginning of your draw step lets you draw two extra cards; then, for each of those cards still in your hand, you choose: pay 4 life to keep it, or put it on top of your library. Paying is optional and per card: put both back and pay nothing (you keep your normal draw), pay 4 to keep one, or pay 8 to keep both. You can also decline the extra draws altogether (\"you may\").")
             return true
         }
+        if (clause0 == "vexing-torpor-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. With Torpor Orb on the battlefield, Vexing Devil entering doesn't cause its ability to trigger at all, so the choice it offers (\"any opponent may have it deal 4 damage to them; if a player does, sacrifice it\") is never presented. Vexing Devil simply stays on the battlefield as a 4/3 (603.2, Torpor Orb).")
+            return true
+        }
+        Regex("""^blocktheirturn-question (it|that|c\d+)$""").find(clause0)?.let { r ->
+            val id = m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) } ?: ctx.events.lastOrNull { it.verb == "attack" && it.obj != null }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "blockTheirTurn"); return true
+        }
+        Regex("""^killwith-question (c\d+)$""").find(clause0)?.let { r ->
+            val target = m.cards.getValue(r.groupValues[1])
+            val burn = ctx.objects.values.filter { o -> o.zone == "hand" && o.controller == "me" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }
+            if (burn.isEmpty()) return@let
+            val tid = objectIdFor(target, ctx) ?: addObject(target, ctx.other("me") ?: "opp", false, ctx)
+            for (b in burn) ctx.events += EventSpec("cast", player = "me", obj = b.id, targets = listOf(tid))
+            ctx.asks += EventSpec("ask", obj = tid, to = "die"); ctx.lastMentioned = tid
+            ctx.notes += "\"Can you kill it?\" is read as casting ${burn.joinToString(" and ") { it.card.name ?: "the spell" }} at ${target.display}; the outcome says whether it dies."
+            return true
+        }
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
@@ -3491,6 +3516,13 @@ class SituationParser(private val names: NameIndex) {
         // MTG_DEBUG_CLAUSE=1 prints every clause as the rules see it. A clause that is read by the wrong rule
         // leaves no note behind, so seeing the exact text is the quickest way to find which rule took it.
         if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("clause: [$clauseIn] lastVerb=${ctx.lastVerb} lastActor=${ctx.lastActor}")
+        // "I have two Lightning Bolts in hand": that many copies, in the hand, not on the battlefield.
+        Regex("""^(?:(i|we|they|he|she|my opponent|the opponent) )?(?:have|has|hold|holds|holding|am holding|is holding|are holding) (\d+|two|three|four|five) (c\d+) in (?:my |their |his |her |the )?hand$""").find(clauseIn.trim().replace(Regex("""^(?:and|then|so|but) """), ""))?.let { r ->
+            val who = when (r.groupValues[1]) { "i", "we" -> "me"; "" -> actorOfClause(clauseIn) ?: ctx.lastOwner ?: "me"; "my opponent", "the opponent" -> ctx.other("me") ?: "opp"; else -> pronounPlayer(ctx, r.groupValues[1]) }
+            val n = number(r.groupValues[2]) ?: return@let
+            repeat(n) { addObject(m.cards.getValue(r.groupValues[3]), who, false, ctx, zone = "hand", allowDuplicate = true) }
+            ctx.handSize[who] = maxOf(ctx.handSize[who] ?: 0, n); ctx.lastOwner = who; ctx.lastVerb = "have"; ctx.note(who); return true
+        }
         // "I have Reliquary Tower and 9 cards": the bare count after a "have" is the hand.
         Regex("""^(\d+|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve) cards$""").find(clauseIn.trim())?.let { r ->
             if (ctx.lastVerb == "have" && ctx.lastOwner != null && ctx.clauseIndex > 0) return readClause("${if (ctx.lastOwner == "me") "i have" else "they have"} ${r.groupValues[1]} cards in hand", m, ctx)
@@ -3999,6 +4031,15 @@ class SituationParser(private val names: NameIndex) {
             if (n == 0 && Regex("""\b(?:casts?|plays?|played|cast|activates?)\b""").containsMatchIn(clause0)) {
                 ctx.events += EventSpec("pay", player = who, to = "no")
                 ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} no mana left over after that, so nothing optional (a tax, an \"unless\" cost) can be paid."
+            } else if (Regex("""\b(?:casts?|plays?|played|cast)\b""").containsMatchIn(clause0)) {
+                // "they cast a 4 drop with 2 lands untapped": what's untapped once the spell is cast, so the cast itself is
+                // paid for and the two are what an "unless" cost or a tax is checked against.
+                val ok = readClause(clause0.removeRange(r.range), m, ctx)
+                if (ok) {
+                    ctx.events += EventSpec("manaNow", player = who, amount = n)
+                    ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} $n mana left after casting; an \"unless\" cost or a tax is checked against that."
+                }
+                return ok
             } else {
                 setMana(who, n, ctx)
                 ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} $n mana available; costs are checked against that."
@@ -8705,7 +8746,7 @@ class SituationParser(private val names: NameIndex) {
                 if (nm != null) { targets = listOf(slug(nm) + ":spell"); ctx.notes += "${card.display} is read as aimed at $nm, the spell on the stack." }
             }
         }
-        if (targets.isEmpty() && needsSpellTarget(card) && ctx.events.lastOrNull()?.let { it.verb == "cast" && it.player != who } != true) {
+        if (targets.isEmpty() && needsSpellTarget(card) && ctx.events.lastOrNull { it.verb !in setOf("manaNow", "pay") }?.let { it.verb == "cast" && it.player != who } != true) {
             val other = ctx.other(who) ?: "me"
             if (ctx.events.lastOrNull()?.verb in setOf("cast", "activate", "trigger")) ctx.events += EventSpec("resolveAll")
             ctx.events += EventSpec("cast", player = other, card = CardRef(name = "a spell")); targets = listOf("a_spell:spell")

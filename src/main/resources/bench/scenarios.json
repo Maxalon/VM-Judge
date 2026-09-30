@@ -28169,5 +28169,93 @@
     "expect": [
       "Yes: Lightning Bolt is countered (by Chalice of the Void)."
     ]
+  },
+  {
+    "id": "goblin-guide-not-a-draw",
+    "text": "I have a Goblin Guide. I attack. Does my opponent draw a card?",
+    "expect": [
+      "No: opponent doesn't draw. A card an effect puts into the hand (Goblin Guide's revealed land, for instance) isn't drawn: drawing is specifically taking the top card of the library (121.1)."
+    ]
+  },
+  {
+    "id": "propaganda-two-attackers-three-lands",
+    "text": "My opponent has Propaganda. Can I attack with two creatures if I have 3 lands?",
+    "expect": [
+      "No: only 1 of your 2 can attack: Propaganda makes each attacker cost {2}, and you have 3 mana (508.1c)."
+    ]
+  },
+  {
+    "id": "shock-vs-giant-growth-response",
+    "text": "I cast Shock at my opponent's 2/2. They respond with Giant Growth. What happens?",
+    "expect": [
+      "a 2/2 creature is 5/5 until end of turn.",
+      "a 2/2 creature has 2 damage marked."
+    ]
+  },
+  {
+    "id": "finks-with-counter-no-persist",
+    "text": "I have Kitchen Finks with a -1/-1 counter. It dies. Does persist bring it back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it."
+    ]
+  },
+  {
+    "id": "damnation-anthem-survives",
+    "text": "My opponent casts Damnation. I have Glorious Anthem and a 2/2. Does Anthem survive?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your graveyard.",
+      "Yes: Glorious Anthem is still on the battlefield."
+    ]
+  },
+  {
+    "id": "serra-angel-block-their-turn",
+    "text": "I attack with a Serra Angel. Can I still block with it on their turn?",
+    "expect": [
+      "Yes: Serra Angel has vigilance, so attacking didn't tap it (702.20b). It's still untapped on their turn and can block."
+    ]
+  },
+  {
+    "id": "bears-block-their-turn-tapped",
+    "text": "I attack with a Grizzly Bears. Can I still block with it on their turn?",
+    "expect": [
+      "No: Grizzly Bears tapped when it attacked (508.1f), and you don't untap until your own untap step (502.3), so it's still tapped on their turn; a tapped creature can't block (509.1a)."
+    ]
+  },
+  {
+    "id": "tapped-out-can-they-respond",
+    "text": "My opponent taps out. I cast Lightning Bolt at them. Can they respond?",
+    "expect": [
+      "But opponent is tapped out, so only something that costs no mana can be used"
+    ]
+  },
+  {
+    "id": "mana-leak-vs-four-drop-two-open",
+    "text": "I have Mana Leak. My opponent casts a 4 drop with 2 lands untapped. Can I counter it?",
+    "expect": [
+      "opponent can't pay {3} for Mana Leak: opponent has only 2 mana available.",
+      "a 4 mana creature is countered."
+    ]
+  },
+  {
+    "id": "thoughtseize-vs-leyline",
+    "text": "My opponent casts Thoughtseize on me. I have Leyline of Sanctity. What happens?",
+    "expect": [
+      "Thoughtseize can't target you."
+    ]
+  },
+  {
+    "id": "vexing-devil-torpor-choice",
+    "text": "I have Vexing Devil. Can my opponent choose to take 4 with Torpor Orb out?",
+    "expect": [
+      "No. With Torpor Orb on the battlefield, Vexing Devil entering doesn't cause its ability to trigger at all"
+    ]
+  },
+  {
+    "id": "two-bolts-kill-baneslayer",
+    "text": "I have two Lightning Bolts in hand and 3 Mountains. Can I kill a Baneslayer Angel?",
+    "expect": [
+      "Baneslayer Angel has 6 damage marked.",
+      "Yes: Baneslayer Angel died (it's in the graveyard)."
+    ]
   }
 ]
