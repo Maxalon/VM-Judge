@@ -828,6 +828,8 @@ object OracleParser {
         }
         // "Activated abilities of artifacts can't be activated." / "Activated abilities of creatures your opponents control can't be activated."
         if (Regex("""^Activated abilities of sources with the chosen name can't be activated unless they're mana abilities\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.CantActivate(ObjFilter(setOf(Kind.PERMANENT), raw = "sources with the chosen name"), named = true, exceptMana = true))
+        // Phyrexian Revoker: the same lock, mana abilities included.
+        if (Regex("""^Activated abilities of sources with the chosen name can't be activated\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.CantActivate(ObjFilter(setOf(Kind.PERMANENT), raw = "sources with the chosen name"), named = true, exceptMana = false))
         Regex("""^Activated abilities of (.+?) can't be activated\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.PERMANENT); if (f.verifiable) return listOf(StaticEffect.CantActivate(f))
         }
@@ -1782,6 +1784,8 @@ object OracleParser {
         Regex("""^exile (target .+?) until ~ leaves the battlefield\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.ExileUntilLeaves(target(it.groupValues[1])) }
         // Oblivion Ring: "exile another target nonland permanent" (never itself), and its return trigger.
         Regex("""^exile another target (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> val t = target("target " + m.groupValues[1]); return Effect.Exile(t.copy(filter = t.filter.copy(other = true))) }
+        // Ajani Vengeant: "Target permanent doesn't untap during its controller's next untap step."
+        Regex("""^(target .+?) doesn't untap during its controller's next untap step\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.FreezeUntap(target(m.groupValues[1])) }
         if (Regex("""^return the exiled card to the battlefield under its owner's control\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ReturnExiledCard
         if (Regex("""^(?:its owner|you) shuffles? (?:their|your) graveyard into (?:their|your) library\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ShuffleGraveyardIntoLibrary(Who.YOU)
         exileRe.matchEntire(s)?.let { return Effect.Exile(target(it.groupValues[1])) }

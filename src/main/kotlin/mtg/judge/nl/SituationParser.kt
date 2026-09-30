@@ -1360,6 +1360,17 @@ class SituationParser(private val names: NameIndex) {
             // "I have Aether Vial with 2 counters. My opponent casts Wrath of God. Can I put a creature in?": timing advice.
         if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Aether Vial" } && ctx.events.lastOrNull { it.verb == "cast" }?.let { it.player != "me" } == true &&
             Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:a creature|something|a guy|it|that|(?:my |the )?c\d+) in(?: in response| now| with the vial| with it)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialresponse-question"
+            // "Graveyard has only a land": whose graveyard doesn't matter for a count of card types.
+        t2 = t2.replace(Regex("""^(?:the |my |our )?graveyards? (?:has|have|contains?|holds?) (?:only|just) (.+)$""", RegexOption.IGNORE_CASE), "my graveyard has $1")
+            // "a white 4/4 blocker": a white 4/4 creature.
+        t2 = t2.replace(Regex("""\b(an? |their |my |the )(white|blue|black|red|green) (\d+/\d+) (?:creature )?(?:blocker|attacker|guy|dude)\b""", RegexOption.IGNORE_CASE), "$1$3 $2 creature")
+        t2 = t2.replace(Regex("""\b(an? |their |my |the )(\d+/\d+) (white|blue|black|red|green) (?:creature )?(?:blocker|attacker|guy|dude)\b""", RegexOption.IGNORE_CASE), "$1$2 $3 creature")
+            // "Boros Charm making their creatures indestructible": the mode, said as its effect.
+        t2 = t2.replace(Regex("""\b(?:making|giving|to make|to give) (?:their|my|his|her|our|all their|all my) (?:creatures|team|board|guys|permanents|stuff) indestructible\b""", RegexOption.IGNORE_CASE), "choosing indestructible")
+            // "Can I play a fetchland and crack it?" under Blood Moon: a nonbasic land is a Mountain with no abilities.
+        if (ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") } && Regex("""^can (?:i|we) (?:play|drop) (?:a |my |the )?(?:fetch(?:land)?|c\d+) and (?:crack|sac|sacrifice|use|activate|fetch with) it\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "moonfetch-question"
+            // "casts two Lightning Bolts at it": two casts, one after the other.
+        t2 = t2.replace(Regex("""\b(casts?|plays?|bolts?) (two|2) ((?:c\d+))s? (at|on|targeting) (it|that|(?:my |their |his |her )?c\d+)\b""", RegexOption.IGNORE_CASE), "$1 $3 $4 $5, then $1 $3 $4 $5 again")
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3032,6 +3043,11 @@ class SituationParser(private val names: NameIndex) {
             val spell = ctx.events.last { it.verb == "cast" }.let { it.card?.name ?: it.obj?.let { id -> ctx.objects[id]?.card?.name } ?: "their spell" }
             val sweeper = spell.let { n -> names.lookup(Names.normalize(n)) }?.let { e -> setOf("Wrath of God", "Damnation", "Day of Judgment", "Supreme Verdict", "Anger of the Gods", "Pyroclasm", "Toxic Deluge", "Terminus", "Languish", "Sweltering Suns", "Slagstorm", "Blasphemous Act", "Austere Command", "Hallowed Burial", "End Hostilities", "Fumigate", "Cleansing Nova", "Shatter the Sky", "Doomskar", "Depopulate", "Farewell", "Ritual of Soot", "Deafening Clarion", "Kozilek's Return", "Firespout", "Volcanic Fallout", "Electrickery", "Radiant Flames", "Sunfall") }?.contains(spell) == true
             ctx.asks += EventSpec("ask", to = "text:Yes, but not yet. Aether Vial's ability is activated at instant speed, so with $spell on the stack you can put a creature with mana value equal to the counters onto the battlefield in response (602.5)." + (if (sweeper) " Don't: $spell resolves after the Vial's ability, and the creature you just put in is on the battlefield when it does, so it dies with the rest. Let $spell resolve, then activate the Vial afterwards (at their end step, say) and the creature arrives on an empty board." else " Whether that's wise depends on what $spell does once it resolves."))
+            return true
+        }
+        if (clause0 == "moonfetch-question") {
+            val moon = ctx.objects.values.first { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }
+            ctx.asks += EventSpec("ask", to = "text:You can play it, but you can't crack it. Under ${moon.card.name} a nonbasic land is a Mountain and loses all its other abilities (305.7, 613.1), so a fetchland enters as a Mountain: it has \"{T}: Add {R}\" and nothing else, and the sacrifice-to-search ability isn't there to activate. It still counts as your land drop and taps for red.")
             return true
         }
         if (clause0 == "castallowed-question") {

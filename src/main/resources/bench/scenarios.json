@@ -29110,5 +29110,85 @@
       "Grizzly Bears has 1 damage marked. (×2)",
       "No: Grizzly Bears is still on the battlefield. (×2)"
     ]
+  },
+  {
+    "id": "thoughtseize-takes-bolt-life",
+    "text": "My opponent casts Thoughtseize and takes my Lightning Bolt. Do they lose life?",
+    "expect": [
+      "Lightning Bolt: your hand → your graveyard.",
+      "opponent loses 2 life in all."
+    ]
+  },
+  {
+    "id": "ajani-plus-one-freeze",
+    "text": "I have Ajani Vengeant. I use his +1 on their Grizzly Bears. Does it untap?",
+    "expect": [
+      "Grizzly Bears doesn't untap during its controller's next untap step."
+    ]
+  },
+  {
+    "id": "revoker-naming-jace",
+    "text": "My opponent has Phyrexian Revoker naming Jace, the Mind Sculptor. Can I use Jace?",
+    "expect": [
+      "No: Phyrexian Revoker says Jace, the Mind Sculptor's activated abilities can't be activated."
+    ]
+  },
+  {
+    "id": "boros-charm-making-indestructible",
+    "text": "I cast Wrath of God. My opponent responds with Boros Charm making their creatures indestructible. Do they survive?",
+    "expect": [
+      "Boros Charm had nothing to protect: no permanents of opponent's were described. Any there are would have indestructible until end of turn."
+    ]
+  },
+  {
+    "id": "goblin-guide-vs-wall",
+    "text": "I attack with Goblin Guide and they have a Wall of Omens. Can they block?",
+    "expect": [
+      "Yes: Wall of Omens can block Goblin Guide."
+    ]
+  },
+  {
+    "id": "blood-moon-fetchland-crack",
+    "text": "My opponent has a Blood Moon. Can I play a fetchland and crack it?",
+    "expect": [
+      "You can play it, but you can't crack it. Under Blood Moon a nonbasic land is a Mountain and loses all its other abilities (305.7, 613.1)"
+    ]
+  },
+  {
+    "id": "goyf-dismember-only-land",
+    "text": "I have a Tarmogoyf and my opponent casts Dismember on it. Graveyard has only a land. Does Goyf die?",
+    "expect": [
+      "Yes: Tarmogoyf died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "kira-vs-two-bolts",
+    "text": "I have Kira, Great Glass-Spinner and my opponent casts two Lightning Bolts at it. Does it die?",
+    "expect": [
+      "Lightning Bolt is countered.",
+      "Kira, Great Glass-Spinner has 3 damage marked.",
+      "Yes: Kira, Great Glass-Spinner died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "mindcensor-vs-gsz",
+    "text": "My opponent has Aven Mindcensor and I cast Green Sun's Zenith for 2. What happens?",
+    "expect": [
+      "Aven Mindcensor: You look at only the top four cards of your library for the card it looks for; if none is there, nothing is found."
+    ]
+  },
+  {
+    "id": "stormbreath-vs-white-blocker",
+    "text": "I attack with Stormbreath Dragon. My opponent has a white 4/4 blocker. Can they block?",
+    "expect": [
+      "No: a 4/4 white creature can't block Stormbreath Dragon (protection)."
+    ]
+  },
+  {
+    "id": "inquisition-vs-emrakul",
+    "text": "My opponent casts Inquisition of Kozilek on me. I have Emrakul, the Aeons Torn in hand. Can they take it?",
+    "expect": [
+      "You discard nothing (no nonland card with mana value 3 or less in hand)."
+    ]
   }
 ]
