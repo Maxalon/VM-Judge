@@ -30206,5 +30206,108 @@
       "can't target Thought-Knot Seer"
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-bolt-one-mountain",
+    "text": "I have Thalia, Guardian of Thraben. My opponent casts Lightning Bolt with only one Mountain untapped. Can they?",
+    "expect": [
+      "No: Lightning Bolt can't be cast (costs 2, only 1 mana available)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "deaths-shadow-while-at-4",
+    "text": "My opponent attacks me with Death's Shadow while at 4 life. How big is it?",
+    "expect": [
+      "Death's Shadow is 9/9."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "wrath-finks-persists-back",
+    "text": "I cast Wrath of God. My opponent has Kitchen Finks and Voice of Resurgence. What do they have after?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1."
+    ],
+    "cite": []
+  },
+  {
+    "id": "clique-in-their-draw-step",
+    "text": "I have Vendilion Clique in hand. Can I flash it in during my opponent's draw step?",
+    "expect": [
+      "Yes. Flash lets you cast Vendilion Clique any time you could cast an instant (702.8a)",
+      "after they've drawn for the turn"
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-from-hand-midgame",
+    "text": "My opponent casts Thoughtseize on me and I have Leyline of Sanctity in hand. Can I put it in?",
+    "expect": [
+      "No. Leyline of Sanctity's free entry works only from your opening hand, before the first turn begins (103.6a)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "champion-vs-goyf-two-types",
+    "text": "I attack with Champion of the Parish and my opponent blocks with Tarmogoyf. Graveyards have 2 types. Who wins?",
+    "expect": [
+      "Yes: Tarmogoyf is still on the battlefield.",
+      "No: Champion of the Parish is in the graveyard."
+    ],
+    "notExpect": [
+      "Tarmogoyf: the battlefield → opponent's graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-zero-probe-for-life",
+    "text": "My opponent has Chalice of the Void on 0. Can I cast Gitaxian Probe by paying life?",
+    "expect": [
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "is countered"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dryad-arbor-under-moon",
+    "text": "My opponent controls Blood Moon. I play Dryad Arbor. Is it still a creature?",
+    "expect": [
+      "Dryad Arbor is still a creature (1/1): Blood Moon changes only its land type and abilities."
+    ],
+    "cite": []
+  },
+  {
+    "id": "stony-silence-mox-opal",
+    "text": "I cast Stony Silence. My opponent has Mox Opal. Can they tap it for mana?",
+    "expect": [
+      "Mox Opal's ability can't be activated (Stony Silence)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-mage-when-it-dies",
+    "text": "I control Rest in Peace and cast Snapcaster Mage. What happens to the Mage when it dies?",
+    "expect": [
+      "Snapcaster Mage: the battlefield → exile (replaced by Rest in Peace).",
+      "Snapcaster Mage is in exile."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "karn-great-creator-vial",
+    "text": "My opponent has Karn, the Great Creator. Can I activate my Aether Vial?",
+    "expect": [
+      "No: Karn, the Great Creator says Aether Vial's activated abilities can't be activated."
+    ],
+    "cite": []
   }
 ]
