@@ -1418,6 +1418,10 @@ class SituationParser(private val names: NameIndex) {
             if (m.cards[r.groupValues[1]]?.display == "Cavern of Souls" && m.cards[r.groupValues[2]]?.let { isCreatureName(it.display) } == true) { ctx.cavernCast += m.cards.getValue(r.groupValues[2]).display; "my ${r.groupValues[2]}" } else r.value } }
         // "Does persist bring it back?": the same question as "does it come back?" (the persist-after-exile note answers it).
         t2 = t2.replace(Regex("""^(?:does|will|can|would) (?:its |the )?(?:persist|undying) (?:bring|get|return) (it|that|c\d+) back\??$""", RegexOption.IGNORE_CASE), "does $1 come back")
+        // "What survives if I sacrifice Spirit?": the action is done first (in response), then the question is asked.
+        t2 = t2.replace(Regex("""^(what (?:survives|dies|happens|is left|do (?:i|we) have left)|(?:does|will|is) (?:my |the )?(?:c\d+|it|that) (?:survive|die|live|still (?:die|live)|dead|alive)|do (?:i|we) (?:win|lose|die|survive)) if (?:i|we) ((?:(?:sacrifice|sac|activate|tap|cast|play|use|crack|pump|flash in|kill|counter|bolt|path|respond with|fire off) (?:my |the |a |an )?(?:c\d+|it|that)(?: (?:first|in response|now|at instant speed))?|block(?: with (?:it|that|(?:my |the )?c\d+|my \d+/\d+))?|chump(?: (?:it|with it))?|don't block))\??$""", RegexOption.IGNORE_CASE)) { r -> val act = r.groupValues[2].let { a -> if (a == "block" || a == "chump" || a == "chump it") "block with it" else if (a == "chump with it") "block with it" else a }; "i $act, ${r.groupValues[1]}" }
+        // "They pay 2 life to redirect my other Bolt to it": Spellskite's Phyrexian cost paid with life, aimed at a second spell.
+        if (ctx.objects.values.any { it.card.name == "Spellskite" } && Regex("""^(?:they|my opponent|the opponent|he|she|i|we) pays? (?:2|two) life to (?:redirect|change|move|point|switch) (?:my |their |the )?(?:other |second |another |next )?(?:c\d+|spell|it|bolt) (?:to|onto|at|towards?) (?:it|the skite|(?:the |their |my )?c\d+)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "spellskite-life-question"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3137,7 +3141,14 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"Can I exile it?\" is read as Scavenging Ooze's ability ({G}: Exile target card from a graveyard) at ${food.card.name}; it needs {G}."
             return true
         }
+        if (clause0 == "spellskite-life-question") {
+            val skite = ctx.objects.values.last { it.card.name == "Spellskite" }
+            val theirs = skite.controller != "me"
+            ctx.asks += EventSpec("ask", to = "text:Yes. Spellskite's ability costs {U/P}, and Phyrexian mana can be paid with either {U} or 2 life (107.4f), so ${if (theirs) "they" else "you"} can pay 2 life with no blue open. Each activation changes the target of one spell (Spellskite's controller chooses which), and it can be activated again for the second spell as long as ${if (theirs) "they" else "you"} can pay again; Spellskite being targeted by one Bolt already doesn't stop it becoming the target of another (115.7). Both Bolts then hit Spellskite: 6 damage to a 0/4 destroys it, and it's ${if (theirs) "their" else "your"} call whether that trade is worth the 2 life.")
+            return true
+        }
         if (clause0 == "castallowed-question") {
+            if (ctx.asks.any { it.to?.startsWith("text:") == true }) return true
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
             ctx.asks += EventSpec("ask", card = card, to = "castAllowed"); return true

@@ -29949,5 +29949,113 @@
       "opponent has hexproof (Leyline of Sanctity)"
     ],
     "cite": []
+  },
+  {
+    "id": "nacatl-their-lands-dont-count",
+    "text": "I attack with Wild Nacatl and my opponent has a Plains and a Mountain. How big is it?",
+    "expect": [
+      "Wild Nacatl is 1/1"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-empty-hand-two-power",
+    "text": "My opponent casts Ensnaring Bridge and has 0 cards in hand. Can my 2/2 attack?",
+    "expect": [
+      "a 2/2 creature can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-one-probe-life",
+    "text": "I have Chalice of the Void with 1 counter. My opponent casts Gitaxian Probe paying 2 life. Is it countered?",
+    "expect": [
+      "Yes: Gitaxian Probe is countered (by Chalice of the Void)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-pay-life-second-bolt",
+    "text": "I cast Lightning Bolt on my opponent's Spellskite. They pay 2 life to redirect my other Bolt to it. Can they?",
+    "expect": [
+      "Yes. Spellskite's ability costs {U/P}, and Phyrexian mana can be paid with either {U} or 2 life (107.4f)"
+    ],
+    "notExpect": [
+      "Lightning Bolt costs {R}"
+    ],
+    "cite": []
+  },
+  {
+    "id": "canonist-second-nonartifact",
+    "text": "My opponent has Ethersworn Canonist. I cast Thoughtseize then try to cast Lightning Bolt. Can I?",
+    "expect": [
+      "No: Lightning Bolt can't be cast (Ethersworn Canonist)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "ancestral-vision-when-draw",
+    "text": "I cast Ancestral Vision with suspend. When do I draw?",
+    "expect": [
+      "with 4 counters, that is 4 upkeeps from now"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ste-sac-while-blocking",
+    "text": "I sacrifice Sakura-Tribe Elder while it's blocking a 2/2. Does the 2/2 deal damage to me?",
+    "expect": [
+      "a 2/2 creature deals no combat damage: its blocker left combat and it stays blocked."
+    ],
+    "cite": []
+  },
+  {
+    "id": "mom-pro-white-vs-path",
+    "text": "I have Mother of Runes and my opponent casts Path to Exile on my Tarmogoyf. I give it protection from white. What happens?",
+    "expect": [
+      "Tarmogoyf has protection from white until end of turn.",
+      "Path to Exile doesn't resolve (all targets illegal)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "damnation-what-survives-if-sac-spirit",
+    "text": "My opponent casts Damnation. I have Selfless Spirit and Thalia, Guardian of Thraben. What survives if I sacrifice Spirit?",
+    "expect": [
+      "Thalia, Guardian of Thraben is indestructible and isn't destroyed.",
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield."
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "stony-silence-vial",
+    "text": "I cast Stony Silence. Can my opponent still crack their Aether Vial?",
+    "expect": [
+      "No: Stony Silence says Aether Vial's activated abilities can't be activated."
+    ],
+    "cite": []
+  },
+  {
+    "id": "does-it-die-if-i-block-finks",
+    "text": "My opponent attacks with a 4/4. I have Kitchen Finks. Does it die if I block?",
+    "expect": [
+      "Kitchen Finks has 4 damage marked.",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ],
+    "notExpect": [
+      "You take 4 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "take-damage-if-i-block-wall",
+    "text": "My opponent attacks with Goblin Guide. I have Wall of Omens. Do I take damage if I block?",
+    "expect": [
+      "No: you take no damage."
+    ],
+    "cite": []
   }
 ]
