@@ -29552,5 +29552,91 @@
     "expect": [
       "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard, and persist returns it only from the graveyard (702.79a)."
     ]
+  },
+  {
+    "id": "fog-stops-sword-trigger",
+    "text": "I attack with a 3/3 and my opponent casts Fog. Do I still get my Sword of Fire and Ice trigger?",
+    "expect": [
+      "Damage to opponent from a 3/3 creature is prevented.",
+      "No: Sword of Fire and Ice's ability didn't trigger (nothing that happened matched its trigger condition)."
+    ]
+  },
+  {
+    "id": "doom-blade-finks-comes-back",
+    "text": "My opponent casts Doom Blade on my Kitchen Finks. Does it come back?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "Yes: Kitchen Finks is back on the battlefield"
+    ]
+  },
+  {
+    "id": "does-bolt-kill-countered-bears",
+    "text": "I have a Lightning Bolt and my opponent has a Grizzly Bears with a +1/+1 counter. Does Bolt kill it?",
+    "expect": [
+      "Grizzly Bears has 3 damage marked.",
+      "Yes: Grizzly Bears died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "blightning-one-card",
+    "text": "My opponent casts Blightning targeting me and I have 1 card in hand. How many do I discard?",
+    "expect": [
+      "You take 3 damage.",
+      "You discard 1 card (1 → 0 in hand)."
+    ]
+  },
+  {
+    "id": "jace-zero-brainstorm",
+    "text": "I have Jace, the Mind Sculptor and use his 0. What happens?",
+    "expect": [
+      "You draw 3 cards.",
+      "You put 2 cards from your hand back on top of your library."
+    ]
+  },
+  {
+    "id": "wall-of-omens-blocks-2-2",
+    "text": "My opponent attacks with a 2/2 and I block with a Wall of Omens. Do I take damage?",
+    "expect": [
+      "Wall of Omens has 2 damage marked.",
+      "No: you take no damage."
+    ]
+  },
+  {
+    "id": "deaths-shadow-at-5",
+    "text": "I have Death's Shadow and 5 life. How big is it?",
+    "expect": [
+      "Death's Shadow is 8/8."
+    ]
+  },
+  {
+    "id": "chalice-two-vs-snapcaster",
+    "text": "My opponent has Chalice of the Void on 2 and I cast Snapcaster Mage. Is it countered?",
+    "expect": [
+      "Yes: Snapcaster Mage is countered (by Chalice of the Void)."
+    ]
+  },
+  {
+    "id": "selfless-spirit-two-others-survive",
+    "text": "My opponent casts Damnation and I have Selfless Spirit and two other creatures. I sacrifice Spirit. What survives?",
+    "expect": [
+      "a creature is indestructible and isn't destroyed. (×2)",
+      "Yes: a creature is still on the battlefield. (×2)",
+      "No: Selfless Spirit is in the graveyard."
+    ]
+  },
+  {
+    "id": "nighthawk-vs-deathtouch-1-1",
+    "text": "I attack with a Vampire Nighthawk and they block with a 1/1 deathtouch. What happens?",
+    "expect": [
+      "a 1/1 creature with deathtouch can't block Vampire Nighthawk (flying).",
+      "You gain 2 life."
+    ]
+  },
+  {
+    "id": "deathrite-forest-mana",
+    "text": "I have a Deathrite Shaman and my graveyard has a Forest. Can I make mana?",
+    "expect": [
+      "Yes, if it has been under your control since the turn began; a {T} ability of a creature needs that or haste (302.6)."
+    ]
   }
 ]

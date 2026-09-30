@@ -1391,6 +1391,9 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(?:does|do|will|would) (it|that|(?:my |the |their )?c\d+) (?:still )?(?:persist|undying|come back with persist|return with persist)\??$""", RegexOption.IGNORE_CASE), "does $1 come back")
             // "I cast Green Sun's Zenith for X=3. What can I get?": what the search may find.
         if (Regex("""^what can (?:i|we) (?:get|find|fetch|search for|grab|tutor for)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.lastOrNull { it.verb == "cast" }?.let { e -> (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name })?.let { n -> names.lookup(Names.normalize(n)) } }?.let { true } == true) t2 = "searchwhat-question"
+            // "Does Bolt kill it?" with the Bolt in hand: cast it at the creature and ask.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|would|can) (?:the |my )?(c\d+) kill (it|that|(?:their |my opponent's |the )?c\d+|(?:their |the )?\d+/\d+)\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                if (m.cards[r.groupValues[1]]?.isSpellOnly == true) "i cast ${r.groupValues[1]} at ${r.groupValues[2]}, does ${if (r.groupValues[2] in setOf("it", "that")) "it" else r.groupValues[2]} die" else r.value } }
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -1516,7 +1519,8 @@ class SituationParser(private val names: NameIndex) {
                 if (r.groupValues[2].contains("says-")) return@replace "${r.groupValues[1]} have ${r.groupValues[3]} creatures, ${r.groupValues[1]} have ${r.groupValues[2]}"
                 val card = m.cards[Regex("""c\d+""").find(r.groupValues[2])!!.value]
                 if (card?.display == "Craterhoof Behemoth") "i have ${r.groupValues[3]} creatures, i cast ${r.groupValues[2]} and attack with everything"
-                else if (card?.typeLine?.contains("Creature") == true) "i have ${r.groupValues[3]} creatures and ${r.groupValues[2]}, i attack with everything" else r.value } }
+                // "I have Selfless Spirit and two other creatures": only a lethal/attack question sends the team in.
+                else if (card?.typeLine?.contains("Creature") == true) "i have ${r.groupValues[3]} creatures and ${r.groupValues[2]}" + (if (Regex("""\b(?:lethal|attack|attacks|swing|swings|gg|game|alpha)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t0)) ", i attack with everything" else "") else r.value } }
         t2 = t2.replace(Regex("""(?<=, )(?:is that lethal|is it lethal|is that game|is that gg|lethal)\??$""", RegexOption.IGNORE_CASE), "do they die")
             // "do I gain life if I block?": the block, then the life question.
         t2 = t2.replace(Regex("""\bdo (i|we) gain (?:any |the )?life if (?:i|we) block(?: with it| it)?\??$""", RegexOption.IGNORE_CASE), "i block with it, how much life do i gain")
