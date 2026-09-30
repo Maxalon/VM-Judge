@@ -29190,5 +29190,94 @@
     "expect": [
       "You discard nothing (no nonland card with mana value 3 or less in hand)."
     ]
+  },
+  {
+    "id": "clique-flashed-at-them",
+    "text": "I have a Vendilion Clique in hand. My opponent casts Ancestral Recall. I flash it in targeting them. What happens?",
+    "expect": [
+      "opponent draws 3 cards.",
+      "Vendilion Clique enters the battlefield.",
+      "opponent draws 1 card."
+    ]
+  },
+  {
+    "id": "4-4-double-blocked-by-2-2s",
+    "text": "My opponent attacks with a 4/4. I block with two 2/2s. Does the 4/4 die?",
+    "expect": [
+      "Yes: a 4/4 creature died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "serra-avenger-turn-2",
+    "text": "I have Serra Avenger in hand on turn 2. Can I cast it?",
+    "expect": [
+      "Serra Avenger can't be cast yet (turn 2; not before your turn 4)."
+    ]
+  },
+  {
+    "id": "two-finks-what-comes-back",
+    "text": "My opponent casts Damnation. I have a Kitchen Finks with a -1/-1 counter and a Kitchen Finks without. What comes back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it.",
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1."
+    ]
+  },
+  {
+    "id": "confidant-griselbrand-at-3",
+    "text": "I have a Dark Confidant and 3 life. I reveal a Griselbrand. Do I die?",
+    "expect": [
+      "You lose 8 life (Griselbrand's mana value).",
+      "Yes: You have lost the game."
+    ]
+  },
+  {
+    "id": "chalice-zero-vs-land-grant",
+    "text": "My opponent has Chalice of the Void on 0. Can I cast Land Grant?",
+    "expect": [
+      "Land Grant: Search your library for a Forest card, reveal that card, put it into your hand, then shuffle (not tracked in detail)."
+    ],
+    "notExpect": [
+      "Land Grant is countered."
+    ]
+  },
+  {
+    "id": "nacatl-bolted-after-plains",
+    "text": "I attack with a Wild Nacatl and my opponent Bolts it after I play a Plains. Does it die?",
+    "expect": [
+      "Wild Nacatl has 3 damage marked.",
+      "Yes: Wild Nacatl died (it's in the graveyard)."
+    ]
+  },
+  {
+    "id": "mother-saves-bears-from-doom-blade",
+    "text": "I have Mother of Runes untapped and my opponent casts Doom Blade on my Grizzly Bears. Can Mother save it?",
+    "expect": [
+      "Grizzly Bears has protection from black until end of turn.",
+      "Doom Blade doesn't resolve (all targets illegal).",
+      "Yes: Grizzly Bears is still on the battlefield."
+    ]
+  },
+  {
+    "id": "ghostly-prison-four-lands-three",
+    "text": "My opponent casts Ghostly Prison. I have 4 lands and 3 creatures. How many can I attack with?",
+    "expect": [
+      "2 of your 3 creatures can attack: Ghostly Prison makes each attacker cost {2}, and you have 4 mana (508.1c)."
+    ]
+  },
+  {
+    "id": "thalia-three-lands-bolt-shock",
+    "text": "My opponent has Thalia. I have 3 lands. Can I cast Lightning Bolt and Shock this turn?",
+    "expect": [
+      "No: Lightning Bolt ({R}, 2) and Shock ({R}, 2) cost 4 mana together, and you have only 3 available; you can cast Lightning Bolt or Shock but not both."
+    ]
+  },
+  {
+    "id": "zealous-conscripts-attack-with-bears",
+    "text": "I have Zealous Conscripts and cast it targeting their Grizzly Bears. Can I attack with the Bears?",
+    "expect": [
+      "You control Grizzly Bears until end of turn.",
+      "Grizzly Bears has haste until end of turn.",
+      "Yes: Grizzly Bears can attack."
+    ]
   }
 ]

@@ -1371,6 +1371,11 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") } && Regex("""^can (?:i|we) (?:play|drop) (?:a |my |the )?(?:fetch(?:land)?|c\d+) and (?:crack|sac|sacrifice|use|activate|fetch with) it\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "moonfetch-question"
             // "casts two Lightning Bolts at it": two casts, one after the other.
         t2 = t2.replace(Regex("""\b(casts?|plays?|bolts?) (two|2) ((?:c\d+))s? (at|on|targeting) (it|that|(?:my |their |his |her )?c\d+)\b""", RegexOption.IGNORE_CASE), "$1 $3 $4 $5, then $1 $3 $4 $5 again")
+            // "a Kitchen Finks with a -1/-1 counter and a Kitchen Finks without" / "and another Kitchen Finks": one more copy.
+        t2 = t2.replace(Regex("""\band (?:an? |another )(c\d+) without(?: (?:counters?|one|a counter|any))?(?=[,.?]|$| and\b)""", RegexOption.IGNORE_CASE), "and 1 $1")
+        t2 = t2.replace(Regex("""\band another (c\d+)(?=[,.?]|$| and\b| that\b| with\b)""", RegexOption.IGNORE_CASE), "and 1 $1")
+            // "What comes back?" after a sweeper: each of the asker's creatures, asked about.
+        if (Regex("""^(?:what|which(?: ones?)?) (?:comes|come) back\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "whatcomesback-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3050,6 +3055,13 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:You can play it, but you can't crack it. Under ${moon.card.name} a nonbasic land is a Mountain and loses all its other abilities (305.7, 613.1), so a fetchland enters as a Mountain: it has \"{T}: Add {R}\" and nothing else, and the sacrifice-to-search ability isn't there to activate. It still counts as your land drop and taps for red.")
             return true
         }
+        if (clause0 == "whatcomesback-question") {
+            val mine = ctx.objects.values.filter { o -> o.controller == "me" && o.zone == "battlefield" && isCreatureName(o.card.name) }
+            if (mine.isEmpty()) return false
+            mine.forEach { ctx.asks += EventSpec("ask", obj = it.id, to = "comesBack") }
+            ctx.notes += "\"What comes back?\" is answered creature by creature below."
+            return true
+        }
         if (clause0 == "castallowed-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
             val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
@@ -3930,7 +3942,10 @@ class SituationParser(private val names: NameIndex) {
         // "… while I control X" / "… when they have Y out": the state part is read first, then the action.
         Regex("""^(.+?)\s+after ((?:i|my|they|their|the opponent|my opponent|opponent|@\w+)\b.*)$""").find(clause0)?.let { r ->
             if (Regex("""\b(?:attack|attacks|cast|casts|play|plays|activate|activates|block|blocks|declare|declares|gain|gains|lose|loses|draw|draws|sacrifice|sacrifices|tap|taps|resolve|resolves)\b""").containsMatchIn(r.groupValues[2])) {
+                // "my opponent Bolts it after I play a Plains": "it" was the creature before the land came up.
+                val keep = ctx.lastMentioned
                 val first = readPart(r.groupValues[2], m, ctx)
+                if (keep != null && Regex("""\b(?:it|that)\b""").containsMatchIn(r.groupValues[1])) ctx.lastMentioned = keep
                 return readPart(r.groupValues[1], m, ctx) || first
             }
         }
