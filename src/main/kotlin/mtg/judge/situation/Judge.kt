@@ -422,7 +422,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val card = cards.byOracleId(o.def.oracleId)
                 val back = card?.let { toFaceDef(it, 1) }
                 if (back == null) state.clarifications += mtg.judge.engine.Clarification("${o.name}'s other face", "${o.name} has no back face to transform to.")
-                else { val was = o.name; o.def = back; state.trace.step("$was is transformed: it's now ${back.name}${if (back.isCreature) " (${back.power}/${back.toughness})" else ""}, with the back face's characteristics (712.8a).", "712.8a"); state.outcomes += "$was is transformed into ${back.name}." }
+                else { val was = o.name; o.def = back; o.transformed = true; state.trace.step("$was is transformed: it's now ${back.name}${if (back.isCreature) " (${back.power}/${back.toughness})" else ""}, with the back face's characteristics (712.8a).", "712.8a"); state.outcomes += "$was is transformed into ${back.name}." }
             }
             "blink" -> { val o = state.obj(e.obj ?: throw JudgeException("blink needs an object")); engine.blinkObject(o, e.player ?: o.controller) }
             "reanimate" -> { val o = state.obj(e.obj ?: throw JudgeException("reanimate needs an object")); engine.reanimateObject(o, e.player ?: o.owner) }
@@ -1464,6 +1464,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val def = e.card?.let { cardDef(it, state) } ?: throw JudgeException("suspend needs a card")
                     val p = state.player(e.player ?: "me")
                     val sus = Regex("""(?i)suspend (\d+)\s*[—-]\s*((?:\{[^}]+\})+)""").find(def.oracleText)
+                    // Chalice of the Void on 0 with Ancestral Vision: the card is cast when the last counter goes, and a Chalice on its mana value counters it.
+                    state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.def.name == "Chalice of the Void" && (o.counters["charge"] ?: 0) == def.manaValue.toInt() }?.let { ch ->
+                        state.outcomes += "When ${def.name} is finally cast from exile it is still cast (702.62a), and ${ch.name} with ${ch.counters["charge"] ?: 0} charge counter${if ((ch.counters["charge"] ?: 0) == 1) "" else "s"} counters a spell with mana value ${def.manaValue.toInt()}${if (def.manaCost == null) " (a card with no mana cost has mana value 0, 202.3b)" else ""}, so ${ch.name} counters it then; suspend doesn't get around that." }
                     state.outcomes += if (sus == null) "${def.name} doesn't have suspend, so it can't be suspended; it would have to be cast normally."
                         else { val n = sus.groupValues[1].toInt(); "${def.name} is exiled with $n time counter${if (n == 1) "" else "s"} for ${sus.groupValues[2]} instead of being cast. At the beginning of each of ${p.possessive} upkeeps a counter is removed, and when the last one goes ${p.subject.lowercase()} ${p.v("casts", "cast")} it without paying its mana cost (702.62a): with $n counter${if (n == 1) "" else "s"}, that is ${if (n == 1) "${p.possessive} next upkeep" else "$n upkeeps from now"}, and it resolves then${if (def.isCreature) " (a creature cast this way gets haste)" else ""}." }
                     return true

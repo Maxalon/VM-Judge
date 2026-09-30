@@ -1538,6 +1538,17 @@ class SituationParser(private val names: NameIndex) {
             && ctx.objects.values.any { o -> o.controller != "me" && o.zone != "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }) t2 = "snapbolt-question"
         // "I have Delver of Secrets and it flipped": the transformed face.
         t2 = t2.replace(Regex("""\b(it|that|c\d+) (?:flipped|has flipped|is flipped|transformed|has transformed|is transformed|already flipped|flipped already)\b""", RegexOption.IGNORE_CASE), "$1 transforms")
+        // "… at my Delver after it transformed": the transform first, then the rest.
+        t2 = t2.let { t0 -> Regex("""^(.+?) after (it|that|(?:my |the )?c\d+) (?:flipped|transformed|has flipped|has transformed|is flipped|transforms)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            // "at my Delver after it transformed": "it" is the card just named, which isn't an object yet when the transform is read first.
+            val what = if (r.groupValues[2].lowercase() in setOf("it", "that")) Regex("""(c\d+)""").findAll(r.groupValues[1]).lastOrNull()?.value?.let { "my $it" } ?: r.groupValues[2] else r.groupValues[2]
+            "$what transforms, ${r.groupValues[1]}" } ?: t0 }
+        // "What can attack me?" under Ensnaring Bridge: their whole team is sent in and the engine says which are held back.
+        if (ctx.objects.values.any { it.controller != "me" && it.zone == "battlefield" && isCreatureName(it.card.name) } && Regex("""^(?:what|which(?: of (?:their|his|her) creatures)?|who) can (?:still |even )?attack(?: me| into me| this turn)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) { t2 = "they attack with everything"; ctx.notes += "\"What can attack me?\" is read as your opponent attacking with everything; the outcome says which creatures are held back." }
+        // "Do they have to show me their hand?" (Gitaxian Probe, Peek): looking at a hand means they show it.
+        if (Regex("""^do (?:they|he|she) (?:have to|need to|got to) (?:show|reveal) (?:me )?(?:their|his|her) (?:whole )?hand\??$|^can (?:i|we) see (?:their|his|her) (?:whole )?hand\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "showhand-question"
+        // "Can I flashback it for its normal flashback cost?" after Snapcaster: both flashback costs are available.
+        if (Regex("""^can (?:i|we) (?:still )?(?:flashback|flash back|cast) (?:it|that|c\d+) for its (?:normal|own|printed|regular|real) (?:flashback )?cost(?: instead)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "ownflashback-question"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2803,8 +2814,10 @@ class SituationParser(private val names: NameIndex) {
         // "my Delver transforms": transforming doesn't make it a new object.
         Regex("""^(?:(?:my|their|his|her) )?(c\d+) (?:transforms?|transformed|is transformed|turns? over)$""").find(clause0)?.let { r ->
             val card = m.cards.getValue(r.groupValues[1])
-            val who = ctx.lastOwner ?: "me"
-            if (objectIdFor(card, ctx) == null) addObject(card, who, false, ctx)
+            val who = if (clause0.startsWith("their ") || clause0.startsWith("his ") || clause0.startsWith("her ")) (ctx.other("me") ?: "opp") else ctx.lastOwner ?: "me"
+            val id = objectIdFor(card, ctx) ?: addObject(card, who, false, ctx)
+            // The transform itself is played out (the back face from here on); the note below is the rules point people ask about.
+            ctx.events += EventSpec("transform", obj = id); ctx.lastMentioned = id
             ctx.asks += EventSpec("ask", to = "text:${card.display} transforming doesn't make it a new object: it keeps everything that applied to it, including how long it has been under its controller's control, so it is exactly as summoning sick as it was before it transformed (712.18). If it has been under your control since your turn began, it can attack and use {T} abilities now (302.6).")
             return true
         }
@@ -3424,8 +3437,19 @@ class SituationParser(private val names: NameIndex) {
         // "it transforms": a double-faced card turned to its back face.
         Regex("""^(it|that|(?:my |the |their )?c\d+) transforms$""").find(clause0)?.let { r ->
             val ph = r.groupValues[1].removePrefix("my ").removePrefix("the ").removePrefix("their ")
-            val id = (if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[ph]?.let { objectIdFor(it, ctx) }) ?: return@let
+            val owner = if (r.groupValues[1].startsWith("their ")) (ctx.other("me") ?: "opp") else "me"
+            val id = (if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[ph]?.let { objectIdFor(it, ctx) ?: addObject(it, owner, false, ctx) }) ?: return@let
             ctx.events += EventSpec("transform", obj = id); ctx.lastMentioned = id; return true
+        }
+        if (clause0 == "showhand-question") {
+            val spell = ctx.events.lastOrNull { it.verb == "cast" }?.let { it.card?.name ?: it.obj?.let { id -> ctx.objects[id]?.card?.name } } ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $spell says \"look at target player's hand\": as it resolves that player shows you their whole hand, and you may look at it for as long as it's resolving (you don't get to keep it face up afterwards, 701.16a). It isn't \"reveal\", so other players don't get to see it, only you.")
+            return true
+        }
+        if (clause0 == "ownflashback-question") {
+            val card = ctx.lastMentioned?.takeIf { it in ctx.objects }?.let { ctx.objects.getValue(it).card.name } ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull()?.let { ctx.objects[it]?.card?.name } ?: "the card"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $card keeps its own flashback, and Snapcaster Mage's trigger gives it a second one (flashback for its mana cost). Each instance of flashback is a separate alternative cost, so you choose which one to pay when you cast it from your graveyard (702.34b, 601.2b): $card's printed flashback cost, or its mana cost. Either way it's exiled as it resolves.")
+            return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")

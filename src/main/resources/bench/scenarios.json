@@ -31143,5 +31143,95 @@
       "You can make 1 mana right now: Urza's Tower → {R} (it's a Mountain under Blood Moon)."
     ],
     "cite": []
+  },
+  {
+    "id": "two-thalias-both-sides-bolt",
+    "text": "I have Thalia and my opponent has Thalia too. How much does Lightning Bolt cost me?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {2}",
+      "3 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "trample-5-5-into-0-4-wall",
+    "text": "My opponent attacks me with a 5/5 trample and I block with a 0/4 Wall. How much do I take?",
+    "expect": [
+      "You take 1 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-their-goyf-my-mindcensor",
+    "text": "I cast Path to Exile on my opponent's Tarmogoyf while I control Aven Mindcensor. Do they find a basic?",
+    "expect": [
+      "Aven Mindcensor: opponent looks at only the top four cards"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-vs-abrupt-decay",
+    "text": "I have Spellskite and my opponent casts Abrupt Decay on my Tarmogoyf. Can I redirect it?",
+    "expect": [
+      "Abrupt Decay now targets Spellskite instead of Tarmogoyf."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-zero-suspended-vision",
+    "text": "My opponent has Chalice of the Void on 0 and I cast Ancestral Vision with suspend. Is it countered?",
+    "expect": [
+      "Ancestral Vision is exiled with 4 time counters",
+      "counters a spell with mana value 0",
+      "counters it then"
+    ],
+    "cite": []
+  },
+  {
+    "id": "grudge-snapcaster-own-flashback",
+    "text": "I cast Snapcaster Mage targeting Ancient Grudge in my graveyard. Can I flashback it for its normal flashback cost?",
+    "expect": [
+      "Yes. Ancient Grudge keeps its own flashback, and Snapcaster Mage's trigger gives it a second one"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-transformed-delver",
+    "text": "My opponent casts Lightning Bolt at my Delver of Secrets after it transformed. Does it die?",
+    "expect": [
+      "Delver of Secrets is transformed into Insectile Aberration.",
+      "Insectile Aberration has 3 damage marked.",
+      "turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-one-card-what-can-attack",
+    "text": "I have Ensnaring Bridge and one card in hand. My opponent has two 1/1s and a 3/3. What can attack me?",
+    "expect": [
+      "a 3/3 creature can't attack (Ensnaring Bridge)",
+      "You take 1 damage. (×2)"
+    ],
+    "notExpect": [
+      "Nothing changes"
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-show-me-hand",
+    "text": "I cast Gitaxian Probe on my opponent. Do they have to show me their hand?",
+    "expect": [
+      "Yes. Gitaxian Probe says \"look at target player's hand\""
+    ],
+    "cite": []
+  },
+  {
+    "id": "torpor-orb-finks-no-gain",
+    "text": "My opponent has Torpor Orb and I cast Kitchen Finks. Do I gain 2?",
+    "expect": [
+      "Kitchen Finks entering the battlefield doesn't trigger any abilities (Torpor Orb).",
+      "No: you gain no life here."
+    ],
+    "cite": []
   }
 ]

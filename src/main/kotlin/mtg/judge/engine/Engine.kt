@@ -1032,6 +1032,16 @@ class Engine(val state: GameState) {
     }
 
     /** Aven Mindcensor: an opponent's search looks at only the top four cards of the library (614.1a). */
+    /** Who a narrated search belongs to: "its controller may search" is the targeted permanent's controller, "that player" the targeted player, otherwise the caster. */
+    private fun searcherOf(text: String, item: StackItem, caster: String): String = when {
+        Regex("""(?i)\bits controller (?:may )?search""").containsMatchIn(text) -> item.targets.filterIsInstance<Ref.Obj>().firstOrNull()?.let { state.objects[it.id]?.controller } ?: caster
+        Regex("""(?i)\bthat player (?:may )?search""").containsMatchIn(text) -> item.targets.filterIsInstance<Ref.Player>().firstOrNull()?.id ?: caster
+        // Path to Exile's remainder after "its controller may": "Search their library …" with a permanent targeted is that permanent's controller's search.
+        Regex("""(?i)^search(?:es)? their library""").containsMatchIn(text.trim()) && item.targets.filterIsInstance<Ref.Obj>().isNotEmpty() -> item.targets.filterIsInstance<Ref.Obj>().firstOrNull()?.let { state.objects[it.id]?.controller } ?: caster
+        Regex("""(?i)\beach player searches""").containsMatchIn(text) -> caster
+        else -> caster
+    }
+
     private fun searchLimitNote(searcher: String, what: String) {
         val censor = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller != searcher && it.def.abilities.any { a -> a is UnparsedAbility && a.text.contains("searches the top four cards of that library instead", ignoreCase = true) } } ?: return
         val p = state.player(searcher)
@@ -3189,7 +3199,7 @@ class Engine(val state: GameState) {
                 if (ownSubject) trace.step("${item.source.name}: \"${effect.text.replace("~", item.source.name).replaceFirstChar { it.uppercase() }.trimEnd('.')}.\" (${if (targetSubject) "the targeted player carries" else "${you.subject} ${you.v("carries", "carry")}"} this out; the details aren't tracked here.)", *effect.rules.toTypedArray())
                 else trace.step("${you.subject} ${thirdPerson(effectText(effect.text, item), you)}.", *effect.rules.toTypedArray())
                 val said = if (ownSubject || you.you) effect.text.replace("~", item.source.name).replaceFirstChar { it.uppercase() } else "${you.subject} ${thirdPerson(effectText(effect.text, item), you)}"
-                if (Regex("""(?i)\bsearch(?:es)? (?:your|their|his or her) library\b""").containsMatchIn(effect.text)) searchLimitNote(you.id, "the card it looks for")
+                if (Regex("""(?i)\bsearch(?:es)? (?:your|their|his or her) library\b""").containsMatchIn(effect.text)) searchLimitNote(searcherOf(effect.text, item, you.id), "the card it looks for")
                 enterBlockersNote(item, effect.text)
                 if (Regex("""(?i)cast spells from your graveyard""").containsMatchIn(effect.text)) state.castFromGraveyard += you.id
                 if (Regex("""(?i)cast spells from your graveyard""").containsMatchIn(effect.text)) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.oracleText.contains("would be put into a graveyard from anywhere, exile it instead", ignoreCase = true) }?.let { rip ->
@@ -3628,7 +3638,7 @@ class Engine(val state: GameState) {
         if (to == Zone.BATTLEFIELD && obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
         if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.def !== obj.printedDef) {
             trace.step("${obj.printedDef.name} was a copy of ${obj.def.name}; the copy effect ends as it leaves the battlefield, so in its new zone it is ${obj.printedDef.name} again, a new object with no memory of what it was.", "400.7", "707.2")
-            state.outcomes += "${obj.printedDef.name} stops being a copy of ${obj.def.name} as it leaves the battlefield."
+            state.outcomes += if (obj.transformed) "${obj.def.name} turns back to its front face, ${obj.printedDef.name}, as it leaves the battlefield (712.8)." else "${obj.printedDef.name} stops being a copy of ${obj.def.name} as it leaves the battlefield."
             obj.def = obj.printedDef
         }
         if (obj.isOnBattlefield()) {

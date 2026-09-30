@@ -120,6 +120,8 @@ class GameObject(
     var manaAvailableAtCast: Int? = null
     /** "pitching a blue card": the alternative cost this spell was cast for, in the card's words, so "what did it cost?" answers with it. */
     var castForAlternativeCost: String? = null
+    /** A double-faced card showing its back face (Insectile Aberration); it turns back to the front face when it leaves the battlefield (712.8). */
+    var transformed: Boolean = false
     /** The cost-raising permanents that applied as it was cast (name to amount), for "how much did it cost?" asked once they have left. */
     var taxesAtCast: List<Pair<String, Int>>? = null
     /** Monstrous: set by monstrosity and never unset while the permanent stays on the battlefield (701.31b). */
