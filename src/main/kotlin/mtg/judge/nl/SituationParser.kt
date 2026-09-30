@@ -1336,6 +1336,11 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.sawValakut && (ctx.objects.values.any { o -> o.controller == "me" && o.card.name == "Scapeshift" } || ctx.inHand["me"]?.any { it.display == "Scapeshift" } == true) && Regex("""^how much (?:damage )?can (?:i|we) (?:do|deal)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "scapeshift-question"
             // "How do I assign damage?" with two blockers: the current rule, alongside the outcome.
         if (Regex("""^how (?:do|should|would|can|must) (?:i|we) (?:assign|divide|split|order|distribute) (?:the |my |its |combat )?damage(?: (?:between|among|to) (?:them|the blockers|both))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "assigndamage-question"
+            // "Can I make them lose life?" with Deathrite Shaman: its third ability, at an instant or sorcery card in a graveyard.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Deathrite Shaman" } && Regex("""^can (?:i|we) (?:make|have) (?:them|my opponent|the opponent|him|her) lose (?:life|2 life|2|some life)(?: with (?:it|c\d+|the shaman))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "deathrite-drain-question"
+            // "I have Aether Vial on 2 and Meddling Mage in hand. My opponent casts a spell. Can I name it in response?"
+        if ((ctx.objects.values.any { o -> o.controller == "me" && o.card.name == "Meddling Mage" } || ctx.inHand["me"]?.any { it.display == "Meddling Mage" } == true) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Aether Vial" } &&
+            Regex("""^can (?:i|we) (?:name (?:it|that|the spell|their spell)|vial (?:in )?(?:the )?(?:mage|meddling mage|it)(?: in)?|stop it with (?:the )?(?:mage|meddling mage))(?: in response| with (?:it|the vial|c\d+|the mage|meddling mage))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialmage-question"
             // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -2966,6 +2971,18 @@ class SituationParser(private val names: NameIndex) {
             val id = (if (ph in setOf("it", "that")) ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[ph]?.let { objectIdFor(it, ctx) }) ?: return@let
             val who = ctx.objects.getValue(id).controller
             ctx.events += EventSpec("activate", player = who, obj = id, to = "animate"); ctx.lastActor = who; ctx.lastVerb = "activate"; ctx.lastMentioned = id
+            return true
+        }
+        if (clause0 == "deathrite-drain-question") {
+            val drs = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Deathrite Shaman" }
+            val card = ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }
+            if (card == null) { ctx.asks += EventSpec("ask", to = "text:Only with an instant or sorcery card in a graveyard: Deathrite Shaman's third ability ({B}, {T}: Exile target instant or sorcery card from a graveyard. Each opponent loses 2 life) needs one to target, and none was described here."); return true }
+            ctx.events += EventSpec("activate", player = "me", obj = drs.id, targets = listOf(card.id)); ctx.lastActor = "me"; ctx.lastVerb = "activate"
+            ctx.notes += "\"Can I make them lose life?\" is read as Deathrite Shaman's {B}, {T} ability at ${card.card.name}; it needs {B} and Deathrite untapped and not summoning sick (302.6)."
+            return true
+        }
+        if (clause0 == "vialmage-question") {
+            ctx.asks += EventSpec("ask", to = "text:You can put Meddling Mage in, but it won't stop that spell. Aether Vial's ability is activated at instant speed, so with two counters you can put Meddling Mage onto the battlefield in response, and as it enters you choose a card name (you may name the spell on the stack). But Meddling Mage says spells with the chosen name can't be cast: the spell already on the stack has been cast, so it resolves as normal (601.2, 608.2). Naming it only stops later copies. Name whatever they are most likely to cast next instead.")
             return true
         }
         if (clause0 == "castallowed-question") {

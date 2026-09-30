@@ -28788,5 +28788,87 @@
       "Yes: You have won the game.",
       "But only if opponent doesn't block: Wall of Omens can block Grizzly Bears"
     ]
+  },
+  {
+    "id": "canonist-second-spell",
+    "text": "I have Ethersworn Canonist. My opponent casts Lightning Bolt and then Shock. Can they?",
+    "expect": [
+      "Shock can't be cast (Ethersworn Canonist).",
+      "No: Shock can't be cast (Ethersworn Canonist)."
+    ]
+  },
+  {
+    "id": "krosan-grip-vs-top",
+    "text": "My opponent casts Krosan Grip on my Sensei's Divining Top. Can I respond by tapping the Top?",
+    "expect": [
+      "Sensei's Divining Top's ability can't be activated while Krosan Grip is on the stack (split second).",
+      "Sensei's Divining Top: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "mana-leak-vs-attacking-smiter",
+    "text": "I attack with a Loxodon Smiter. My opponent casts Mana Leak on it. What happens?",
+    "expect": [
+      "Mana Leak can't target Loxodon Smiter (not a spell).",
+      "opponent takes 4 damage."
+    ]
+  },
+  {
+    "id": "rip-snapcaster-flashback",
+    "text": "My opponent has Rest in Peace. I cast Snapcaster Mage. Can I flashback anything?",
+    "expect": [
+      "Snapcaster Mage's trigger has no legal target (Rest in Peace keeps graveyards empty) and does nothing."
+    ]
+  },
+  {
+    "id": "vial-meddling-mage-in-response",
+    "text": "I have Aether Vial on 2 and Meddling Mage in hand. My opponent casts a spell. Can I name it in response?",
+    "expect": [
+      "You can put Meddling Mage in, but it won't stop that spell."
+    ]
+  },
+  {
+    "id": "path-own-bears-land",
+    "text": "I cast Path to Exile on my own Grizzly Bears. Do I get a land?",
+    "expect": [
+      "Yes: the search is yours."
+    ]
+  },
+  {
+    "id": "swords-vs-emrakul",
+    "text": "My opponent has Emrakul, the Aeons Torn. I cast Swords to Plowshares on it. Does it work?",
+    "expect": [
+      "Swords to Plowshares can't target Emrakul, the Aeons Torn."
+    ]
+  },
+  {
+    "id": "deathrite-drain-bolt",
+    "text": "I have a Deathrite Shaman and my opponent's graveyard has a Lightning Bolt. Can I make them lose life?",
+    "expect": [
+      "Lightning Bolt: opponent's graveyard → exile.",
+      "opponent loses 2 life."
+    ]
+  },
+  {
+    "id": "thoughtseize-emrakul-shuffle",
+    "text": "My opponent casts Thoughtseize. I have Emrakul, the Aeons Torn in hand. Can they take it?",
+    "expect": [
+      "Emrakul, the Aeons Torn: your hand → your graveyard.",
+      "You shuffle your graveyard into your library: Emrakul, the Aeons Torn."
+    ]
+  },
+  {
+    "id": "gaeas-cradle-three",
+    "text": "I control Gaea's Cradle and 3 creatures. How much mana does it make?",
+    "expect": [
+      "{G}{G}{G} right now"
+    ]
+  },
+  {
+    "id": "force-of-will-vs-emrakul",
+    "text": "My opponent casts Force of Will pitching a blue card on my Emrakul. Does Emrakul get countered?",
+    "expect": [
+      "No: Emrakul, the Aeons Torn isn't countered (it can't be)."
+    ]
   }
 ]

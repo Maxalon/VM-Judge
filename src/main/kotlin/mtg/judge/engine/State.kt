@@ -524,7 +524,8 @@ class GameState(
         val notSubOk = f.notSubtypes.none { st -> o.def.subtypes.any { it.equals(st, true) } || ((st == "basic" || st == "snow") && o.def.supertypes.any { it.equals(st, true) }) }
         val ctrlOk = when (f.controller) { null -> true; Who.YOU -> o.controller == controller; Who.OPPONENT -> o.controller != controller; else -> true }
         val anim = o.animatedAs
-        fun hasSub(st: String) = o.def.subtypes.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
+        // "instant or sorcery card": the filter parser files card types alongside subtypes; a card type is on the type line.
+        fun hasSub(st: String) = o.def.subtypes.any { it.equals(st, true) } || o.def.types.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
             (o.def.changeling && o.def.isCreature) || anim?.allCreatureTypes == true
         val subOk = if (f.subtypesAny && f.subtypes.isNotEmpty()) f.subtypes.any { st -> hasSub(st) }
                     else f.subtypes.all { st -> hasSub(st) || (st.equals("basic", true) && o.def.supertypes.any { it.equals("Basic", true) }) || (st.equals("snow", true) && o.def.supertypes.any { it.equals("Snow", true) }) }

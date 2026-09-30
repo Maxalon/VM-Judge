@@ -311,6 +311,7 @@ object OracleParser {
         if (Regex("""^~ deals (combat )?damage$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisDealsDamage(c.contains("combat", true), null)
         if (Regex("""^you attack( with one or more creatures)?$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.YouAttack
         if (Regex("""^~ is put into a graveyard from the battlefield$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisDies
+        if (Regex("""^~ is put into a graveyard from anywhere$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisToGraveyardAnywhere
         if (Regex("""^~ is dealt damage$|^a source deals damage to ~$|^~ is dealt damage by a source$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisIsDealtDamage
         if (Regex("""^~ becomes blocked$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisBecomesBlocked
         if (Regex("""^~ becomes blocked by a creature$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisBecomesBlockedByCreature
@@ -1782,6 +1783,7 @@ object OracleParser {
         // Oblivion Ring: "exile another target nonland permanent" (never itself), and its return trigger.
         Regex("""^exile another target (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> val t = target("target " + m.groupValues[1]); return Effect.Exile(t.copy(filter = t.filter.copy(other = true))) }
         if (Regex("""^return the exiled card to the battlefield under its owner's control\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ReturnExiledCard
+        if (Regex("""^(?:its owner|you) shuffles? (?:their|your) graveyard into (?:their|your) library\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ShuffleGraveyardIntoLibrary(Who.YOU)
         exileRe.matchEntire(s)?.let { return Effect.Exile(target(it.groupValues[1])) }
         tapRe.matchEntire(s)?.let { return Effect.Tap(target(it.groupValues[1])) }
         // Threaten: "Untap target creature and gain control of it until end of turn."
