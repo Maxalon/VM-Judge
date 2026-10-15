@@ -1549,6 +1549,15 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^do (?:they|he|she) (?:have to|need to|got to) (?:show|reveal) (?:me )?(?:their|his|her) (?:whole )?hand\??$|^can (?:i|we) see (?:their|his|her) (?:whole )?hand\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "showhand-question"
         // "Can I flashback it for its normal flashback cost?" after Snapcaster: both flashback costs are available.
         if (Regex("""^can (?:i|we) (?:still )?(?:flashback|flash back|cast) (?:it|that|c\d+) for its (?:normal|own|printed|regular|real) (?:flashback )?cost(?: instead)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "ownflashback-question"
+        // "Does my own Leyline stop it?": hexproof is against opponents only.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb") } && Regex("""^does my (?:own )?(?:c\d+|leyline) (?:stop|block|prevent|counter|affect) (?:it|that|my own spell|me)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "ownleyline-question"
+        // "Can I still cast Thalia uncounterable?" with Cavern of Souls under Blood Moon: the Cavern's mana is plain red now.
+        if (ctx.objects.values.any { it.card.name == "Cavern of Souls" } && (ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }) && Regex("""^can (?:i|we) (?:still )?(?:cast|make) (?:my |the )?(?:c\d+|it|creatures?|my creatures) (?:uncounterable|so it can't be countered|uncounterably|with cavern|through cavern|with the cavern)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "cavernmoon-question"
+        // "Do I take damage if I block with both?": the double block, then the question (before the plain "if I block" rewrite).
+        t2 = t2.replace(Regex("""^do (?:i|we) take (?:any )?damage if (?:i|we) block with (both|both of them|two of them|everything|all of them)\??$""", RegexOption.IGNORE_CASE), "i block with $1, do i take damage")
+        // "Can I Snapcaster and Bolt this turn?": both casts against the mana.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (c\d+) (?:and|and then|then|into) (c\d+)(?: (?:this turn|in one turn|in the same turn|both|together))?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (m.cards[r.groupValues[1]] != null && m.cards[r.groupValues[2]] != null) "can i cast ${r.groupValues[1]} and ${r.groupValues[2]} in the same turn" else t0 } ?: t0 }
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3450,6 +3459,21 @@ class SituationParser(private val names: NameIndex) {
             val card = ctx.lastMentioned?.takeIf { it in ctx.objects }?.let { ctx.objects.getValue(it).card.name } ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull()?.let { ctx.objects[it]?.card?.name } ?: "the card"
             ctx.asks += EventSpec("ask", to = "text:Yes. $card keeps its own flashback, and Snapcaster Mage's trigger gives it a second one (flashback for its mana cost). Each instance of flashback is a separate alternative cost, so you choose which one to pay when you cast it from your graveyard (702.34b, 601.2b): $card's printed flashback cost, or its mana cost. Either way it's exiled as it resolves.")
             return true
+        }
+        if (clause0 == "ownleyline-question") {
+            val ley = ctx.objects.values.last { o -> o.controller == "me" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb") }.card.name
+            ctx.asks += EventSpec("ask", to = "text:No. $ley gives you hexproof, and hexproof only stops spells and abilities your opponents control from targeting you (702.11c); your own spells can target you freely. Thoughtseize on yourself resolves as normal.")
+            return true
+        }
+        if (clause0 == "cavernmoon-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. Under Blood Moon, Cavern of Souls is a Mountain with no abilities of its own (305.7, 613.1): it taps for {R} and nothing else, so the mana it makes no longer carries \"that spell can't be countered\". A creature cast with it can be countered like any other; you'd need a different source of protection.")
+            return true
+        }
+        // "then they discard their hand to Liliana": no cards in hand from here on (Ensnaring Bridge).
+        // ("I discard my hand" with the hand's size known stays a discard of that many cards, read elsewhere.)
+        Regex("""^(?:then )?(?:(?:they|he|she|my opponent|the opponent) )?(?:then )?(?:discards?|pitch(?:es)?|dumps?|throws? away) (their|his|her) (?:whole |entire )?hand(?: (?:to|with|off) (?:c\d+|it|liliana|the ultimatum|a spell))?$""").find(clause0)?.let { r ->
+            val who = pronounPlayer(ctx, "their")
+            ctx.handSize[who] = 0; ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} no cards in hand after that."; ctx.note(who); return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
