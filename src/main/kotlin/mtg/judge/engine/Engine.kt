@@ -23,6 +23,10 @@ class Engine(val state: GameState) {
             state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard (nothing allows it)."; return null
         }
         if (obj.zone == Zone.GRAVEYARD && !flashback && playerId in state.castFromGraveyard) trace.step("${card.name} is cast from ${player.possessive} graveyard, as Yawgmoth's Will allows this turn.", "601.3")
+        if (flashback || obj.zone == Zone.GRAVEYARD) state.objects.values.firstOrNull { o -> o.isOnBattlefield() && Regex("""(?i)can't cast spells from graveyards""").containsMatchIn(o.def.oracleText) }?.let { cage ->
+            trace.step("${cage.name} says players can't cast spells from graveyards or libraries, so ${card.name} can't be cast from ${player.possessive} graveyard${if (flashback) ", flashback or not: flashback only gives permission to cast from the graveyard, and the Cage takes that permission away" else ""}.", "601.3", "702.34a")
+            state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard (${cage.name})."; return null
+        }
         state.stack.firstOrNull { it.kind == StackKind.SPELL && it.source.def.has("split second") }?.let { ss ->
             trace.step("${ss.source.name} has split second and is on the stack, so players can't cast spells or activate abilities that aren't mana abilities. ${card.name} can't be cast now.", "702.61a")
             state.outcomes += "${card.name} can't be cast while ${ss.source.name} is on the stack (split second)."; return null
@@ -1341,12 +1345,15 @@ class Engine(val state: GameState) {
                     else item.effect?.let { applyEffect(it, item) } ?: if (!Generic.isGeneric(def)) state.unsupported.add(Unsupported(def.name, "The spell has no modeled effect.")) else Unit
                     val exilesItself = effectContains(item.effect) { it is Effect.ExileSelfSpell }
                     val willExile = item.source.owner in state.exileInsteadThisTurn && !item.source.token && !item.flashback && !exilesItself
-                    item.source.zone = if (item.flashback || exilesItself || willExile) Zone.EXILE else Zone.GRAVEYARD
+                    // Leyline of the Void, Rest in Peace: the spell would go to a graveyard, so it's exiled instead (614.1a).
+                    val keeper = if (!item.flashback && !exilesItself && !willExile && !item.source.token) graveyardReplacement(item.source, Zone.STACK)?.takeIf { it.zone == Zone.EXILE && it.source != null } else null
+                    item.source.zone = if (item.flashback || exilesItself || willExile || keeper != null) Zone.EXILE else Zone.GRAVEYARD
+                    if (keeper != null) { trace.step("${def.name} finishes resolving and would be put into its owner's graveyard, but ${keeper.by} says a card that would be put into that graveyard from anywhere is exiled instead, so it's exiled. It can't be flashed back from exile.", "608.2n", "614.1a"); state.outcomes += "${def.name}: the stack → exile instead of the graveyard (${keeper.by}, 614.1a)." }
                     if (willExile) { trace.step("${def.name} finishes resolving and would go to its owner's graveyard, but this turn a card that would be put into that graveyard is exiled instead (Yawgmoth's Will), so it's exiled.", "608.2n", "614.1a"); state.outcomes += "${def.name}: the stack → exile (exiled instead of going to the graveyard this turn)." }
                     if (item.source.token) trace.step("The copy of ${def.name} finishes resolving; a copy of a spell ceases to exist once it leaves the stack.", "608.2c", "707.10a")
                     else if (exilesItself && !item.flashback) { state.outcomes += "${def.name}: the stack → exile (it exiles itself)." }
                     else if (item.flashback) { trace.step("${def.name} was cast with flashback, so it is exiled instead of going to its owner's graveyard; it can't be cast again.", "702.34a", "608.2n"); state.outcomes += "${def.name} is exiled (flashback)." }
-                    else trace.step("${def.name} finishes resolving and is put into its owner's graveyard.", "608.2c", "608.2n")
+                    else if (keeper == null) trace.step("${def.name} finishes resolving and is put into its owner's graveyard.", "608.2c", "608.2n")
                 } else {
                     item.source.zone = Zone.BATTLEFIELD; item.source.tapped = false; item.source.summoningSick = def.isCreature; item.source.timestamp = state.tick()
                     if (def.isAura) {
@@ -2950,6 +2957,10 @@ class Engine(val state: GameState) {
                 val untilNext = effect.keywords.any { k -> k.endsWith("@until-your-next-turn") }
                 it.tempKeywords += effect.keywords.map { k -> k.replace("@until-your-next-turn", "@until-turn:${item.controller}") }
                 val dur = if (untilNext) "until ${state.player(item.controller).possessive} next turn" else "until end of turn"
+                if ("flashback" in effect.keywords) state.objects.values.firstOrNull { o -> o.isOnBattlefield() && Regex("""(?i)can't cast spells from graveyards""").containsMatchIn(o.def.oracleText) }?.let { cage ->
+                    trace.step("${it.name} has flashback now, but ${cage.name} says players can't cast spells from graveyards, so it still can't be cast from there: the Cage's \"can't\" beats flashback's \"may\".", "101.2", "702.34a")
+                    state.outcomes += "${cage.name}: ${it.name} gets flashback but can't be cast from the graveyard while the Cage is on the battlefield (\"can't\" beats \"may\", 101.2)."
+                }
                 // "unblockable" is how the engine carries "can't be blocked"; it isn't a keyword anybody prints.
                 val said = effect.keywords.joinToString(" and ") { k -> when (k.substringBefore('@')) { "unblockable" -> "\"can't be blocked\""; "cant-block" -> "\"can't block\""; "cant-attack" -> "\"can't attack\""; else -> k } }
                 trace.step("${it.name} gains $said $dur.", "611.2a")

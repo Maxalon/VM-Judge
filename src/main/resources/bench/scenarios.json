@@ -31498,5 +31498,116 @@
     "cite": [
       "712.8a"
     ]
+  },
+  {
+    "id": "trample-55-blocked-by-22-at-3",
+    "text": "They attack me with a 5/5 trample and I block with my 2/2. I'm at 3. Do I die?",
+    "expect": [
+      "You take 3 damage.",
+      "You lose the game."
+    ],
+    "cite": [
+      "702.19b"
+    ]
+  },
+  {
+    "id": "snapcaster-bolt-cast-again-exiled",
+    "text": "I cast Snapcaster Mage at end of their turn and flash back Lightning Bolt. Then on my turn can I cast Bolt again?",
+    "expect": [
+      "Lightning Bolt is exiled (flashback).",
+      "No: Lightning Bolt can't be cast again: it's in exile"
+    ],
+    "cite": [
+      "702.34a"
+    ]
+  },
+  {
+    "id": "goyf-three-types-vs-bolt",
+    "text": "I have Tarmogoyf. There's a land, an instant, and a creature in graveyards. They Bolt it. Does it die?",
+    "expect": [
+      "No: Tarmogoyf is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-void-souls-no-flashback",
+    "text": "They have Leyline of the Void. I cast Lingering Souls. Can I flash it back?",
+    "expect": [
+      "Lingering Souls: the stack → exile instead of the graveyard (Leyline of the Void, 614.1a).",
+      "Lingering Souls can't be cast with flashback: it's in exile"
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "confidant-reveals-griselbrand",
+    "text": "I have Dark Confidant and reveal Griselbrand. How much life do I lose?",
+    "expect": [
+      "You lose 8 life (Griselbrand's mana value)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "confidant-at-1-reveals-land",
+    "text": "I'm at 1 life with Dark Confidant. Do I lose on upkeep if I reveal a land?",
+    "expect": [
+      "You lose no life (a basic land has mana value 0).",
+      "No: You are still in the game at 1 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-into-smiter",
+    "text": "My opponent casts Thoughtseize on me. I have Loxodon Smiter in hand. What happens?",
+    "expect": [
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell).",
+      "opponent loses 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "cage-vs-snapcaster-grant",
+    "text": "I have Grafdigger's Cage. Can they Snapcaster their Bolt?",
+    "expect": [
+      "Grafdigger's Cage: Lightning Bolt gets flashback but can't be cast from the graveyard while the Cage is on the battlefield"
+    ],
+    "cite": [
+      "101.2"
+    ]
+  },
+  {
+    "id": "cage-vs-snapcaster-flashback-cast",
+    "text": "I have Grafdigger's Cage. They cast Snapcaster Mage and flash back Lightning Bolt at me. Does it work?",
+    "expect": [
+      "Lightning Bolt can't be cast from opponent's graveyard (Grafdigger's Cage)."
+    ],
+    "cite": [
+      "601.3"
+    ]
+  },
+  {
+    "id": "mirran-crusader-vs-goyf",
+    "text": "I attack with Mirran Crusader and they have a Tarmogoyf. Can it block?",
+    "expect": [
+      "No: Tarmogoyf can't block Mirran Crusader (protection)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-one-card-vs-counter-33",
+    "text": "They have Ensnaring Bridge with 1 card in hand. I have a 2/2 with +1/+1 counter. Can I attack?",
+    "expect": [
+      "a 2/2 creature can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-one-vs-thoughtseize",
+    "text": "I cast Chalice of the Void with X=1. Can they cast Thoughtseize?",
+    "expect": [
+      "Thoughtseize is countered."
+    ],
+    "cite": []
   }
 ]

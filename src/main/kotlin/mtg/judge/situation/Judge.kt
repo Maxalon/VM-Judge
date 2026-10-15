@@ -244,6 +244,21 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         (c.oracleId?.let { it == o.def.oracleId } ?: o.def.name.equals(c.name ?: "", true)) } }
                     ?: e.card?.let { c -> state.objects.values.firstOrNull { o -> o.zone == Zone.COMMAND && o.controller == player &&
                         (c.oracleId?.let { it == o.def.oracleId } ?: o.def.name.equals(c.name ?: "", true)) } }
+                // "Can I cast Bolt again?" after flashing it back, "can I flash it back?" under Leyline of the Void: the card is in exile.
+                if (existing == null && e.obj == null && e.card != null && (e.to == "flashback" || e.to == "again")) {
+                    val exiled = state.objects.values.lastOrNull { o -> o.zone == Zone.EXILE && o.owner == player && (e.card.oracleId?.let { it == o.def.oracleId } ?: o.def.name.equals(e.card.name ?: "", true)) }
+                    if (exiled == null && e.to == "again") state.objects.values.lastOrNull { o -> o.zone == Zone.GRAVEYARD && o.owner == player && (e.card.oracleId?.let { it == o.def.oracleId } ?: o.def.name.equals(e.card.name ?: "", true)) }?.let { gy ->
+                        state.trace.step("${gy.name} is in ${state.player(player).possessive} graveyard now, so casting it again means casting it from there.", "601.3")
+                        engine.cast(player, gy.def, emptyList(), gy.id); return
+                    }
+                    if (exiled != null) {
+                        val keeper = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.def.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.any { ef -> ((ef as? StaticEffect.Replace)?.replacement as? mtg.judge.engine.Replacement.GraveyardReplacement)?.let { it.fromAnywhere && it.instead == "exile" && !it.self } == true } }
+                        val why = if (keeper != null) "${keeper.name} exiled it instead of letting it reach the graveyard, 614.1a" else "a card cast with flashback is exiled as it resolves, 702.34a"
+                        state.trace.step("${exiled.name} is in exile, not ${state.player(player).possessive} graveyard or hand: $why. A card can be cast only from where a rule or effect allows (601.3), and nothing allows casting it from exile, so it can't be cast${if (e.to == "again") " again" else " with flashback"}.", "601.3", if (keeper != null) "614.1a" else "702.34a")
+                        state.outcomes += "${exiled.name} can't be cast${if (e.to == "again") " again" else " with flashback"}: it's in exile ($why), and nothing lets it be cast from there."
+                        return
+                    }
+                }
                 val def = existing?.def ?: cardDef(e.card ?: throw JudgeException("cast needs a card"), state) ?: return
                 // A rider sentence in front of the modes makes the spell a Seq around its Modal.
                 val modalEffect = def.spellEffect as? Effect.Modal

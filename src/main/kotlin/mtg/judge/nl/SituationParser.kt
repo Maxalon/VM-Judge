@@ -1580,6 +1580,12 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" }) t2 = t2.replace(Regex("""^can (?:i|we) (?:vial in|put in|flash in|vial|drop in) (?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)?(?: in response| before it resolves| first| now)?(?: to (?:gain (?:the )?life|save myself|survive|go up|block|chump|stay alive))?\??$""", RegexOption.IGNORE_CASE), "i vial in $1 in response")
         // "Can I redirect it with Spellskite paying life?": how the Phyrexian mana is paid is the engine's to say.
         t2 = t2.replace(Regex("""(?<=\bwith (?:my |the )?c\d|\bwith (?:my |the )?c\d\d)(?:,| and)? ?(?:by |while )?(?:paying|pay|using) (?:the |2 |two )?life(?: for it| instead| for the mana| instead of mana)?(?=\?|$)""", RegexOption.IGNORE_CASE), "")
+        // "Then on my turn, can I cast Bolt again?": the lead-in is dropped; whether the card can be cast again is what's asked.
+        t2 = t2.replace(Regex("""^(?:then\s+|and then\s+)?(?:(?:on|in|during) my (?:next |own )?turn,?\s+|next turn,?\s+|later,?\s+)?(can (?:i|we) (?:still |even |then )?(?:cast|play|flashback|flash back|recast|re-cast) (?:my |the )?c\d+ again\??)$""", RegexOption.IGNORE_CASE), "$1")
+        // "Do I lose on upkeep if I reveal a land?" (Dark Confidant at 1 life): the reveal, then the question.
+        t2 = t2.replace(Regex("""^(do|will|would) (i|we) (lose|die|lose the game|survive|live) (?:on|in|during|at) (?:my )?(?:next )?upkeep if (?:i|we) (?:reveal|flip|hit|trigger into|draw into) (an? |the )?(land|basic land|c\d+|instant|sorcery|creature|artifact|enchantment|planeswalker)\??$""", RegexOption.IGNORE_CASE), "i reveal $4$5, $1 $2 $3")
+        // "Can I flash it back?": the verb's two words around the object.
+        t2 = t2.replace(Regex("""\bflash (it|that|them|(?:my |the )?c\d+) back\b""", RegexOption.IGNORE_CASE), "flash back $1")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
@@ -3515,6 +3521,16 @@ class SituationParser(private val names: NameIndex) {
             val who = if (clause0.endsWith(" me")) "me" else pronounPlayer(ctx, "their")
             ctx.events += EventSpec("nobasics", player = who); ctx.note(who); return true
         }
+        // "Can I cast Lightning Bolt again?" after it was flashed back: the same card is cast again, and the engine says where it is now.
+        Regex("""^can (?:i|we) (?:still |even |then )?(?:cast|play|flashback|flash back|recast|re-cast) (?:my |the )?(c\d+) again$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            if (ctx.events.none { it.verb == "cast" && it.player == "me" && (it.card?.name == card.display || it.obj?.let { o -> ctx.objects[o]?.card?.name } == card.display) }) return@let
+            if (ctx.events.lastOrNull()?.verb != "resolveAll") ctx.events += EventSpec("resolveAll")
+            val ref = CardRef(name = card.display, oracleId = card.oracleId)
+            ctx.events += EventSpec("cast", player = "me", card = ref, to = "again"); ctx.castCards += card.display
+            ctx.asks += EventSpec("ask", card = ref, to = "castAllowed")
+            ctx.notes += "\"${restore(clause0, m)}?\" is read as casting the same ${card.display} a second time; the outcome says where that card is now and whether it can be cast from there."; ctx.lastActor = "me"; return true
+        }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
             return true
@@ -5197,7 +5213,10 @@ class SituationParser(private val names: NameIndex) {
             val who = actorOfClause(c) ?: ctx.lastActor ?: "me"
             val card = m.cards[r.groupValues[1]]
                 ?: (ctx.lastMentioned?.let { ctx.objects[it] }?.takeIf { it.zone == "graveyard" } ?: ctx.objects.values.lastOrNull { it.zone == "graveyard" && it.controller == who })
-                    ?.card?.name?.let { n -> names.lookup(Names.normalize(n)) } ?: return@let
+                    ?.card?.name?.let { n -> names.lookup(Names.normalize(n)) }
+                // "I cast Lingering Souls. Can I flash it back?": the spell just cast, once it has resolved.
+                ?: ctx.events.lastOrNull { it.verb == "cast" && it.player == who }?.card?.name?.let { n -> names.lookup(Names.normalize(n)) }?.also { if (ctx.events.lastOrNull()?.verb == "cast") ctx.events += EventSpec("resolveAll") }
+                ?: return@let
             emitCast(who, card, r.groupValues[2] + " with flashback", m, ctx); return true
         }
         // "I discard Vengevine", "they discard Lightning Bolt to Liliana": a named card leaves hand for the graveyard.
@@ -6815,12 +6834,14 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "${ctx.objects.getValue(id).card.name} is read as the top card of ${if (who == "me") "your" else "their"} library."; ctx.lastMentioned = id; return true
         }
         // "I have Dark Confidant and reveal Emrakul": the revealed card was the top of the library; the upkeep trigger does the rest.
-        Regex("""^(?:and )?reveals? (?:an? |the )?(c\d+)(?: (?:with|to|off|from) (?:my |the )?(?:c\d+|it))?(?: (?:at|in|during|on) (?:my |the |their )?(?:next )?upkeep| at the beginning of my upkeep)?$""").find(c)?.let { r ->
+        Regex("""^(?:and )?reveals? (?:an? |the )?(c\d+|(?:basic )?land|instant|sorcery|creature|artifact|enchantment|planeswalker)(?: card)?(?: (?:with|to|off|from) (?:my |the )?(?:c\d+|it))?(?: (?:at|in|during|on) (?:my |the |their )?(?:next )?upkeep| at the beginning of my upkeep)?$""").find(c)?.let { r ->
             val who = actor ?: ctx.lastActor ?: "me"
             if (ctx.objects.values.none { it.controller == who && it.zone == "battlefield" && it.card.oracleId != null }) return@let
-            val id = addObject(m.cards.getValue(r.groupValues[1]), who, false, ctx, zone = "library", allowDuplicate = true)
+            val w = r.groupValues[1]
+            val id = if (cardRef.matches(w)) addObject(m.cards.getValue(w), who, false, ctx, zone = "library", allowDuplicate = true)
+                     else { val name = if (w.endsWith("land")) "a basic land" else (if (w.first() in "aeiou") "an " else "a ") + w; var nid = slug("$w card"); var k = 2; while (ctx.objects.containsKey(nid)) nid = slug("$w card") + "_" + (k++); ctx.objects[nid] = ObjectSpec(nid, CardRef(name = name), zone = "library", controller = who); nid }
             if (ctx.events.none { it.verb == "step" }) { ctx.events += EventSpec("step", player = who, to = "upkeep"); ctx.activePlayer = who }
-            ctx.notes += "\"reveal ${m.cards.getValue(r.groupValues[1]).display}\" is read as it being the top card of ${if (who == "me") "your" else "their"} library when the upkeep trigger reveals it."; ctx.lastMentioned = id; return true
+            ctx.notes += "\"reveal ${ctx.objects.getValue(id).card.name}\" is read as it being the top card of ${if (who == "me") "your" else "their"} library when the upkeep trigger reveals it."; ctx.lastMentioned = id; return true
         }
         // "…and Thalia in hand": a card said to be in hand, with no verb of its own after the "and".
         Regex("""^(?:an? |my |their )?(c\d+) (?:in|is in|'s in) (?:my |their |his |her )?hand$""").find(c)?.let { r ->
@@ -9604,7 +9625,18 @@ class SituationParser(private val names: NameIndex) {
             if (last.verb == "cast" && last.player != who && sorcerySpeed && card.typeLine.let { it.contains("Creature") || it.contains("Sorcery") || it.contains("Artifact") || it.contains("Enchantment") || it.contains("Planeswalker") }) ctx.events += EventSpec("resolveAll")
         }
         val fromGraveyard = Regex("""\bfrom (?:my|the|their|his|her) (?:own )?graveyard\b""").containsMatchIn(restIn) && !flashedBack
-        val gyObj = if (fromGraveyard) ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "graveyard" }?.id ?: addObject(card, who, false, ctx, zone = "graveyard", allowDuplicate = true) else null
+        // "I cast Snapcaster Mage and flash back Lightning Bolt": the Bolt is the card in the graveyard Snapcaster's trigger targets, and Snapcaster resolves first.
+        val gyObj = if (fromGraveyard) ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "graveyard" }?.id ?: addObject(card, who, false, ctx, zone = "graveyard", allowDuplicate = true)
+            else if (flashedBack) ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "graveyard" && it.controller == who }?.id ?: run {
+                val snap = ctx.events.indexOfLast { it.verb == "cast" && it.player == who && it.targets.isEmpty() && it.card?.name in setOf("Snapcaster Mage", "Torrential Gearhulk") }
+                if (snap < 0) null else {
+                    val id = addObject(card, who, false, ctx, zone = "graveyard", allowDuplicate = true)
+                    ctx.events[snap] = ctx.events[snap].copy(targets = listOf(id))
+                    if (snap == ctx.events.lastIndex) ctx.events += EventSpec("resolveAll")
+                    ctx.notes += "${ctx.events[snap].card?.name}'s trigger is read as targeting ${card.display} in ${if (who == "me") "your" else "their"} graveyard, which is then flashed back."
+                    id
+                }
+            } else null
         repeat(n) { i -> ctx.events += EventSpec("cast", player = who, obj = gyObj, card = if (gyObj != null) null else CardRef(name = card.display, oracleId = card.oracleId), targets = targets, modes = modes, to = if (copyOf != null) "copy:$copyOf" else if (flashedBack) "flashback" else if (overload) "overload" else if (kicked) "kicked" else if (evoked) "evoke" else if (revolt != null) "revolt" else if (mastery != null) "spellmastery" else namedCard?.let { "name:$it" } ?: modeWord?.let { "mode:" + List(modeRepeat) { _ -> it }.joinToString("|") } ?: if (altCost) "altcost" else null, amount = xValue, payLife = ctx.payLife); if (secondTime != null && i == 0) ctx.events += EventSpec("resolveAll") }
         ctx.payLife = null
         if (n > 1) ctx.notes += "${card.display} is cast $n times, one copy after another (each is its own spell)." 
