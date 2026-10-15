@@ -31428,5 +31428,75 @@
       "Nothing changes"
     ],
     "cite": []
+  },
+  {
+    "id": "leyline-target-myself",
+    "text": "They have Leyline of Sanctity. I cast Thoughtseize. Can I target myself instead?",
+    "expect": [
+      "Yes. Thoughtseize says \"target player\", and that can be its own caster (115.1)"
+    ],
+    "cite": [
+      "115.1"
+    ]
+  },
+  {
+    "id": "delver-flipped-after-name-block",
+    "text": "I attack with Delver of Secrets flipped and they have a Grizzly Bears. Does it survive a block?",
+    "expect": [
+      "Grizzly Bears can't block Insectile Aberration (flying)"
+    ],
+    "cite": [
+      "702.9b"
+    ]
+  },
+  {
+    "id": "vial-finks-in-response-gain-life",
+    "text": "I have Aether Vial on 3 and Kitchen Finks in hand. They cast Lightning Bolt at me when I'm at 3. Can I vial in Kitchen Finks before it resolves to gain life?",
+    "expect": [
+      "You go from 3 to 2 life."
+    ],
+    "notExpect": [
+      "You lose the game"
+    ]
+  },
+  {
+    "id": "path-no-basics-left",
+    "text": "I cast Path to Exile on their Tarmogoyf. They have no basics left. What happens?",
+    "expect": [
+      "finds nothing (none left in opponent's library); the library is shuffled anyway"
+    ],
+    "cite": [
+      "701.19b"
+    ]
+  },
+  {
+    "id": "spell-pierce-on-snapcaster",
+    "text": "They cast Snapcaster Mage. I cast Spell Pierce targeting it. Does it get countered?",
+    "expect": [
+      "Spell Pierce can't target Snapcaster Mage (it isn't a noncreature spell)"
+    ],
+    "cite": [
+      "601.2c"
+    ]
+  },
+  {
+    "id": "spellskite-at-2-life-paying-life",
+    "text": "I have Spellskite and I'm at 2 life. They Bolt my Delver of Secrets. Can I redirect it with Spellskite paying life?",
+    "expect": [
+      "Careful: Spellskite's {U/P} can be paid with 2 life, and at 2 life you may pay it (119.4), but that leaves you at 0"
+    ],
+    "cite": [
+      "107.4f"
+    ]
+  },
+  {
+    "id": "delver-it-flipped-shock",
+    "text": "I have Delver of Secrets and it flipped. They Shock it. Does it die?",
+    "expect": [
+      "Insectile Aberration turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8)"
+    ],
+    "cite": [
+      "712.8a"
+    ]
   }
 ]

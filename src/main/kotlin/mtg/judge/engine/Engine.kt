@@ -779,6 +779,8 @@ class Engine(val state: GameState) {
             val phyrexian = Regex("""\{[WUBRG]/P\}""").findAll(ability.cost).count()
             if (phyrexian == 0) return@run
             val p = state.player(playerId)
+            // "I have Spellskite and 2 life": paying the life is allowed at exactly 2 (119.4), but it puts the player at 0 and they lose when state-based actions are checked.
+            if (p.life != null && p.life!! <= 2 * phyrexian) state.outcomes += "Careful: ${obj.name}'s ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} can be paid with ${2 * phyrexian} life, and at ${p.life} life you may pay it (119.4), but that leaves you at ${p.life!! - 2 * phyrexian} and you lose the game the next time state-based actions are checked (704.5a). Pay it with mana instead, or don't activate."
             if (p.mana == 0) { p.life = p.life?.minus(2 * phyrexian); trace.step("${p.subject} ${p.v("has", "have")} no mana, so the ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} in ${obj.name}'s cost is paid with 2 life${if (phyrexian > 1) " each" else ""} (a Phyrexian mana symbol can be paid with either its colour of mana or 2 life).", "107.4f"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} ${2 * phyrexian} life for ${obj.name}'s ${if (phyrexian == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"}." }
             else trace.step("${obj.name}'s cost includes Phyrexian mana, payable with that colour of mana or 2 life.", "107.4f")
         }
@@ -3205,7 +3207,12 @@ class Engine(val state: GameState) {
                 if (Regex("""(?i)cast spells from your graveyard""").containsMatchIn(effect.text)) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.oracleText.contains("would be put into a graveyard from anywhere, exile it instead", ignoreCase = true) }?.let { rip ->
                     state.outcomes += "${rip.name} keeps ${you.possessive} graveyard empty (cards go to exile instead), so ${item.source.name} has nothing there to play or cast."
                 }
-                state.outcomes += "${item.source.name}: ${said.trimEnd('.')} (not tracked in detail)."
+                val searcher = if (Regex("""(?i)\bsearch(?:es)? (?:your|their|his or her) library for an? basic land card\b""").containsMatchIn(effect.text)) searcherOf(effect.text, item, you.id) else null
+                if (searcher != null && searcher in state.noBasicsInLibrary) {
+                    val sp = state.player(searcher)
+                    trace.step("${sp.subject} ${sp.v("has", "have")} no basic land card left in ${sp.possessive} library, so the search finds nothing: a player searching for a card with stated qualities may fail to find one, and the library is still shuffled.", "701.19b", "701.19a")
+                    state.outcomes += "${item.source.name}: ${sp.subject} ${sp.v("searches", "search")} for a basic land card and ${sp.v("finds", "find")} nothing (none left in ${sp.possessive} library); the library is shuffled anyway."
+                } else state.outcomes += "${item.source.name}: ${said.trimEnd('.')} (not tracked in detail)."
             }
             is Effect.ForAll -> applyEffectMore(effect, item)
             is Effect.ExileSelfSpell ->

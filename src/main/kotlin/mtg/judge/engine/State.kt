@@ -255,6 +255,8 @@ class GameState(
     var castabilityAsked = false
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */
     val ceased = mutableMapOf<String, String>()
+    /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.19b). */
+    val noBasicsInLibrary = mutableSetOf<String>()
     /** The game's turn number, when the situation said so. */
     var turnNumber: Int? = null
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */
