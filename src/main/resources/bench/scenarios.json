@@ -31329,5 +31329,104 @@
       "comes back"
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-own-snapcaster-cost",
+    "text": "I have Thalia and cast Snapcaster Mage. Does my own Snapcaster cost more?",
+    "expect": [
+      "Thalia, Guardian of Thraben taxes only noncreature spells, and Snapcaster Mage isn't one.",
+      "Snapcaster Mage costs {1}{U}"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snag-delver-in-response-survive",
+    "text": "My opponent casts Lightning Bolt at my Delver of Secrets and I respond with Vapor Snag on it. Does Delver survive?",
+    "expect": [
+      "Lightning Bolt doesn't resolve (all targets illegal).",
+      "didn't die: it was returned to its owner's hand"
+    ],
+    "notExpect": [
+      "No: Delver of Secrets is in its owner's hand."
+    ],
+    "cite": []
+  },
+  {
+    "id": "guide-into-finks-persists",
+    "text": "I attack with Goblin Guide and my opponent blocks with Kitchen Finks. Does Finks persist?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "Yes: Kitchen Finks is back on the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "push-revolt-tks",
+    "text": "I cast Fatal Push with revolt on my opponent's Thought-Knot Seer. Does it die?",
+    "expect": [
+      "Yes: Thought-Knot Seer died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-two-cards-my-2-2-attacks",
+    "text": "I have Ensnaring Bridge and 2 cards in hand. I attack with a 2/2. Can I?",
+    "expect": [
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "can't attack"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-bolt-and-land",
+    "text": "My opponent casts Thoughtseize and I have Lightning Bolt and a land in hand. What can they take?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-4-5-blocked-by-finks",
+    "text": "My opponent attacks with Tarmogoyf at 4/5 and I block with Kitchen Finks. Does Goyf die?",
+    "expect": [
+      "Tarmogoyf has 3 damage marked.",
+      "No: Tarmogoyf is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "helix-at-three-life",
+    "text": "I cast Lightning Helix on my opponent at 3 life. Do they die before I gain life?",
+    "expect": [
+      "opponent takes 3 damage.",
+      "You gain 3 life.",
+      "opponent loses the game."
+    ],
+    "cite": []
+  },
+  {
+    "id": "moon-tapped-vents-untaps",
+    "text": "My opponent casts Blood Moon. My Steam Vents is tapped. When it untaps, what does it make?",
+    "expect": [
+      "Steam Vents is a Mountain under Blood Moon, so it taps for {R} and nothing else."
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-one-thalia-her",
+    "text": "I have Aether Vial on 1 and Thalia in hand. Can I vial her in?",
+    "expect": [
+      "mana value"
+    ],
+    "notExpect": [
+      "needs 0 targets",
+      "Nothing changes"
+    ],
+    "cite": []
   }
 ]

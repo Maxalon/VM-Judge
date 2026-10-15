@@ -715,7 +715,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     "survive", "die" -> {
                         val where = when (o.zone) { mtg.judge.engine.Zone.GRAVEYARD -> "the graveyard"; mtg.judge.engine.Zone.EXILE -> "exile"; mtg.judge.engine.Zone.HAND -> "its owner's hand"; mtg.judge.engine.Zone.LIBRARY -> "its owner's library"; mtg.judge.engine.Zone.COMMAND -> "the command zone"; else -> o.zone.name.lowercase() }
                         state.outcomes += if (o.phasedOut) "No: ${sideName(o, state)} is phased out — treated as though it doesn't exist until it phases in at its controller's next untap step, so nothing happened to it." else if (e.to == "die") { if (o.isOnBattlefield()) "No: ${sideName(o, state)} is still on the battlefield." else if (o.zone == mtg.judge.engine.Zone.GRAVEYARD) "Yes: ${sideName(o, state)} died (it's in the graveyard)." else "No: ${sideName(o, state)} didn't die, but it left the battlefield; it's in $where." }
-                        else { if (o.isOnBattlefield()) "Yes: ${sideName(o, state)} is still on the battlefield." else "No: ${sideName(o, state)} is in $where." }
+                        else { if (o.isOnBattlefield()) "Yes: ${sideName(o, state)} is still on the battlefield."
+                               // "I Vapor Snag it in response. Does it survive?": bounced isn't dead.
+                               else if (o.zone == mtg.judge.engine.Zone.HAND) "${sideName(o, state)} didn't die: it was returned to its owner's hand, so whatever was aimed at it lost its target. It isn't on the battlefield, but the card is back in hand to be cast again (400.7: it's a new object then)."
+                               else "No: ${sideName(o, state)} is in $where." }
                         if (o.zone == mtg.judge.engine.Zone.EXILE && (o.def.has("persist") || o.def.has("undying"))) { val kw = if (o.def.has("persist")) "persist" else "undying"; state.outcomes += "${o.name}'s $kw doesn't return it: it was exiled instead of going to the graveyard, and $kw returns it only from the graveyard (${if (kw == "persist") "702.79a" else "702.93a"})." }
                     }
                     else -> {}

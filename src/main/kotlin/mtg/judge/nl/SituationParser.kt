@@ -1347,6 +1347,8 @@ class SituationParser(private val names: NameIndex) {
                 val lc = ctx.events.lastOrNull { it.verb == "cast" }
                 if (m.cards[r.groupValues[1]]?.display == "Spellskite" && sk != null && lc != null && lc.player != "me" && sk.id in lc.targets) "spellskite-already-question" else r.value } }
             // "Can I put it in on their turn?" with Aether Vial: the Vial's ability, at instant speed.
+        // "Can I Vial her in?": the card's short name used as the verb.
+        t2 = t2.let { t0 -> Regex("""^(can (?:i|we)(?: still)?) (c\d+) (it|that|her|him|them|(?:my |the )?c\d+) in\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[2]]?.display == "Aether Vial") "${r.groupValues[1]} vial ${r.groupValues[3]} in" + t0.substring(r.range.last + 1) else t0 } ?: t0 }
         if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash|sneak) (?:it|that|(?:my |the )?(c\d+)) (?:in|into play|onto the battlefield|out) (?:on|during|in) (?:their|my opponent's|the opponent's|his|her) (?:next |end )?(?:turn|step)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialin-question " + (Regex("""(c\d+)""").find(t2)?.value ?: "it")
             // "Can I cast it for free?": the card in hand, for its alternative cost.
         if (Regex("""^can (?:i|we) (?:cast|play) (?:it|that) for free\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { it.zone == "hand" && it.controller == "me" }) t2 = "castfree-question"
@@ -1391,9 +1393,12 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(i|we) (cast|casts|bolt|play) ((?:an? |the |my )?c\d+) (on|at|targeting) (my opponent|them|him|her) who (?:has|controls|is holding|owns) ((?:an? |the )?c\d+)\b""", RegexOption.IGNORE_CASE), "my opponent has $6, $1 $2 $3 $4 $5")
             // "I have two Grizzly Bears and my opponent casts Electrolyze. Can they kill both?": the damage divided between them.
         if (Regex("""^can (?:they|he|she|my opponent|the opponent|it) (?:kill|get|take out) (?:both|both of them|them both|all of them|both bears|both creatures)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.lastOrNull { it.verb == "cast" }?.let { it.player != "me" && it.targets.isEmpty() } == true) t2 = "killboth-question"
+            // "I have Aether Vial on 1 and Thalia in hand. Can I vial her in?": the Vial is activated at the creature, and its counters are checked.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Aether Vial" } && ctx.events.none { it.verb == "cast" && it.player != "me" } &&
+            Regex("""^can (?:i|we) (?:put|vial|drop|flash|sneak) (?:it|that|her|him|them|(?:my |the )?c\d+) in(?: now| right now| at instant speed| this turn)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialin-question " + (Regex("""(c\d+)""").find(t2)?.value ?: "it")
             // "I have Aether Vial with 2 counters. My opponent casts Wrath of God. Can I put a creature in?": timing advice.
         if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Aether Vial" } && ctx.events.lastOrNull { it.verb == "cast" }?.let { it.player != "me" } == true &&
-            Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:a creature|something|a guy|it|that|(?:my |the )?c\d+) in(?: in response| now| with the vial| with it)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialresponse-question"
+            Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:a creature|something|a guy|it|that|her|him|them|(?:my |the )?c\d+) in(?: in response| now| with the vial| with it)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialresponse-question"
             // "Graveyard has only a land": whose graveyard doesn't matter for a count of card types.
         t2 = t2.replace(Regex("""^(?:the |my |our )?graveyards? (?:has|have|contains?|holds?) (?:only|just) (.+)$""", RegexOption.IGNORE_CASE), "my graveyard has $1")
             // "a white 4/4 blocker": a white 4/4 creature.
@@ -1474,7 +1479,9 @@ class SituationParser(private val names: NameIndex) {
             if (ley != null && ctx.objects.values.none { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" }) t2 = "leyline-hand-question"
         }
         // "Do my own Lightning Bolts cost more?" (Thalia): the spell's cost.
-        t2 = t2.replace(Regex("""^do (?:my|my own|our|our own) (c\d+)s? cost (?:more|extra|any more|anything more|1 more|\d more|more too)\??$""", RegexOption.IGNORE_CASE), "how much does my $1 cost")
+        t2 = t2.replace(Regex("""^(?:do|does) (?:my|my own|our|our own) (c\d+)s? cost (?:more|extra|any more|anything more|1 more|\d more|more too)(?: too| as well)?\??$""", RegexOption.IGNORE_CASE), "how much does my $1 cost")
+        // "When it untaps, what does it make?" under Blood Moon: the colours the land can produce.
+        t2 = t2.replace(Regex("""^(?:when it untaps,? |after it untaps,? |next turn,? )?what (?:does|will|can) (?:it|that|(?:my |the )?c\d+) (?:make|produce|give me|add)(?: now| then| for me)?\??$""", RegexOption.IGNORE_CASE), "what color mana can i make")
         // "I attack with Goblin Guide and they reveal a land. Who gets the land?": the defending player keeps it.
         if (Regex("""^who (?:gets|takes|keeps|draws) (?:the |that )?(?:land|card)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == "Goblin Guide" }) t2 = "goblinguide-land-question"
         // "What order do I scry and draw?" (Serum Visions): the card's text, in the order written.
@@ -3474,6 +3481,11 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^(?:then )?(?:(?:they|he|she|my opponent|the opponent) )?(?:then )?(?:discards?|pitch(?:es)?|dumps?|throws? away) (their|his|her) (?:whole |entire )?hand(?: (?:to|with|off) (?:c\d+|it|liliana|the ultimatum|a spell))?$""").find(clause0)?.let { r ->
             val who = pronounPlayer(ctx, "their")
             ctx.handSize[who] = 0; ctx.notes += "${if (who == "me") "You have" else (ctx.players[who] ?: "Your opponent") + " has"} no cards in hand after that."; ctx.note(who); return true
+        }
+        // "I have Lightning Bolt and a land in hand": an unnamed land in hand, noted (Thoughtseize can't take it).
+        Regex("""^(?:(?:i|we) (?:have|hold) )?(?:an? |one |two |three |\d+ )?(lands?|basic lands?|basics?)(?: cards?)? in (?:my |our )?hand$""").find(clause0)?.let { r ->
+            ctx.handSize["me"]?.let { ctx.handSize["me"] = it + (number(clause0.split(' ').firstOrNull { number(it) != null } ?: "") ?: 1) }
+            ctx.notes += "A land in your hand is noted; it isn't a nonland card, so a Thoughtseize or Duress can't take it."; return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
