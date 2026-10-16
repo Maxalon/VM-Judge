@@ -865,7 +865,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         events.removeAt(events.indexOf(ask))
         if (saver == null) { events += EventSpec("ask", to = "text:Nothing described that ${if (who == "me") "you control" else "they control"} saves the team from that: an effect that makes your creatures indestructible (Selfless Spirit, Boros Charm), regenerates them, or gives them protection would; name it for an answer."); return sit.copy(events = events) }
         events.add(castIdx + 1, EventSpec("activate", player = who, obj = saver.id))
-        events += EventSpec("ask", to = "text:Yes: sacrifice ${saver.card.name} in response, while the sweeper is on the stack; the ability resolves first and your other creatures are indestructible when it resolves. ${saver.card.name} itself is gone (it was the cost).")
+        events += EventSpec("ask", to = "text:Yes: ${if (who == "me") "sacrifice" else "they sacrifice"} ${saver.card.name} in response, while the sweeper is on the stack; the ability resolves first and ${if (who == "me") "your" else "their"} other creatures are indestructible when it resolves. ${saver.card.name} itself is gone (it was the cost).")
         return sit.copy(events = events)
     }
     private fun p(kind: String) = when (kind) { "equipment" -> "your Equipment"; "aura" -> "your Auras"; else -> "your $kind" }

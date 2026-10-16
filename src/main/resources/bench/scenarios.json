@@ -37342,5 +37342,104 @@
       "Thoughtseize's target isn't changed (Spellskite isn't a legal target for it)",
       "Thalia, Guardian of Thraben: your hand → your graveyard"
     ]
+  },
+  {
+    "id": "tt261-one-spellskite-which-to-block",
+    "text": "They attack with Goblin Guide and Monastery Swiftspear. I have one Spellskite untapped. Which do I block?",
+    "expect": [
+      "Blocking Goblin Guide with Spellskite: saves you 2 damage; Spellskite survives and Goblin Guide survives",
+      "Blocking Monastery Swiftspear with Spellskite: saves you 1 damage"
+    ],
+    "notExpect": [
+      "Nothing is attacking you"
+    ]
+  },
+  {
+    "id": "tt261-can-they-save-their-team",
+    "text": "I cast Supreme Verdict. They have Selfless Spirit. Can they save their team?",
+    "expect": [
+      "Selfless Spirit: the battlefield → opponent's graveyard",
+      "Yes: they sacrifice Selfless Spirit in response, while the sweeper is on the stack; the ability resolves first and their other creatures are indestructible when it resolves"
+    ]
+  },
+  {
+    "id": "tt261-leyline-vs-burning-inquiry-do-they-discard",
+    "text": "My opponent has Leyline of Sanctity. I cast Burning Inquiry. Do they discard?",
+    "expect": [
+      "Yes. Burning Inquiry doesn't target",
+      "hexproof from Leyline of Sanctity only stops spells and abilities that target the player (702.11c)"
+    ]
+  },
+  {
+    "id": "tt261-goyf-three-four-dismember-sorcery-in-yard",
+    "text": "I have Tarmogoyf as a 3/4. They cast Dismember on it with a sorcery already in the yard. Does it die?",
+    "expect": [
+      "Tarmogoyf gets -5/-5 until end of turn",
+      "Yes: Tarmogoyf died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt261-reach-blocks-flier",
+    "text": "They attack with a 2/2 flier. I have a 2/2 with reach. Can I block it?",
+    "expect": [
+      "Yes: a 2/2 creature with reach can block, and did (above)"
+    ]
+  },
+  {
+    "id": "tt261-pierce-with-one-island",
+    "text": "They cast Hymn to Tourach on me. I have Spell Pierce and one Island. Can I counter it?",
+    "expect": [
+      "Hymn to Tourach is countered"
+    ]
+  },
+  {
+    "id": "tt261-their-attacker-assignment-after-bolt",
+    "text": "I block their 4/4 with my 2/2 and 2/2. They Bolt one of my blockers. How is damage assigned?",
+    "expect": [
+      "a 4/4 creature is blocked by one creature still in combat (the other left before damage; the attacker stays blocked, 509.1h), so all its damage goes to that blocker (510.1c)"
+    ]
+  },
+  {
+    "id": "tt261-vial-delver-under-played-thalia",
+    "text": "They play Thalia. My Aether Vial is on 1. Can I put in Delver for free still?",
+    "expect": [
+      "Delver of Secrets enters the battlefield",
+      "Yes, if the counters match the creature's mana value (the outcome above says). Aether Vial puts the creature onto the battlefield without casting it"
+    ]
+  },
+  {
+    "id": "tt261-aberration-vs-reach-blocker",
+    "text": "I attack with Insectile Aberration. They block with a 2/2 with reach. What happens?",
+    "expect": [
+      "Insectile Aberration turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8)",
+      "a 2/2 creature with reach: the battlefield → opponent's graveyard"
+    ]
+  },
+  {
+    "id": "tt261-goyf-grows-before-path",
+    "text": "They cast Path to Exile on my Tarmogoyf and I respond with Lightning Bolt to their face. Does Goyf get bigger before Path resolves?",
+    "expect": [
+      "Yes. Lightning Bolt was cast in response, so it's above Path to Exile on the stack and resolves first (608.1, 405.2)",
+      "That doesn't save Tarmogoyf from Path to Exile"
+    ]
+  },
+  {
+    "id": "tt261-shadow-at-two-bolted",
+    "text": "I have Death's Shadow and I'm at 2. They Bolt my Shadow. Does it die?",
+    "expect": [
+      "Death's Shadow has 3 damage marked",
+      "No: Death's Shadow is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt261-finks-persist-it-not-vial",
+    "text": "I have Kitchen Finks. They Dismember it and I have Aether Vial. Does it persist?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1",
+      "Yes: Kitchen Finks is back on the battlefield"
+    ],
+    "notExpect": [
+      "No: Aether Vial is on the battlefield"
+    ]
   }
 ]
