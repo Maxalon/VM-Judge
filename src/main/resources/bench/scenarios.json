@@ -35031,5 +35031,104 @@
     "expect": [
       "You discard a basic land and a basic land"
     ]
+  },
+  {
+    "id": "tt238-vialed-thalia-vs-my-thoughtseize",
+    "text": "I cast Thoughtseize and they respond with Aether Vial putting in Thalia. Does my Thoughtseize cost more now?",
+    "expect": [
+      "Thoughtseize cost {B} when it was cast"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "tt238-guide-land-must-go-to-hand",
+    "text": "They attack with Goblin Guide. I reveal a land off the trigger. Do I have to put it in my hand?",
+    "expect": [
+      "Yes. Goblin Guide's trigger says"
+    ]
+  },
+  {
+    "id": "tt238-top-vs-bob-trigger",
+    "text": "I have Dark Confidant and Sensei's Divining Top. Can I Top in response to Bob's trigger to change the card?",
+    "expect": [
+      "Yes. Dark Confidant's trigger goes on the stack at the beginning of your upkeep"
+    ]
+  },
+  {
+    "id": "tt238-snapcaster-bolted-passive-flashback",
+    "text": "My Snapcaster Mage is Bolted in response to its trigger. Can I still flash back the Bolt I targeted?",
+    "expect": [
+      "Snapcaster Mage: the battlefield → your graveyard",
+      "Lightning Bolt has flashback until end of turn",
+      "Lightning Bolt is exiled (flashback)"
+    ],
+    "notExpect": [
+      "can't target Snapcaster Mage while it's still a spell"
+    ]
+  },
+  {
+    "id": "tt238-snapcaster-bolted-in-response-to-trigger",
+    "text": "I cast Snapcaster Mage targeting Lightning Bolt in my graveyard. They Bolt it in response to the trigger. Can I still flash it back?",
+    "expect": [
+      "Snapcaster Mage: the battlefield → your graveyard",
+      "Lightning Bolt has flashback until end of turn",
+      "opponent takes 3 damage"
+    ],
+    "notExpect": [
+      "can't target Snapcaster Mage while it's still a spell"
+    ]
+  },
+  {
+    "id": "tt238-queller-exiles-verdict-via-vial",
+    "text": "They cast Supreme Verdict. I have Spell Queller in hand and Vial on 3. Can Queller exile Verdict?",
+    "expect": [
+      "Supreme Verdict: the stack → exile (Spell Queller)",
+      "Not countered, but exiled"
+    ]
+  },
+  {
+    "id": "tt238-finks-pyroclasm-back-and-alive",
+    "text": "I have Kitchen Finks and they cast Pyroclasm. Does Finks come back and does it die again?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "No: Kitchen Finks is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt238-path-own-goyf-land",
+    "text": "I Path to Exile my own Tarmogoyf. Do I get the land?",
+    "expect": [
+      "Yes: the search is yours"
+    ]
+  },
+  {
+    "id": "tt238-probe-no-mana-under-thalia",
+    "text": "They have Thalia and I cast Gitaxian Probe paying life with no mana. Can I?",
+    "expect": [
+      "No: Gitaxian Probe can't be cast: the Phyrexian mana can be paid with life, but the other {1} needs mana"
+    ]
+  },
+  {
+    "id": "tt238-trample-into-skite",
+    "text": "I attack with a 5/5 trample into their 2/2 Spellskite block. How much goes through?",
+    "expect": [
+      "opponent takes 1 damage in all"
+    ]
+  },
+  {
+    "id": "tt238-snag-own-delver-vs-bolt",
+    "text": "They cast Lightning Bolt at my Delver. I respond with Vapor Snag on my own Delver. Do I lose the Delver?",
+    "expect": [
+      "No: Delver of Secrets didn't die, but it left the battlefield; it's in its owner's hand"
+    ]
+  },
+  {
+    "id": "tt238-bridge-and-no-cards",
+    "text": "They have Ensnaring Bridge and no cards. I attack with two 2/2s. What happens?",
+    "expect": [
+      "a 2/2 creature can't attack (Ensnaring Bridge). (×2)"
+    ]
   }
 ]

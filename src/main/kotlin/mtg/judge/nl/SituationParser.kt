@@ -1121,6 +1121,23 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^can (?:it|that|(?:my |the )?c\d+|the ooze) (?:ever |still )?(?:grow|get bigger|get counters|get any counters|eat anything|eat|do anything|gain me life)(?: at all| now| with that out)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.objects.values.any { o -> o.card.name == "Scavenging Ooze" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Scavenging Ooze" })) t2 = "oozeripped-question"
         // "Do they see the cards I drew?" (Brainstorm in response to Thoughtseize): the hand is revealed as the spell resolves.
         if (Regex("""^(?:do|does|will|can) (?:they|he|she|my opponent|the opponent) (?:get to )?(?:see|look at|know) (?:the cards? (?:i|we) (?:drew|draw|just drew|brainstormed into)|my new cards?|what (?:i|we) drew|my (?:whole |new )?hand(?: after)?|the new cards?)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "cast" && it.player != "me" } && ctx.events.any { it.verb == "cast" && it.player == "me" }) t2 = "seedrawn-question"
+        // "Can I still flash back the Bolt I targeted?": the card Snapcaster's trigger was aimed at, in the graveyard.
+        t2 = t2.let { t0 -> Regex("""^(.*?)\bthe (c\d+) (?:i|we) (?:targeted|targets|target|picked|chose)\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val sp = m.cards[r.groupValues[2]] ?: return@let t0
+                val snap = ctx.events.indexOfLast { e -> e.verb == "cast" && e.player == "me" && e.targets.isEmpty() && (e.card?.name == "Snapcaster Mage" || e.obj?.let { o -> ctx.objects[o]?.card?.name } == "Snapcaster Mage") }
+                if (snap >= 0 && sp.isSpellOnly && ctx.objects.values.none { it.card.oracleId == sp.oracleId }) {
+                    val gy = addObject(sp, "me", false, ctx, zone = "graveyard", allowDuplicate = true)
+                    ctx.events[snap] = ctx.events[snap].copy(targets = listOf(gy))
+                    ctx.notes += "\"the ${sp.display} I targeted\": Snapcaster Mage's trigger was aimed at a ${sp.display} in your graveyard."
+                }
+                "${r.groupValues[1]}${r.groupValues[2]}${r.groupValues[3]}" } ?: t0 }
+        // "They have Ensnaring Bridge and no cards": an empty hand, said as a tail.
+        t2 = t2.let { t0 -> Regex("""^((?:they|he|she|my opponent|the opponent|i|we) (?:have|has|control|controls) .+?) (?:and|with) (?:no|zero|0) cards?(?: in (?:their |my )?hand)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "${r.groupValues[1]}, ${if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t0)) "i have" else "they have"} 0 cards in hand" } ?: t0 }
+        // "I reveal a land off the trigger" (Goblin Guide) and "do I have to put it in my hand?": the trigger's words.
+        if (ctx.events.any { e -> e.verb == "attack" && ctx.objects[e.obj]?.card?.name == "Goblin Guide" } && Regex("""^(?:i|we) reveal (?:an? )?(?:land|basic|basic land|nonland|creature|spell|c\d+)(?: card)? (?:off|from|to|for|with|on) (?:the |its |guide's |goblin guide's )?(?:trigger|guide|goblin guide|c\d+|reveal|ability)$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "guidereveal-note " + (if (Regex("""\b(?:nonland|creature|spell)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "nonland" else "land")
+        if (ctx.events.any { e -> e.verb == "attack" && ctx.objects[e.obj]?.card?.name == "Goblin Guide" } && Regex("""^(?:do|must|will) (?:i|we) (?:have to|need to|get to) (?:put|take|add) (?:it|that|the land|the card) (?:in|into|to) (?:my|our) hand\??$|^(?:is|does) (?:it|that|the land) (?:go|put) (?:in|into|to) (?:my|our) hand\??$|^(?:do|can) (?:i|we) (?:have to |get to )?keep it on top\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "guidehand-question"
+        // "Can I Top in response to Bob's trigger to change the card?": Sensei's Divining Top at instant speed before the reveal.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Sensei's Divining Top" } && Regex("""^can (?:i|we) (?:top|spin|spin the top|use|activate|tap|c\d+)(?: (?:the )?(?:top|c\d+))? in response to (?:bob's|c\d+'s|the|its|my|the bob|the upkeep|the confidant) (?:upkeep |bob |confidant )?trigger(?: to (?:change|fix|swap|alter|dodge|avoid) (?:the card|the top|the top card|what (?:i|we) reveal|the reveal|it|a big card|emrakul|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "topbob-question"
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1150,6 +1167,25 @@ class SituationParser(private val names: NameIndex) {
         // "I alpha strike", "I go wide with three 1/1s": table talk for attacking with everything and for having
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
+        // "My Snapcaster Mage is Bolted in response to its trigger": the Mage was cast, and the Bolt answers its trigger.
+        t2 = t2.let { t0 -> Regex("""^my (c\d+) (?:is|gets|got|was) (c\d+)(?:ed|d)? in response to (?:its|the) (?:etb |enters )?trigger$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val cr = m.cards[r.groupValues[1]]; val sp = m.cards[r.groupValues[2]]
+                if (cr == null || sp == null || cr.isSpellOnly || !sp.isSpellOnly) t0 else "i cast ${r.groupValues[1]}, resolvetop-marker, they cast ${r.groupValues[2]} targeting ${r.groupValues[1]}" } ?: t0 }
+        // "Can Queller exile Verdict?" with Spell Queller in hand and Aether Vial out: the Vial puts it in against the spell.
+        t2 = t2.let { t0 -> Regex("""^can (?:my )?(c\d+|queller|the queller) (?:exile|eat|take|get|hit|stop|catch|answer) (?:it|that|(?:the |their )?c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val q = if (r.groupValues[1].startsWith("c")) m.cards[r.groupValues[1]]?.takeIf { it.display == "Spell Queller" }?.let { r.groupValues[1] } else m.cards.entries.firstOrNull { it.value.display == "Spell Queller" }?.key
+                val inHand = ctx.objects.values.any { o -> o.controller == "me" && o.zone == "hand" && o.card.name == "Spell Queller" }
+                val vial = ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Aether Vial" }
+                if (q != null && inHand && vial && ctx.events.any { it.verb == "cast" && it.player != "me" }) "i vial in $q in response, vialcounter-question $q" else t0 } ?: t0 }
+        // "They Bolt it in response to the trigger": the creature spell has resolved and its enters trigger waits on the
+        // stack, so the response is aimed at the permanent; the phrase is dropped once that is set up.
+        t2 = t2.let { t0 -> Regex("""^((?:they|he|she|my opponent|the opponent|i|we) (?:casts? |plays? )?(?:c\d+|bolt|kill|shock|path|counter|respond with c\d+)\b.*?)\s+in response to (?:the|its|that) (?:etb |enters )?trigger\s*$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val last = ctx.events.lastOrNull(); val lastName = last?.card?.name
+                if (last == null || last.verb != "cast" || lastName == null || names.lookup(Names.normalize(lastName))?.isSpellOnly != false) return@let t0
+                val src = triggerSourceFromCast(ctx, null) ?: return@let t0
+                ctx.events += EventSpec("resolve"); ctx.lastMentioned = src
+                ctx.notes += "\"in response to the trigger\": $lastName has resolved and is on the battlefield with its enters-the-battlefield trigger on the stack; the response comes then (603.3, 117.1b)."
+                r.groupValues[1] } ?: t0 }
         // "What should I do?" against a discard spell with a Vial and a creature in hand: the response that saves the card.
         if (ctx.objects.values.any { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Aether Vial" } && ctx.events.any { it.verb == "cast" && it.player != "me" && it.card?.name?.lowercase() in discardSpells })
             t2 = t2.replace(Regex("""^(?:what should (?:i|we) do|what's my (?:play|move|best play|line)|what is my best play|what do (?:i|we) do|how do (?:i|we) play (?:this|it)|any way to save (?:it|her|him|my c\d+))\??$""", RegexOption.IGNORE_CASE), "advice-question")
@@ -4472,6 +4508,27 @@ class SituationParser(private val names: NameIndex) {
             ctx.events += EventSpec("activate", player = "me", obj = r.groupValues[1], targets = listOf(r.groupValues[2]))
             ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = r.groupValues[2]
             ctx.asks += EventSpec("ask", obj = r.groupValues[2], to = "survive")
+            return true
+        }
+        Regex("""^guidereveal-note (land|nonland)$""").find(clause0)?.let { r ->
+            ctx.notes += if (r.groupValues[1] == "land") "Goblin Guide's trigger revealed a land: \"If it's a land card, that player puts it into their hand\" is not optional, so it goes to your hand (it isn't a draw, 121.1)." else "Goblin Guide's trigger revealed a nonland card: it stays on top of your library, where everyone has now seen it."
+            return true
+        }
+        if (clause0 == "guidehand-question") {
+            ctx.asks += EventSpec("ask", to = "text:Yes. Goblin Guide's trigger says \"Defending player reveals the top card of their library. If it's a land card, that player puts it into their hand\": there is no \"may\", so a revealed land goes into your hand whether you want it or not (608.2c). It isn't drawn, so nothing that cares about drawing sees it (121.1); a nonland card simply stays on top, revealed.")
+            return true
+        }
+        if (clause0 == "topbob-question") {
+            ctx.asks += EventSpec("ask", to = "text:Yes. Dark Confidant's trigger goes on the stack at the beginning of your upkeep, and you get priority before it resolves (603.3, 117.1). Sensei's Divining Top's first ability ({1}: Look at the top three cards of your library, then put them back in any order) is an activated ability you can use then; it resolves first (608.1), so you reorder the top three and the Confidant's trigger reveals whichever card you left on top. With no card you want to reveal, Top's second ability ({T}: Draw a card, then put Top on top of your library) puts Top itself on top, and the trigger reveals Top: mana value 1, so you lose 1 life.")
+            return true
+        }
+        // A creature spell resolving on its own, so its enters trigger is on the stack when the next clause responds.
+        if (clause0 == "resolvetop-marker") {
+            val last = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
+            val name = last.card?.name ?: last.obj?.let { ctx.objects[it]?.card?.name }
+            if (last.card?.name != null) triggerSourceFromCast(ctx, null)?.let { ctx.lastMentioned = it }
+            ctx.events += EventSpec("resolve")
+            ctx.notes += "${name ?: "The spell"} resolves first; its enters-the-battlefield trigger is on the stack when the response is cast (603.3, 117.1b)."
             return true
         }
         if (clause0 == "oozeripped-question") {
