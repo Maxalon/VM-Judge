@@ -33579,5 +33579,112 @@
       "No: Scavenging Ooze is still on the battlefield"
     ],
     "cite": []
+  },
+  {
+    "id": "mother-saves-thalia-from-bolt",
+    "text": "They cast Lightning Bolt at my Thalia and I have Mother of Runes untapped. Can I save her?",
+    "expect": [
+      "Thalia, Guardian of Thraben has protection from red until end of turn",
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-with-counter-bolted",
+    "text": "I have Kitchen Finks with a -1/-1 counter. They Bolt it. Does it come back again?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-empty-graveyards-size",
+    "text": "They attack with Tarmogoyf. I have Spellskite and they have no cards in graveyards. How big is Goyf?",
+    "expect": [
+      "Tarmogoyf is 0/1"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-vs-thoughtseize",
+    "text": "My opponent casts Thoughtseize targeting me and I have Spellskite. Can I redirect it?",
+    "expect": [
+      "Thoughtseize's target isn't changed (Spellskite isn't a legal target for it)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "block-shadow-at-5-with-2-2",
+    "text": "I block their Death's Shadow with my 2/2 while they're at 5 life. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your graveyard",
+      "Death's Shadow has 2 damage marked"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-bolted-in-upkeep-before-trigger",
+    "text": "I have Dark Confidant. They Bolt it in my upkeep before the trigger. Do I still lose life?",
+    "expect": [
+      "Dark Confidant's trigger still resolves even though Dark Confidant is gone (113.7a)",
+      "Yes: you lose life equal to the revealed card's mana value"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "pyroclasm-finks-thalia",
+    "text": "They cast Pyroclasm and I have a Kitchen Finks and a Thalia. What survives?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-their-goyf-no-basics-left",
+    "text": "I Path their Tarmogoyf and they have no basics left. What happens?",
+    "expect": [
+      "opponent searches for a basic land card and finds nothing"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-in-response-to-thalia-cast",
+    "text": "I cast Thoughtseize at them in response to their Thalia being cast. Can I take Thalia?",
+    "expect": [
+      "No. Thalia, Guardian of Thraben is a spell on the stack, not a card in their hand"
+    ],
+    "cite": [
+      "608.1"
+    ]
+  },
+  {
+    "id": "vapor-snag-my-attacker-after-blocks",
+    "text": "I attack with a 2/2 and they Vapor Snag it after blockers are declared. Do I lose life?",
+    "expect": [
+      "You lose 1 life in all"
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-on-1-and-2-vs-thalia",
+    "text": "They have Chalice on 1 and 2. Can I cast Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben is countered"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-on-their-end-step-attack-my-turn",
+    "text": "I activate Aether Vial with 2 counters on their end step to put in Thalia. Can I attack with her on my turn?",
+    "expect": [
+      "opponent takes 2 damage"
+    ],
+    "notExpect": [
+      "summoning sick"
+    ],
+    "cite": []
   }
 ]

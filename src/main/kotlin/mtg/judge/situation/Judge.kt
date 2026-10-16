@@ -189,7 +189,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             outcome = if (state.outcomes.isEmpty()) listOf("Nothing changes.") else state.outcomes.groupingBy { it }.eachCount().let { counts -> state.outcomes.distinct().map { o -> if (counts.getValue(o) > 1) "$o (×${counts.getValue(o)})" else o } },
             trace = state.trace.steps.map { TraceLine(it.text, it.rules) },
             assumptions = state.assumptions.distinct(),
-            clarifications = state.clarifications.distinct().filter { c -> !(c.about.endsWith(" hand") && sit.events.any { it.verb == "ask" && it.to in setOf("playerLost", "playerGain", "playerLife", "playerDie", "playerSurvive") }) }.map { "${it.about}: ${it.why}" },
+            // A question about something else (life, a redirect, a creature's fate) doesn't need the unknown hand or top card asked for.
+            clarifications = state.clarifications.distinct().filter { c ->
+                val hidden = c.about.endsWith(" hand") || c.about.endsWith(" top card") || c.about == "the revealed card"
+                val asks = sit.events.filter { it.verb == "ask" }
+                val aboutHidden = asks.any { it.to == "discardChoices" || it.to == "graveyardChoices" }
+                // "Thoughtseize targeting me and I have Spellskite. Can I redirect it?": the response is the question, not the hand.
+                val discardIdx = sit.events.indexOfLast { it.verb == "cast" && it.card?.name?.lowercase() in setOf("thoughtseize", "duress", "inquisition of kozilek", "hymn to tourach", "mind rot", "raven's crime", "distress", "despise", "wrench mind") }
+                val responded = discardIdx >= 0 && sit.events.drop(discardIdx + 1).any { it.verb == "activate" }
+                !(hidden && (asks.isNotEmpty() || responded) && !aboutHidden) }.map { "${it.about}: ${it.why}" },
             unsupported = state.unsupported.distinct().map { "${it.what}: ${it.detail}" },
             citations = citations,
             understood = understood,
