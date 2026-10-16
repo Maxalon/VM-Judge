@@ -36062,5 +36062,102 @@
       "You draw 3 cards",
       "Thoughtseize is countered"
     ]
+  },
+  {
+    "id": "tt249-bolt-skite-with-4-damage",
+    "text": "I cast Lightning Bolt at their Spellskite with 4 damage already on it. Does it die?",
+    "expect": [
+      "Yes: Spellskite died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt249-finks-which-to-block",
+    "text": "They attack with a 3/3 and a 2/2. I have one Kitchen Finks. Which should I block?",
+    "expect": [
+      "Blocking a 3/3 creature with Kitchen Finks: saves you 3 damage; Kitchen Finks dies and a 3/3 creature dies"
+    ]
+  },
+  {
+    "id": "tt249-force-pitching-brainstorm-whats-left",
+    "text": "They Thoughtseize me. I have Force of Will and a Brainstorm in hand. Can I Force pitching the Brainstorm, and what's left?",
+    "expect": [
+      "Thoughtseize is countered",
+      "Your hand now: Brainstorm"
+    ]
+  },
+  {
+    "id": "tt249-verdict-sac-spirit-thalia-survives",
+    "text": "My opponent casts Supreme Verdict with my Selfless Spirit and Thalia out. I sacrifice Spirit. Does Thalia survive?",
+    "expect": [
+      "Thalia, Guardian of Thraben is indestructible and isn't destroyed",
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt249-pyroclasm-goyf-thalia-who-dies",
+    "text": "I have Tarmogoyf and Thalia. They Pyroclasm. Who dies?",
+    "expect": [
+      "Yes: Tarmogoyf died (it's in the graveyard)",
+      "Yes: Thalia, Guardian of Thraben died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt249-shadow-attacker-bolted-size",
+    "text": "They attack me with Death's Shadow at 12 life. I Bolt them in response. How big is the Shadow now?",
+    "expect": [
+      "Death's Shadow is 4/4",
+      "You take 4 damage"
+    ]
+  },
+  {
+    "id": "tt249-guide-reveals-their-mountain",
+    "text": "I attack with Goblin Guide and reveal their top card: a Mountain. Do they get it?",
+    "expect": [
+      "Yes: Mountain is a land card, so Goblin Guide's trigger puts it into their hand"
+    ],
+    "notExpect": [
+      "Mountain [mountain] (opponent's)\\n"
+    ]
+  },
+  {
+    "id": "tt249-finks-under-their-rip",
+    "text": "They have Rest in Peace. My Kitchen Finks dies. Does it persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Rest in Peace)",
+      "No: Kitchen Finks is in exile"
+    ]
+  },
+  {
+    "id": "tt249-dismember-their-finks-persists",
+    "text": "I Dismember their Kitchen Finks. Does it persist?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "opponent gains 2 life"
+    ]
+  },
+  {
+    "id": "tt249-their-thoughtseize-into-my-chalice",
+    "text": "They cast Thoughtseize targeting me with Chalice on 1 on my side. Is it countered?",
+    "expect": [
+      "Yes: Thoughtseize is countered (by Chalice of the Void)"
+    ]
+  },
+  {
+    "id": "tt249-vial-thalia-make-bolt-cost-more",
+    "text": "I have Aether Vial on 2 and Thalia in hand. They cast Lightning Bolt at my face. Can I Vial in Thalia to make the Bolt cost more?",
+    "expect": [
+      "No. You can put Thalia, Guardian of Thraben in with Aether Vial in response, but it won't change what Lightning Bolt costs"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "tt249-delver-attacks-as-aberration",
+    "text": "My Delver attacks as Insectile Aberration. They block with a 3/3 reach. Does it die?",
+    "expect": [
+      "Delver of Secrets: the battlefield → your graveyard",
+      "a 3/3 creature with reach: the battlefield → opponent's graveyard"
+    ]
   }
 ]

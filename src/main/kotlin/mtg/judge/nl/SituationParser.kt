@@ -1179,12 +1179,14 @@ class SituationParser(private val names: NameIndex) {
         // "How big was it?" after the creature left: its size as it was, from what is known.
         t2 = t2.replace(Regex("""^how (?:big|large) (?:was|had been) (it|that|(?:my |the )?c\d+)(?: when it (?:left|died|was exiled|got exiled))?\??$""", RegexOption.IGNORE_CASE), "how big is $1")
         // "They reveal Lightning Bolt" with my Goblin Guide attacking: the trigger's reveal, not a cast.
-        t2 = t2.let { t0 -> Regex("""^(?:they|he|she|my opponent|the opponent) reveals? (?:an? |the )?(c\d+|land|basic land|basic|nonland card|creature|spell)(?: card)?(?: (?:off|from|to|for|with|on) (?:the |its |guide's |goblin guide's )?(?:trigger|guide|goblin guide|c\d+|reveal|ability|top))?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-                if (ctx.events.none { e -> e.verb == "attack" && e.player != "opp" && ctx.objects[e.obj]?.card?.name == "Goblin Guide" && ctx.objects[e.obj]?.controller == "me" }) return@let t0
-                val w = r.groupValues[1].lowercase()
+        t2 = t2.let { t0 -> Regex("""(^|, )(?:they|he|she|my opponent|the opponent) reveals? (?:an? |the )?(c\d+|land|basic land|basic|nonland card|creature|spell)(?: card)?(?: (?:off|from|to|for|with|on) (?:the |its |guide's |goblin guide's )?(?:trigger|guide|goblin guide|c\d+|reveal|ability|top))?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val guideAttacked = ctx.events.any { e -> e.verb == "attack" && ctx.objects[e.obj]?.card?.name == "Goblin Guide" && ctx.objects[e.obj]?.controller == "me" } ||
+                    Regex("""\b(?:i|we) attacks? with (?:my )?(c\d+)\b""", RegexOption.IGNORE_CASE).findAll(t0).any { a -> m.cards[a.groupValues[1].lowercase()]?.display == "Goblin Guide" }
+                if (!guideAttacked) return@let t0
+                val w = r.groupValues[2].lowercase()
                 val card = if (w.startsWith("c")) m.cards[w] else null
                 val land = if (card != null) card.typeLine.contains("Land") else w.contains("land") && !w.startsWith("nonland")
-                "guidereveal-note ${if (land) "land" else "nonland"}${card?.let { " $w" } ?: ""}" } ?: t0 }
+                t0.substring(0, r.range.first) + r.groupValues[1] + "guidereveal-note ${if (land) "land" else "nonland"}${card?.let { " $w" } ?: ""}" } ?: t0 }
         // "Can I Vial in a different Thalia?" with their counter on my Thalia: a second copy from the hand, never a spell.
         t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:vial|vial in|put in|flash in|drop in|respond with (?:my |the )?(?:vial|aether vial|c\d+) (?:to |and )?(?:put|drop|flash) in) (?:a |another |a different |a second |my other |the other )(c\d+)(?: in response| instead| in| into play| onto the battlefield)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 // Only when their spell is aimed at a spell of mine on the stack (a counter); against a Bolt at a permanent the Vial simply puts the copy in.
@@ -1262,6 +1264,14 @@ class SituationParser(private val names: NameIndex) {
         // "I alpha strike", "I go wide with three 1/1s": table talk for attacking with everything and for having
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
+        // "Can I Force pitching the Brainstorm?": the counter's name as the verb, with its alternative cost said next.
+        t2 = t2.let { t0 -> Regex("""^(can |could )?(i|we|they|he|she) (c\d+) (pitching|exiling) (?:the |an? |my )?(c\d+)\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[3]]?.isSpellOnly == true) "${r.groupValues[1]}${r.groupValues[2]} cast ${r.groupValues[3]} ${r.groupValues[4]} ${r.groupValues[5]}" + t0.substring(r.range.last + 1) else t0 } ?: t0 }
+        // "and what's left?" / "what is left in my hand?": the hand afterwards.
+        t2 = t2.replace(Regex("""(^|, |\s+and\s+)what(?:'s| is) left(?: in (?:my|our) hand| in hand| of my hand)?\??$""", RegexOption.IGNORE_CASE), "$1handnow-question")
+        // "I attack with Goblin Guide and reveal their top card: a Mountain": the Guide's reveal.
+        t2 = t2.replace(Regex("""(,| and) (?:i |they )?reveal(?:s|ed|ing)? (?:their|the) top card:? (?:an? |the )?(c\d+|land|basic land|nonland card|creature|spell)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), ", they reveal $2")
+        // "My Delver attacks as Insectile Aberration": the transformed face attacks.
+        t2 = t2.let { t0 -> Regex("""^(?:my |the )?(c\d+) attacks? as (?:an? )?(?:c\d+|insectile aberration|a \d+/\d+(?: \w+)?)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display?.startsWith("Delver of Secrets") == true) "my ${r.groupValues[1]} flipped, i attack with ${r.groupValues[1]}" else t0 } ?: t0 }
         // "I cast Gitaxian Probe for 2 life and 1 mana": the life pays the Phyrexian symbol; the mana is the rest of the cost.
         t2 = t2.replace(Regex("""\b(?:for|paying) (\d+) life (?:and|plus) (?:\d+|one|two) (?:mana|blue|red|black|green|white)\b""", RegexOption.IGNORE_CASE), "paying $1 life")
         // "do I gain life when it dies?": the condition is the described death; the question is the life.
@@ -2227,7 +2237,7 @@ class SituationParser(private val names: NameIndex) {
             val kinds = listOf("a creature", "an instant", "a land", "a sorcery", "an artifact", "an enchantment").take(n.coerceIn(1, 6))
             "there is ${kinds.joinToString(" and ")} in the graveyards, ${r.groupValues[1]}" } ?: t0 }
         // "Can I put Thalia in to make it cost more?" with their spell already on the stack: a tax applies only as a spell is cast.
-        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:in )?(?:my |the )?(c\d+)(?: in)? (?:to make it cost more|to tax it|to make (?:it|their spell|that) cost (?:1 )?more|so it costs more|to counter it|in response to make it cost more)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialtax-question " + Regex("""(c\d+)""").find(t2)!!.value
+        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:in )?(?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)? (?:to make it cost more|to tax it|to make (?:it|their spell|that|the c\d+|the spell|the bolt) cost (?:1 )?more|so it costs more|in response to make it cost more)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialtax-question " + Regex("""(c\d+)""").find(t2)!!.value
         // "How much damage total if I attack?" after a burn spell: the attack is made, then the total asked.
         t2 = t2.replace(Regex("""^how much (?:damage )?(?:total|in all|altogether|overall)?(?: damage)? if (?:i|we) (?:attack|swing)(?: with (?:everything|everyone|it|all my creatures|my team))?\??$""", RegexOption.IGNORE_CASE), "i attack with everything, how much damage does my opponent take")
         // "Does Cage still work?" under Stony Silence / Null Rod / Karn: only activated abilities are stopped.
@@ -4330,6 +4340,7 @@ class SituationParser(private val names: NameIndex) {
             val name = card?.display ?: if (r.groupValues[1] == "land") "a land" else "a nonland card"
             if (card != null) { val id = addObject(card, if (theirs) pronounPlayer(ctx, "their") else "me", false, ctx, zone = "library", allowDuplicate = true); ctx.lastMentioned = id }
             ctx.notes += if (r.groupValues[1] == "land") "Goblin Guide's trigger revealed $name: \"If it's a land card, that player puts it into their hand\" is not optional, so it goes to $who hand (it isn't a draw, 121.1)." else "Goblin Guide's trigger revealed $name, a nonland card: it stays on top of $who library, where everyone has now seen it, and nothing is drawn or cast by the trigger."
+            if (card != null && card.typeLine.contains("Land")) ctx.asks += EventSpec("ask", to = "text:Yes: ${card.display} is a land card, so Goblin Guide's trigger puts it into $who hand (\"If it's a land card, that player puts it into their hand\"); that is not a draw (121.1), and it is not optional. ${if (theirs) "They" else "You"} may play it as a land drop as usual.")
             if (card != null && !card.typeLine.contains("Land")) ctx.asks += EventSpec("ask", to = "text:${card.display} was revealed by Goblin Guide's trigger, not drawn and not cast: a nonland card stays on top of $who library (the trigger only puts a land into the hand). ${if (theirs) "They" else "You"} draw it in the next draw step, as usual, and ${if (theirs) "they" else "you"} could cast it only from the hand.")
             return true
         }
@@ -4475,6 +4486,10 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "uncounterableredirect-note") {
             val theirs = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "the spell"
             ctx.asks += EventSpec("ask", to = "text:\"Can't be countered\" doesn't matter here: Spellskite's ability changes a target (115.7), it doesn't counter anything, so $theirs's clause isn't engaged. The redirect works if Spellskite is a legal target for $theirs; the outcome shows it.")
+            return true
+        }
+        if (clause0 == "handnow-question") {
+            ctx.asks += EventSpec("ask", player = "me", to = "handNow")
             return true
         }
         if (clause0 == "cardinhand-question") {
