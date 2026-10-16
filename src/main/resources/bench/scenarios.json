@@ -31996,5 +31996,106 @@
       "No: a 2/4 wall creature can't attack (Ensnaring Bridge: You have 0 cards in hand and a 2/4 wall creature's power is 2, 508.1c)."
     ],
     "cite": []
+  },
+  {
+    "id": "spellskite-redirect-to-itself-pay-life",
+    "text": "They cast Lightning Bolt at my Spellskite. I pay 2 life to redirect it to Spellskite. Does that do anything?",
+    "expect": [
+      "There's nothing to redirect: Lightning Bolt already targets Spellskite."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-taxes-snapcaster-flashback-bolt",
+    "text": "I have Thalia. They cast Snapcaster Mage and want to flash back Bolt. How much does the Bolt cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-blocks-goblin-guide",
+    "text": "I attack with Goblin Guide and they have a Kor Firewalker. Can they block it?",
+    "expect": [
+      "Damage to Kor Firewalker from Goblin Guide is prevented (protection).",
+      "Yes: Kor Firewalker can block, and did (above)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-two-cards-vs-goyf-three-types",
+    "text": "They have Ensnaring Bridge and 2 cards in hand. I have Tarmogoyf with 3 types in graveyards. Can it attack?",
+    "expect": [
+      "Tarmogoyf can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-in-hand-cannot-respond",
+    "text": "I cast Thoughtseize on them. They have Leyline of Sanctity in hand. Can they cast it in response?",
+    "expect": [
+      "Leyline of Sanctity can't be cast now: it isn't an instant and has no flash, and Thoughtseize is on the stack (sorcery-speed timing, 307.1)."
+    ],
+    "cite": [
+      "307.1"
+    ]
+  },
+  {
+    "id": "delver-trigger-reveals-bolt",
+    "text": "My Delver of Secrets trigger reveals Lightning Bolt. Does it flip?",
+    "expect": [
+      "Lightning Bolt is an instant or sorcery card, so Delver transforms into Insectile Aberration"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spell-pierce-vs-goyf",
+    "text": "I have Spell Pierce. They cast Tarmogoyf. Can I Pierce it?",
+    "expect": [
+      "Spell Pierce can't target Tarmogoyf (it isn't a noncreature spell)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-zero-vs-probe-for-life",
+    "text": "They have Chalice on 0. Can I cast Gitaxian Probe for 2 life?",
+    "expect": [
+      "You pay 2 life.",
+      "You draw 1 card."
+    ],
+    "cite": []
+  },
+  {
+    "id": "brutality-discard-vs-hand-of-one-land",
+    "text": "I cast Collective Brutality choosing discard. They have one card in hand which is a land. What happens?",
+    "expect": [
+      "opponent discards nothing (no instant or sorcery card in hand)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-22s-block-one-at-2",
+    "text": "They attack me with two 2/2s and I have one 3/3. I'm at 2. Do I die if I block one?",
+    "expect": [
+      "You take 2 damage.",
+      "Yes: You have lost the game."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-two-mountains-second-bolt",
+    "text": "I control Thalia and they cast Lightning Bolt with two Mountains. Can they also cast a second Bolt?",
+    "expect": [
+      "Lightning Bolt can't be cast (costs 2, only 0 mana available)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-minus-counter-no-persist",
+    "text": "I have Kitchen Finks with a -1/-1 counter. It dies. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it."
+    ],
+    "cite": []
   }
 ]

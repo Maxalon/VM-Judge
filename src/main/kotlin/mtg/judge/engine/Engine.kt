@@ -31,6 +31,14 @@ class Engine(val state: GameState) {
             trace.step("${ss.source.name} has split second and is on the stack, so players can't cast spells or activate abilities that aren't mana abilities. ${card.name} can't be cast now.", "702.61a")
             state.outcomes += "${card.name} can't be cast while ${ss.source.name} is on the stack (split second)."; return null
         }
+        // "They cast Leyline of Sanctity in response": without flash, a noninstant spell can't be cast while another player's spell is on the stack.
+        if (state.castabilityAsked) state.stack.firstOrNull { it.kind == StackKind.SPELL && it.controller != playerId }?.let { theirs ->
+            val instantSpeed = "Instant" in card.types || card.has("flash") || state.objects.values.any { o -> o.isOnBattlefield() && o.controller == playerId && Regex("""(?i)as though (?:it|they) had flash""").containsMatchIn(o.def.oracleText) }
+            if (!instantSpeed) {
+                trace.step("${theirs.source.name} is on the stack, and ${card.name} isn't an instant and doesn't have flash: a ${card.types.firstOrNull { it != "Legendary" && it != "Basic" }?.lowercase() ?: "spell"} spell can be cast only during its controller's main phase while the stack is empty, so it can't be cast in response.", "307.1", "302.1", "303.1")
+                state.outcomes += "${card.name} can't be cast now: it isn't an instant and has no flash, and ${theirs.source.name} is on the stack (sorcery-speed timing, 307.1)."; return null
+            }
+        }
         fun castLockApplies(e: StaticEffect.CantCastFiltered, lock: GameObject): Boolean =
             spellMatches(e.filter, card) && (e.minManaValue == null || card.manaValue.toInt() >= e.minManaValue) && (!e.xInCost || (card.manaCost ?: "").contains("{X}")) &&
                 (!e.chosenNumber || lock.chosenName?.toIntOrNull() == card.manaValue.toInt())
@@ -352,7 +360,8 @@ class Engine(val state: GameState) {
                 val mv = card.manaValue.toInt() + (x ?: 0)
                 val fromPool = minOf(p.manaPool, mv)
                 if (fromPool > 0) { p.manaPool -= fromPool; repeat(fromPool) { if (p.manaPoolSymbols.isNotEmpty()) p.manaPoolSymbols.removeAt(0) }; trace.step("${p.subject} ${p.v("pays", "pay")} $fromPool of ${card.name}'s cost from the mana in ${p.possessive} pool${if (p.manaPool > 0) " (${p.poolText()} left floating)" else ""}.", "601.2g", "106.4") }
-                p.manaSpent += mv - fromPool
+                // Thalia's {1} is paid too: it comes out of the same lands.
+                p.manaSpent += mv - fromPool + (obj.taxesAtCast?.sumOf { it.second } ?: 0).coerceAtLeast(0)
             }
         }
         val item = StackItem(state.newStackId(), StackKind.SPELL, playerId, obj, effect, targets, zonesOf(targets), card.oracleText, modes, x = x, kicked = kicked, evoked = evoked && card.has("evoke"), flashback = flashback && obj.has("flashback"), choice = copyChoice, targetsUnknown = targetsUnknown)

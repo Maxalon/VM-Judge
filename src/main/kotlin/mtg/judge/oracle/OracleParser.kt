@@ -995,6 +995,13 @@ object OracleParser {
             }
             return withZone(inner)
         }
+        // A modal spell whose modes run to several sentences (Collective Brutality): the modes split on the bullets, not on periods.
+        if (t.contains("•")) modalRe.matchEntire(t.trim())?.let { m ->
+            if (m.groupValues[1].isBlank() && m.groupValues[3].count { it == '.' } > 1) {
+                val modeTexts = m.groupValues[3].split("•").map { it.trim().trimEnd('.') }.filter { it.isNotEmpty() }
+                return Effect.Modal(m.groupValues[2].lowercase(), modeTexts.map { parseEffect(it) }, modeTexts)
+            }
+        }
         val sentences = t.split(sentenceSplit).map { it.trim() }.filter { it.isNotEmpty() }
         if (sentences.size > 1) {
             // "You may pay {2}. If you do, draw a card." / "You may sacrifice a creature. If you do, …"
