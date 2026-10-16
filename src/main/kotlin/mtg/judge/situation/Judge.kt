@@ -692,6 +692,11 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                                 "No: ${o.name} came under ${state.player(o.controller).possessive} control this turn and doesn\'t have haste, so its {T} ability can\'t be activated yet (302.6).${if (tapAbilities.size < any.size) " Its abilities without {T} in the cost still can be." else ""}"
                             tapAbilities.isNotEmpty() && o.def.isCreature && o.summoningSick == true ->
                                 "Yes: ${o.name} has haste, so it can use its {T} ability the turn it came under ${state.player(o.controller).possessive} control (702.10b)."
+                            // Deathrite Shaman with empty graveyards: every ability needs a target and none is legal, so none can be activated.
+                            any.all { a -> a.effect.targets().isNotEmpty() } && any.none { a -> a.effect.targets().all { spec -> state.objects.values.any { t ->
+                                if (spec.filter.inGraveyard) t.zone == Zone.GRAVEYARD && spec.filter.raw.lowercase().let { raw -> when { "land" in raw -> "Land" in t.def.types; "instant or sorcery" in raw -> t.def.isInstantOrSorcery; "creature" in raw -> t.def.isCreature; else -> true } }
+                                else t.isOnBattlefield() && state.matches(spec.filter, t, o.controller, o, anyZone = true) } } } ->
+                                "No: ${if (any.size == 1) "${o.name}'s ability needs a target" else "each of ${o.name}'s abilities needs a target"} (${any.map { a -> a.effect.targets().first().raw }.distinct().joinToString("; ")}), and nothing described is a legal one. An ability with no legal target can't be activated at all, mana ability or not (602.2b, 602.5a); name a card in a graveyard if there is one."
                             tapAbilities.isNotEmpty() && o.def.isCreature && o.summoningSick == null ->
                                 "Yes, if it has been under ${state.player(o.controller).possessive} control since the turn began; a {T} ability of a creature needs that or haste (302.6)."
                             else -> "Yes: ${o.name} can activate ${if (any.size == 1) "its ability" else "its abilities"}, mana permitting."

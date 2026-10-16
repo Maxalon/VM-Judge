@@ -31918,5 +31918,83 @@
       "Only during the turn Snapcaster Mage's trigger resolved. The flashback it grants lasts \"until end of turn\" (611.2a)"
     ],
     "cite": []
+  },
+  {
+    "id": "dismember-goyf-two-types",
+    "text": "I have Tarmogoyf and they cast Dismember on it paying 4 life. There's a creature and a land in graveyards. Does it die?",
+    "expect": [
+      "opponent pays 4 life.",
+      "Yes: Tarmogoyf died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-vs-finks-persist",
+    "text": "They cast Path to Exile on my Kitchen Finks. Does persist bring it back?",
+    "expect": [
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-vs-finks-persist",
+    "text": "I control Rest in Peace. My Kitchen Finks dies. Does it persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Rest in Peace).",
+      "No: Kitchen Finks is in exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "33-into-22-first-striker",
+    "text": "I attack with a 3/3 and they block with a 2/2 first striker. Does my creature die?",
+    "expect": [
+      "No: a 3/3 creature is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "blood-moon-vs-wasteland",
+    "text": "They have Blood Moon. Can I activate my Wasteland?",
+    "expect": [
+      "No: Blood Moon makes Wasteland a Mountain with none of its own abilities"
+    ],
+    "cite": [
+      "305.7"
+    ]
+  },
+  {
+    "id": "deathrite-empty-graveyards",
+    "text": "I have Deathrite Shaman and they have no cards in their graveyard. Can I make mana with it?",
+    "expect": [
+      "No: each of Deathrite Shaman's abilities needs a target",
+      "An ability with no legal target can't be activated at all, mana ability or not (602.2b, 602.5a)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "wrath-who-survives",
+    "text": "I cast Wrath of God. I have Thalia and they have Tarmogoyf. Who survives?",
+    "expect": [
+      "No: Thalia, Guardian of Thraben is in the graveyard.",
+      "No: Tarmogoyf is in the graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-sanctity-vs-their-thoughtseize",
+    "text": "They cast Thoughtseize on me while I have Leyline of Sanctity. Does it work?",
+    "expect": [
+      "Thoughtseize can't target you."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-vs-animated-wall",
+    "text": "I have Ensnaring Bridge and no cards in hand. They attack with a 0/4 wall that was animated to 2/4. Can it attack?",
+    "expect": [
+      "No: a 2/4 wall creature can't attack (Ensnaring Bridge: You have 0 cards in hand and a 2/4 wall creature's power is 2, 508.1c)."
+    ],
+    "cite": []
   }
 ]
