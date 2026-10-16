@@ -32667,5 +32667,87 @@
       "Yes: Spellskite died (it's in the graveyard)."
     ],
     "cite": []
+  },
+  {
+    "id": "chalice-zero-no-lands-under-thalia",
+    "text": "I have Thalia and they try to cast Chalice for 0 with no lands. Can they?",
+    "expect": [
+      "No: Chalice of the Void can't be cast (costs 1, only 0 mana available)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "delver-no-instant-speed-transform",
+    "text": "They cast Lightning Bolt at my Delver of Secrets. I respond by flipping it? Can I transform Delver at instant speed?",
+    "expect": [
+      "No. Delver of Secrets transforms only when its own upkeep trigger resolves and reveals an instant or sorcery card"
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-into-spellskite",
+    "text": "I attack with Kitchen Finks into their Spellskite. Do they block?",
+    "expect": [
+      "Spellskite has 3 damage marked."
+    ],
+    "cite": []
+  },
+  {
+    "id": "one-blocker-vs-guide-and-devil",
+    "text": "I'm at 4 and they attack with Goblin Guide and Vexing Devil. I have one blocker, a 2/2. Do I die?",
+    "expect": [
+      "You take 2 damage.",
+      "No: You are still in the game at 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "brutality-drain-into-leyline",
+    "text": "They have Leyline of Sanctity. I cast Collective Brutality choosing drain. What happens?",
+    "expect": [
+      "Collective Brutality can't target opponent (hexproof)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "ooze-with-counters-vs-push",
+    "text": "I have Scavenging Ooze with 2 counters. They Fatal Push it. Does it die?",
+    "expect": [
+      "Yes: Scavenging Ooze died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-cannot-redirect-wrath",
+    "text": "They cast Wrath of God while I have Thalia and Spellskite. Can Spellskite redirect Wrath?",
+    "expect": [
+      "No. Spellskite's ability changes a target of a spell or ability, and Wrath of God has no targets"
+    ],
+    "cite": []
+  },
+  {
+    "id": "shadow-size-after-bolt",
+    "text": "I have Death's Shadow at 6 life. They Bolt me. What size is Shadow after?",
+    "expect": [
+      "Death's Shadow is 10/10.",
+      "You go from 6 to 3 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-blocks-33",
+    "text": "They attack with a 3/3. I have Kor Firewalker. If I block, does Firewalker die?",
+    "expect": [
+      "Yes: Kor Firewalker died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "souls-flashback-spirit-count",
+    "text": "I cast Lingering Souls and flash it back. How many Spirits do I have?",
+    "expect": [
+      "You have 4 spirits."
+    ],
+    "cite": []
   }
 ]

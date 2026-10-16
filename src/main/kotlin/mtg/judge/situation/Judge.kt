@@ -1006,7 +1006,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val def = e.card?.let { cardDef(it, state) } ?: throw JudgeException("ask needs a card")
                     val triggers = def.abilities.filterIsInstance<TriggeredAbility>()
                     val targeted = triggers.filter { it.effect.targets().isNotEmpty() || Regex("""(?i)\btarget\b""").containsMatchIn(it.text) }
-                    state.outcomes += if (triggers.isEmpty()) "${def.name} has no triggered ability for Spellskite to touch."
+                    val spellTargets = def.isInstantOrSorcery && (def.spellEffect?.targets()?.isNotEmpty() == true || Regex("""(?i)\btarget\b""").containsMatchIn(def.oracleText))
+                    state.outcomes += if (def.isInstantOrSorcery) (if (spellTargets) "Yes, if Spellskite is a legal target for it: Spellskite's ability can change a target of ${def.name} to Spellskite, provided Spellskite fits what the spell may target (115.7)." else "No. Spellskite's ability changes a target of a spell or ability, and ${def.name} has no targets (\"${def.oracleText.lineSequence().firstOrNull()?.trimEnd('.') ?: def.name}\"): a sweeper affects everything without targeting, so there is nothing to redirect and Spellskite can't be activated against it (602.2b, 115.1).")
+                        else if (triggers.isEmpty()) "${def.name} has no triggered ability for Spellskite to touch."
                         else if (targeted.isEmpty()) "No. Spellskite's ability changes a target of a spell or ability, and ${def.name}'s trigger has no target (\"${triggers.first().text.replace("~", def.name).trimEnd('.')}\"): there is nothing to redirect, so Spellskite can't be activated against it at all (602.2b, 115.1)."
                         else "Yes, if Spellskite is a legal target for it: Spellskite's ability can change a target of ${def.name}'s trigger (\"${targeted.first().text.replace("~", def.name).trimEnd('.')}\") to Spellskite, provided Spellskite fits what that trigger may target (115.7)."
                     return true

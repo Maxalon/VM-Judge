@@ -235,7 +235,8 @@ class SituationParser(private val names: NameIndex) {
                 ctx.events.filter { it.verb == "attackAll" && it.player != askedOf && (it.targets.isEmpty() || it.targets.firstOrNull() == askedOf) }.flatMap { a -> ctx.objects.values.filter { it.controller == a.player && it.zone == "battlefield" && isCreatureName(it.card.name) }.map { it.id } }
             val mine = ctx.objects.values.filter { it.controller == askedOf && it.zone == "battlefield" && isCreatureName(it.card.name) && it.tapped != true && ctx.events.none { e -> e.verb == "attack" && e.obj == it.id } }
             if (attackers.isNotEmpty() && mine.isNotEmpty() && ctx.events.none { it.verb in setOf("cast", "activate") }) {
-                val sorted = attackers.distinct().sortedByDescending { a -> Regex("""(\d+)/""").find(ctx.objects[a]?.card?.name ?: "")?.groupValues?.get(1)?.toIntOrNull() ?: 1 }
+                // The biggest attacker is blocked first: a named card's printed power counts too (Vexing Devil before Goblin Guide).
+                val sorted = attackers.distinct().sortedByDescending { a -> val nm = ctx.objects[a]?.card?.name ?: ""; Regex("""(\d+)/""").find(nm)?.groupValues?.get(1)?.toIntOrNull() ?: names.lookup(Names.normalize(nm))?.power?.toIntOrNull() ?: 1 }
                 val at = ctx.events.indexOfLast { it.verb == "attack" || it.verb == "attackAll" } + 1
                 var k = 0
                 for ((i, b) in mine.withIndex()) { val a = sorted.getOrNull(i) ?: break; ctx.events.add(at + k, EventSpec("block", player = askedOf, obj = b.id, targets = listOf(a))); k++ }
@@ -629,6 +630,170 @@ class SituationParser(private val names: NameIndex) {
         if (pronoun) ctx.lastNamed?.let { return it }
         if (ctx.players.size == 1) return ctx.players.keys.first()
         ctx.usesOpp = true; return "opp"
+    }
+
+    /** The second half of the sentence-level rewrites (split out of readSentence for the JVM method size limit). */
+    private fun rewriteHeadB(t2In: String, m: Marked, ctx: Ctx): String {
+        var t2 = t2In
+        // "I have Delver of Secrets and it flipped": the transformed face.
+        t2 = t2.replace(Regex("""\b(it|that|c\d+) (?:flipped|has flipped|is flipped|transformed|has transformed|is transformed|already flipped|flipped already)\b""", RegexOption.IGNORE_CASE), "$1 transforms")
+        // "… at my Delver after it transformed": the transform first, then the rest.
+        t2 = t2.let { t0 -> Regex("""^(.+?) after (it|that|(?:my |the )?c\d+) (?:flipped|transformed|has flipped|has transformed|is flipped|transforms)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            // "at my Delver after it transformed": "it" is the card just named, which isn't an object yet when the transform is read first.
+            val what = if (r.groupValues[2].lowercase() in setOf("it", "that")) Regex("""(c\d+)""").findAll(r.groupValues[1]).lastOrNull()?.value?.let { "my $it" } ?: r.groupValues[2] else r.groupValues[2]
+            "$what transforms, ${r.groupValues[1]}" } ?: t0 }
+        // "What can attack me?" under Ensnaring Bridge: their whole team is sent in and the engine says which are held back.
+        if (ctx.objects.values.any { it.controller != "me" && it.zone == "battlefield" && isCreatureName(it.card.name) } && Regex("""^(?:what|which(?: of (?:their|his|her) creatures)?|who) can (?:still |even )?attack(?: me| into me| this turn)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) { t2 = "they attack with everything"; ctx.notes += "\"What can attack me?\" is read as your opponent attacking with everything; the outcome says which creatures are held back." }
+        // "Do they have to show me their hand?" (Gitaxian Probe, Peek): looking at a hand means they show it.
+        if (Regex("""^do (?:they|he|she) (?:have to|need to|got to) (?:show|reveal) (?:me )?(?:their|his|her) (?:whole )?hand\??$|^can (?:i|we) see (?:their|his|her) (?:whole )?hand\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "showhand-question"
+        // "Can I flashback it for its normal flashback cost?" after Snapcaster: both flashback costs are available.
+        if (Regex("""^can (?:i|we) (?:still )?(?:flashback|flash back|cast) (?:it|that|c\d+) for its (?:normal|own|printed|regular|real) (?:flashback )?cost(?: instead)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "ownflashback-question"
+        // "Does my own Leyline stop it?": hexproof is against opponents only.
+        if (ctx.objects.values.any { o -> o.controller == "me" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb") } && Regex("""^does my (?:own )?(?:c\d+|leyline) (?:stop|block|prevent|counter|affect) (?:it|that|my own spell|me)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "ownleyline-question"
+        // "Can I still cast Thalia uncounterable?" with Cavern of Souls under Blood Moon: the Cavern's mana is plain red now.
+        if (ctx.objects.values.any { it.card.name == "Cavern of Souls" } && (ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }) && Regex("""^can (?:i|we) (?:still )?(?:cast|make) (?:my |the )?(?:c\d+|it|creatures?|my creatures) (?:uncounterable|so it can't be countered|uncounterably|with cavern|through cavern|with the cavern)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "cavernmoon-question"
+        // "Do I take damage if I block with both?": the double block, then the question (before the plain "if I block" rewrite).
+        t2 = t2.replace(Regex("""^do (?:i|we) take (?:any )?damage if (?:i|we) block with (both|both of them|two of them|everything|all of them)\??$""", RegexOption.IGNORE_CASE), "i block with $1, do i take damage")
+        // "Can I Snapcaster and Bolt this turn?": both casts against the mana.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (c\d+) (?:and|and then|then|into) (c\d+)(?: (?:this turn|in one turn|in the same turn|both|together))?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (m.cards[r.groupValues[1]] != null && m.cards[r.groupValues[2]] != null) "can i cast ${r.groupValues[1]} and ${r.groupValues[2]} in the same turn" else t0 } ?: t0 }
+        // "Can I target myself instead?" with their Leyline of Sanctity: a player may target themselves.
+        if (ctx.objects.values.any { o -> o.controller != "me" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb") } && Regex("""^can (?:i|we) (?:target|hit|aim it at|cast it on|point it at) (?:myself|me|us|ourselves|my own face)(?: instead| then)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "targetself-question"
+        // "Can I vial in Kitchen Finks before it resolves to gain life?": the Vial in response, played out.
+        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" }) t2 = t2.replace(Regex("""^can (?:i|we) (?:vial in|put in|flash in|vial|drop in) (?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)?(?: in response| before it resolves| first| now)?(?: to (?:gain (?:the )?life|save myself|survive|go up|block|chump|stay alive))?\??$""", RegexOption.IGNORE_CASE), "i vial in $1 in response")
+        // "Can I redirect it with Spellskite paying life?": how the Phyrexian mana is paid is the engine's to say.
+        t2 = t2.replace(Regex("""(?<=\bwith (?:my |the )?c\d|\bwith (?:my |the )?c\d\d)(?:,| and)? ?(?:by |while )?(?:paying|pay|using) (?:the |2 |two )?life(?: for it| instead| for the mana| instead of mana)?(?=\?|$)""", RegexOption.IGNORE_CASE), "")
+        // "Then on my turn, can I cast Bolt again?": the lead-in is dropped; whether the card can be cast again is what's asked.
+        t2 = t2.replace(Regex("""^(?:then\s+|and then\s+)?(?:(?:on|in|during) my (?:next |own )?turn,?\s+|next turn,?\s+|later,?\s+)?(can (?:i|we) (?:still |even |then )?(?:cast|play|flashback|flash back|recast|re-cast) (?:my |the )?c\d+ again\??)$""", RegexOption.IGNORE_CASE), "$1")
+        // "Do I lose on upkeep if I reveal a land?" (Dark Confidant at 1 life): the reveal, then the question.
+        t2 = t2.replace(Regex("""^(do|will|would) (i|we) (lose|die|lose the game|survive|live) (?:on|in|during|at) (?:my )?(?:next )?upkeep if (?:i|we) (?:reveal|flip|hit|trigger into|draw into) (an? |the )?(land|basic land|c\d+|instant|sorcery|creature|artifact|enchantment|planeswalker)\??$""", RegexOption.IGNORE_CASE), "i reveal $4$5, $1 $2 $3")
+        // "Can I flash it back?": the verb's two words around the object.
+        t2 = t2.replace(Regex("""\bflash (it|that|them|(?:my |the )?c\d+) back\b""", RegexOption.IGNORE_CASE), "flash back $1")
+        // "I have Stoneforge Mystic with Batterskull in hand": the first is on the battlefield, the second in hand.
+        t2 = t2.replace(Regex("""^(i|we) have ((?:my |the )?c\d+) with ((?:an? |my |the )?c\d+) in (?:my |our )?hand\b""", RegexOption.IGNORE_CASE), "$1 have $2, $3 in hand")
+        // "I have Loxodon Smiter and two lands in hand", "I have only lands and a Loxodon Smiter": all of it is the hand.
+        t2 = t2.replace(Regex("""^(?:i|we) have ((?:an? |my )?c\d+) and (an? |one |two |three |four |\d+ )?(?:lands?|basic lands?)(?: cards?)? in (?:my |our )?hand\b""", RegexOption.IGNORE_CASE), "i have $1 in hand, i have $2lands in hand")
+        t2 = t2.replace(Regex("""\b(?:i|we) have (?:only|just|nothing but) (?:lands?|basic lands?)(?: cards?)? and (?:an? |one |my )?(c\d+)(?: in (?:my |our )?hand)?\b""", RegexOption.IGNORE_CASE), "i have $1 in hand, i have a land in hand")
+        // "Do they take the Smiter?" after Thoughtseize: what the spell may choose from the hand.
+        t2 = t2.replace(Regex("""^(?:do|does|will|would|can) (they|he|she|my opponent|the opponent) (?:have to |get to |need to )?(?:take|pick|choose|grab|snag|hit|discard) (?:the |my )?(?:c\d+|it|that)\??$""", RegexOption.IGNORE_CASE), "what can $1 take")
+        // "and Vial in a Spirit token": the Vial's name used as the verb after "and" or a subject.
+        t2 = t2.let { t0 -> Regex("""(^|\band |\b(?:they|i|we|he|she) )(c\d+) in (?=(?:an? |my |the |their )?(?:c\d+|[a-z]))""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2].lowercase()]?.display == "Aether Vial") "${r.groupValues[1]}vial in " else r.value } }
+        // "Does Thalia tax it?": the spell's cost with the tax.
+        t2 = t2.replace(Regex("""^(?:does|will|would) (?:my |the )?(?:c\d+|thalia|it) (?:tax|hit|apply to|make it cost more for|add to) (it|that|c\d+)(?: too| as well)?\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
+        // "I cast Collective Brutality escalated choosing all three modes. How much does it cost?": the escalate total.
+        t2 = t2.let { t0 -> Regex("""^how much (?:does|did|would|will) (it|that|c\d+) cost\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val lc = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" }
+            val nm = lc?.card?.name ?: lc?.obj?.let { ctx.objects[it]?.card?.name }
+            if (lc != null && lc.modes.size >= 2 && nm in setOf("Collective Brutality", "Collective Defiance", "Collective Effort", "Blessed Alliance", "Borrowed Grace", "Borrowed Hostility", "Borrowed Malevolence", "Savage Alliance")) "escalate-cost-question ${r.groupValues[1]} ${lc.modes.size}" else t0 } ?: t0 }
+        // "My Snapcaster Mage gives Bolt flashback until end of turn": the Mage cast at the Bolt in the graveyard.
+        t2 = t2.let { t0 -> Regex("""^my (c\d+) (?:flashback |trigger |ability )?(?:gives|gave|granted|grants) (?:my )?(c\d+) flashback(?: until end of turn)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display in setOf("Snapcaster Mage", "Torrential Gearhulk")) "i cast ${r.groupValues[1]} targeting ${r.groupValues[2]} in my graveyard" else t0 } ?: t0 }
+        if (Regex("""^can (?:i|we) (?:still )?(?:flash (?:it|that) back|flashback (?:it|that)|flash back (?:it|that|c\d+)|cast (?:it|that) from (?:my |the )?graveyard) (?:on|during|in) (?:their|my opponent's|the opponent's) (?:next )?turn\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.objects.values.any { it.card.name == "Snapcaster Mage" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Snapcaster Mage" })) t2 = "snapflashturn-question"
+        // "Does Lightning Bolt cost 3 for them?": the spell's cost, with whatever taxes apply.
+        t2 = t2.replace(Regex("""^(?:does|will|would) (?:my |the |their |an? )?(c\d+|it|that) (?:still |even )?cost (?:\d+|more|less|extra|the same|double|one more|two more)(?: mana)?(?: for (?:them|me|my opponent|the opponent|us))?(?: now| then| anyway)?\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
+        // "Who survives?" after a sweeper with no combat: the creatures, not the players.
+        if (ctx.events.none { it.verb == "attack" || it.verb == "attackAll" } && ctx.events.lastOrNull { it.verb == "cast" }?.card?.name in setOf("Wrath of God", "Damnation", "Supreme Verdict", "Anger of the Gods", "Toxic Deluge", "Pyroclasm", "Terminus", "Day of Judgment", "Languish", "Blasphemous Act", "Ritual of Soot", "Firespout", "Volcanic Fallout", "Sweltering Suns", "Slagstorm", "Kozilek's Return", "Shatter the Sky", "Depopulate", "Farewell", "Cleansing Nova", "Akroma's Vengeance", "Austere Command", "Rout", "Hallowed Burial", "Winds of Abandon", "Doomskar", "Vanquish the Horde", "Sunfall", "Deadly Tempest", "Crux of Fate", "Extinction Event", "Starfall Invocation", "Lavastorm", "Electrickery") && Regex("""^who (?:survives|dies|lives|is left|is still alive)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = t2.replace(Regex("""^who""", RegexOption.IGNORE_CASE), "what")
+        // "a 0/4 wall that was animated to 2/4": the size it has now.
+        t2 = t2.replace(Regex("""\b(an? |my |their |the )?(\d+/\d+) ([a-z]+) (?:that was |that's been |that is |that got |which was )?(?:animated|pumped|boosted|grown|buffed) (?:to|into|up to) (\d+/\d+)\b""", RegexOption.IGNORE_CASE), "$1$4 $3")
+        // "They have one card in hand which is a land": that card, in their hand.
+        t2 = t2.replace(Regex("""^(they|he|she|my opponent|the opponent) (?:have|has|hold|holds) (?:one|1|a single|only one|just one) card in (?:their |his |her )?hand,? (?:which|and it|that|and that) is (?:an? )?(land|basic land|c\d+|creature|instant|sorcery)\b""", RegexOption.IGNORE_CASE), "$1 have a $2 in hand")
+        // "Can they cast it in response?": the cast, then whether it was allowed.
+        t2 = t2.replace(Regex("""^can (they|he|she|i|we|my opponent|the opponent) (?:even |still |just )?(?:cast|play) (it|that|(?:the |their |my )?c\d+) in response(?: to (?:it|that|my spell|the spell))?\??$""", RegexOption.IGNORE_CASE), "$1 cast $2 in response, castallowed-question")
+        // "Ensnaring Bridge with 1 card": the cards are the hand.
+        t2 = t2.let { t0 -> Regex("""\b(c\d+) with (\d+|one|two|three|four|no|zero) cards?\b(?! in)""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1].lowercase()]?.display == "Ensnaring Bridge") "${r.groupValues[1]} with ${r.groupValues[2]} cards in hand" else r.value } }
+        // "Can I vial in a Snapcaster for free?": the Vial activation, with the question about it.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:still |even |just )?(vial|put|drop|flash|sneak) in (?:an? |my |the )?(c\d+|creature|\d+-?drop|\d+/\d+(?: creature)?)(?: with (?:my |the )?c\d+)?(?: for free| for nothing| without paying(?: mana)?| at instant speed| now| this turn| right now)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (r.groupValues[1].lowercase() == "vial" || ctx.objects.values.any { it.card.name == "Aether Vial" && it.zone == "battlefield" }) "vialin-question ${r.groupValues[2]}" else t0 } ?: t0 }
+        // "They Bolt my Dark Confidant in response to its trigger": the upkeep trigger is on the stack first.
+        t2 = t2.let { t0 -> Regex("""^(.*?),?\s+in response to (?:its|the|that|my|their|his|her) (upkeep |draw |etb |enters |enter |attack |own )?(?:trigger|triggered ability)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val head = r.groupValues[1]
+            val upkeepCards = setOf("Dark Confidant", "Delver of Secrets", "Phyrexian Arena", "Bitterblossom", "Sylvan Library", "Bloodghast", "Vampire Nighthawk")
+            val tok = Regex("""(c\d+)""").findAll(head).map { it.value }.firstOrNull { m.cards[it]?.display in upkeepCards }
+            val upkeep = r.groupValues[2].lowercase().startsWith("upkeep") || tok != null
+            if (!upkeep) head
+            else {
+                val whose = if (tok != null && Regex("""\b(?:their|his|her|my opponent's|the opponent's) $tok\b""").containsMatchIn(head)) "their" else if (tok != null && Regex("""\bmy $tok\b""").containsMatchIn(head)) "my" else if (Regex("""^(?:they|he|she|my opponent|the opponent)\b""").containsMatchIn(head)) "my" else "my"
+                ctx.notes += "\"in response to its trigger\" is read as the upkeep trigger already on the stack; the spell resolves first, and the trigger then resolves on its own (113.7a)."
+                "$whose upkeep begins, $head"
+            }
+        } ?: t0 }
+        // "I activate Deathrite Shaman exiling a Lightning Bolt from my graveyard": the card is the target.
+        t2 = t2.replace(Regex("""^(.*\bactivates? (?:my |the )?c\d+),? (?:exiling|to exile|exile|eating) (?:an? |the |my )?(c\d+) from (my|the|their) graveyard\??$""", RegexOption.IGNORE_CASE), "$1 targeting $2 in $3 graveyard")
+        // "How much do they pay?": the spell's cost.
+        t2 = t2.replace(Regex("""^how much (?:do|does|did|will|would) (?:they|he|she|i|we|my opponent|the opponent) (?:have to |need to )?pay(?: for (it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE)) { r -> "how much does ${r.groupValues[1].ifEmpty { "it" }} cost" }
+        // "Can I attack with my 2/2?": the attack, then the question about that creature.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:still |even |also )?attack with my (\d+/\d+)\??$""", RegexOption.IGNORE_CASE), "i attack with my $1, can it attack")
+        // "Can they still destroy my land with it?" (Ghost Quarter under Blood Moon): whether the ability can be activated.
+        t2 = t2.replace(Regex("""^can (they|he|she|i|we) (?:still |even )?(?:destroy|kill|blow up|wasteland|hit|remove) (?:my|their|a|one of my|one of their) lands? with (it|that|(?:the |their |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "can $1 activate $2")
+        // "I have another Bolt in hand": a second copy, in hand.
+        t2 = t2.replace(Regex("""^(?:i|we) have another (c\d+) in (?:my |our )?hand$""", RegexOption.IGNORE_CASE), "i have $1 in hand")
+        // "Do they gain life from persist?" after Path: whether it comes back at all.
+        t2 = t2.replace(Regex("""^(?:do (?:they|i|we) (?:gain|get)|how much life (?:do|does|will|would) (?:they|i|we) (?:gain|get)) (?:the |any )?(?:life |2 life |2 |two life )?(?:from|off|with|through) (?:the )?persist(?: trigger)?\??$""", RegexOption.IGNORE_CASE), "does it come back")
+        // "Can it do anything?" (Deathrite under Rest in Peace): whether its abilities can be activated.
+        t2 = t2.let { t0 -> Regex("""^can (it|that|(?:my |their |the )?c\d+) (?:still |even )?do anything(?: now| anymore| at all| here)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val who = if (r.groupValues[1].startsWith("my")) "i" else if (r.groupValues[1].startsWith("their")) "they" else if (ctx.events.lastOrNull { it.verb == "cast" }?.player == "me") "i" else if (ctx.events.lastOrNull { it.verb == "cast" } != null) "they" else "i"
+            "can $who activate ${r.groupValues[1]}" } ?: t0 }
+        // "They Thoughtseize me and take my Lightning Bolt": the Bolt is in hand for the spell to find.
+        t2 = t2.replace(Regex("""^(they|he|she|my opponent|the opponent) (c\d+)s? me and (?:takes?|took|grabs?|snags?|picks?) (?:my |the )?(c\d+)$""", RegexOption.IGNORE_CASE), "i have $3 in hand, $1 cast $2 on me")
+        // "They have only Lightning Bolt and lands": the hand.
+        t2 = t2.replace(Regex("""\b(they|he|she|my opponent|the opponent) (?:have|has|hold|holds) (?:only |just )?(?:an? )?(c\d+) and (?:some |a few |\d+ |two |three |only )?lands(?: in (?:their |his |her )?hand)?\b""", RegexOption.IGNORE_CASE), "$1 have $2 in hand, $1 have a land in hand")
+        // "Do they lose 2 life too?" (Thoughtseize): how much life that player loses.
+        t2 = t2.replace(Regex("""^do (they|he|she|my opponent|the opponent|i|we) (?:also |still )?lose (?:the )?(?:\d+ |two )?life(?: too| as well| also)?\??$""", RegexOption.IGNORE_CASE), "how much life do $1 lose")
+        // "I have Spirit tokens. Can they attack?": "they" are my tokens when nothing of the opponent's is a creature.
+        if (Regex("""^can they (?:still |even )?attack(?: into (?:it|that|the bridge))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.none { it.controller != "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }) {
+            if (ctx.events.any { (it.verb == "attack" || it.verb == "attackAll") && it.player == "me" }) t2 = "do they take damage"
+            else if (ctx.lastMentioned?.let { ctx.objects[it] }?.let { it.controller == "me" && (it.card.name ?: "").contains("token", true) } == true) t2 = "i attack with everything, do they take damage"
+        }
+        // "How much total mana?": what the described spells cost in all.
+        if (Regex("""^how much (?:total )?mana(?: total| in all| is that| does that take| did (?:that|it) cost| do (?:i|we) need| do (?:i|we) spend| did (?:i|we) spend| for all that| altogether)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "cast" && it.player == "me" }) t2 = "manaspent-question"
+        // "I attack with two Spirits into their Ensnaring Bridge": a noncreature "into" is just something they have.
+        t2 = t2.let { t0 -> Regex("""\binto (?:their |his |her |the )?(c\d+)( with (?:\d+|no|zero|one|two|three|four|five) cards?(?: in hand)?)?\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1].lowercase()]?.typeLine?.contains("Creature") == false) ", they have ${r.groupValues[1]}${if (r.groupValues[2].isNotEmpty()) ", they have " + Regex("""(\d+|no|zero|one|two|three|four|five)""").find(r.groupValues[2])!!.value + " cards in hand" else ""}" else r.value } }
+        // "into their Ensnaring Bridge with 0 cards in hand": the hand size that an earlier rewrite gave to me belongs to the Bridge's controller.
+        t2 = t2.let { t0 -> Regex("""(, they have (c\d+)), i have (\d+|no|zero|one|two|three|four|five) cards in hand\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2].lowercase()]?.display == "Ensnaring Bridge") "${r.groupValues[1]}, they have ${r.groupValues[3]} cards in hand" else r.value } }
+        // "choosing -2/-2 on their Thalia and drain": the first mode's target moves after the modes.
+        t2 = t2.replace(Regex("""\bchoosing ((?:-\d+/-\d+|[a-z]+(?: [a-z]+)?)) (on|at|targeting) ((?:their |my |the )?c\d+) and ([a-z]+(?: [a-z]+)?)\b""", RegexOption.IGNORE_CASE), "choosing $1 and $4 $2 $3")
+        // "with no mana": said first, so the cast is checked against it.
+        t2 = t2.replace(Regex("""\b(?:try|tries|tried|attempts?|wants? to|go to|goes to) to (cast|play|activate)\b""", RegexOption.IGNORE_CASE), "$1")
+        // ("with no mana open" after a cast is the older reading: nothing left to pay an "unless" cost with.)
+        t2 = t2.let { t0 -> Regex("""^(.*?),? with no (?:lands untapped|untapped lands|lands up|lands|mana at all|mana sources|mana whatsoever|mana)\b(?! open| available| up| left| to spare| floating)(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            // Whose mana: the subject of the cast the phrase hangs on ("I have Thalia and they cast Chalice with no lands": theirs).
+            val subj = Regex("""\b(they|he|she|my opponent|the opponent|i|we) (?:casts?|plays?|activates?|tr(?:y|ies) to cast)\b""", RegexOption.IGNORE_CASE).findAll(r.groupValues[1]).lastOrNull()?.groupValues?.get(1)?.lowercase()
+                ?: Regex("""^(they|he|she|my opponent|the opponent|i|we)\b""", RegexOption.IGNORE_CASE).find(r.groupValues[1].trim())?.groupValues?.get(1)?.lowercase()
+            if (r.groupValues[1].isBlank()) t0 else "${if (subj in setOf("they", "he", "she", "my opponent", "the opponent")) "they have" else "i have"} no mana, ${r.groupValues[1]}${r.groupValues[2]}" } ?: t0 }
+        // "They cast Kitchen Finks and it dies": the creature just cast.
+        t2 = t2.replace(Regex("""^(they|i|we|he|she) (casts?|plays?) (c\d+)(.*?) and (?:it|that) (dies|died|is destroyed|gets destroyed|gets killed)\b""", RegexOption.IGNORE_CASE), "$1 $2 $3$4, $3 $5")
+        // "with a Chalice on 1 on my side": mine; "on their side": theirs.
+        t2 = t2.let { t0 -> Regex("""\bwith (?:an? |my |their )?(c\d+)((?: on \d+)?) on (my|their) side\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> ", ${if (r.groupValues[3].lowercase() == "my") "i" else "they"} have ${r.groupValues[1]}${r.groupValues[2]}" } }
+        // "my graveyard Bolt": the card in that graveyard.
+        t2 = t2.replace(Regex("""\b(my|their|his|her) graveyard (c\d+)\b""", RegexOption.IGNORE_CASE), "the $2 in $1 graveyard")
+        // "My Death's Shadow is 5/5": its size says the life total (13 minus the power).
+        t2 = t2.let { t0 -> Regex("""^(?:my |the )?(c\d+) is (?:a )?(\d+)/(\d+)(?: right now| currently| at the moment)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (m.cards[r.groupValues[1]]?.display == "Death's Shadow") { val life = 13 - r.groupValues[2].toInt(); ctx.notes += "Death's Shadow at ${r.groupValues[2]}/${r.groupValues[3]} means you're at $life life (13/13 minus your life total)."; "i'm at $life life and i have ${r.groupValues[1]}" } else t0 } ?: t0 }
+        // "Wrath of God." on its own after a board was described: the other player casts it.
+        if (Regex("""^c\d+\.?$""").matches(t2.trim()) && m.cards[t2.trim().trimEnd('.')]?.isSpellOnly == true && ctx.objects.values.any { it.controller == "me" && it.zone == "battlefield" } && ctx.events.none { it.verb == "cast" }) { t2 = "they cast ${t2.trim().trimEnd('.')}"; ctx.notes += "\"${m.cards.getValue(t2.removePrefix("they cast ")).display}.\" on its own is read as your opponent casting it; say \"I cast\" if it was yours." }
+        // "Do both come back?": the two creatures of mine just described.
+        if (Regex("""^do both (?:come back|persist|return|undying back|survive|die)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "bothback-question " + (if (Regex("""\b(?:survive)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "survive" else if (Regex("""\bdie\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "die" else "comesBack")
+        // "Does Spellskite stop the Devil trigger?": whether that trigger has a target to change.
+        t2 = t2.let { t0 -> Regex("""^(?:does|can|will) (?:their |my |the )?(c\d+) (?:stop|affect|redirect|take|change|counter|eat) (?:the |my |their )?(c\d+)(?:'s)? (?:trigger|triggered ability|ability|etb|etb trigger)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display == "Spellskite") "skitestops-question ${r.groupValues[2]}" else t0 } ?: t0 }
+        // "I respond by flipping it" / "Can I transform Delver at instant speed?": a transform isn't something a player does on demand.
+        t2 = t2.replace(Regex("""^(?:i|we) (?:respond by|try to|want to) (?:flipping|transforming|flip|transform) (?:it|that|my c\d+|the c\d+|c\d+)\??$""", RegexOption.IGNORE_CASE), "can i transform it in response")
+        if (Regex("""^can (?:i|we) (?:transform|flip) (?:my |the )?(?:c\d+|it|that|delver) (?:at instant speed|in response|now|right now|manually|whenever i want|on demand|at will)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "flipondemand-question"
+        // "I have one blocker, a 2/2": the one creature.
+        t2 = t2.replace(Regex("""\b(?:i have )?(?:one|a|1|a single|only one) blockers?,? (?:i have )?(an? \d+/\d+)\b""", RegexOption.IGNORE_CASE), "i have $1")
+        // "Can Spellskite redirect Wrath?": whether that spell has a target to change.
+        t2 = t2.let { t0 -> Regex("""^can (?:my |the )?(c\d+) (redirect|take|eat|stop|absorb|c\d+) (?:the |their |a )?(c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val verbIsRedirectCard = r.groupValues[2].startsWith("c") && m.cards[r.groupValues[2]]?.display == "Redirect"
+            if (m.cards[r.groupValues[1]]?.display == "Spellskite" && (!r.groupValues[2].startsWith("c") || verbIsRedirectCard)) "skitestops-question ${r.groupValues[3]}" else t0 } ?: t0 }
+        // "How many Spirits do I have?": a creature type read as a card name is the type word.
+        t2 = t2.let { t0 -> Regex("""^how many (c\d+)s? (?:do|did|does|will) (i|we|they) (?:have|get|control|end up with|make)(?: now| in all| total)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val disp = m.cards[r.groupValues[1]]?.display ?: return@let t0
+            // "Spirits" matched a card by its first word ("Spirit of the Night"): the type word is what was meant.
+            val head = disp.split(' ').first()
+            if (head in setOf("Spirit", "Zombie", "Goblin", "Soldier", "Elemental", "Beast", "Angel", "Thopter", "Servo", "Saproling", "Wolf", "Cat", "Knight", "Bird", "Insect", "Elf", "Human", "Vampire", "Dragon", "Elephant", "Wurm", "Bear", "Myr", "Golem", "Snake", "Rat", "Squirrel", "Devil", "Faerie", "Illusion", "Plant", "Treasure", "Clue", "Food")) "how many ${head.lowercase()}s do ${r.groupValues[2]} have" else t0 } ?: t0 }
+        // "What size is Shadow after?": the size once everything has happened.
+        t2 = t2.replace(Regex("""^(what size is (?:my |the )?(?:c\d+|it|that)) (?:after|afterwards|now|then|after that|after this)\??$""", RegexOption.IGNORE_CASE), "$1")
+        // "They have no basics left": a Path to Exile search that finds nothing.
+        if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
+        return t2
     }
 
     private fun readSentence(m: Marked, ctx: Ctx): Boolean {
@@ -1560,141 +1725,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b((?:my |the )?c\d+) (?:unflipped|untransformed|not flipped|unflipped yet)\b""", RegexOption.IGNORE_CASE), "$1")
         t2 = t2.let { t0 -> Regex("""^(.*?)\b(?:my |the )?(c\d+) (?:flipped|transformed|already flipped)\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             if (Regex("""^(?:it|that|my c\d+|the c\d+|c\d+) $""").matches(r.groupValues[1]) || r.groupValues[1].trim().isEmpty()) t0 else "my ${r.groupValues[2]} transforms, ${r.groupValues[1]}${r.groupValues[2]}${r.groupValues[3]}" } ?: t0 }
-        // "I have Delver of Secrets and it flipped": the transformed face.
-        t2 = t2.replace(Regex("""\b(it|that|c\d+) (?:flipped|has flipped|is flipped|transformed|has transformed|is transformed|already flipped|flipped already)\b""", RegexOption.IGNORE_CASE), "$1 transforms")
-        // "… at my Delver after it transformed": the transform first, then the rest.
-        t2 = t2.let { t0 -> Regex("""^(.+?) after (it|that|(?:my |the )?c\d+) (?:flipped|transformed|has flipped|has transformed|is flipped|transforms)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-            // "at my Delver after it transformed": "it" is the card just named, which isn't an object yet when the transform is read first.
-            val what = if (r.groupValues[2].lowercase() in setOf("it", "that")) Regex("""(c\d+)""").findAll(r.groupValues[1]).lastOrNull()?.value?.let { "my $it" } ?: r.groupValues[2] else r.groupValues[2]
-            "$what transforms, ${r.groupValues[1]}" } ?: t0 }
-        // "What can attack me?" under Ensnaring Bridge: their whole team is sent in and the engine says which are held back.
-        if (ctx.objects.values.any { it.controller != "me" && it.zone == "battlefield" && isCreatureName(it.card.name) } && Regex("""^(?:what|which(?: of (?:their|his|her) creatures)?|who) can (?:still |even )?attack(?: me| into me| this turn)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) { t2 = "they attack with everything"; ctx.notes += "\"What can attack me?\" is read as your opponent attacking with everything; the outcome says which creatures are held back." }
-        // "Do they have to show me their hand?" (Gitaxian Probe, Peek): looking at a hand means they show it.
-        if (Regex("""^do (?:they|he|she) (?:have to|need to|got to) (?:show|reveal) (?:me )?(?:their|his|her) (?:whole )?hand\??$|^can (?:i|we) see (?:their|his|her) (?:whole )?hand\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "showhand-question"
-        // "Can I flashback it for its normal flashback cost?" after Snapcaster: both flashback costs are available.
-        if (Regex("""^can (?:i|we) (?:still )?(?:flashback|flash back|cast) (?:it|that|c\d+) for its (?:normal|own|printed|regular|real) (?:flashback )?cost(?: instead)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "ownflashback-question"
-        // "Does my own Leyline stop it?": hexproof is against opponents only.
-        if (ctx.objects.values.any { o -> o.controller == "me" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb") } && Regex("""^does my (?:own )?(?:c\d+|leyline) (?:stop|block|prevent|counter|affect) (?:it|that|my own spell|me)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "ownleyline-question"
-        // "Can I still cast Thalia uncounterable?" with Cavern of Souls under Blood Moon: the Cavern's mana is plain red now.
-        if (ctx.objects.values.any { it.card.name == "Cavern of Souls" } && (ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }) && Regex("""^can (?:i|we) (?:still )?(?:cast|make) (?:my |the )?(?:c\d+|it|creatures?|my creatures) (?:uncounterable|so it can't be countered|uncounterably|with cavern|through cavern|with the cavern)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "cavernmoon-question"
-        // "Do I take damage if I block with both?": the double block, then the question (before the plain "if I block" rewrite).
-        t2 = t2.replace(Regex("""^do (?:i|we) take (?:any )?damage if (?:i|we) block with (both|both of them|two of them|everything|all of them)\??$""", RegexOption.IGNORE_CASE), "i block with $1, do i take damage")
-        // "Can I Snapcaster and Bolt this turn?": both casts against the mana.
-        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (c\d+) (?:and|and then|then|into) (c\d+)(?: (?:this turn|in one turn|in the same turn|both|together))?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-            if (m.cards[r.groupValues[1]] != null && m.cards[r.groupValues[2]] != null) "can i cast ${r.groupValues[1]} and ${r.groupValues[2]} in the same turn" else t0 } ?: t0 }
-        // "Can I target myself instead?" with their Leyline of Sanctity: a player may target themselves.
-        if (ctx.objects.values.any { o -> o.controller != "me" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb") } && Regex("""^can (?:i|we) (?:target|hit|aim it at|cast it on|point it at) (?:myself|me|us|ourselves|my own face)(?: instead| then)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "targetself-question"
-        // "Can I vial in Kitchen Finks before it resolves to gain life?": the Vial in response, played out.
-        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" }) t2 = t2.replace(Regex("""^can (?:i|we) (?:vial in|put in|flash in|vial|drop in) (?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)?(?: in response| before it resolves| first| now)?(?: to (?:gain (?:the )?life|save myself|survive|go up|block|chump|stay alive))?\??$""", RegexOption.IGNORE_CASE), "i vial in $1 in response")
-        // "Can I redirect it with Spellskite paying life?": how the Phyrexian mana is paid is the engine's to say.
-        t2 = t2.replace(Regex("""(?<=\bwith (?:my |the )?c\d|\bwith (?:my |the )?c\d\d)(?:,| and)? ?(?:by |while )?(?:paying|pay|using) (?:the |2 |two )?life(?: for it| instead| for the mana| instead of mana)?(?=\?|$)""", RegexOption.IGNORE_CASE), "")
-        // "Then on my turn, can I cast Bolt again?": the lead-in is dropped; whether the card can be cast again is what's asked.
-        t2 = t2.replace(Regex("""^(?:then\s+|and then\s+)?(?:(?:on|in|during) my (?:next |own )?turn,?\s+|next turn,?\s+|later,?\s+)?(can (?:i|we) (?:still |even |then )?(?:cast|play|flashback|flash back|recast|re-cast) (?:my |the )?c\d+ again\??)$""", RegexOption.IGNORE_CASE), "$1")
-        // "Do I lose on upkeep if I reveal a land?" (Dark Confidant at 1 life): the reveal, then the question.
-        t2 = t2.replace(Regex("""^(do|will|would) (i|we) (lose|die|lose the game|survive|live) (?:on|in|during|at) (?:my )?(?:next )?upkeep if (?:i|we) (?:reveal|flip|hit|trigger into|draw into) (an? |the )?(land|basic land|c\d+|instant|sorcery|creature|artifact|enchantment|planeswalker)\??$""", RegexOption.IGNORE_CASE), "i reveal $4$5, $1 $2 $3")
-        // "Can I flash it back?": the verb's two words around the object.
-        t2 = t2.replace(Regex("""\bflash (it|that|them|(?:my |the )?c\d+) back\b""", RegexOption.IGNORE_CASE), "flash back $1")
-        // "I have Stoneforge Mystic with Batterskull in hand": the first is on the battlefield, the second in hand.
-        t2 = t2.replace(Regex("""^(i|we) have ((?:my |the )?c\d+) with ((?:an? |my |the )?c\d+) in (?:my |our )?hand\b""", RegexOption.IGNORE_CASE), "$1 have $2, $3 in hand")
-        // "I have Loxodon Smiter and two lands in hand", "I have only lands and a Loxodon Smiter": all of it is the hand.
-        t2 = t2.replace(Regex("""^(?:i|we) have ((?:an? |my )?c\d+) and (an? |one |two |three |four |\d+ )?(?:lands?|basic lands?)(?: cards?)? in (?:my |our )?hand\b""", RegexOption.IGNORE_CASE), "i have $1 in hand, i have $2lands in hand")
-        t2 = t2.replace(Regex("""\b(?:i|we) have (?:only|just|nothing but) (?:lands?|basic lands?)(?: cards?)? and (?:an? |one |my )?(c\d+)(?: in (?:my |our )?hand)?\b""", RegexOption.IGNORE_CASE), "i have $1 in hand, i have a land in hand")
-        // "Do they take the Smiter?" after Thoughtseize: what the spell may choose from the hand.
-        t2 = t2.replace(Regex("""^(?:do|does|will|would|can) (they|he|she|my opponent|the opponent) (?:have to |get to |need to )?(?:take|pick|choose|grab|snag|hit|discard) (?:the |my )?(?:c\d+|it|that)\??$""", RegexOption.IGNORE_CASE), "what can $1 take")
-        // "and Vial in a Spirit token": the Vial's name used as the verb after "and" or a subject.
-        t2 = t2.let { t0 -> Regex("""(^|\band |\b(?:they|i|we|he|she) )(c\d+) in (?=(?:an? |my |the |their )?(?:c\d+|[a-z]))""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2].lowercase()]?.display == "Aether Vial") "${r.groupValues[1]}vial in " else r.value } }
-        // "Does Thalia tax it?": the spell's cost with the tax.
-        t2 = t2.replace(Regex("""^(?:does|will|would) (?:my |the )?(?:c\d+|thalia|it) (?:tax|hit|apply to|make it cost more for|add to) (it|that|c\d+)(?: too| as well)?\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
-        // "I cast Collective Brutality escalated choosing all three modes. How much does it cost?": the escalate total.
-        t2 = t2.let { t0 -> Regex("""^how much (?:does|did|would|will) (it|that|c\d+) cost\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-            val lc = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" }
-            val nm = lc?.card?.name ?: lc?.obj?.let { ctx.objects[it]?.card?.name }
-            if (lc != null && lc.modes.size >= 2 && nm in setOf("Collective Brutality", "Collective Defiance", "Collective Effort", "Blessed Alliance", "Borrowed Grace", "Borrowed Hostility", "Borrowed Malevolence", "Savage Alliance")) "escalate-cost-question ${r.groupValues[1]} ${lc.modes.size}" else t0 } ?: t0 }
-        // "My Snapcaster Mage gives Bolt flashback until end of turn": the Mage cast at the Bolt in the graveyard.
-        t2 = t2.let { t0 -> Regex("""^my (c\d+) (?:flashback |trigger |ability )?(?:gives|gave|granted|grants) (?:my )?(c\d+) flashback(?: until end of turn)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display in setOf("Snapcaster Mage", "Torrential Gearhulk")) "i cast ${r.groupValues[1]} targeting ${r.groupValues[2]} in my graveyard" else t0 } ?: t0 }
-        if (Regex("""^can (?:i|we) (?:still )?(?:flash (?:it|that) back|flashback (?:it|that)|flash back (?:it|that|c\d+)|cast (?:it|that) from (?:my |the )?graveyard) (?:on|during|in) (?:their|my opponent's|the opponent's) (?:next )?turn\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.objects.values.any { it.card.name == "Snapcaster Mage" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Snapcaster Mage" })) t2 = "snapflashturn-question"
-        // "Does Lightning Bolt cost 3 for them?": the spell's cost, with whatever taxes apply.
-        t2 = t2.replace(Regex("""^(?:does|will|would) (?:my |the |their |an? )?(c\d+|it|that) (?:still |even )?cost (?:\d+|more|less|extra|the same|double|one more|two more)(?: mana)?(?: for (?:them|me|my opponent|the opponent|us))?(?: now| then| anyway)?\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
-        // "Who survives?" after a sweeper with no combat: the creatures, not the players.
-        if (ctx.events.none { it.verb == "attack" || it.verb == "attackAll" } && ctx.events.lastOrNull { it.verb == "cast" }?.card?.name in setOf("Wrath of God", "Damnation", "Supreme Verdict", "Anger of the Gods", "Toxic Deluge", "Pyroclasm", "Terminus", "Day of Judgment", "Languish", "Blasphemous Act", "Ritual of Soot", "Firespout", "Volcanic Fallout", "Sweltering Suns", "Slagstorm", "Kozilek's Return", "Shatter the Sky", "Depopulate", "Farewell", "Cleansing Nova", "Akroma's Vengeance", "Austere Command", "Rout", "Hallowed Burial", "Winds of Abandon", "Doomskar", "Vanquish the Horde", "Sunfall", "Deadly Tempest", "Crux of Fate", "Extinction Event", "Starfall Invocation", "Lavastorm", "Electrickery") && Regex("""^who (?:survives|dies|lives|is left|is still alive)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = t2.replace(Regex("""^who""", RegexOption.IGNORE_CASE), "what")
-        // "a 0/4 wall that was animated to 2/4": the size it has now.
-        t2 = t2.replace(Regex("""\b(an? |my |their |the )?(\d+/\d+) ([a-z]+) (?:that was |that's been |that is |that got |which was )?(?:animated|pumped|boosted|grown|buffed) (?:to|into|up to) (\d+/\d+)\b""", RegexOption.IGNORE_CASE), "$1$4 $3")
-        // "They have one card in hand which is a land": that card, in their hand.
-        t2 = t2.replace(Regex("""^(they|he|she|my opponent|the opponent) (?:have|has|hold|holds) (?:one|1|a single|only one|just one) card in (?:their |his |her )?hand,? (?:which|and it|that|and that) is (?:an? )?(land|basic land|c\d+|creature|instant|sorcery)\b""", RegexOption.IGNORE_CASE), "$1 have a $2 in hand")
-        // "Can they cast it in response?": the cast, then whether it was allowed.
-        t2 = t2.replace(Regex("""^can (they|he|she|i|we|my opponent|the opponent) (?:even |still |just )?(?:cast|play) (it|that|(?:the |their |my )?c\d+) in response(?: to (?:it|that|my spell|the spell))?\??$""", RegexOption.IGNORE_CASE), "$1 cast $2 in response, castallowed-question")
-        // "Ensnaring Bridge with 1 card": the cards are the hand.
-        t2 = t2.let { t0 -> Regex("""\b(c\d+) with (\d+|one|two|three|four|no|zero) cards?\b(?! in)""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1].lowercase()]?.display == "Ensnaring Bridge") "${r.groupValues[1]} with ${r.groupValues[2]} cards in hand" else r.value } }
-        // "Can I vial in a Snapcaster for free?": the Vial activation, with the question about it.
-        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:still |even |just )?(vial|put|drop|flash|sneak) in (?:an? |my |the )?(c\d+|creature|\d+-?drop|\d+/\d+(?: creature)?)(?: with (?:my |the )?c\d+)?(?: for free| for nothing| without paying(?: mana)?| at instant speed| now| this turn| right now)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-            if (r.groupValues[1].lowercase() == "vial" || ctx.objects.values.any { it.card.name == "Aether Vial" && it.zone == "battlefield" }) "vialin-question ${r.groupValues[2]}" else t0 } ?: t0 }
-        // "They Bolt my Dark Confidant in response to its trigger": the upkeep trigger is on the stack first.
-        t2 = t2.let { t0 -> Regex("""^(.*?),?\s+in response to (?:its|the|that|my|their|his|her) (upkeep |draw |etb |enters |enter |attack |own )?(?:trigger|triggered ability)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-            val head = r.groupValues[1]
-            val upkeepCards = setOf("Dark Confidant", "Delver of Secrets", "Phyrexian Arena", "Bitterblossom", "Sylvan Library", "Bloodghast", "Vampire Nighthawk")
-            val tok = Regex("""(c\d+)""").findAll(head).map { it.value }.firstOrNull { m.cards[it]?.display in upkeepCards }
-            val upkeep = r.groupValues[2].lowercase().startsWith("upkeep") || tok != null
-            if (!upkeep) head
-            else {
-                val whose = if (tok != null && Regex("""\b(?:their|his|her|my opponent's|the opponent's) $tok\b""").containsMatchIn(head)) "their" else if (tok != null && Regex("""\bmy $tok\b""").containsMatchIn(head)) "my" else if (Regex("""^(?:they|he|she|my opponent|the opponent)\b""").containsMatchIn(head)) "my" else "my"
-                ctx.notes += "\"in response to its trigger\" is read as the upkeep trigger already on the stack; the spell resolves first, and the trigger then resolves on its own (113.7a)."
-                "$whose upkeep begins, $head"
-            }
-        } ?: t0 }
-        // "I activate Deathrite Shaman exiling a Lightning Bolt from my graveyard": the card is the target.
-        t2 = t2.replace(Regex("""^(.*\bactivates? (?:my |the )?c\d+),? (?:exiling|to exile|exile|eating) (?:an? |the |my )?(c\d+) from (my|the|their) graveyard\??$""", RegexOption.IGNORE_CASE), "$1 targeting $2 in $3 graveyard")
-        // "How much do they pay?": the spell's cost.
-        t2 = t2.replace(Regex("""^how much (?:do|does|did|will|would) (?:they|he|she|i|we|my opponent|the opponent) (?:have to |need to )?pay(?: for (it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE)) { r -> "how much does ${r.groupValues[1].ifEmpty { "it" }} cost" }
-        // "Can I attack with my 2/2?": the attack, then the question about that creature.
-        t2 = t2.replace(Regex("""^can (?:i|we) (?:still |even |also )?attack with my (\d+/\d+)\??$""", RegexOption.IGNORE_CASE), "i attack with my $1, can it attack")
-        // "Can they still destroy my land with it?" (Ghost Quarter under Blood Moon): whether the ability can be activated.
-        t2 = t2.replace(Regex("""^can (they|he|she|i|we) (?:still |even )?(?:destroy|kill|blow up|wasteland|hit|remove) (?:my|their|a|one of my|one of their) lands? with (it|that|(?:the |their |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "can $1 activate $2")
-        // "I have another Bolt in hand": a second copy, in hand.
-        t2 = t2.replace(Regex("""^(?:i|we) have another (c\d+) in (?:my |our )?hand$""", RegexOption.IGNORE_CASE), "i have $1 in hand")
-        // "Do they gain life from persist?" after Path: whether it comes back at all.
-        t2 = t2.replace(Regex("""^(?:do (?:they|i|we) (?:gain|get)|how much life (?:do|does|will|would) (?:they|i|we) (?:gain|get)) (?:the |any )?(?:life |2 life |2 |two life )?(?:from|off|with|through) (?:the )?persist(?: trigger)?\??$""", RegexOption.IGNORE_CASE), "does it come back")
-        // "Can it do anything?" (Deathrite under Rest in Peace): whether its abilities can be activated.
-        t2 = t2.let { t0 -> Regex("""^can (it|that|(?:my |their |the )?c\d+) (?:still |even )?do anything(?: now| anymore| at all| here)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-            val who = if (r.groupValues[1].startsWith("my")) "i" else if (r.groupValues[1].startsWith("their")) "they" else if (ctx.events.lastOrNull { it.verb == "cast" }?.player == "me") "i" else if (ctx.events.lastOrNull { it.verb == "cast" } != null) "they" else "i"
-            "can $who activate ${r.groupValues[1]}" } ?: t0 }
-        // "They Thoughtseize me and take my Lightning Bolt": the Bolt is in hand for the spell to find.
-        t2 = t2.replace(Regex("""^(they|he|she|my opponent|the opponent) (c\d+)s? me and (?:takes?|took|grabs?|snags?|picks?) (?:my |the )?(c\d+)$""", RegexOption.IGNORE_CASE), "i have $3 in hand, $1 cast $2 on me")
-        // "They have only Lightning Bolt and lands": the hand.
-        t2 = t2.replace(Regex("""\b(they|he|she|my opponent|the opponent) (?:have|has|hold|holds) (?:only |just )?(?:an? )?(c\d+) and (?:some |a few |\d+ |two |three |only )?lands(?: in (?:their |his |her )?hand)?\b""", RegexOption.IGNORE_CASE), "$1 have $2 in hand, $1 have a land in hand")
-        // "Do they lose 2 life too?" (Thoughtseize): how much life that player loses.
-        t2 = t2.replace(Regex("""^do (they|he|she|my opponent|the opponent|i|we) (?:also |still )?lose (?:the )?(?:\d+ |two )?life(?: too| as well| also)?\??$""", RegexOption.IGNORE_CASE), "how much life do $1 lose")
-        // "I have Spirit tokens. Can they attack?": "they" are my tokens when nothing of the opponent's is a creature.
-        if (Regex("""^can they (?:still |even )?attack(?: into (?:it|that|the bridge))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.none { it.controller != "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }) {
-            if (ctx.events.any { (it.verb == "attack" || it.verb == "attackAll") && it.player == "me" }) t2 = "do they take damage"
-            else if (ctx.lastMentioned?.let { ctx.objects[it] }?.let { it.controller == "me" && (it.card.name ?: "").contains("token", true) } == true) t2 = "i attack with everything, do they take damage"
-        }
-        // "How much total mana?": what the described spells cost in all.
-        if (Regex("""^how much (?:total )?mana(?: total| in all| is that| does that take| did (?:that|it) cost| do (?:i|we) need| do (?:i|we) spend| did (?:i|we) spend| for all that| altogether)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "cast" && it.player == "me" }) t2 = "manaspent-question"
-        // "I attack with two Spirits into their Ensnaring Bridge": a noncreature "into" is just something they have.
-        t2 = t2.let { t0 -> Regex("""\binto (?:their |his |her |the )?(c\d+)( with (?:\d+|no|zero|one|two|three|four|five) cards?(?: in hand)?)?\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1].lowercase()]?.typeLine?.contains("Creature") == false) ", they have ${r.groupValues[1]}${if (r.groupValues[2].isNotEmpty()) ", they have " + Regex("""(\d+|no|zero|one|two|three|four|five)""").find(r.groupValues[2])!!.value + " cards in hand" else ""}" else r.value } }
-        // "into their Ensnaring Bridge with 0 cards in hand": the hand size that an earlier rewrite gave to me belongs to the Bridge's controller.
-        t2 = t2.let { t0 -> Regex("""(, they have (c\d+)), i have (\d+|no|zero|one|two|three|four|five) cards in hand\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2].lowercase()]?.display == "Ensnaring Bridge") "${r.groupValues[1]}, they have ${r.groupValues[3]} cards in hand" else r.value } }
-        // "choosing -2/-2 on their Thalia and drain": the first mode's target moves after the modes.
-        t2 = t2.replace(Regex("""\bchoosing ((?:-\d+/-\d+|[a-z]+(?: [a-z]+)?)) (on|at|targeting) ((?:their |my |the )?c\d+) and ([a-z]+(?: [a-z]+)?)\b""", RegexOption.IGNORE_CASE), "choosing $1 and $4 $2 $3")
-        // "with no mana": said first, so the cast is checked against it.
-        t2 = t2.let { t0 -> Regex("""^(.*?),? with no mana(?: open| available| untapped| up| left)?\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (r.groupValues[1].isBlank()) t0 else "i have no mana, ${r.groupValues[1]}${r.groupValues[2]}" } ?: t0 }
-        // "They cast Kitchen Finks and it dies": the creature just cast.
-        t2 = t2.replace(Regex("""^(they|i|we|he|she) (casts?|plays?) (c\d+)(.*?) and (?:it|that) (dies|died|is destroyed|gets destroyed|gets killed)\b""", RegexOption.IGNORE_CASE), "$1 $2 $3$4, $3 $5")
-        // "with a Chalice on 1 on my side": mine; "on their side": theirs.
-        t2 = t2.let { t0 -> Regex("""\bwith (?:an? |my |their )?(c\d+)((?: on \d+)?) on (my|their) side\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> ", ${if (r.groupValues[3].lowercase() == "my") "i" else "they"} have ${r.groupValues[1]}${r.groupValues[2]}" } }
-        // "my graveyard Bolt": the card in that graveyard.
-        t2 = t2.replace(Regex("""\b(my|their|his|her) graveyard (c\d+)\b""", RegexOption.IGNORE_CASE), "the $2 in $1 graveyard")
-        // "My Death's Shadow is 5/5": its size says the life total (13 minus the power).
-        t2 = t2.let { t0 -> Regex("""^(?:my |the )?(c\d+) is (?:a )?(\d+)/(\d+)(?: right now| currently| at the moment)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-            if (m.cards[r.groupValues[1]]?.display == "Death's Shadow") { val life = 13 - r.groupValues[2].toInt(); ctx.notes += "Death's Shadow at ${r.groupValues[2]}/${r.groupValues[3]} means you're at $life life (13/13 minus your life total)."; "i'm at $life life and i have ${r.groupValues[1]}" } else t0 } ?: t0 }
-        // "Wrath of God." on its own after a board was described: the other player casts it.
-        if (Regex("""^c\d+\.?$""").matches(t2.trim()) && m.cards[t2.trim().trimEnd('.')]?.isSpellOnly == true && ctx.objects.values.any { it.controller == "me" && it.zone == "battlefield" } && ctx.events.none { it.verb == "cast" }) { t2 = "they cast ${t2.trim().trimEnd('.')}"; ctx.notes += "\"${m.cards.getValue(t2.removePrefix("they cast ")).display}.\" on its own is read as your opponent casting it; say \"I cast\" if it was yours." }
-        // "Do both come back?": the two creatures of mine just described.
-        if (Regex("""^do both (?:come back|persist|return|undying back|survive|die)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "bothback-question " + (if (Regex("""\b(?:survive)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "survive" else if (Regex("""\bdie\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "die" else "comesBack")
-        // "Does Spellskite stop the Devil trigger?": whether that trigger has a target to change.
-        t2 = t2.let { t0 -> Regex("""^(?:does|can|will) (?:their |my |the )?(c\d+) (?:stop|affect|redirect|take|change|counter|eat) (?:the |my |their )?(c\d+)(?:'s)? (?:trigger|triggered ability|ability|etb|etb trigger)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display == "Spellskite") "skitestops-question ${r.groupValues[2]}" else t0 } ?: t0 }
-        // "They have no basics left": a Path to Exile search that finds nothing.
-        if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
+        t2 = rewriteHeadB(t2, m, ctx)
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
             // "Do I have to pay life?" with Sylvan Library out: the payment is a choice, per card.
@@ -3715,6 +3746,10 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^skitestops-question (c\d+)$""").find(clause0)?.let { r ->
             val card = m.cards[r.groupValues[1]] ?: return@let
             ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "skiteStops"); return true
+        }
+        if (clause0 == "flipondemand-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets transforms only when its own upkeep trigger resolves and reveals an instant or sorcery card (701.28a: a permanent transforms only when a spell or ability instructs it to); nothing lets you transform it at instant speed or in response. Said as the trigger itself (\"at my upkeep I reveal Lightning Bolt\"), the transform is played out.")
+            return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
