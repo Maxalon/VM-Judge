@@ -790,8 +790,11 @@ class Engine(val state: GameState) {
         }
         if (ability.cost.contains("discard this card", true)) onEvent(GameEvent.Cycled(obj))
         val needed = ability.effect.targets()
+        // "I minus Liliana on Tarmogoyf": an ability that targets a player, aimed at a creature, targets that creature's controller.
+        val targetsAsGiven = if (needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && targetsAPlayer(ability.effect)) state.objects[(targets[0] as Ref.Obj).id]?.let { o ->
+            trace.step("${obj.name}'s ability targets a player, so \"on ${o.name}\" is read as targeting its controller, ${state.player(o.controller).subject.lowercase()}.", "115.1"); listOf<Ref>(Ref.Player(o.controller)) } ?: targets else targets
         // "I activate Spellskite" with nothing named: the one legal target, as for spells.
-        val targets = if (targets.isEmpty() && needed.size == 1) inferTarget("${obj.name}'s ability", needed[0], playerId, harmful = isHarmful(ability.effect), source = obj, beneficial = isBeneficial(ability.effect))?.takeIf { it.isNotEmpty() } ?: targets else targets
+        val targets = if (targetsAsGiven.isEmpty() && needed.size == 1) inferTarget("${obj.name}'s ability", needed[0], playerId, harmful = isHarmful(ability.effect), source = obj, beneficial = isBeneficial(ability.effect))?.takeIf { it.isNotEmpty() } ?: targetsAsGiven else targetsAsGiven
         // The ability's text names a target the parser couldn't model ("~ becomes a copy of target land"): keeping
         // the target and saying the text isn't modeled beats "the ability needs 0 targets but 1 given".
         var abilityTargetsUnknown = false
@@ -1035,6 +1038,32 @@ class Engine(val state: GameState) {
                 state.outcomes += "${o.name}: the creatures ${item.source.name} would put onto the battlefield are exiled instead (they weren't cast)."
             }
         }
+    }
+
+    /** Spell Queller's enters trigger: the spell leaves the stack for exile without being countered. */
+    private fun applyExileSpell(effect: Effect.ExileSpell, item: StackItem) {
+    forEachLegalTarget(item, effect.target) { ref ->
+            val target = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: (ref as? Ref.Obj)?.let { r -> state.stack.firstOrNull { it.source.id == r.id } }
+            if (target == null) { trace.step("${state.nameOf(ref)} is no longer on the stack, so there's nothing to exile.", "608.2b"); return@forEachLegalTarget }
+            state.stack.remove(target)
+            if (target.kind == StackKind.SPELL) {
+                target.source.zone = Zone.EXILE; target.source.exiledBy = item.source.id; state.quelled[item.source.id] = target.source.id
+                trace.step("${target.describe} is exiled: it's removed from the stack without resolving, so none of its effects happen. This isn't countering, so even a spell that can't be countered is exiled; ${item.source.name} remembers the card for its leaves-the-battlefield ability.", "701.13a", "608.2b")
+                state.outcomes += "${target.describe}: the stack → exile (${item.source.name}); it doesn't resolve."
+            } else trace.step("${target.describe} is removed from the stack and ceases to exist.", "701.13a")
+        }
+    }
+
+    /** Spell Queller leaving: the card it exiled may be cast by its owner, free, as this resolves. */
+    private fun quellerReturns(effect: Effect.Narrated, item: StackItem): Boolean {
+        if (!Regex("""(?i)the exiled card's owner may cast (?:that card|it) without paying its mana cost""").containsMatchIn(effect.text)) return false
+        val card = state.quelled.remove(item.source.id)?.let { state.objects[it] }?.takeIf { it.zone == Zone.EXILE }
+        if (card == null) { trace.step("${item.source.name} has no card exiled with it, so its leaves-the-battlefield ability does nothing.", "608.2c"); state.outcomes += "${item.source.name}'s leave trigger has no exiled card to give back."; return true }
+        val owner = state.player(card.owner)
+        trace.step("${item.source.name} has left the battlefield, so ${owner.subject.lowercase()} may cast ${card.name} from exile without paying its mana cost, right now as the ability resolves (${owner.subject.lowercase()} can't wait until later); it's a new spell, so new targets are chosen for it.", "608.2c", "118.7a")
+        state.outcomes += "${card.name} comes back: ${owner.subject} may cast it from exile without paying its mana cost as ${item.source.name}'s leave trigger resolves, choosing new targets."
+        cast(card.owner, card.def, emptyList(), card.id, alternative = true)
+        return true
     }
 
     /** Aven Mindcensor: an opponent's search looks at only the top four cards of the library (614.1a). */
@@ -2615,6 +2644,7 @@ class Engine(val state: GameState) {
                 if (target.kind == StackKind.SPELL && instead != null) state.outcomes += "${target.source.name}: the stack → ${when (instead) { "exile" -> "exile (${item.source.name} exiles what it counters, so it isn't in the graveyard to reanimate)"; "hand" -> "its owner's hand"; else -> "its owner's library" }}."
                 if (target.kind == StackKind.TRIGGERED) state.outcomes += "Countering ${target.source.name}'s trigger doesn't remove the ability: it triggers again the next time its event happens (603.2)."
             }
+            is Effect.ExileSpell -> applyExileSpell(effect, item)
             is Effect.Destroy -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { destroy(it, "${it.name} is destroyed and put into its owner's graveyard.", "701.8a", canRegenerate = !effect.noRegen) } }
             is Effect.Bounce -> {
                 val bounce: (GameObject) -> Unit = { o -> move(o, Zone.HAND, "${o.name} is returned to its owner's hand. It becomes a new object with no memory of its previous existence.", "400.7") }
@@ -3203,6 +3233,7 @@ class Engine(val state: GameState) {
                 else trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${missing.joinToString(" or ") { "an $it" }}, so ${item.source.name} adds only what it says first, not ${effect.text}.", "605.1a")
             }
             is Effect.Narrated -> {
+                if (quellerReturns(effect, item)) return
                 // "that many": the count of what the previous part affected (Settle the Wreckage's exiled attackers).
                 val effect = item.lastCount?.takeIf { effect.text.contains("that many") }?.let { n -> effect.copy(text = effect.text.replace("that many", "$n (that many)")) } ?: effect
                 state.lastCountered?.let { c -> if (effect.text.contains("that spell's mana value")) { val mv = c.def.manaValue.toInt(); trace.step("That spell was ${c.name}, mana value $mv. ${effect.text.replace("that spell's mana value", "$mv").replaceFirstChar { it.uppercase() }} (a delayed triggered ability created as ${item.source.name} resolves).", "202.3", "608.2h", *effect.rules.toTypedArray()); state.outcomes += "${item.source.name}: ${effect.text.replace("that spell's mana value", "$mv (${c.name}'s mana value)").replace("~", item.source.name).replaceFirstChar { it.uppercase() }.trimEnd('.')}."; return } }
@@ -4600,7 +4631,7 @@ class Engine(val state: GameState) {
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"
         is Effect.Damage -> "deal ${effect.amount} damage to ${effect.target.raw}"
-        is Effect.CounterThatSpell -> "counter that spell"; is Effect.Counter -> "counter ${effect.target.raw}"; is Effect.Fight -> "${effect.mine.raw} fights ${effect.theirs.raw}"; is Effect.DealsPowerTo -> "${effect.mine.raw} deals damage equal to its power to ${effect.theirs.raw}"; is Effect.RedirectToSelf -> "change a target of ${effect.target.raw} to ${item.source.name}"; is Effect.Blink -> "exile ${effect.target.raw}, then return it to the battlefield under ${if (effect.ownersControl) "its owner's" else "your"} control"; is Effect.CopySpell -> "copy ${effect.target.raw}"; is Effect.StormCopy -> "copy it for each spell cast before it this turn"; is Effect.Monstrosity -> "become monstrous with ${effect.amount} +1/+1 counters"; is Effect.ReflectPrevented -> "deal damage prevented this way back to ${if (effect.toCreature) "that creature" else "the source's controller"}"; is Effect.MoveSourceCounters -> "put its ${effect.kind} counters on ${effect.target.raw}"; is Effect.Evolve -> "put a +1/+1 counter on it if the creature that entered is bigger"; is Effect.ChangeTarget -> "change the target of ${effect.target.raw}"; is Effect.DamageDivided -> "deal ${if (effect.x) "X" else effect.amount.toString()} damage divided${if (effect.evenly) " evenly" else ""} as you choose among ${effect.maxTargets?.let { "up to $it " } ?: ""}${effect.target.raw}"; is Effect.PreventCombatToAndBy -> "prevent all combat damage dealt to and by ${effect.target.raw} this turn"; is Effect.WinIfCastBefore -> "win the game if another spell with this name was cast this game, otherwise tuck it seventh from the top and gain ${effect.life} life"; is Effect.Destroy -> "destroy ${effect.target.raw}${if (effect.noRegen) " (it can't be regenerated)" else ""}"; is Effect.Exile -> "exile ${effect.target.raw}"
+        is Effect.CounterThatSpell -> "counter that spell"; is Effect.Counter -> "counter ${effect.target.raw}"; is Effect.Fight -> "${effect.mine.raw} fights ${effect.theirs.raw}"; is Effect.DealsPowerTo -> "${effect.mine.raw} deals damage equal to its power to ${effect.theirs.raw}"; is Effect.RedirectToSelf -> "change a target of ${effect.target.raw} to ${item.source.name}"; is Effect.Blink -> "exile ${effect.target.raw}, then return it to the battlefield under ${if (effect.ownersControl) "its owner's" else "your"} control"; is Effect.CopySpell -> "copy ${effect.target.raw}"; is Effect.StormCopy -> "copy it for each spell cast before it this turn"; is Effect.Monstrosity -> "become monstrous with ${effect.amount} +1/+1 counters"; is Effect.ReflectPrevented -> "deal damage prevented this way back to ${if (effect.toCreature) "that creature" else "the source's controller"}"; is Effect.MoveSourceCounters -> "put its ${effect.kind} counters on ${effect.target.raw}"; is Effect.Evolve -> "put a +1/+1 counter on it if the creature that entered is bigger"; is Effect.ChangeTarget -> "change the target of ${effect.target.raw}"; is Effect.DamageDivided -> "deal ${if (effect.x) "X" else effect.amount.toString()} damage divided${if (effect.evenly) " evenly" else ""} as you choose among ${effect.maxTargets?.let { "up to $it " } ?: ""}${effect.target.raw}"; is Effect.PreventCombatToAndBy -> "prevent all combat damage dealt to and by ${effect.target.raw} this turn"; is Effect.WinIfCastBefore -> "win the game if another spell with this name was cast this game, otherwise tuck it seventh from the top and gain ${effect.life} life"; is Effect.Destroy -> "destroy ${effect.target.raw}${if (effect.noRegen) " (it can't be regenerated)" else ""}"; is Effect.ExileSpell -> "exile ${effect.target.raw}"; is Effect.Exile -> "exile ${effect.target.raw}"
         is Effect.DamageCausing -> "${item.source.name} deals ${effect.amount} damage to that creature"; is Effect.PumpCausing -> "that creature gets ${signed(effect.power)}/${signed(effect.toughness)}"; is Effect.CantLoseThisTurn -> "you can't lose the game this turn"; is Effect.LoseKeywordsAll -> "${effect.filter.raw} lose ${effect.keywords.joinToString(" and ")} until end of turn"; is Effect.ExileInsteadOfGraveyardThisTurn -> "cards that would go to your graveyard this turn are exiled instead"; is Effect.DamageLifeFloor -> "damage can't reduce your life total below ${effect.floor} this turn"; is Effect.ExtraLandThisTurn -> "play ${effect.count} additional land${if (effect.count == 1) "" else "s"} this turn"; is Effect.CoinFlip -> "flip a coin"; is Effect.CantCastThisTurn -> "stop spells being cast this turn"; is Effect.Proliferate -> "proliferate"; is Effect.ForAllTargeted -> "${effect.action} all ${effect.filter.raw} ${effect.target.raw} controls"; is Effect.LoseLifeThatMuch -> "lose that much life"; is Effect.AnimateSelf -> "${item.source.name} becomes a ${effect.power}/${effect.toughness} creature until end of turn"; is Effect.SaddleSelf -> "${item.source.name} becomes saddled"; is Effect.BecomeMonarch -> "become the monarch"; is Effect.PumpSelfCount -> "${item.source.name} gets ${signed(effect.power)}/${signed(effect.toughness)} for each of them"; is Effect.TapAttached -> "tap the creature ${item.source.name} is attached to"; is Effect.ReturnSelfFromGraveyard -> "return ${item.source.name} from your graveyard to the battlefield${if (effect.tapped) " tapped" else ""}"; is Effect.DamageThatMuch -> "deal that much damage to ${effect.target.raw}"; is Effect.PumpAllCount -> "${effect.filter.raw} get +X/+X${if (effect.keywords.isEmpty()) "" else " and gain " + effect.keywords.joinToString(" and ")}"; is Effect.ShuffleIntoLibrary -> "shuffle ${effect.target.raw} into its owner's library"
         is Effect.DamagePlayer -> "deal ${effect.amount} damage to ${when (effect.who) { Who.THAT_PLAYER -> "that player"; Who.EACH_OPPONENT -> "each opponent"; Who.EACH_PLAYER -> "each player"; Who.YOU -> "you"; else -> "the player" }}"
         is Effect.ReturnExiledCard -> "return the exiled card to the battlefield under its owner's control"

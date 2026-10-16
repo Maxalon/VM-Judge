@@ -755,6 +755,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "flip" -> state.coinFlips += (e.to ?: "lose").lowercase()
             // "They have no basics left": a search for a basic land card finds nothing in that library.
             "nobasics" -> state.noBasicsInLibrary += (e.player ?: "me")
+            // "I have Spell Queller exiled their Thoughtseize": the card it is holding in exile.
+            "quelled" -> { val q = e.obj ?: throw JudgeException("quelled needs an object"); val c = e.targets.firstOrNull() ?: throw JudgeException("quelled needs a card"); state.quelled[q] = c; state.objects[c]?.exiledBy = q }
             // "I play a land": counted against the one land a player may play each turn (305.2).
             "playland" -> { val objId = e.obj ?: throw JudgeException("playLand needs an object"); engine.playLand(e.player ?: state.obj(objId).controller, objId) }
             "leave" -> if (e.targets.isEmpty()) engine.leave(e.obj ?: throw JudgeException("leave needs an object"), zone(e.to ?: "graveyard"))
@@ -885,6 +887,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "playland" -> "${who ?: "you"} play${if (who == null || who == "you") "" else "s"} ${state.objects[e.obj]?.name ?: e.obj}"
             "flip" -> "${who ?: "you"} ${e.to ?: "lose"} the coin flip"
             "nobasics" -> "${who ?: "you"} ${if (who == null || who == "you") "have" else "has"} no basic land card left in the library"
+            "quelled" -> "${state.objects[e.obj]?.name ?: e.obj} is holding ${e.targets.firstOrNull()?.let { state.objects[it]?.name ?: it }} in exile"
             "gaincontrol" -> "${who ?: "you"} gain${if (who == null || who == "you") "" else "s"} control of ${state.objects[e.obj]?.name ?: e.obj}"
             "leave" -> if (e.targets.isEmpty()) "${state.objects[e.obj]?.name ?: e.obj} goes to ${e.to}" else "${(listOf(e.obj) + e.targets).joinToString(" and ") { state.objects[it]?.name ?: it ?: "?" }} go to ${e.to} at the same time"
             "damage" -> "${e.source} deals ${e.amount} damage${tg.replace(" targeting ", " to ")}"

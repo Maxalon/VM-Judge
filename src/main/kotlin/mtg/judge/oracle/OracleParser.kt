@@ -1232,6 +1232,8 @@ object OracleParser {
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
+        // Spell Queller's leave trigger: the engine plays it out from the card it remembered exiling.
+        Regex("""^the exiled card's owner may cast (?:that card|it) without paying its mana cost\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("608.2c", "118.7a")) }
         // "(You may) have ~ deal 3 damage to any target" says what "~ deals 3 damage to any target" says.
         Regex("""^have (?:~|it) deal (.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return parseSentence("~ deals " + it.groupValues[1]) }
         Regex("""^target (player|opponent) reveals their hand\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "reveals their hand", listOf("701.20a")) }
@@ -1736,6 +1738,7 @@ object OracleParser {
             return Effect.Damage(n, target(m.groupValues[2]))
         }
         counterRe.matchEntire(s)?.let { return Effect.Counter(target(it.groupValues[1], Kind.SPELL)) }
+        Regex("""^exile (target spell(?: with mana value \d+ or less)?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.ExileSpell(target(it.groupValues[1], Kind.SPELL)) }
         Regex("""^(all creatures|creatures your opponents control|creatures you control|all other creatures|other creatures) get -X/-X until end of turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val f = parseFilter(m.groupValues[1].removePrefix("all ").removePrefix("All "), Kind.CREATURE); if (f.verifiable) return Effect.PumpAll(f, 0, 0, x = true)
         }

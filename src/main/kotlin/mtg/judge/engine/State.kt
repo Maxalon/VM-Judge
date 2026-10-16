@@ -257,6 +257,8 @@ class GameState(
     val ceased = mutableMapOf<String, String>()
     /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.19b). */
     val noBasicsInLibrary = mutableSetOf<String>()
+    /** Spell Queller: the card a permanent exiled from the stack, by the permanent's id, for "the exiled card's owner may cast it" when it leaves. */
+    val quelled = mutableMapOf<String, String>()
     /** The game's turn number, when the situation said so. */
     var turnNumber: Int? = null
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */

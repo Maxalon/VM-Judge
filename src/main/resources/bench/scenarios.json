@@ -31609,5 +31609,111 @@
       "Thoughtseize is countered."
     ],
     "cite": []
+  },
+  {
+    "id": "selfless-spirit-vs-wrath-two-others",
+    "text": "They cast Wrath of God. I have Selfless Spirit and two other creatures. If I sac Spirit, do my creatures survive?",
+    "expect": [
+      "a creature is indestructible and isn't destroyed. (×2)",
+      "Yes: Selfless Spirit died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "sfm-batterskull-their-end-step",
+    "text": "I have Stoneforge Mystic with Batterskull in hand. Can I put Batterskull in on their end step?",
+    "expect": [
+      "Yes. Stoneforge Mystic's second ability ({1}{W}, {T}: You may put an Equipment card from your hand onto the battlefield) is an activated ability with no timing restriction"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-blocked-giant-growth",
+    "text": "I attack with Thalia and they block with a 2/2. I cast Giant Growth. Does Thalia survive?",
+    "expect": [
+      "Thalia, Guardian of Thraben is 5/4 until end of turn.",
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-sanctity-vs-thoughtseize",
+    "text": "They have a Leyline of Sanctity. Can I Thoughtseize them?",
+    "expect": [
+      "Thoughtseize can't target opponent."
+    ],
+    "cite": [
+      "702.11c"
+    ]
+  },
+  {
+    "id": "kolaghans-command-discard-and-damage",
+    "text": "I cast Kolaghan's Command choosing discard and 2 damage to their Thalia. What happens?",
+    "expect": [
+      "opponent discards 1 card.",
+      "Thalia, Guardian of Thraben: the battlefield → opponent's graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spell-queller-exiles-then-dies",
+    "text": "They cast Thoughtseize targeting me. I cast Spell Queller targeting it. Then they Bolt my Spell Queller. What happens?",
+    "expect": [
+      "Thoughtseize: the stack → exile (Spell Queller); it doesn't resolve.",
+      "Thoughtseize comes back: opponent may cast it from exile without paying its mana cost as Spell Queller's leave trigger resolves"
+    ],
+    "cite": [
+      "608.2c"
+    ]
+  },
+  {
+    "id": "spell-queller-holding-thoughtseize-bolted",
+    "text": "They cast Lightning Bolt at my Spell Queller. I have Spell Queller exiled their Thoughtseize. What happens?",
+    "expect": [
+      "Spell Queller: the battlefield → your graveyard.",
+      "Thoughtseize comes back: opponent may cast it from exile without paying its mana cost"
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-22s-into-33-one-blocked",
+    "text": "I attack with two 2/2s and they have one 3/3. If they block one, how much damage do I deal?",
+    "expect": [
+      "Yes: opponent takes 2 damage in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "teferi-t3feri-vs-bolt-on-my-turn",
+    "text": "I have Teferi, Time Raveler. Can they cast Lightning Bolt on my turn?",
+    "expect": [
+      "Lightning Bolt can't be cast (Teferi, Time Raveler: sorcery speed only)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "liliana-they-plus-her",
+    "text": "They have 4 cards in hand and a Liliana of the Veil. They plus her. What happens?",
+    "expect": [
+      "You discard 1 card.",
+      "opponent discards 1 card (4 → 3 in hand)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "liliana-minus-on-goyf",
+    "text": "I have Liliana of the Veil and they have Tarmogoyf. I minus her on Tarmogoyf. What happens?",
+    "expect": [
+      "Tarmogoyf: the battlefield → opponent's graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "clique-flash-in-response-to-wrath",
+    "text": "I have Vendilion Clique in hand and they cast Wrath of God. Can I flash it in in response?",
+    "expect": [
+      "Yes: Vendilion Clique has flash, so it can be cast any time you could cast an instant (702.8a)"
+    ],
+    "cite": []
   }
 ]

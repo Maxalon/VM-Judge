@@ -14,7 +14,10 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                      /** Other cards this word could have meant ("Atraxa": Praetors' Voice or Grand Unifier). */
                      val alternatives: List<String> = emptyList(),
                      /** Printed size, where the card has one: a token named by its type carries the size it comes with. */
-                     val power: String? = null, val toughness: String? = null) {
+                     val power: String? = null, val toughness: String? = null,
+                     /** The card's keyword list ("Flash, Flying"), for timing the parser needs to know about. */
+                     val keywords: String = "") {
+        val hasFlash: Boolean get() = Regex("""(?i)\bflash\b""").containsMatchIn(keywords)
         /** An instant or sorcery: it lives in hand or on the stack, never on the battlefield. */
         val isSpellOnly: Boolean get() = (typeLine.contains("Instant") || typeLine.contains("Sorcery")) && !typeLine.contains("Land")
     }
@@ -129,7 +132,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             val map = HashMap<String, Entry>(80_000)
             var maxWords = 1
             conn.createStatement().executeQuery(
-                """SELECT n.name_norm, n.display, n.oracle_id, n.kind, c.layout, c.type_line, c.power, c.toughness FROM card_names n JOIN cards c ON c.oracle_id = n.oracle_id"""
+                """SELECT n.name_norm, n.display, n.oracle_id, n.kind, c.layout, c.type_line, c.power, c.toughness, c.keywords FROM card_names n JOIN cards c ON c.oracle_id = n.oracle_id"""
             ).use { rs ->
                 while (rs.next()) {
                     val norm = rs.getString(1); val kind = rs.getString(4)
@@ -145,7 +148,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                     // "the Ring" after an Oblivion Ring was it instead of the Ring just named.
                     if (rs.getString(2).startsWith("The Ring")) continue
                     val isCard = rs.getString(5) !in mtg.judge.carddb.ingest.ScryfallIngest.nonCardLayouts
-                    val e = Entry(rs.getString(2), rs.getString(3), isCard, kind, rs.getString(6) ?: "", power = rs.getString(7), toughness = rs.getString(8))
+                    val e = Entry(rs.getString(2), rs.getString(3), isCard, kind, rs.getString(6) ?: "", power = rs.getString(7), toughness = rs.getString(8), keywords = rs.getString(9) ?: "")
                     val prev = map[norm]
                     // Prefer real cards over tokens, full names over face names, on collisions.
                     if (prev == null || (!prev.isCard && isCard) || (prev.kind != "full" && kind == "full" && prev.isCard == isCard)) map[norm] = e
