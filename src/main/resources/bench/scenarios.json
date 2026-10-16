@@ -37039,5 +37039,100 @@
     "expect": [
       "Yes: Snapcaster Mage is countered (by Chalice of the Void)"
     ]
+  },
+  {
+    "id": "tt258-blood-moon-saga-chapter-two",
+    "text": "They cast Blood Moon. I have Urza's Saga on chapter 2. What happens?",
+    "expect": [
+      "Urza's Saga is a Mountain with no abilities (Blood Moon)",
+      "Urza's Saga stays on the battlefield"
+    ],
+    "cite": [
+      "714.4"
+    ]
+  },
+  {
+    "id": "tt258-skite-redirects-abrupt-decay",
+    "text": "I have Spellskite and they cast Abrupt Decay on my Thalia. Can I redirect it?",
+    "expect": [
+      "Abrupt Decay now targets Spellskite instead of Thalia, Guardian of Thraben",
+      "Spellskite: the battlefield → your graveyard"
+    ]
+  },
+  {
+    "id": "tt258-one-blocker-at-three-life-tail",
+    "text": "They attack with two 2/2s and I have one 2/2 untapped at 3 life. Do I die if I block one?",
+    "expect": [
+      "No: You are still in the game at 1 life",
+      "You go from 3 to 1 life"
+    ]
+  },
+  {
+    "id": "tt258-cast-bob-upkeep-reveal-griselbrand",
+    "text": "I cast Dark Confidant turn two. On my upkeep I reveal Griselbrand at 7 life. What happens?",
+    "expect": [
+      "Griselbrand: your library → your hand",
+      "You lose 8 life (Griselbrand's mana value)",
+      "You lose the game"
+    ]
+  },
+  {
+    "id": "tt258-bob-angel-reveal-emrakul-at-ten",
+    "text": "I have Dark Confidant and Platinum Angel. I reveal Emrakul at 10 life. Do I lose?",
+    "expect": [
+      "You lose 15 life (Emrakul, the Aeons Torn's mana value)",
+      "You stay in the game: Platinum Angel keeps you from losing",
+      "No: You are still in the game at -5 life"
+    ]
+  },
+  {
+    "id": "tt258-vial-queller-the-thoughtseize",
+    "text": "They Thoughtseize me. I have Spell Queller in hand and Aether Vial on 3. Can I Queller the Thoughtseize?",
+    "expect": [
+      "Spell Queller enters the battlefield",
+      "Thoughtseize: the stack → exile (Spell Queller); it doesn't resolve"
+    ]
+  },
+  {
+    "id": "tt258-trample-over-two-blockers",
+    "text": "I block their 5/5 trampler with my 2/2 and 1/1. How much tramples over?",
+    "expect": [
+      "You take 2 damage",
+      "Yes: you take 2 damage in all"
+    ]
+  },
+  {
+    "id": "tt258-guide-blocked-bear-bolted-hit-me",
+    "text": "They attack with Goblin Guide. I block with my 2/2 Bear and they Bolt the Bear. Does Goblin Guide hit me?",
+    "expect": [
+      "Goblin Guide deals no combat damage: its blocker left combat and it stays blocked",
+      "No: Goblin Guide dealt no damage to you"
+    ]
+  },
+  {
+    "id": "tt258-goyf-blocked-bolted-still-hit",
+    "text": "I attack with Goyf. They block with a 1/1 and Bolt the Goyf. Does it still hit?",
+    "expect": [
+      "No: Tarmogoyf dealt no damage to opponent"
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "tt258-spell-pierce-two-lands",
+    "text": "Can I Spell Pierce their Thoughtseize if they have 2 lands untapped?",
+    "expect": [
+      "opponent can't pay {2} for Spell Pierce: opponent has only 1 mana available",
+      "Thoughtseize is countered"
+    ]
+  },
+  {
+    "id": "tt258-vial-snapcaster-flashback-under-thalia",
+    "text": "My opponent plays Thalia. I have Aether Vial on 2 and Snapcaster in hand. Can I Vial in Snapcaster for free and flashback Bolt?",
+    "expect": [
+      "Snapcaster Mage enters the battlefield",
+      "Lightning Bolt has flashback until end of turn"
+    ]
   }
 ]

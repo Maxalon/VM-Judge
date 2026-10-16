@@ -1356,6 +1356,10 @@ class SituationParser(private val names: NameIndex) {
             ctx.skitePayLife = who
             val lifeSaid = if (r.groupValues[4].isNotEmpty()) "${if (who == "me") "i am" else "they are"} at ${r.groupValues[4]} life, " else ""
             if (r.groupValues[1].isEmpty()) lifeSaid + r.groupValues[2] else lifeSaid + t0.replaceRange(r.range, "${r.groupValues[1]}skitedo-marker $who") } ?: t0 }
+        // "On my upkeep I reveal Griselbrand": the reveal is the upkeep trigger's; the time words add nothing.
+        t2 = t2.replace(Regex("""^(?:on|during|in|at) (?:my|the) (?:next )?upkeep,? ((?:i|we|my c\d+) reveals? .+)$""", RegexOption.IGNORE_CASE), "$1")
+        // "I have one 2/2 untapped at 3 life" / "I reveal Griselbrand at 7 life": the life total said as a tail.
+        t2 = t2.replace(Regex("""(^|, |\s+and\s+)((?:i|we) (?:have|control) (?:one|two|three|an?|\d+) (?:untapped )?\d+/\d+\b.*?|(?:i|we) reveals? .+?) at (\d+)(?: life)?$""", RegexOption.IGNORE_CASE), "$1i am at $3 life, $2")
         // "Which Chalice counters it?": whether it is countered, and by which.
         t2 = t2.replace(Regex("""^which (?:chalice|c\d+|one) counters? (?:it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "is it countered")
         // "I block the 3/3 with Spellskite and take the 2/2": the unblocked one is simply unblocked.
@@ -2364,7 +2368,7 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.objects.values.none { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Planeswalker") } == true }) t0
             else "pwkill-question ${r.groupValues[2].lowercase().replace('\u2212', '-')} ${r.groupValues[1].replace(Regex("""^(?:their |the |my opponent's )"""), "")}" } ?: t0 }
         // "Does my Guide connect?" / "does it get through?": whether the attacker dealt damage to the player.
-        t2 = t2.replace(Regex("""^(?:does|will|would|did|can) (?:my |the )?(c\d+|it|that) (?:still |even )?(?:connect|get through|get in|go through|hit them|hit him|hit her|hit my opponent|hit the opponent|hit face|deal damage to them|still hit|hit)\??$""", RegexOption.IGNORE_CASE), "connect-question $1")
+        t2 = t2.replace(Regex("""^(?:does|will|would|did|can) (?:my |the )?(c\d+|it|that) (?:still |even )?(?:connect|get through|get in|go through|hit them|hit him|hit her|hit my opponent|hit the opponent|hit face|hit me|hits me|connect with me|get through to me|deal damage to me|deal damage to them|still hit|hit)\??$""", RegexOption.IGNORE_CASE), "connect-question $1")
         // "I have two Aether Vials, one with 1 counter and one with 2": two of the same permanent with their own counters.
         t2 = t2.replace(Regex("""^(?:i|we) (?:have|control|'ve got|got) (?:two|2) (c\d+)s?,? one (?:with|at|on) (\d+)(?: counters?)? and (?:one|the other|another|the second) (?:with|at|on) (\d+)(?: counters?)?\??$""", RegexOption.IGNORE_CASE), "pair-question $1 $2 $3")
         t2 = t2.replace(Regex("""^(?:they|he|she|my opponent|the opponent) (?:have|has|control|controls|'ve got|got) (?:two|2) (c\d+)s?,? one (?:with|at|on) (\d+)(?: counters?)? and (?:one|the other|another|the second) (?:with|at|on) (\d+)(?: counters?)?\??$""", RegexOption.IGNORE_CASE), "pair-question theirs $1 $2 $3")
@@ -3342,7 +3346,8 @@ class SituationParser(private val names: NameIndex) {
             // "I have Dark Confidant and reveal Emrakul": a creature's reveal is from the library, read clause by clause.
             if (Regex("""\bhave (c\d+) and reveals? (?:an? |the )?c\d+$""").find(t2)?.let { h -> m.cards[h.groupValues[1]]?.typeLine?.contains("Creature") } == true) return@let
             // "I have a Dark Confidant. I reveal a Griselbrand.": the reveal is Bob's, from the library, not a hand shown.
-            if (Regex("""^(?:i|we) reveals? |\band reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") || o.card.name?.startsWith("Delver of Secrets") == true) }) return@let
+            if (Regex("""^(?:i|we) reveals? |\band reveals? |, (?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.events.any { e -> e.verb == "cast" && (e.player ?: "me") == "me" && e.card?.name in setOf("Dark Confidant", "Dark Tutelage") }) return@let
+            if (Regex("""^(?:i|we) reveals? |\band reveals? |, (?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") || o.card.name?.startsWith("Delver of Secrets") == true) }) return@let
             // "My Delver is a 1/1 and I reveal Lightning Bolt": the reveal belongs to the Delver named in the same sentence.
             if (Regex("""\b(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2) && m.cards.values.any { it.display.startsWith("Delver of Secrets") || it.display in setOf("Dark Confidant", "Dark Tutelage") }) return@let
             val before = t2.substring(0, r.range.first)
@@ -8580,7 +8585,11 @@ class SituationParser(private val names: NameIndex) {
         // "I have Dark Confidant and reveal Emrakul": the revealed card was the top of the library; the upkeep trigger does the rest.
         Regex("""^(?:and )?reveals? (?:an? |the )?(c\d+|(?:basic )?land|instant|sorcery|creature|artifact|enchantment|planeswalker)(?: card)?(?: (?:with|to|off|from) (?:my |the )?(?:c\d+|it))?(?: (?:at|in|during|on) (?:my |the |their )?(?:next )?upkeep| at the beginning of my upkeep)?$""").find(c)?.let { r ->
             val who = actor ?: ctx.lastActor ?: "me"
-            if (ctx.objects.values.none { it.controller == who && it.zone == "battlefield" && it.card.oracleId != null }) return@let
+            // "I cast Dark Confidant. On my upkeep I reveal Griselbrand": the Confidant was cast, not described; it resolves and reveals.
+            if (ctx.objects.values.none { it.controller == who && it.zone == "battlefield" && it.card.oracleId != null }) {
+                if (ctx.events.any { e -> e.verb == "cast" && (e.player ?: "me") == who && e.card?.name in setOf("Dark Confidant", "Dark Tutelage") } && triggerSourceFromCast(ctx, null) != null) ctx.events += EventSpec("resolveAll")
+                else return@let
+            }
             val w = r.groupValues[1]
             val id = if (cardRef.matches(w)) addObject(m.cards.getValue(w), who, false, ctx, zone = "library", allowDuplicate = true)
                      else { val name = if (w.endsWith("land")) "a basic land" else (if (w.first() in "aeiou") "an " else "a ") + w; var nid = slug("$w card"); var k = 2; while (ctx.objects.containsKey(nid)) nid = slug("$w card") + "_" + (k++); ctx.objects[nid] = ObjectSpec(nid, CardRef(name = name), zone = "library", controller = who); nid }
