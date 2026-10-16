@@ -1213,6 +1213,8 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^can (?:i|we) still (?:pay (?:2 |two )?life for|use|activate|pay for) (?:my |the )?(?:c\d+|spellskite)(?:'s)? ?(?:ability|redirect|activation)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") } && Regex("""^can (?:i|we) still (?:pay (?:2 |two )?life for|use|activate|pay for) """, RegexOption.IGNORE_CASE).containsMatchIn(t2)) t2 = "moonnonland-question"
         // "Does it get summoning sickness?" after persist or undying: a new object that came in this turn.
         if (Regex("""^(?:does|will|is) (?:it|that|(?:my |the )?c\d+) (?:get|have|has|be) summoning sick(?:ness)?(?: again| now| when it comes back)?\??$|^can (?:it|that|(?:my |the )?c\d+) (?:still )?(?:attack|block|tap) (?:this turn|right away|again this turn)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { e -> e.verb == "leave" && ctx.objects[e.obj]?.card?.name?.let { n -> names.lookup(Names.normalize(n))?.let { en -> Regex("""(?i)\b(?:persist|undying)\b""").containsMatchIn(en.keywords) } } == true }) t2 = "persistsick-question"
+        // "Can I respond before the Chalice trigger resolves?": a trigger on the stack waits for priority like anything else.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:respond|do anything|act|do something) (?:before|to|with) (?:the |its |their )?(?:(c\d+)(?:'s)? )?(?:trigger|triggered ability|ability)(?: (?:resolves|on the stack|goes off|happens))?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "respondtrigger-question ${r.groupValues[1]}" } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1242,6 +1244,10 @@ class SituationParser(private val names: NameIndex) {
         // "I alpha strike", "I go wide with three 1/1s": table talk for attacking with everything and for having
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
+        // "I have Spellskite and Force of Will in hand and 5 lands": the lands are a separate statement.
+        t2 = t2.replace(Regex("""^((?:i|we) (?:have|'ve got|hold) .+? in (?:my |our )?hand) and (\d+|one|two|three|four|five|six|seven) (?:untapped )?lands?(?: untapped| open)?$""", RegexOption.IGNORE_CASE), "i have $2 lands, $1")
+        // "Should I attack with both?" / "What's my best attack?": each attacker weighed against their untapped blockers.
+        t2 = t2.let { t0 -> Regex("""^(?:should (?:i|we) (?:attack|swing)(?: with (?:both|everything|all|all of them|my team|them|it|(?:my )?c\d+|(?:my )?\d+/\d+))?|what(?:'s| is) my best attack|is (?:it|attacking) (?:safe|a good idea) to attack|can (?:i|we) attack (?:safely|profitably))\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (ctx.objects.values.any { o -> o.controller != "me" && o.zone == "battlefield" && isCreatureName(o.card.name) } && ctx.events.none { it.verb == "attack" || it.verb == "attackall" }) "shouldattack-question" else t0 } ?: t0 }
         // "I have two cards: Lightning Bolt and a Mountain" / "three cards in hand: two lands and a Bolt": the hand, listed after a colon.
         t2 = t2.replace(Regex("""(^|, |\s+and\s+)(?:i|we) (?:have|hold|'ve got) (?:exactly |just |only )?(?:two|three|four|five|\d+) cards?(?: in (?:my )?hand| left)?:? (?=(?:an? |the |two |three |\d+ )?(?:c\d+|lands?|basics?))""", RegexOption.IGNORE_CASE), "$1my hand is ")
         // "into their Ensnaring Bridge with one card in hand": the hand is the Bridge's controller's, not the attacker's.
@@ -4380,6 +4386,17 @@ class SituationParser(private val names: NameIndex) {
         }
         // "I have no responses": nothing is cast in answer.
         if (Regex("""^(?:(?:i|we) (?:have|'ve got|hold) )?no (?:responses?|answers?|plays?|interaction|tricks)(?: in hand| available)?$|^(?:i|we) (?:can't|cannot|don't) respond$""").matches(clause0)) { ctx.notes += "No response: the spell resolves as cast."; return true }
+        if (clause0 == "shouldattack-question") {
+            ctx.asks += EventSpec("ask", player = "me", to = "shouldAttack")
+            ctx.notes += "\"${restore(clause0, m)}?\" weighs each attacker against each untapped creature of theirs; no attack is declared, since the choice is yours."
+            return true
+        }
+        Regex("""^respondtrigger-question (c\d*)$""").find(clause0)?.let { r ->
+            val src = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards[it]?.display } ?: ctx.objects.values.lastOrNull { o -> o.card.name == "Chalice of the Void" }?.card?.name ?: "the permanent"
+            val spell = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name
+            ctx.asks += EventSpec("ask", to = "text:Yes. A triggered ability goes on the stack the next time a player would receive priority, and every player gets priority before it resolves (603.3, 117.1), so you can cast instants or activate abilities with $src's trigger on the stack${if (src == "Chalice of the Void" && spell != null) ". Nothing you do changes what it does to $spell, though: the trigger counters $spell when it resolves (701.6a) unless the trigger itself is countered (Stifle) or $spell has left the stack; casting more spells in response doesn't save it" else ""}.")
+            return true
+        }
         if (clause0 == "cardinhand-question") {
             val o = ctx.lastMentioned?.let { ctx.objects[it] } ?: return false
             val name = o.card.name ?: "the card"
@@ -6550,6 +6567,17 @@ class SituationParser(private val names: NameIndex) {
                 ?: ctx.events.lastOrNull { it.verb == "cast" && it.player == who }?.card?.name?.let { n -> names.lookup(Names.normalize(n)) }?.also { if (ctx.events.lastOrNull()?.verb == "cast") ctx.events += EventSpec("resolveAll") }
                 ?: return@let
             emitCast(who, card, r.groupValues[2] + " with flashback", m, ctx); return true
+        }
+        // "and discard a creature" (to my own Thoughtseize): an unnamed card of that type leaves the hand for the graveyard.
+        Regex("""^(?:(?:i|we|they|he|she|my opponent|the opponent) )?discards? (?:an? |the |my |their )?(creature|land|instant|sorcery|artifact|enchantment|planeswalker|nonland card|spell)(?: card)?$""").find(c)?.let { r ->
+            val who = actorOfClause(c) ?: ctx.lastActor ?: "me"
+            val kind = r.groupValues[1].let { if (it == "spell" || it == "nonland card") "nonland" else it }
+            val name = when (kind) { "land" -> "a basic land"; "nonland" -> "a nonland card"; else -> (if (kind.first() in "aeiou") "an " else "a ") + kind + " card" }
+            var id = slug("$kind card"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("$kind card") + "_" + (k++)
+            ctx.objects[id] = ObjectSpec(id, CardRef(name = name), zone = "hand", controller = who)
+            ctx.events += EventSpec("discard", player = who, obj = id)
+            ctx.notes += "\"discard $kind\" is read as an unnamed $kind card going from ${if (who == "me") "your" else "their"} hand to the graveyard; name it for anything that depends on which card."
+            ctx.lastActor = who; ctx.lastVerb = "discard"; ctx.lastMentioned = id; ctx.note(who); return true
         }
         // "I discard Vengevine", "they discard Lightning Bolt to Liliana": a named card leaves hand for the graveyard.
         Regex("""^(?:(?:i|they|he|she|we|my opponent|the opponent|@\w+) )?discards? (?:an? |the |my |their )?(c\d+)(?: (?:to|for|with) (?:$possPrefix|an? )?c\d+)?$""").find(c)?.let { r ->
@@ -10826,7 +10854,11 @@ class SituationParser(private val names: NameIndex) {
         // the creature before the pump resolved.
         run {
             val last = ctx.events.lastOrNull() ?: return@run
-            if (last.verb == "cast" && last.player != null && last.player != who && !card.typeLine.contains("Instant") && card.isSpellOnly) ctx.events += EventSpec("resolveAll")
+            if (last.verb == "cast" && last.player != null && last.player != who && !card.typeLine.contains("Instant") && card.isSpellOnly) {
+                ctx.events += EventSpec("resolveAll")
+                // "In response I cast Thoughtseize": a sorcery can't be cast in response at all; it comes after the spell resolves, in the main phase.
+                if (Regex("""\bin response\b""", RegexOption.IGNORE_CASE).containsMatchIn(ctx.currentClause)) ctx.asks += EventSpec("ask", to = "text:${card.display} can't be cast in response: it's a sorcery, and a sorcery is cast only during your own main phase while the stack is empty (307.1). ${last.card?.name ?: "Their spell"} resolves first, and ${card.display} can be cast only afterwards, on your turn; the outcome is worked out that way.")
+            }
         }
         // "cast Snapcaster targeting Bolt in my graveyard": the named card is in that graveyard, and the phrase isn't part of the target.
         // "cast Snapcaster Mage targeting my Lightning Bolt": a card the caster reaches into a graveyard for is in that graveyard.
@@ -10985,6 +11017,8 @@ class SituationParser(private val names: NameIndex) {
         val targets0 = if (overload) emptyList() else targetsIn(restForTargets.replace(Regex("""\b(?:paying|and pays?|pay) \d+ life\b"""), "").replace(Regex("""^\s*for (?:x ?= ?)?\d+\s+(?=(?:split|divided|between|among|targeting|at|on)\b)"""), "").replace(Regex("""\s*\b(?:with flashback|for (?:its|the) flashback cost|via flashback|flashing it back|using flashback|from (?:my|their|his|her|the) graveyard)\b"""), "").replace(Regex("""\b(?:with (?:the )?kicker|with kicker paid|paying (?:the )?kicker|kicked|with evoke|evoked|for (?:its|the) evoke cost|via evoke|evoking it|using evoke)\b"""), "").replace(Regex("""\b(?:with|for|where|at) x ?(?:=|equal to|equals|being|of|as) ?\d+\b|\bx ?= ?\d+\b"""), ""), m, ctx)
         // "They cast Counterspell" with nothing on the stack to counter: it must be answering a spell of the other player's.
         var targets = targets0
+        // "Can I Force it?": a counterspell's "it" is the spell on the stack, never the Force itself or a card in hand.
+        if (needsSpellTarget(card) && targets.isNotEmpty() && targets.all { t -> ctx.objects[t]?.let { o -> o.card.oracleId == card.oracleId || o.zone == "hand" } == true } && ctx.events.any { it.verb == "cast" && it.player != who }) targets = emptyList()
         // "I cast Lightning Bolt at them and then Fork it": a copy spell with no target named copies the spell just cast, whoever cast it.
         if (targets.isEmpty() && card.display in setOf("Fork", "Twincast", "Reverberate", "Increasing Vengeance", "Reiterate", "Expansion // Explosion", "Expansion Explosion", "Wild Ricochet", "Redirect", "Misdirection")) {
             // "and then Fork it": the "then" resolved the Bolt first; a copy spell needs it still on the stack.

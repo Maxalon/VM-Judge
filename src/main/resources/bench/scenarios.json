@@ -35708,5 +35708,89 @@
     "expect": [
       "Yes. Kitchen Finks returned from the graveyard as a new object (400.7)"
     ]
+  },
+  {
+    "id": "tt245-should-i-attack-with-both",
+    "text": "I have a 2/2 and a 3/3. They have one 4/4 untapped. Should I attack with both?",
+    "expect": [
+      "a 2/2 creature (2/2) attacking: a 4/4 creature (4/4) blocks it: a 2/2 creature dies and a 4/4 creature survives",
+      "Unblocked, the attack deals 5 in all"
+    ],
+    "cite": [
+      "509.1a"
+    ]
+  },
+  {
+    "id": "tt245-sorcery-in-response-to-bolt",
+    "text": "They cast Lightning Bolt at my Tarmogoyf which is 3/4. In response I cast Thoughtseize on myself and discard a creature. Does Goyf survive?",
+    "expect": [
+      "Thoughtseize can't be cast in response: it's a sorcery",
+      "Yes: Tarmogoyf is still on the battlefield",
+      "a creature card: your hand → your graveyard"
+    ]
+  },
+  {
+    "id": "tt245-aberration-what-can-block",
+    "text": "I attack with Insectile Aberration. They have Spellskite and a 2/2. What can block it?",
+    "expect": [
+      "No: Spellskite can't block Insectile Aberration (flying)",
+      "No: a 2/2 creature can't block Insectile Aberration (flying)"
+    ]
+  },
+  {
+    "id": "tt245-hymn-four-cards-after",
+    "text": "They cast Hymn to Tourach. I have 4 cards. How many do I have after?",
+    "expect": [
+      "You discard 2 cards (4 → 2 in hand)"
+    ]
+  },
+  {
+    "id": "tt245-respond-before-chalice-trigger",
+    "text": "I have Chalice on 1 and they cast Gitaxian Probe paying 2 life. Can I respond before the Chalice trigger resolves?",
+    "expect": [
+      "Yes. A triggered ability goes on the stack the next time a player would receive priority",
+      "Gitaxian Probe is countered"
+    ]
+  },
+  {
+    "id": "tt245-bob-reveals-land-no-loss",
+    "text": "My Dark Confidant trigger reveals a land. Do I lose life?",
+    "expect": [
+      "You lose no life (a basic land has mana value 0)",
+      "No: you lose no life here"
+    ]
+  },
+  {
+    "id": "tt245-pathed-finks-no-persist",
+    "text": "They Path my Kitchen Finks. Does it persist?",
+    "expect": [
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard",
+      "No: Kitchen Finks is in exile"
+    ]
+  },
+  {
+    "id": "tt245-force-it-with-skite-in-hand",
+    "text": "They cast Thoughtseize. I have Spellskite and Force of Will in hand and 5 lands. Can I Force it?",
+    "expect": [
+      "Thoughtseize is countered"
+    ],
+    "notExpect": [
+      "Force of Will targeting Force of Will",
+      "Spellskite [spellskite] (your, 0/4)"
+    ]
+  },
+  {
+    "id": "tt245-goyf-into-maze-and-skite-best-play",
+    "text": "They attack with Tarmogoyf 4/5 and I have Maze of Ith and Spellskite. What's my best play?",
+    "expect": [
+      "Tarmogoyf's combat damage this turn (dealt and received) is prevented"
+    ]
+  },
+  {
+    "id": "tt245-vial-one-thalia-stays",
+    "text": "I have Aether Vial on 1. Can I put Thalia in?",
+    "expect": [
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)"
+    ]
   }
 ]
