@@ -1138,6 +1138,10 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.events.any { e -> e.verb == "attack" && ctx.objects[e.obj]?.card?.name == "Goblin Guide" } && Regex("""^(?:do|must|will) (?:i|we) (?:have to|need to|get to) (?:put|take|add) (?:it|that|the land|the card) (?:in|into|to) (?:my|our) hand\??$|^(?:is|does) (?:it|that|the land) (?:go|put) (?:in|into|to) (?:my|our) hand\??$|^(?:do|can) (?:i|we) (?:have to |get to )?keep it on top\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "guidehand-question"
         // "Can I Top in response to Bob's trigger to change the card?": Sensei's Divining Top at instant speed before the reveal.
         if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Sensei's Divining Top" } && Regex("""^can (?:i|we) (?:top|spin|spin the top|use|activate|tap|c\d+)(?: (?:the )?(?:top|c\d+))? in response to (?:bob's|c\d+'s|the|its|my|the bob|the upkeep|the confidant) (?:upkeep |bob |confidant )?trigger(?: to (?:change|fix|swap|alter|dodge|avoid) (?:the card|the top|the top card|what (?:i|we) reveal|the reveal|it|a big card|emrakul|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "topbob-question"
+        // "Does it transform before I draw?" (Delver): the upkeep comes before the draw step.
+        if (Regex("""^(?:does|will|is) (?:it|that|(?:my |the )?c\d+|delver) (?:transform|flip|get flipped|transformed|flipped) before (?:i|we|the|my) draw(?: step| a card| for the turn)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }) t2 = "delverbeforedraw-question"
+        // "Does the 3/3 take damage from the persisted Finks?": the returned creature is a new object, out of combat.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|is) (?:the |their |my )?(?:attacker|attacking creature|blocker|\d+/\d+|c\d+|it) (?:take|get|receive|be dealt) (?:any |combat )?damage from (?:the |my |their )?(?:persisted|returned|undying|new|re-?entered) (?:c\d+|creature|it|one|finks|token)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { if (ctx.events.any { it.verb == "block" }) "persistedcombat-question" else t0 } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1167,6 +1171,12 @@ class SituationParser(private val names: NameIndex) {
         // "I alpha strike", "I go wide with three 1/1s": table talk for attacking with everything and for having
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
+        // "into their Ensnaring Bridge with one card in hand": the hand is the Bridge's controller's, not the attacker's.
+        t2 = t2.replace(Regex("""\binto (their|his|her|my opponent's|the opponent's) (c\d+) with (\d+|one|two|three|four|no|zero) cards? in hand\b""", RegexOption.IGNORE_CASE), "into $1 $2, they have $3 cards in hand")
+        // "They have Aether Vial on 3 and Spell Queller in hand": the hand belongs to the same player as the first half.
+        t2 = t2.let { t0 -> Regex("""^((they|he|she|my opponent|the opponent|i|we) (?:have|has|control|controls|'ve got) .+?(?:on \d+|at \d+|with \d+ counters?|untapped|tapped|in play|on the battlefield|out|\d+ life)) and ((?:an? |the |two |three |another )?c\d+s?(?: and (?:an? |the )?c\d+)*) in (?:their |my |our )?hand$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "${r.groupValues[1]}, ${if (r.groupValues[2].lowercase() in setOf("i", "we")) "i have" else "they have"} ${r.groupValues[3]} in hand" } ?: t0 }
+        // "At upkeep I reveal Ponder": the timing said first goes last, where the reveal reader expects it.
+        t2 = t2.replace(Regex("""^(?:at|on|in|during) (?:my |the )?(?:next )?upkeep,? (i|we) (reveal|flip|hit) (.+)$""", RegexOption.IGNORE_CASE), "$1 $2 $3 at upkeep")
         // "My Snapcaster Mage is Bolted in response to its trigger": the Mage was cast, and the Bolt answers its trigger.
         t2 = t2.let { t0 -> Regex("""^my (c\d+) (?:is|gets|got|was) (c\d+)(?:ed|d)? in response to (?:its|the) (?:etb |enters )?trigger$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 val cr = m.cards[r.groupValues[1]]; val sp = m.cards[r.groupValues[2]]
@@ -4529,6 +4539,17 @@ class SituationParser(private val names: NameIndex) {
             if (last.card?.name != null) triggerSourceFromCast(ctx, null)?.let { ctx.lastMentioned = it }
             ctx.events += EventSpec("resolve")
             ctx.notes += "${name ?: "The spell"} resolves first; its enters-the-battlefield trigger is on the stack when the response is cast (603.3, 117.1b)."
+            return true
+        }
+        if (clause0 == "delverbeforedraw-question") {
+            val delver = ctx.objects.values.last { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
+            ctx.asks += EventSpec("ask", to = "text:Yes, if the card revealed is an instant or sorcery. The beginning phase runs untap, upkeep, then draw (501.1): Delver's trigger goes on the stack at the beginning of the upkeep step and resolves there, so ${delver.card.name} is already Insectile Aberration (a 3/2 flier) when the draw step begins. The card it revealed stays on top of the library, so that is the card you draw next.")
+            return true
+        }
+        if (clause0 == "persistedcombat-question") {
+            val attacker = ctx.events.lastOrNull { it.verb == "attack" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
+            val blocker = ctx.events.lastOrNull { it.verb == "block" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the blocker"
+            ctx.asks += EventSpec("ask", to = "text:No. The $blocker that persist returns is a new object with no memory of having blocked (400.7): it isn't in combat, so it deals and takes no combat damage, and it can't be declared as a blocker now (509.1a). $attacker stays blocked, since a creature once blocked remains blocked even when its blocker leaves combat (509.1h); without trample it deals no combat damage to anyone, and the new $blocker is simply on the battlefield.")
             return true
         }
         if (clause0 == "oozeripped-question") {

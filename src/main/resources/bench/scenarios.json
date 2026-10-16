@@ -35130,5 +35130,101 @@
     "expect": [
       "a 2/2 creature can't attack (Ensnaring Bridge). (×2)"
     ]
+  },
+  {
+    "id": "tt239-vial-second-thalia-vs-bolt",
+    "text": "I have Thalia and Aether Vial on 2. They cast Lightning Bolt at Thalia. Can I Vial in a second Thalia in response? What happens?",
+    "expect": [
+      "Lightning Bolt doesn't resolve (all targets illegal)",
+      "Yes: after Lightning Bolt is cast its controller gets priority"
+    ],
+    "cite": [
+      "704.5j"
+    ]
+  },
+  {
+    "id": "tt239-persisted-finks-out-of-combat",
+    "text": "They attack with a 3/3. I block with Kitchen Finks. They Bolt Finks before damage. Does the 3/3 take damage from the persisted Finks?",
+    "expect": [
+      "a 3/3 creature deals no combat damage: its blocker left combat and it stays blocked",
+      "No. The Kitchen Finks that persist returns is a new object"
+    ]
+  },
+  {
+    "id": "tt239-bolt-bob-upkeep-trigger-on-stack",
+    "text": "I cast Lightning Bolt at their Dark Confidant during their upkeep with the trigger on the stack. Do they still lose life?",
+    "expect": [
+      "Dark Confidant's trigger still resolves even though Dark Confidant is gone (113.7a)",
+      "Yes: opponent loses life equal to the revealed card's mana value"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "tt239-thoughtseize-smiter-and-bolt",
+    "text": "They cast Thoughtseize on me and I have Loxodon Smiter and a Bolt in hand. What can they take?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Loxodon Smiter, Lightning Bolt",
+      "Loxodon Smiter: your hand → the battlefield"
+    ]
+  },
+  {
+    "id": "tt239-chalice-zero-mox-opal",
+    "text": "My opponent has Chalice on 0. I cast a Mox Opal. Is it countered?",
+    "expect": [
+      "Yes: Mox Opal is countered (by Chalice of the Void)"
+    ]
+  },
+  {
+    "id": "tt239-delver-at-upkeep-reveal-ponder",
+    "text": "I have Delver of Secrets. At upkeep I reveal Ponder. Does it transform before I draw?",
+    "expect": [
+      "Yes, if the card revealed is an instant or sorcery. The beginning phase runs untap, upkeep, then draw (501.1)"
+    ]
+  },
+  {
+    "id": "tt239-hymn-into-leyline",
+    "text": "They Hymn me with Leyline of Sanctity on my side. Can they?",
+    "expect": [
+      "No: Hymn to Tourach can't target you"
+    ]
+  },
+  {
+    "id": "tt239-skite-vs-decay-on-goyf",
+    "text": "I have Spellskite and they cast Abrupt Decay on my Tarmogoyf. Can I redirect?",
+    "expect": [
+      "Abrupt Decay now targets Spellskite instead of Tarmogoyf",
+      "Spellskite: the battlefield → your graveyard"
+    ],
+    "notExpect": [
+      "Tarmogoyf: the battlefield → your graveyard"
+    ]
+  },
+  {
+    "id": "tt239-their-vial-queller-vs-thoughtseize",
+    "text": "They have Aether Vial on 3 and Spell Queller in hand. I cast Thoughtseize. What happens if they Vial in Queller?",
+    "expect": [
+      "Thoughtseize: the stack → exile (Spell Queller); it doesn't resolve"
+    ]
+  },
+  {
+    "id": "tt239-dismember-at-5-then-bolt",
+    "text": "I cast Dismember on their 3/3 paying 4 life at 5 life. Then they Bolt me. Do I die?",
+    "expect": [
+      "You pay 4 life. It pays Dismember's Phyrexian mana (107.4f)",
+      "Yes: You have lost the game",
+      "You go from 5 to -2 life"
+    ]
+  },
+  {
+    "id": "tt239-two-guides-into-bridge-one-card",
+    "text": "I attack with two Goblin Guides into their Ensnaring Bridge with one card in hand. How many can attack?",
+    "expect": [
+      "Goblin Guide can't attack (Ensnaring Bridge). (×2)"
+    ],
+    "notExpect": [
+      "opponent takes 2 damage"
+    ]
   }
 ]
