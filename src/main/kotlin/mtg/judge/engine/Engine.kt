@@ -85,7 +85,7 @@ class Engine(val state: GameState) {
             }
             // Whose turn it is decides this, and the question may not have said. Left silent, the answer read as
             // if Teferi weren't there at all.
-            if (state.activePlayer == null) state.clarifications += Clarification("whose turn it is",
+            if (state.activePlayer == null && ("Instant" in card.types || card.has("flash"))) state.clarifications += Clarification("whose turn it is",
                 "${teferi.name} lets ${state.player(playerId).subject.lowercase()} cast spells only at sorcery speed — during ${state.player(playerId).possessive} own main phase with an empty stack. Whose turn is it? ${card.name} is taken as cast at a legal time.")
         }
         state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller != playerId && it.controller == state.activePlayer && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.any { s -> s is StaticEffect.OpponentsLockedOnYourTurn } }?.let { ab ->

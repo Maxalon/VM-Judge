@@ -33052,5 +33052,133 @@
       "202.3g"
     ],
     "cite": []
+  },
+  {
+    "id": "thoughtseize-into-leyline",
+    "text": "They cast Thoughtseize on me and I have Leyline of Sanctity. What happens?",
+    "expect": [
+      "Thoughtseize can't target you",
+      "hexproof"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-one-attacker-other-still-hits",
+    "text": "I attack with Tarmogoyf and a 2/2 and they Path the Goyf after blockers. Does my other attacker still deal damage?",
+    "expect": [
+      "Yes: a 2/2 creature dealt damage to opponent"
+    ],
+    "cite": []
+  },
+  {
+    "id": "wasteland-animated-attacking-colonnade",
+    "text": "They activate Wasteland on my Celestial Colonnade while it's animated and attacking. What happens?",
+    "expect": [
+      "Celestial Colonnade: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-thalia-bolt-in-hand-costs-more",
+    "text": "I Vial in a Thalia with Vial on 2. Does my Bolt in hand cost more now?",
+    "expect": [
+      "Thalia, Guardian of Thraben makes it cost {1} more"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-one-card-2-2-cant-attack",
+    "text": "They have Ensnaring Bridge with 1 card in hand. Can my 2/2 attack?",
+    "expect": [
+      "a 2/2 creature can't attack (Ensnaring Bridge)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "verdict-vs-counterspell",
+    "text": "I cast Supreme Verdict. They have Counterspell. Can they counter it?",
+    "expect": [
+      "No: Supreme Verdict says it can't be countered",
+      "113.6g"
+    ],
+    "notExpect": [
+      "Yes, with a counterspell in hand"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ooze-eats-a-creature",
+    "text": "My Scavenging Ooze eats a creature. How big does it get and do I gain life?",
+    "expect": [
+      "Scavenging Ooze has 1 +1/+1 counter",
+      "You gain 1 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-blocks-goyf-stated-wrong-size",
+    "text": "I block their Tarmogoyf with my Kitchen Finks. Their Goyf is 4/5 with land, creature, instant in graveyards. Does Finks die?",
+    "expect": [
+      "Tarmogoyf is 3/4",
+      "Kitchen Finks comes back with a -1/-1 counter"
+    ],
+    "cite": []
+  },
+  {
+    "id": "stifle-stoneforge-trigger",
+    "text": "They Stifle my Stoneforge Mystic trigger. Do I still get to search?",
+    "expect": [
+      "No. The search was part of Stoneforge Mystic's triggered ability",
+      "701.5a"
+    ],
+    "cite": []
+  },
+  {
+    "id": "stifle-its-trigger-after-cast",
+    "text": "I cast Stoneforge Mystic. They Stifle its trigger. Do I still get to search?",
+    "expect": [
+      "Stoneforge Mystic's triggered ability is countered",
+      "you don't search"
+    ],
+    "cite": []
+  },
+  {
+    "id": "stoneforge-search-happens",
+    "text": "I cast Stoneforge Mystic. Do I get to search for Batterskull?",
+    "expect": [
+      "Yes: the search happens"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "ponder-chalice-1-with-teferi",
+    "text": "I cast Ponder with Chalice on 1 but they have Teferi, Time Raveler. Is my Ponder countered?",
+    "expect": [
+      "Yes: Ponder is countered (by Chalice of the Void)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "liliana-ultimate-next-turn",
+    "text": "I have Liliana of the Veil at 3 loyalty. Can I ultimate next turn if I plus now?",
+    "expect": [
+      "No. Plus now takes Liliana of the Veil from 3 to 4 loyalty",
+      "the earliest is in 3 turns"
+    ],
+    "cite": [
+      "606.3"
+    ]
+  },
+  {
+    "id": "jace-ultimate-in-two-turns",
+    "text": "I have Jace, the Mind Sculptor at 3. Can I ultimate in two turns if I plus now?",
+    "expect": [
+      "the earliest is in 5 turns"
+    ],
+    "cite": [
+      "606.3"
+    ]
   }
 ]
