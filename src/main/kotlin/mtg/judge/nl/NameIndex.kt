@@ -14,12 +14,21 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                      /** Other cards this word could have meant ("Atraxa": Praetors' Voice or Grand Unifier). */
                      val alternatives: List<String> = emptyList(),
                      /** Printed size, where the card has one: a token named by its type carries the size it comes with. */
-                     val power: String? = null, val toughness: String? = null) {
+                     val power: String? = null, val toughness: String? = null,
+                     /** The card's keyword list ("Flash, Flying"), for timing the parser needs to know about. */
+                     val keywords: String = "",
+                     /** The card's mana value, for things that key off it (what an Aether Vial can put in). */
+                     val manaValue: Int = 0) {
+        val hasFlash: Boolean get() = Regex("""(?i)\bflash\b""").containsMatchIn(keywords)
         /** An instant or sorcery: it lives in hand or on the stack, never on the battlefield. */
         val isSpellOnly: Boolean get() = (typeLine.contains("Instant") || typeLine.contains("Sorcery")) && !typeLine.contains("Land")
     }
 
     fun lookup(norm: String): Entry? = byNorm[norm]
+    /** The full "Front // Back" name of a double-faced card, by oracle id. */
+    fun fullNameOf(oracleId: String): String? = byNorm.values.firstOrNull { it.oracleId == oracleId && it.kind == "full" && it.display.contains(" // ") }?.display
+    /** "Insectile Aberration": the back face of a transforming card, named on its own. */
+    fun isBackFace(e: Entry): Boolean = e.kind == "face" && fullNameOf(e.oracleId)?.split(" // ")?.getOrNull(1)?.equals(e.display, true) == true
     val size: Int get() = byNorm.size
 
     /** Every card-name occurrence in [words] (already normalized tokens), longest match first, non-overlapping. */
@@ -84,7 +93,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
     companion object {
         /** Common nicknames -> normalized card names. Grow this by hand; it is not data from any card source. */
         val aliases: Map<String, String> = mapOf(
-            "bolt" to "lightning bolt", "maze" to "maze of ith", "chalice" to "chalice of the void", "snapcaster" to "snapcaster mage", "jace" to "jace the mind sculptor", "liliana" to "liliana of the veil", "elesh norn" to "elesh norn grand cenobite", "lili" to "liliana of the veil", "elspeth" to "elspeth sun s champion", "gideon" to "gideon ally of zendikar", "ugin" to "ugin the spirit dragon", "delver" to "delver of secrets", "leyline" to "leyline of sanctity", "ballista" to "walking ballista", "hangarback" to "hangarback walker", "craterhoof" to "craterhoof behemoth", "settle" to "settle the wreckage", "deluge" to "toxic deluge", "helix" to "lightning helix", "hailfire" to "torment of hailfire", "hoof" to "craterhoof behemoth", "snappy" to "snapcaster mage", "snap" to "snapcaster mage", "bears" to "grizzly bears", "swords" to "swords to plowshares", "path" to "path to exile",
+            "bolt" to "lightning bolt", "vial" to "aether vial", "surgical" to "surgical extraction", "hymn" to "hymn to tourach", "shadow" to "death s shadow", "maze" to "maze of ith", "chalice" to "chalice of the void", "snapcaster" to "snapcaster mage", "jace" to "jace the mind sculptor", "liliana" to "liliana of the veil", "elesh norn" to "elesh norn grand cenobite", "lili" to "liliana of the veil", "elspeth" to "elspeth sun s champion", "gideon" to "gideon ally of zendikar", "ugin" to "ugin the spirit dragon", "delver" to "delver of secrets", "leyline" to "leyline of sanctity", "ballista" to "walking ballista", "hangarback" to "hangarback walker", "craterhoof" to "craterhoof behemoth", "settle" to "settle the wreckage", "deluge" to "toxic deluge", "helix" to "lightning helix", "hailfire" to "torment of hailfire", "hoof" to "craterhoof behemoth", "snappy" to "snapcaster mage", "snap" to "snapcaster mage", "bears" to "grizzly bears", "swords" to "swords to plowshares", "path" to "path to exile",
             "rhystic" to "rhystic study", "tithe" to "smothering tithe", "sol" to "sol ring", "wrath" to "wrath of god", "damnation" to "damnation",
             "cyc rift" to "cyclonic rift", "rift" to "cyclonic rift", "tutor" to "demonic tutor", "demonic" to "demonic tutor", "vamp tutor" to "vampiric tutor",
             "mana crypt" to "mana crypt", "crypt" to "mana crypt", "vault" to "mana vault", "goyf" to "tarmogoyf", "sdt" to "sensei s divining top", "divining top" to "sensei s divining top",
@@ -110,7 +119,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             "one", "two", "three", "first", "second", "last", "next", "new", "old", "big", "small", "up", "down", "out", "off", "over", "under", "back", "again", "now", "then", "here", "there",
             "life", "death", "damage", "counter", "target", "attack", "block", "draw", "hand", "deck", "library", "graveyard", "exile", "battlefield", "stack", "response", "trigger", "ability", "poison", "commander", "cards", "card",
             "they", "them", "he", "she", "we", "you", "i", "me", "re", "ve", "ll", "m", "s", "d", "t", "don", "doesn", "can", "won", "isn", "aren")
-        private val stopWords = setOf("speed", 
+        private val stopWords = setOf("lord", "speed", 
             "counter", "target", "turn", "attack", "block", "cast", "play", "draw", "damage", "life", "control", "survive", "survives", "dead", "alive", "die", "dies", "grow", "resolve", "experience", "energy", "storm", "sacrifice", "sacrificed", "top", "bottom", "overload", "overloaded", "kick", "kicked", "evoke", "convoke", "cycle", "flashback", "recast", "replay",
             "creature", "spell", "ability", "trigger", "stack", "response", "resolve", "resolves", "tap", "untap", "exile", "destroy", "sacrifice",
             "discard", "hand", "library", "graveyard", "battlefield", "token", "copy", "end", "step", "upkeep", "combat", "main", "phase", "pay",
@@ -129,7 +138,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             val map = HashMap<String, Entry>(80_000)
             var maxWords = 1
             conn.createStatement().executeQuery(
-                """SELECT n.name_norm, n.display, n.oracle_id, n.kind, c.layout, c.type_line, c.power, c.toughness FROM card_names n JOIN cards c ON c.oracle_id = n.oracle_id"""
+                """SELECT n.name_norm, n.display, n.oracle_id, n.kind, c.layout, c.type_line, c.power, c.toughness, c.keywords, c.mana_value FROM card_names n JOIN cards c ON c.oracle_id = n.oracle_id"""
             ).use { rs ->
                 while (rs.next()) {
                     val norm = rs.getString(1); val kind = rs.getString(4)
@@ -141,8 +150,11 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                     // Jumpstart pack front cards ("Liliana", "Gigantic", "Surprise!") are memorabilia with the type line
                     // "Card" and no game text. Indexed, "Liliana" was one of them instead of a planeswalker.
                     if (rs.getString(6) == "Card") continue
+                    // "The Ring // The Ring Tempts You" is the Lord of the Rings helper card, not a card anyone casts; indexed,
+                    // "the Ring" after an Oblivion Ring was it instead of the Ring just named.
+                    if (rs.getString(2).startsWith("The Ring")) continue
                     val isCard = rs.getString(5) !in mtg.judge.carddb.ingest.ScryfallIngest.nonCardLayouts
-                    val e = Entry(rs.getString(2), rs.getString(3), isCard, kind, rs.getString(6) ?: "", power = rs.getString(7), toughness = rs.getString(8))
+                    val e = Entry(rs.getString(2), rs.getString(3), isCard, kind, rs.getString(6) ?: "", power = rs.getString(7), toughness = rs.getString(8), keywords = rs.getString(9) ?: "", manaValue = rs.getDouble(10).toInt())
                     val prev = map[norm]
                     // Prefer real cards over tokens, full names over face names, on collisions.
                     if (prev == null || (!prev.isCard && isCard) || (prev.kind != "full" && kind == "full" && prev.isCard == isCard)) map[norm] = e
