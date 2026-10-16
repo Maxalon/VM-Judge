@@ -394,6 +394,17 @@ class Engine(val state: GameState) {
         if (kicked) trace.step("${card.name} is kicked: its controller paid the kicker cost as an additional cost, so its \"if this spell was kicked\" parts apply.", "702.33a", "702.33d")
         if (x != null) trace.step("X is $x, chosen as ${card.name} is cast; the mana cost includes X.", "107.3a", "601.2b")
         else if (effect != null && usesX(effect)) state.clarifications += Clarification("${card.name}'s X", "${card.name} has X in its text; what was X? (assuming 0)")
+        // "I'm at 3 life and cast Dismember paying 4 life": life can be paid only from a life total at least that big (119.4).
+        run {
+            val lifeNeeded = card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostText>().firstNotNullOfOrNull { c -> Regex("""(?i)\bpay (X|\d+) life\b""").find(c.text)?.groupValues?.get(1)?.let { n -> if (n.equals("X", true)) x else n.toIntOrNull() } } ?: payLife
+            val have = player.life
+            if (lifeNeeded != null && lifeNeeded > 0 && have != null && lifeNeeded > have) {
+                trace.step("${player.subject} ${player.v("is", "are")} at $have life and ${card.name}'s cost asks for $lifeNeeded life: a player can pay life only if their life total is at least the amount, so that cost can't be paid and ${card.name} can't be cast this way${if (Regex("""\{[WUBRG]/P\}""").containsMatchIn(card.manaCost ?: "")) " (its Phyrexian mana would have to be paid with mana instead)" else ""}.", "119.4", "601.2h")
+                state.outcomes += "${card.name} can't be cast paying $lifeNeeded life: ${player.subject.lowercase()} ${player.v("has", "have")} only $have life, and life can't be paid beyond the life total (119.4)."
+                state.stack.remove(item)
+                return null
+            }
+        }
         trace.step("${player.subject} ${player.v("casts", "cast")} ${card.name}${if (modes.isNotEmpty() && modal != null) " choosing " + modes.joinToString(" and ") { "\"${modal.modeTexts.getOrNull(it - 1)?.replace("~", card.name) ?: "?"}\"" } else ""}${describeTargets(targets)}. It goes on top of the stack.", "601.2a", "405.2", *(if (modal != null) arrayOf("601.2b", "700.2a") else emptyArray()))
         val playerTargetMode = targets.isNotEmpty() && targets.all { it is Ref.Player } && modes.any { modal?.modeTexts?.getOrNull(it - 1)?.lowercase()?.contains("target player") == true }
         if (modeEffect != null && modeEffect.targets().size != targets.size && !playerTargetMode && !playerModeExtra) state.clarifications += Clarification("${card.name}'s target", "The chosen mode needs ${modeEffect.targets().size} target(s) (${modeEffect.targets().joinToString("; ") { it.raw }}) but ${targets.size} given.")
@@ -412,8 +423,11 @@ class Engine(val state: GameState) {
         // life total for no reason.
         if (!lifeCostPaid && payLife != null && payLife > 0) {
             player.life = player.life?.minus(payLife)
-            trace.step("${player.subject} ${player.v("pays", "pay")} $payLife life while casting ${card.name}${player.life?.let { l -> " ($l)" } ?: ""}.", "119.4")
-            state.outcomes += "${player.subject} ${player.v("pays", "pay")} $payLife life."
+            val pips = Regex("""\{[WUBRG]/P\}""").findAll(card.manaCost ?: "").map { it.value }.toList()
+            if (pips.isNotEmpty() && payLife == 2 * pips.size) trace.step("${player.subject} ${player.v("pays", "pay")} $payLife life while casting ${card.name}: ${if (pips.size == 1) "its ${pips[0]} is a Phyrexian mana symbol, paid" else "its ${pips.joinToString("")} are Phyrexian mana symbols, each paid"} with either that colour of mana or 2 life${player.life?.let { l -> " ($l life now)" } ?: ""}.", "107.4f", "601.2h")
+            else if (pips.isNotEmpty()) trace.step("${player.subject} ${player.v("pays", "pay")} $payLife life while casting ${card.name}${player.life?.let { l -> " ($l)" } ?: ""}; its ${pips.joinToString("")} can be paid with 2 life each (107.4f), so $payLife life pays for ${payLife / 2} of ${if (pips.size == 1) "it" else "them"}.", "107.4f", "119.4")
+            else trace.step("${player.subject} ${player.v("pays", "pay")} $payLife life while casting ${card.name}${player.life?.let { l -> " ($l)" } ?: ""}.", "119.4")
+            state.outcomes += "${player.subject} ${player.v("pays", "pay")} $payLife life.${if (pips.isNotEmpty()) " It pays ${card.name}'s Phyrexian mana (107.4f)." else ""}"
         }
         card.abilities.filterIsInstance<StaticAbility>().filter { it.keyword in castingKeywordRules }.forEach { k ->
             trace.step("${card.name} has ${k.text.trimEnd('.')}: ${castingKeywordNotes[k.keyword]}.", castingKeywordRules.getValue(k.keyword!!))

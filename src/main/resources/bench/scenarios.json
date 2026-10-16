@@ -34482,5 +34482,215 @@
       "Thalia, Guardian of Thraben is countered."
     ],
     "cite": []
+  },
+  {
+    "id": "tt233-snag-own-delver",
+    "text": "I cast Lightning Bolt at their Delver of Secrets. They respond with Vapor Snag on their own Delver. What happens to my Bolt?",
+    "expect": [
+      "Lightning Bolt doesn't resolve"
+    ],
+    "cite": [
+      "608.2b"
+    ]
+  },
+  {
+    "id": "tt233-second-snapcaster-blocks",
+    "text": "They attack me with a 4/4 Tarmogoyf. I block with Snapcaster Mage and then flash in a second Snapcaster after blockers. Does the second one block too?",
+    "expect": [
+      "No. Blockers are declared once"
+    ],
+    "cite": [
+      "509.1a"
+    ]
+  },
+  {
+    "id": "tt233-leyline-thoughtseize-who",
+    "text": "I control Leyline of Sanctity. They cast Thoughtseize. Who can they target?",
+    "expect": [
+      "Thoughtseize can't target you (hexproof)",
+      "The only player Thoughtseize could be cast targeting is opponent"
+    ],
+    "cite": [
+      "702.11c"
+    ]
+  },
+  {
+    "id": "tt233-thalia-bolt-cost",
+    "text": "My Thalia is in play. They cast Lightning Bolt. How much does it cost them?",
+    "expect": [
+      "2 mana in all"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "tt233-chalice-probe-life",
+    "text": "They have Chalice of the Void on 1. I cast Gitaxian Probe paying 2 life. Is it countered?",
+    "expect": [
+      "You pay 2 life. It pays Gitaxian Probe's Phyrexian mana",
+      "Yes: Gitaxian Probe is countered"
+    ],
+    "notExpect": [
+      "X is 2"
+    ],
+    "cite": [
+      "107.4f"
+    ]
+  },
+  {
+    "id": "tt233-ooze-eats-two-before-damage",
+    "text": "I attack with a 3/3 Tarmogoyf. They block with a 2/2 Scavenging Ooze and activate it twice before damage eating two creatures. Does Goyf die?",
+    "expect": [
+      "Scavenging Ooze has 2 +1/+1 counters",
+      "Yes: Tarmogoyf died"
+    ]
+  },
+  {
+    "id": "tt233-dismember-at-3-paying-4",
+    "text": "I'm at 3 life. I cast Dismember paying 4 life on their Tarmogoyf. Can I?",
+    "expect": [
+      "Dismember can't be cast paying 4 life"
+    ],
+    "notExpect": [
+      "Tarmogoyf: the battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "119.4"
+    ]
+  },
+  {
+    "id": "tt233-deluge-at-5-paying-6",
+    "text": "I'm at 5 life. I cast Toxic Deluge paying 6 life. Can I?",
+    "expect": [
+      "Toxic Deluge can't be cast paying 6 life"
+    ],
+    "cite": [
+      "119.4"
+    ]
+  },
+  {
+    "id": "tt233-their-dismember-life-on-skite",
+    "text": "I'm at 3 life with Spellskite. They cast Dismember paying 4 life on it. Does it die?",
+    "expect": [
+      "opponent pays 4 life. It pays Dismember's Phyrexian mana",
+      "Yes: Spellskite died"
+    ],
+    "cite": [
+      "107.4f"
+    ]
+  },
+  {
+    "id": "tt233-bridge-two-cards-guide",
+    "text": "I attack with Goblin Guide. They have Ensnaring Bridge with two cards in hand. Can it attack?",
+    "expect": [
+      "Yes: Goblin Guide can attack"
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "tt233-bridge-one-card-guide",
+    "text": "I attack with Goblin Guide. They have Ensnaring Bridge and one card in hand. Can it attack?",
+    "expect": [
+      "No: Goblin Guide can't attack"
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "tt233-blood-moon-urzas-saga",
+    "text": "I control Blood Moon. They play Urza's Saga. What happens?",
+    "expect": [
+      "Urza's Saga stays on the battlefield"
+    ],
+    "cite": [
+      "714.4"
+    ]
+  },
+  {
+    "id": "tt233-stifle-at-path",
+    "text": "They cast Path to Exile on my Tarmogoyf. I respond with Stifle. Does Goyf stay?",
+    "expect": [
+      "Stifle can't be cast at Path to Exile",
+      "No: Tarmogoyf is in exile"
+    ],
+    "cite": [
+      "601.2c"
+    ]
+  },
+  {
+    "id": "tt233-bob-at-1-reveals-land",
+    "text": "I have Dark Confidant and I'm at 1 life. In my upkeep I reveal a land. Do I lose?",
+    "expect": [
+      "No: You are still in the game at 1 life"
+    ]
+  },
+  {
+    "id": "tt234-surgical-snapcaster-target",
+    "text": "I cast Snapcaster Mage targeting Lightning Bolt in my graveyard. They Surgical Extraction the Bolt in response. Can I still flash it back?",
+    "expect": [
+      "Lightning Bolt can't be cast with flashback: it's in exile"
+    ]
+  },
+  {
+    "id": "tt234-settle-before-damage",
+    "text": "They attack with a 5/5. I have Settle the Wreckage. Does it get exiled before damage?",
+    "expect": [
+      "a 5/5 creature: the battlefield → exile",
+      "Yes, if it resolves: Settle the Wreckage is cast in the declare attackers step"
+    ],
+    "cite": [
+      "510.1"
+    ]
+  },
+  {
+    "id": "tt234-vial-thalia-vs-verdict",
+    "text": "I have Aether Vial on 2 and Thalia in hand. They cast Supreme Verdict. Can I vial in Thalia to counter it?",
+    "expect": [
+      "No. Thalia, Guardian of Thraben doesn't counter anything",
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "tt234-vial-queller-vs-bolt",
+    "text": "I have Aether Vial on 3 and Spell Queller in hand. They cast Lightning Bolt at my face. Can I vial in Queller to counter it?",
+    "expect": [
+      "Not countered, but exiled",
+      "Lightning Bolt: the stack → exile (Spell Queller)"
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "tt234-rip-goyf-colon",
+    "text": "I control Rest in Peace. My Tarmogoyf: how big is it?",
+    "expect": [
+      "Tarmogoyf is 0/1"
+    ]
+  },
+  {
+    "id": "tt234-shadow-at-4-bolted",
+    "text": "They cast Lightning Bolt at my Death's Shadow while I'm at 4 life. Does it die?",
+    "expect": [
+      "No: Death's Shadow is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt234-growth-on-the-blocked-one",
+    "text": "I attack with two 2/2s. They have one 3/3 untapped. They block one. I cast Giant Growth on the blocked one. How much damage do they take?",
+    "expect": [
+      "opponent takes 2 damage in all",
+      "a 3/3 creature: the battlefield → opponent's graveyard"
+    ],
+    "notExpect": [
+      "takes 5 damage"
+    ]
   }
 ]

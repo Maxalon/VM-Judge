@@ -670,6 +670,12 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.objects.values.any { o -> o.controller != "me" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb") } && Regex("""^can (?:i|we) (?:target|hit|aim it at|cast it on|point it at) (?:myself|me|us|ourselves|my own face)(?: instead| then)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "targetself-question"
         // "Can I vial in Kitchen Finks before it resolves to gain life?": the Vial in response, played out.
         if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" }) t2 = t2.replace(Regex("""^can (?:i|we) (?:vial in|put in|flash in|vial|drop in) (?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)?(?: in response| before it resolves| first| now)?(?: to (?:gain (?:the )?life|save myself|survive|go up|block|chump|stay alive))?\??$""", RegexOption.IGNORE_CASE), "i vial in $1 in response")
+        // "Can I vial in Thalia to counter it?": the Vial puts the creature in, and the question is what that does to the spell.
+        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" }) t2 = t2.replace(Regex("""^can (?:i|we) (?:vial in|put in|flash in|vial|drop in) (?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)?(?: in response| now| first)? to (?:counter|stop|fizzle|tax|answer|beat|deal with|stop) (?:it|that|the spell|(?:the |their )?c\d+)\??$""", RegexOption.IGNORE_CASE), "i vial in $1 in response, vialcounter-question $1")
+        // "Does it get exiled before damage?": whether a removal spell cast in combat lands before the combat damage step.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|is) (it|that|the attacker|(?:the |their |my )?c\d+|the \d+/\d+) (?:get |be )?(exiled|destroyed|killed|removed|bounced|dead|gone|tapped) before (?:combat )?damage(?: is dealt| happens)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "beforedamage-question ${r.groupValues[2].lowercase()} ${r.groupValues[1].lowercase().removePrefix("the ").removePrefix("their ").removePrefix("my ")}" } ?: t0 }
+        // "My Tarmogoyf: how big is it?": the card named before a colon is on the battlefield, and the question follows.
+        t2 = t2.let { t0 -> Regex("""^(my|their|his|her|our) (c\d+)(?::|,)? ((?:how|what|which) .+|(?:does|do|can|will|would|is) (?:it|that|they|i|we)\b.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "${if (r.groupValues[1].lowercase() in setOf("my", "our")) "i have" else "they have"} ${r.groupValues[2]}, ${r.groupValues[3]}" } ?: t0 }
         // "Can I redirect it with Spellskite paying life?": how the Phyrexian mana is paid is the engine's to say.
         t2 = t2.replace(Regex("""(?<=\bwith (?:my |the )?c\d|\bwith (?:my |the )?c\d\d)(?:,| and)? ?(?:by |while )?(?:paying|pay|using) (?:the |2 |two )?life(?: for it| instead| for the mana| instead of mana)?(?=\?|$)""", RegexOption.IGNORE_CASE), "")
         // "Then on my turn, can I cast Bolt again?": the lead-in is dropped; whether the card can be cast again is what's asked.
@@ -852,6 +858,18 @@ class SituationParser(private val names: NameIndex) {
         // "My Scavenging Ooze eats a creature": its ability at a creature card in a graveyard.
         t2 = t2.let { t0 -> Regex("""^(?:my |the )?(c\d+) (?:eats|eats up|munches|exiles|gobbles) (?:a |an |the |their |one of their )?(?:dead )?(?:creature|creature card|guy|dude|creature from (?:their|my|a) graveyard|creature card from (?:their|my|a) graveyard)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 if (m.cards[r.groupValues[1]]?.display == "Scavenging Ooze") "i activate ${r.groupValues[1]} targeting a creature card in their graveyard" else t0 } ?: t0 }
+        // "They activate it twice before damage eating two creatures": the Ooze's ability that many times, each at a creature card in a graveyard.
+        t2 = t2.let { t0 -> Regex("""(^|,\s*|\s+and\s+|\s+then\s+)(?:(i|we|they|he|she|my opponent|the opponent) )?(?:activates?|uses?|pumps?) (it|(?:the |my |their )?c\d+|the ooze) ?(once|twice|three times|four times|\d+ times?)?(?: (?:before|during|in response to|at) (?:combat )?damage| before blockers| before damage is dealt| in response| first| now| at instant speed)?,? ?(?:eating|exiling|munching|removing|to eat|to exile|and eats?|and exiles?) (?:an? |one |two |three |four |\d+ )?(?:dead |creature |creature card|creatures|creature cards|guys?|dudes?)(?: from (?:my|their|a|the) graveyard| in (?:my|their|a|the) graveyard| out of (?:my|their|a|the) graveyard)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val subjWord = r.groupValues[2].ifEmpty { Regex("""^(i|we|they|he|she|my opponent|the opponent)\b""", RegexOption.IGNORE_CASE).find(t0)?.value ?: return@let t0 }.lowercase()
+                val who = if (subjWord == "i" || subjWord == "we") "me" else "opp"
+                val subj = r.groupValues[3].lowercase().removePrefix("the ").removePrefix("my ").removePrefix("their ")
+                val ooze = (if (subj.startsWith("c")) m.cards[subj]?.takeIf { it.display == "Scavenging Ooze" }?.let { subj } else null)
+                    ?: (if (ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name == "Scavenging Ooze" && o.controller == who } || (m.cards.values.any { it.display == "Scavenging Ooze" } && !subj.startsWith("c"))) (m.cards.entries.firstOrNull { it.value.display == "Scavenging Ooze" }?.key ?: "Scavenging Ooze") else null)
+                    ?: return@let t0
+                val n = r.groupValues[4].lowercase().let { when { it.isEmpty() || it == "once" -> 1; it == "twice" -> 2; it.startsWith("three") -> 3; it.startsWith("four") -> 4; else -> it.takeWhile { c -> c.isDigit() }.toIntOrNull() ?: 1 } }
+                val yard = if (who == "me") "their" else "my"
+                t0.substring(0, r.range.first) + (1..n).joinToString("") { i -> ", $subjWord activate $ooze targeting ${if (i == 1) "a" else "another"} creature card in $yard graveyard" }.let { if (r.range.first == 0) it.removePrefix(", ") else it }
+            } ?: t0 }
         // "I cast Ponder with Chalice on 1": the Chalice is the other player's, set to that number, before the cast.
         t2 = t2.let { t0 -> Regex("""^(i|we|they|he|she|my opponent|the opponent) (casts?|plays?) (c\d+)((?: .*?)?) with (their |a |an |the |my )?(c\d+) (?:on|at|set to|naming) (\d+)(?: out| on the battlefield| in play| on their side| on board)?(?:,? (?:but|and|while|when) (.+))?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 val me = r.groupValues[1].lowercase() in setOf("i", "we")
@@ -1058,6 +1076,12 @@ class SituationParser(private val names: NameIndex) {
         // The same after an earlier rewrite has already split the Chalice off: "i cast c1 , they have c2 on 2 with c3 naming human".
         t2 = t2.let { t0 -> Regex("""^(i|we) (casts?|plays?) (c\d+) ?, (they have c\d+ on \d+) with (?:my |an? )?(c\d+)(?: naming \w+)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 if (m.cards[r.groupValues[5]]?.typeLine?.contains("Land") == true) "${r.groupValues[4]}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} with ${r.groupValues[5]}" else t0 } ?: t0 }
+        // "Does the second one block too?": a creature flashed in after blockers were declared is asked about as a blocker.
+        if (Regex("""^(?:does|can|could|will|is) (?:the second one|the second|the new one|the new c\d+|the second c\d+|that one|it|c\d+) (?:also |still |then )?(?:a blocker|block(?:ing)?)(?: too| as well| now| also| the (?:attacker|c\d+)| it)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) {
+            val block = ctx.events.lastOrNull { it.verb == "block" }
+            val cast = ctx.events.lastOrNull { it.verb == "cast" && (it.card?.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Creature") == true } == true || it.obj?.let { o -> ctx.objects[o]?.card?.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Creature") == true } } == true) }
+            if (block != null && cast != null && ctx.events.indexOf(cast) > ctx.events.indexOf(block)) t2 = "secondblocker-question"
+        }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -4357,6 +4381,46 @@ class SituationParser(private val names: NameIndex) {
             val mv = top?.let { names.lookup(Names.normalize(it))?.manaValue }
             val life = ctx.life["me"]
             ctx.asks += EventSpec("ask", to = "text:You can respond (Aether Vial's ability can be activated any time you have priority, 602.1), but it won't help: putting a creature onto the battlefield changes nothing about the card on top of your library, and ${bob.card.name}'s trigger still reveals it and takes its mana value in life when it resolves (113.7a)${if (top != null && mv != null) ". $top has mana value $mv${if (life != null) ", so you go from $life to ${life - mv}${if (life - mv <= 0) " and lose (704.5a)" else ""}" else ""}" else ""}. Only something that changes the top card (a shuffle, a draw, a Brainstorm) or removes the trigger (Stifle) would.")
+            return true
+        }
+        Regex("""^vialcounter-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
+            val spellName = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
+            val taxers = setOf("Thalia, Guardian of Thraben", "Vryn Wingmare", "Glowrider", "Thorn of Amethyst", "Sphere of Resistance", "Lodestone Golem", "Archon of Emeria", "Ethersworn Canonist", "Deafening Silence", "Drannith Magistrate")
+            val uncounterable = setOf("Supreme Verdict", "Abrupt Decay", "Loxodon Smiter", "Slaughter Games", "Combust", "Guttural Response", "Rending Volley", "Thrun, the Last Troll", "Carnage Tyrant", "Banefire", "Gaea's Revenge", "Great Sable Stag", "Vexing Shusher")
+            if (card.display in taxers) {
+                ctx.asks += EventSpec("ask", to = "text:No. ${card.display} doesn't counter anything: it makes spells cost more to cast, and a spell's total cost is determined and paid as it is cast (601.2f, 601.2h). $spellName is already on the stack with its cost paid, so putting ${card.display} onto the battlefield now changes nothing about it${if (spellName in uncounterable) ", and $spellName can't be countered in any case" else ""}; it resolves as normal. The Vial can still put ${card.display} in (602.1), but ${if (spellName in setOf("Supreme Verdict", "Wrath of God", "Damnation", "Terminus", "Anger of the Gods", "Pyroclasm", "Toxic Deluge", "Languish", "Sweltering Suns")) "a sweeper then takes it along with the rest" else "only to be on the battlefield for whatever comes after"}.")
+            } else if (card.display == "Spell Queller" || card.display == "Mystic Snake" || card.display == "Frilled Mystic" || card.display == "Draining Whelk") {
+                val mv = spell.card?.name?.let { n -> names.lookup(Names.normalize(n))?.manaValue } ?: 0
+                val queller = card.display == "Spell Queller"
+                ctx.asks += EventSpec("ask", to = "text:" + (if (queller && mv > 4) "No. Spell Queller's trigger exiles a spell with mana value 4 or less, and $spellName's mana value is $mv, so it has nothing to target; $spellName resolves as normal (603.3d)."
+                    else if (queller) "Not countered, but exiled: Aether Vial puts Spell Queller onto the battlefield in response (602.1), its enters-the-battlefield trigger targets $spellName (mana value $mv, 4 or less), and on resolution exiles it from the stack. That isn't countering, so it works even on a spell that can't be countered (701.6a); $spellName comes back only if Spell Queller leaves the battlefield."
+                    else "Yes, if the trigger resolves: Aether Vial puts ${card.display} onto the battlefield in response (602.1), and its enters-the-battlefield trigger counters $spellName${if (spellName in uncounterable) " — except that $spellName can't be countered, so here it resolves anyway (701.6a)" else ""}."))
+                ctx.notes += "${card.display} is put in with Aether Vial in response; its enters-the-battlefield trigger is what answers the spell."
+            } else {
+                ctx.asks += EventSpec("ask", to = "text:No. ${card.display} has no ability that counters or exiles a spell, so putting it onto the battlefield with Aether Vial does nothing to $spellName, which resolves as normal (608.1)${if (spellName in uncounterable) "; $spellName can't be countered anyway" else ""}.")
+            }
+            return true
+        }
+        Regex("""^beforedamage-question (\w+) (it|that|the attacker|c\d+|\d+/\d+)$""").find(clause0)?.let { r ->
+            val attack = ctx.events.lastOrNull { it.verb == "attack" } ?: return@let
+            // "They attack with a 5/5. I have Settle the Wreckage. Does it get exiled before damage?": the instant in hand is cast now.
+            val spell = ctx.events.lastOrNull { e -> e.verb == "cast" && ctx.events.indexOf(e) > ctx.events.indexOf(attack) }
+                ?: ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "hand" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.let { o ->
+                    val ev = EventSpec("cast", player = "me", card = CardRef(name = o.card.name, oracleId = o.card.oracleId)); ctx.events += ev; ctx.lastActor = "me"; ctx.lastVerb = "cast"
+                    ctx.notes += "\"Does it get exiled before damage?\" is read as you casting ${o.card.name} from your hand now, with the attack declared."; ev }
+                ?: return@let
+            val spellName = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
+            val block = ctx.events.any { e -> e.verb == "block" && ctx.events.indexOf(e) < ctx.events.indexOf(spell) }
+            ctx.asks += EventSpec("ask", to = "text:Yes, if it resolves: $spellName is cast in the ${if (block) "declare blockers" else "declare attackers"} step, after ${if (block) "blockers" else "attackers"} are declared, and players get priority there (${if (block) "509.2" else "508.2"}). It resolves before the combat damage step begins, and combat damage is dealt only then (510.1), so a creature it removes deals and takes no combat damage. The outcome below shows what the spell did.")
+            return true
+        }
+        if (clause0 == "secondblocker-question") {
+            val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
+            val name = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: "the creature"
+            val first = ctx.events.lastOrNull { it.verb == "block" }?.obj?.let { ctx.objects[it]?.card?.name }
+            ctx.asks += EventSpec("ask", to = "text:No. Blockers are declared once, as the declare blockers step begins, from the untapped creatures the defending player controls at that moment (509.1a). $name entered the battlefield after that, so it isn't blocking and can't be added as a blocker later in this combat; it's simply on the battlefield, untapped and out of combat.${first?.let { " $it still blocks as declared." } ?: ""} Flashing a creature in after blockers is for its enters-the-battlefield effect or to have it ready next turn, not to block.")
             return true
         }
         if (clause0 == "devilchoice-question") {
@@ -10519,7 +10583,7 @@ class SituationParser(private val names: NameIndex) {
         // "Prey Upon on my Bears targeting theirs": the fight's other creature.
         secondTarget(rest, targets.firstOrNull(), ctx)?.let { second -> if (targets.size == 1 && second !in targets) targets = targets + second }
         ctx.castingCounter = false; ctx.castingCounterName = null
-        if (payLife != null) { ctx.payLife = payLife; ctx.notes += "${card.display}: ${if (who == "me") "you pay" else "they pay"} $payLife life as it is cast, so X is $payLife." }
+        if (payLife != null) { ctx.payLife = payLife; ctx.notes += "${card.display}: ${if (who == "me") "you pay" else "they pay"} $payLife life as it is cast${if (xValue == payLife) " (read as X where its cost has one)" else ""}." }
         // "cast Lightning Bolt from my graveyard": the card is the one in that graveyard, so the cast is from there.
         // "They play Torpor Orb, I cast Eternal Witness": a creature (or any sorcery-speed spell) cast after another player's
         // spell is cast once that spell has resolved, since it can't be cast with a spell on the stack.
@@ -10665,16 +10729,26 @@ class SituationParser(private val names: NameIndex) {
             out += id; return out
         }
         // "Reanimate on a creature in their graveyard": a card nobody named, in that graveyard.
-        Regex("""^(?:an? |the )?(?:(\d+/\d+) )?(creature|instant|sorcery|land|artifact|enchantment|planeswalker)(?: card)? (?:in|from) (my|their|his|her|the|a|any|an opponent's|my opponent's) graveyard$""").find(seg)?.let { r ->
+        Regex("""^(?:an? |the |(another) )?(?:(\d+/\d+) )?(creature|instant|sorcery|land|artifact|enchantment|planeswalker)(?: card)? (?:in|from) (my|their|his|her|the|a|any|an opponent's|my opponent's) graveyard$""").find(seg)?.let { r0 ->
+            // "another creature card in my graveyard": a second unnamed card, not the one already read.
+            val another = r0.groupValues[1].isNotEmpty()
+            val r = object { val groupValues = listOf(r0.groupValues[0], r0.groupValues[2], r0.groupValues[3], r0.groupValues[4]) }
             val caster = ctx.clauseActor ?: ctx.lastActor ?: "me"
             val owner = when (r.groupValues[3]) { "my" -> caster; "their", "his", "her", "an opponent's", "my opponent's" -> ctx.other(caster) ?: "opp"; else -> caster }
             val kind = r.groupValues[2]
-            ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && o.controller == owner && (o.card.name ?: "").let { n -> n.contains(kind) && (r.groupValues[1].isEmpty() || n.contains(r.groupValues[1])) } }?.let { out += it.id; return out }
+            if (!another) ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && o.controller == owner && (o.card.name ?: "").let { n -> n.contains(kind) && (r.groupValues[1].isEmpty() || n.contains(r.groupValues[1])) } }?.let { out += it.id; return out }
             val name = if (kind == "creature") (if (r.groupValues[1].isEmpty()) "a creature" else "a ${r.groupValues[1]} creature") else (if (kind.first() in "aeiou") "an " else "a ") + kind
             var id = slug("$kind card"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("$kind card") + "_" + (k++)
             ctx.objects[id] = ObjectSpec(id, CardRef(name = name), zone = "graveyard", controller = owner); ctx.note(owner)
             ctx.notes += "\"a $kind in ${if (owner == "me") "your" else "their"} graveyard\" is read as an unnamed $kind card there; name it for a precise answer."
             out += id; return out
+        }
+        // "Giant Growth on the blocked one": the attacker a block was declared on (or the one nobody blocked).
+        Regex("""^(?:(?:the|my|their|his|her) )?(blocked|unblocked) (?:one|creature|guy|dude|attacker|c\d+|\d+/\d+)$""").find(seg)?.let { r ->
+            val blocked = ctx.events.filter { it.verb == "block" }.flatMap { it.targets }.toSet()
+            val attackers = ctx.events.filter { it.verb == "attack" }.mapNotNull { it.obj }
+            val pick = if (r.groupValues[1] == "blocked") attackers.lastOrNull { it in blocked } else attackers.lastOrNull { it !in blocked }
+            if (pick != null) { out += pick; return out }
         }
         // "Divine Verdict on my attacking 3/3": the creature of that side that is attacking (or blocking); if none was
         // said to, it is put on the battlefield and attacks first.

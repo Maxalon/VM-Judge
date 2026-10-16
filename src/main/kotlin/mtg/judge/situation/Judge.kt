@@ -288,6 +288,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     }
                 }
                 val def = existing?.def ?: cardDef(e.card ?: throw JudgeException("cast needs a card"), state) ?: return
+                // "I cast Gitaxian Probe paying 2 life": the life pays a Phyrexian mana symbol (107.4f), not an X the card doesn't have.
+                val phyrexianLife = e.payLife != null && e.amount == e.payLife && Regex("""\{[WUBRG]/P\}""").containsMatchIn(def.manaCost ?: "") && !Regex("""\{X\}""").containsMatchIn(def.manaCost ?: "") && !Regex("""(?i)\bpay X life\b""").containsMatchIn(def.oracleText)
                 // A rider sentence in front of the modes makes the spell a Seq around its Modal.
                 val modalEffect = def.spellEffect as? Effect.Modal
                     ?: (def.spellEffect as? Effect.Seq)?.effects?.firstNotNullOfOrNull { it as? Effect.Modal }
@@ -361,7 +363,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val overloadInferred = e.to == null && castTargets1.isEmpty() && e.targets.isEmpty() && Regex("""(?im)^overload\b""").containsMatchIn(def.oracleText) &&
                     curEvents.count { a -> a.verb == "ask" && a.to in setOf("die", "survive") && a.obj?.let { id -> state.objects[id]?.let { o -> o.controller != player && o.isOnBattlefield() } } == true } >= 2
                 if (overloadInferred) state.assumptions += "${def.name} is cast for its overload cost, since more than one creature is asked about and no single target was named; say \"not overloaded\" if it was cast on one."
-                val castItem = engine.cast(player, def, castTargets1, existing?.id, modes, overload = e.to == "overload" || overloadInferred, x = e.amount, kicked = e.to == "kicked", evoked = e.to == "evoke", flashback = e.to == "flashback", alternative = e.to == "altcost", choice = e.to?.takeIf { it.startsWith("copy:") || it == "revolt" } ?: e.to?.takeIf { it.startsWith("copytarget:") }?.removePrefix("copytarget:") ?: e.to?.takeIf { it.startsWith("name:") }?.removePrefix("name:") ?: e.to?.takeIf { it == "revolt" || it == "spellmastery" } ?: e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:"), payLife = e.payLife)
+                val castItem = engine.cast(player, def, castTargets1, existing?.id, modes, overload = e.to == "overload" || overloadInferred, x = if (phyrexianLife) null else e.amount, kicked = e.to == "kicked", evoked = e.to == "evoke", flashback = e.to == "flashback", alternative = e.to == "altcost", choice = e.to?.takeIf { it.startsWith("copy:") || it == "revolt" } ?: e.to?.takeIf { it.startsWith("copytarget:") }?.removePrefix("copytarget:") ?: e.to?.takeIf { it.startsWith("name:") }?.removePrefix("name:") ?: e.to?.takeIf { it == "revolt" || it == "spellmastery" } ?: e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:"), payLife = e.payLife)
                 // "cast with Cavern of Souls": mana from the Cavern makes the creature spell uncounterable.
                 if (castItem != null && e.to?.startsWith("cavern:") == true) {
                     val land = e.to.removePrefix("cavern:")
