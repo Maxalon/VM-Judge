@@ -28726,7 +28726,7 @@
     "id": "assign-damage-two-blockers",
     "text": "I attack with a 3/3. My opponent blocks with two 2/2s. How do I assign damage?",
     "expect": [
-      "As you like. A creature blocked by two or more creatures divides its combat damage among them however its controller chooses (510.1c)"
+      "however you like (510.1c)"
     ]
   },
   {
@@ -33180,5 +33180,116 @@
     "cite": [
       "606.3"
     ]
+  },
+  {
+    "id": "vapor-snag-finks-no-persist",
+    "text": "They cast Vapor Snag on my Kitchen Finks. Does it persist?",
+    "expect": [
+      "No: persist triggers only when Kitchen Finks dies"
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "force-of-will-under-thalia",
+    "text": "I have Thalia and they cast Force of Will pitching a card. Do they pay 1?",
+    "expect": [
+      "Force of Will still costs {1} more (Thalia, Guardian of Thraben)"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "delver-bounced-comes-back-front",
+    "text": "My Delver flipped. They Vapor Snag it. Does it come back flipped?",
+    "expect": [
+      "turns back to its front face, Delver of Secrets, as it leaves the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "assign-damage-3-3-into-2-2-and-1-1",
+    "text": "I attack with a 3/3 and they block with a 2/2 and a 1/1. How do I assign damage?",
+    "expect": [
+      "however you like (510.1c)",
+      "kills every blocker"
+    ],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "assign-damage-5-5-into-2-2-and-4-4",
+    "text": "I attack with a 5/5 and they block with a 2/2 and a 4/4. How do I assign damage?",
+    "expect": [
+      "Its 5 damage isn't enough to kill both"
+    ],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "push-goyf-3-types",
+    "text": "They cast Fatal Push on my Tarmogoyf with 3 card types in graveyards. Does it die?",
+    "expect": [
+      "Yes: Tarmogoyf died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-snapcaster-no-target",
+    "text": "I have Rest in Peace. They cast Snapcaster Mage. Can they target anything?",
+    "expect": [
+      "Snapcaster Mage's trigger has no legal target (Rest in Peace keeps graveyards empty)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-see-two-bolts-and-a-land",
+    "text": "I Thoughtseize them and see two Bolts and a land. What do I take?",
+    "expect": [
+      "Thoughtseize lets you choose a nonland card from opponent's hand: Lightning Bolt, Lightning Bolt"
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-1-against-me-lava-spike",
+    "text": "I have 3 Mountains and Chalice on 1 against me. Can I cast Lava Spike?",
+    "expect": [
+      "Lava Spike is countered"
+    ],
+    "cite": []
+  },
+  {
+    "id": "blood-moon-then-urzas-saga",
+    "text": "I control Blood Moon. They play Urza's Saga. What happens?",
+    "expect": [
+      "Urza's Saga is a Mountain with no abilities (Blood Moon)",
+      "Urza's Saga stays on the battlefield"
+    ],
+    "cite": [
+      "714.4"
+    ]
+  },
+  {
+    "id": "spellskite-at-2-life-no-blue-redirect",
+    "text": "My opponent has 2 life and I Bolt them. They Spellskite it with no blue. What happens?",
+    "expect": [
+      "opponent pays 2 life for Spellskite's Phyrexian mana symbol",
+      "opponent loses the game"
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "thoughtseize-myself-life",
+    "text": "I cast Thoughtseize on myself. Do I lose 2 life?",
+    "expect": [
+      "You lose 2 life in all"
+    ],
+    "cite": []
   }
 ]

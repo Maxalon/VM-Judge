@@ -189,7 +189,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             outcome = if (state.outcomes.isEmpty()) listOf("Nothing changes.") else state.outcomes.groupingBy { it }.eachCount().let { counts -> state.outcomes.distinct().map { o -> if (counts.getValue(o) > 1) "$o (×${counts.getValue(o)})" else o } },
             trace = state.trace.steps.map { TraceLine(it.text, it.rules) },
             assumptions = state.assumptions.distinct(),
-            clarifications = state.clarifications.distinct().map { "${it.about}: ${it.why}" },
+            clarifications = state.clarifications.distinct().filter { c -> !(c.about.endsWith(" hand") && sit.events.any { it.verb == "ask" && it.to in setOf("playerLost", "playerGain", "playerLife", "playerDie", "playerSurvive") }) }.map { "${it.about}: ${it.why}" },
             unsupported = state.unsupported.distinct().map { "${it.what}: ${it.detail}" },
             citations = citations,
             understood = understood,
@@ -571,7 +571,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     ?: e.to?.takeIf { it == "animate" }?.let { obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> Regex("""\bbecomes? an? .*\bcreature\b""", RegexOption.IGNORE_CASE).containsMatchIn(a.text) }.takeIf { it >= 0 } }
                     ?: e.to?.let { cost -> obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { it.cost.replace('\u2212', '-') == cost.replace('\u2212', '-') }.takeIf { it >= 0 } }
                     ?: minusX?.first
-                engine.activate(e.player ?: obj.controller, objId, idx, targets, choice = e.to?.takeIf { it.startsWith("color:") || it.startsWith("put:") }?.substringAfter(':') ?: e.to?.takeIf { it.startsWith("sacrifice:") || it.startsWith("crew:") }, x = e.amount ?: minusX?.second)
+                engine.activate(e.player ?: obj.controller, objId, idx, targets, choice = e.to?.takeIf { it.startsWith("color:") || it.startsWith("put:") }?.substringAfter(':') ?: e.to?.takeIf { it.startsWith("sacrifice:") || it.startsWith("crew:") }, x = e.amount ?: minusX?.second, payLife = e.payLife)
             }
             "trigger" -> engine.assertTrigger(e.obj ?: throw JudgeException("trigger needs an object"), e.abilityIndex, targets)
             "choose" -> { val objId = e.obj ?: throw JudgeException("choose needs an object"); state.pendingChoices[objId] = e.to?.substringAfter(':') ?: throw JudgeException("choose needs a choice") }
@@ -1213,7 +1213,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val note = if (o.zone == Zone.GRAVEYARD && fromBattlefield && o.enteredFrom == null) " It stays there: its return-to-hand ability triggers only when it goes to a graveyard from the battlefield, and it went there from the stack (countered, or with no legal target) without ever being on the battlefield (603.6c, 603.10)." else ""
                     // "Path on it. Does it come back?": persist and undying return only from a graveyard.
                     if (o.zone == Zone.EXILE && (o.def.has("persist") || o.def.has("undying"))) { val kw = if (o.def.has("persist")) "persist" else "undying"; state.outcomes += "${o.name}'s $kw doesn't return it: it was exiled instead of going to the graveyard, and $kw returns it only from the graveyard (${if (kw == "persist") "702.79a" else "702.93a"})." }
-                    state.outcomes += if (e.to == "whereIs") "${o.name} is $zone.$note" else if (o.zone == Zone.HAND) "Yes: ${o.name} is back in ${owner.possessive} hand."
+                    if (e.to == "comesBack" && o.zone == Zone.HAND && (o.def.has("persist") || o.def.has("undying"))) state.trace.step("${o.name} went to ${owner.possessive} hand, not a graveyard, so its ${if (o.def.has("persist")) "persist" else "undying"} never triggers: \"dies\" means put into a graveyard from the battlefield.", if (o.def.has("persist")) "702.79a" else "702.93a", "700.4")
+                    state.outcomes += if (e.to == "whereIs") "${o.name} is $zone.$note" else if (o.zone == Zone.HAND && (o.def.has("persist") || o.def.has("undying"))) "No: ${if (o.def.has("persist")) "persist" else "undying"} triggers only when ${o.name} dies, that is, goes from the battlefield to a graveyard (${if (o.def.has("persist")) "702.79a" else "702.93a"}, 700.4). It was returned to ${owner.possessive} hand instead, so nothing triggers; it's a card in hand to cast again." else if (o.zone == Zone.HAND) "Yes: ${o.name} is back in ${owner.possessive} hand."
                         else if (o.zone == Zone.BATTLEFIELD && o.id != e.obj) "Yes: ${o.name} is back on the battlefield, as a new object (untapped, ${o.counters.filterValues { it > 0 }.takeIf { it.isNotEmpty() }?.let { c -> "with ${c.entries.joinToString(" and ") { (k, n) -> "$n $k counter${if (n == 1) "" else "s"}" }} and no damage" } ?: "no counters or damage"}, and summoning sick if it's a creature, 400.7)."
                         else "No: ${o.name} is $zone.$note"
                     return true

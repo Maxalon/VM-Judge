@@ -630,15 +630,15 @@ class Engine(val state: GameState) {
      */
     private var triggerHold: MutableList<() -> Unit>? = null
 
-    fun activate(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null): StackItem? {
+    fun activate(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
         val hold = mutableListOf<() -> Unit>()
         val outer = triggerHold
         triggerHold = hold
-        try { return activate0(playerId, objectId, abilityIndex, targets, choice, x) }
+        try { return activate0(playerId, objectId, abilityIndex, targets, choice, x, payLife) }
         finally { triggerHold = outer; hold.forEach { it() } }
     }
 
-    private fun activate0(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null): StackItem? {
+    private fun activate0(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
         val obj = state.obj(objectId)
         val abilities = activatedAbilitiesOf(obj)
         if ("Land" in obj.def.types && "Basic" !in obj.def.supertypes) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } }?.let { moon ->
@@ -802,8 +802,8 @@ class Engine(val state: GameState) {
             if (phyrexian == 0) return@run
             val p = state.player(playerId)
             // "I have Spellskite and 2 life": paying the life is allowed at exactly 2 (119.4), but it puts the player at 0 and they lose when state-based actions are checked.
-            if (p.life != null && p.life!! <= 2 * phyrexian) state.outcomes += "Careful: ${obj.name}'s ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} can be paid with ${2 * phyrexian} life, and at ${p.life} life you may pay it (119.4), but that leaves you at ${p.life!! - 2 * phyrexian} and you lose the game the next time state-based actions are checked (704.5a). Pay it with mana instead, or don't activate."
-            if (p.mana == 0) { p.life = p.life?.minus(2 * phyrexian); trace.step("${p.subject} ${p.v("has", "have")} no mana, so the ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} in ${obj.name}'s cost is paid with 2 life${if (phyrexian > 1) " each" else ""} (a Phyrexian mana symbol can be paid with either its colour of mana or 2 life).", "107.4f"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} ${2 * phyrexian} life for ${obj.name}'s ${if (phyrexian == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"}." }
+            if (p.life != null && p.life!! <= 2 * phyrexian) state.outcomes += "Careful: ${obj.name}'s ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} can be paid with ${2 * phyrexian} life, and at ${p.life} life ${p.subject.lowercase()} may pay it (119.4), but that leaves ${p.subject.lowercase()} at ${p.life!! - 2 * phyrexian} and ${p.subject.lowercase()} ${p.v("loses", "lose")} the game the next time state-based actions are checked (704.5a). Pay it with mana instead, or don't activate."
+            if (p.mana == 0 || payLife != null) { p.life = p.life?.minus(2 * phyrexian); trace.step("${p.subject} ${p.v("has", "have")} no ${if (payLife != null && p.mana != 0) "mana of that colour to spend" else "mana"}, so the ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} in ${obj.name}'s cost is paid with 2 life${if (phyrexian > 1) " each" else ""} (a Phyrexian mana symbol can be paid with either its colour of mana or 2 life).", "107.4f"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} ${2 * phyrexian} life for ${obj.name}'s ${if (phyrexian == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"}." }
             else trace.step("${obj.name}'s cost includes Phyrexian mana, payable with that colour of mana or 2 life.", "107.4f")
         }
         if (ability.cost.contains("discard this card", true)) onEvent(GameEvent.Cycled(obj))

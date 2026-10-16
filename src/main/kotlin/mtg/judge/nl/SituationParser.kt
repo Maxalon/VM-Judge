@@ -869,6 +869,16 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(i|we|they|he|she|my opponent|the opponent) (attacks?|swings?) with (c\d+|an? \d+/\d+(?: creature)?) and (an? \d+/\d+(?: creature)?|c\d+)(?=$|,| and\b| after\b| then\b| but\b)""", RegexOption.IGNORE_CASE), "$1 $2 with $3, $1 $2 with $4")
         // "Does my other attacker still deal damage?": the attacker that wasn't removed.
         t2 = t2.replace(Regex("""^(?:does|will|would) my other (?:attacker|creature|attacking creature|guy|dude) (?:still |even )?(?:deal (?:its |combat )?damage|hit|connect|get through|deal combat damage|hit them)\??$""", RegexOption.IGNORE_CASE), "otherattacker-question")
+        // "They Spellskite it with no blue": the card's name as the verb for its redirect, with how the pip is paid.
+        t2 = t2.let { t0 -> Regex("""^(they|i|we|he|she|my opponent|the opponent) (c\d+) (it|that|the spell|the bolt|(?:my |the |their )?c\d+)((?: (?:with no blue(?: mana| open)?|with no mana(?: open)?|paying (?:2 |two )?life|for (?:2 |two )?life|with life|by paying life)|, nocolour-note \w+)?)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[2]]?.display == "Spellskite") "${r.groupValues[1]} activate ${r.groupValues[2]} targeting ${r.groupValues[3]}${if (r.groupValues[4].startsWith(", nocolour-note")) " paying life" else r.groupValues[4]}" else t0 } ?: t0 }
+        // "I have 3 Mountains and Chalice on 1 against me": the artifact on a number is the other side's.
+        t2 = t2.replace(Regex("""(?:,? and |, |^)(?:a |the |their )?(c\d+) (?:on|at|set to) (\d+) (?:against me|on their side|of theirs|out against me)(?=,|$| and\b)""", RegexOption.IGNORE_CASE), ", they have $1 on $2")
+        // "I Thoughtseize them and see two Bolts and a land": what the hand held.
+        t2 = t2.let { t0 -> Regex("""^(.*\b(c\d+) (?:them|him|her|my opponent|the opponent)\b[^,]*?),? and (?:i )?(?:see|saw|find|reveal) (.+)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[2]]?.display?.lowercase() in discardSpells) "${r.groupValues[1]}, their hand is ${r.groupValues[3]}" else t0 } ?: t0 }
+        // "How do I assign damage?": the attacker's damage among its blockers.
+        t2 = t2.replace(Regex("""^how (?:do|should|would|can|must) (?:i|we) (?:assign|divide|split|distribute|order|allocate) (?:my |the |its |their |combat |the combat )?damage(?: (?:among|between|to) (?:them|the blockers|both|my blockers|their blockers))?\??$""", RegexOption.IGNORE_CASE), "damageassign-question")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1570,8 +1580,8 @@ class SituationParser(private val names: NameIndex) {
             // "Before blockers my opponent casts Fog": the timing phrase moves to the end, where it is read.
         t2 = t2.replace(Regex("""^((?:before|after|during) (?:blockers|blocks|attackers|attacks|combat|combat damage|damage|first strike damage)(?: (?:are|is) (?:declared|dealt))?),? (.+?)\??$""", RegexOption.IGNORE_CASE), "$2 $1")
             // "they redirect it to Spellskite" / "I redirect the Bolt to my Spellskite": Spellskite's ability, activated at the spell.
-        t2 = t2.let { t0 -> Regex("""(?<!can )(?<!could )\b(i|we|they|he|she|my opponent|the opponent) (?:then )?(?:redirects?|moves?|points?|deflects?) (it|that|the spell|(?:the |their |my |my opponent's )?c\d+) (?:to|onto|at) (?:their |my |his |her |the )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
-                if (m.cards[r.groupValues[3]]?.display == "Spellskite") "${r.groupValues[1]} activate ${r.groupValues[3]} targeting ${r.groupValues[2]}" else r.value } }
+        t2 = t2.let { t0 -> Regex("""(?<!can )(?<!could )\b(i|we|they|he|she|my opponent|the opponent) (?:then )?(?:redirects?|moves?|points?|deflects?) (it|that|the spell|(?:the |their |my |my opponent's )?c\d+) (?:to|onto|at) (?:their |my |his |her |the )?(c\d+)\b((?: (?:paying (?:2 |two )?life|for (?:2 |two )?life|with life|by paying life|with no (?:blue|mana)(?: mana| open)?))?)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+                if (m.cards[r.groupValues[3]]?.display == "Spellskite") "${r.groupValues[1]} activate ${r.groupValues[3]} targeting ${r.groupValues[2]}${r.groupValues[4]}" else r.value } }
             // "I attack with Serra Angel. Can I still block with it on their turn?": vigilance decides.
         t2 = t2.replace(Regex("""^can (?:i|we) (?:still |also |then )?block with (it|that|c\d+) (?:on|during|in) (?:their|my opponent's|the opponent's|his|her) (?:next )?turn\??$""", RegexOption.IGNORE_CASE), "blocktheirturn-question $1")
             // "Can my opponent choose to take 4 with Torpor Orb out?": Vexing Devil's trigger never happens.
@@ -2716,20 +2726,25 @@ class SituationParser(private val names: NameIndex) {
             any = true; t2 = t2.removeRange(r.range)
         }
         // "they reveal Counterspell and Forest" / "my hand is Bolt, Bears and Forest": cards in hand, kept together before the clause split.
-        Regex("""\b(?:reveals?|revealing|shows? me|(?:my|their|his|her) hand (?:is|has|contains)|(?:i'm|i am|they're|they are) holding|holds?|holding) ((?:an? |the |two |three |four |\d+ )?c\d+s?(?:,? (?:and )?(?:an? |the |two |three |four |\d+ )?c\d+s?)*)$""").find(t2)?.let { r ->
+        Regex("""\b(?:reveals?|revealing|shows? me|(?:my|their|his|her) hand (?:is|has|contains)|(?:i'm|i am|they're|they are) holding|holds?|holding) ((?:an? |the |two |three |four |\d+ )?(?:c\d+s?|lands?|basics?|basic lands?)(?:,? (?:and )?(?:an? |the |two |three |four |\d+ )?(?:c\d+s?|lands?|basics?|basic lands?))*)$""").find(t2)?.let { r ->
             // "I have Dark Confidant and reveal Emrakul": a creature's reveal is from the library, read clause by clause.
             if (Regex("""\bhave (c\d+) and reveals? c\d+$""").find(t2)?.let { h -> m.cards[h.groupValues[1]]?.typeLine?.contains("Creature") } == true) return@let
             // "I have a Dark Confidant. I reveal a Griselbrand.": the reveal is Bob's, from the library, not a hand shown.
             if (Regex("""^(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") }) return@let
             val before = t2.substring(0, r.range.first)
             val lastWord = Regex("""\b(i|my|i'm|i am|i've|we|they|their|he|she|his|her|my opponent|the opponent|opponent)\b""").findAll(before).lastOrNull()?.groupValues?.get(1)
-            val who = (lastWord?.let { w -> if (w in setOf("i", "my", "i'm", "i am", "i've", "we")) "me" else pronounPlayer(ctx, "they") })
+            // "their hand is two Bolts": the owner is in the phrase itself before anything said earlier.
+            val phraseOwner = Regex("""^(my|their|his|her) hand\b|^(i'm|i am|they're|they are) holding""").find(r.value.trim())?.let { h -> if ((h.groupValues[1].ifEmpty { h.groupValues[2] }) in setOf("my", "i'm", "i am")) "me" else pronounPlayer(ctx, "they") }
+            val who = phraseOwner ?: (lastWord?.let { w -> if (w in setOf("i", "my", "i'm", "i am", "i've", "we")) "me" else pronounPlayer(ctx, "they") })
                 ?: actorOfClause(t2.trim()) ?: ctx.lastActor ?: "opp"
             val cards = Regex("""(?:(two|three|four|five|\d+) )?(c\d+)""").findAll(r.groupValues[1]).flatMap { mm ->
                 val n = mm.groupValues[1].let { if (it.isEmpty()) 1 else number(it) ?: it.toIntOrNull() ?: 1 }
                 List(n) { mm.groupValues[2] }
             }.toList()
-            t2 = t2.substring(0, r.range.first).trim().let { if (it.isEmpty()) "" else "$it, " }.replace(Regex("""(?:i|they|he|she|my opponent|the opponent|opponent|@\w+), $"""), "") + cards.joinToString(", ") { "${if (who == "me") "i have" else if (who == "opp") "they have" else "@$who has"} $it in hand" }
+            // "two Bolts and a land": a land said without its name is noted, not tracked as a card.
+            Regex("""(?:(two|three|four|five|\d+) )?\b(lands?|basics?|basic lands?)\b""").find(r.groupValues[1])?.let { l -> ctx.notes += "The ${l.groupValues[2]} in ${if (who == "me") "your" else "that"} hand ${if (l.groupValues[1].isEmpty() && !l.groupValues[2].endsWith("s")) "isn't" else "aren't"} tracked by name; ${if (l.groupValues[1].isEmpty() && !l.groupValues[2].endsWith("s")) "it's a land, so it can't be chosen by anything that takes a nonland card" else "they're lands, so they can't be chosen by anything that takes a nonland card"}." }
+            if (cards.isEmpty()) return@let
+            t2 = t2.substring(0, r.range.first).trim().trimEnd(',').trim().let { if (it.isEmpty()) "" else "$it, " }.replace(Regex("""(?:i|they|he|she|my opponent|the opponent|opponent|@\w+), $"""), "") + cards.joinToString(", ") { "${if (who == "me") "i have" else if (who == "opp") "they have" else "@$who has"} $it in hand" }
         }
         // "they have an instant and a creature in their graveyard": card types in a graveyard (Tarmogoyf), kept together before the clause split.
         // "my graveyard has a land and an instant", "their graveyard contains a creature": the owner said first.
@@ -3458,10 +3473,6 @@ class SituationParser(private val names: NameIndex) {
                 ctx.asks += EventSpec("ask", to = "text:Yes. Flash lets you cast $name any time you could cast an instant (702.8a), and you receive priority in your opponent's ${when (st.to) { "draw" -> "draw step"; "end" -> "end step"; "combat" -> "beginning of combat step"; "precombat_main" -> "main phase"; null -> "step"; else -> st.to }}${if (st.to?.startsWith("draw") == true) " after they've drawn for the turn (504.1, 504.2), so $name sees the card they just drew" else " once its turn-based actions are done"}.") }
             return true
         }
-        if (clause0 == "assigndamage-question") {
-            ctx.asks += EventSpec("ask", to = "text:As you like. A creature blocked by two or more creatures divides its combat damage among them however its controller chooses (510.1c); there is no longer a damage assignment order and no requirement to assign lethal damage to one before moving to the next. The outcome above shows one split (killing what it can first). The blockers each deal their full damage to the attacker (510.1d), all at the same time (510.2).")
-            return true
-        }
         // "Can I animate it?": the manland's own ability.
         Regex("""^(?:i|we|they|he|she|my opponent) (?:still |even )?animates? (it|that|(?:my |the |their )?c\d+)$""").find(clause0)?.let { r ->
             val ph = r.groupValues[1].removePrefix("my ").removePrefix("the ").removePrefix("their ")
@@ -3900,6 +3911,24 @@ class SituationParser(private val names: NameIndex) {
             val other = attackers.lastOrNull { it !in removed } ?: return false
             val defender = ctx.other("me") ?: "opp"
             ctx.asks += EventSpec("ask", obj = other, to = "damage", targets = listOf(defender)); ctx.note(defender); return true
+        }
+        // "How do I assign damage?": the attacker's power, split among its blockers as its controller likes (510.1c).
+        if (clause0 == "damageassign-question" || clause0 == "assigndamage-question") {
+            val atk = ctx.events.lastOrNull { it.verb == "attack" && it.obj != null && ctx.events.any { b -> b.verb == "block" && it.obj in b.targets } }?.obj
+                ?: ctx.events.lastOrNull { it.verb == "attack" && it.obj != null }?.obj ?: return false
+            val blockers = ctx.events.filter { it.verb == "block" && atk in it.targets }.mapNotNull { it.obj }.distinct()
+            fun pt(id: String): Pair<Int, Int>? { val n = ctx.objects[id]?.card?.name ?: return null; return Regex("""(\d+)/(\d+)""").find(n)?.let { it.groupValues[1].toInt() to it.groupValues[2].toInt() } ?: names.lookup(Names.normalize(n))?.let { e -> e.power?.toIntOrNull()?.let { p -> e.toughness?.toIntOrNull()?.let { t -> p to t } } } }
+            val name = { id: String -> ctx.objects[id]?.card?.name ?: id }
+            val power = pt(atk)?.first
+            val text = if (blockers.isEmpty()) "Nothing is blocking ${name(atk)}: an unblocked attacker deals all its damage to the player or planeswalker it's attacking (510.1b); there is nothing to divide."
+                else if (blockers.size == 1) "${name(atk)} is blocked by one creature, so all its damage goes to that blocker (510.1c); there is no choice to make."
+                else {
+                    val parts = blockers.map { b -> b to pt(b) }
+                    val lethalAll = power != null && parts.all { it.second != null } && parts.sumOf { it.second!!.second } <= power
+                    "You divide ${name(atk)}'s combat damage${power?.let { " ($it)" } ?: ""} among the creatures blocking it however you like (510.1c): there is no longer a damage assignment order and no need to assign lethal damage to one blocker before the next. " +
+                        (if (lethalAll) "Assigning ${parts.joinToString(" and ") { (b, t) -> "${t!!.second} to ${name(b)}" }} kills every blocker${if (parts.sumOf { it.second!!.second } < power!!) ", with ${power - parts.sumOf { it.second!!.second }} to spare that can go anywhere among them" else ""}." else if (power != null && parts.all { it.second != null }) "Its $power damage isn't enough to kill both (${parts.joinToString(" and ") { (b, t) -> "${name(b)} has toughness ${t!!.second}" }}), so choose which to kill: ${parts.filter { it.second!!.second <= power }.joinToString(" or ") { (b, t) -> "${t!!.second} to ${name(b)}" }.ifEmpty { "neither dies to this attacker alone" }}, with the rest wherever you like." else "Each blocker needs damage equal to its toughness to die (704.5g); the split is announced as combat damage is assigned, with all blockers dealing their damage back at the same time (510.2).")
+                }
+            ctx.asks += EventSpec("ask", to = "text:$text"); return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
@@ -8464,12 +8493,15 @@ class SituationParser(private val names: NameIndex) {
             val colour = colourRe.find(r.groupValues[2])?.groupValues?.get(1)
             val levelRe = Regex("""^\s*level[- ]?up ability\b""")
             val levelUp = levelRe.containsMatchIn(r.groupValues[2])
-            val restForTargets = r.groupValues[2].replace(levelRe, "").replace(xRe, "").replace(timesRe, "").let { s -> colour?.let { s.replace(colourRe, "") } ?: s }.trim()
+            // "they redirect it to Spellskite paying 2 life" / "with no blue": the Phyrexian pip is paid with life.
+            val lifeRe = Regex("""\s*\b(?:(?:by |while )?paying (?:2 |two )?life|(?:and )?pays? (?:2 |two )?life(?: for it)?|for (?:2 |two )?life|with life|off life|with no (?:blue|white|black|red|green)(?: mana| open| up)?|with no mana(?: open| up)?)\b""")
+            val lifePaid = lifeRe.containsMatchIn(r.groupValues[2])
+            val restForTargets = r.groupValues[2].replace(levelRe, "").replace(xRe, "").replace(timesRe, "").replace(lifeRe, "").let { s -> colour?.let { s.replace(colourRe, "") } ?: s }.trim()
             val targets = targetsIn(restForTargets, m, ctx).let { t ->
                 if (t != listOf(id)) t
                 else listOfNotNull(ctx.events.lastOrNull { it.verb == "attack" }?.obj ?: ctx.objects.values.lastOrNull { it.id != id && it.zone == "battlefield" && isCreatureName(it.card.name) }?.id)
             }.ifEmpty { if (colour != null) listOf(id) else emptyList() }
-            repeat(times) { ctx.events += EventSpec("activate", player = who, obj = id, targets = targets, amount = xValue, to = colour?.let { "color:$it" } ?: if (levelUp) "levelup" else null) }
+            repeat(times) { ctx.events += EventSpec("activate", player = who, obj = id, targets = targets, amount = xValue, to = colour?.let { "color:$it" } ?: if (levelUp) "levelup" else null, payLife = if (lifePaid) 2 else null) }
             ctx.lastActor = who; return true
         }
         // Step beginnings: "at the beginning of my upkeep", "on their end step", "my upkeep starts".
