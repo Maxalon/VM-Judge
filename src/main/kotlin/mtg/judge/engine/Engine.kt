@@ -362,6 +362,11 @@ class Engine(val state: GameState) {
                 if (fromPool > 0) { p.manaPool -= fromPool; repeat(fromPool) { if (p.manaPoolSymbols.isNotEmpty()) p.manaPoolSymbols.removeAt(0) }; trace.step("${p.subject} ${p.v("pays", "pay")} $fromPool of ${card.name}'s cost from the mana in ${p.possessive} pool${if (p.manaPool > 0) " (${p.poolText()} left floating)" else ""}.", "601.2g", "106.4") }
                 // Thalia's {1} is paid too: it comes out of the same lands.
                 p.manaSpent += mv - fromPool + (obj.taxesAtCast?.sumOf { it.second } ?: 0).coerceAtLeast(0)
+            } else if (flashback && obj.has("flashback")) {
+                // A flashback cast costs its flashback cost (Snapcaster's grant: the mana cost), plus any tax.
+                val fb = Regex("""(?i)flashback(?:—|-|\s)\s*((?:\{[^}]*\})+)""").find(card.oracleText)?.groupValues?.get(1)
+                    ?.let { syms -> Regex("""\{([^}]*)\}""").findAll(syms).sumOf { m -> m.groupValues[1].toIntOrNull() ?: if (m.groupValues[1] == "X") 0 else 1 } } ?: card.manaValue.toInt()
+                p.manaSpent += fb + (obj.taxesAtCast?.sumOf { it.second } ?: 0).coerceAtLeast(0)
             }
         }
         val item = StackItem(state.newStackId(), StackKind.SPELL, playerId, obj, effect, targets, zonesOf(targets), card.oracleText, modes, x = x, kicked = kicked, evoked = evoked && card.has("evoke"), flashback = flashback && obj.has("flashback"), choice = copyChoice, targetsUnknown = targetsUnknown)
@@ -3412,6 +3417,11 @@ class Engine(val state: GameState) {
             // Vexing Devil: an opponent may take the damage; if they do, it's sacrificed.
             is Effect.OpponentMayTakeDamage -> {
                 val opp = state.opponentsOf(item.controller).firstOrNull() ?: return
+                // Leyline of Sanctity on their side: the Devil's trigger doesn't target, so hexproof has nothing to say.
+                state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == opp.id && it.def.oracleText.contains("You have hexproof", ignoreCase = true) }?.let { ley ->
+                    trace.step("${item.source.name}'s trigger doesn't target anyone, so ${ley.name}'s hexproof doesn't come into it: ${opp.subject.lowercase()} still ${opp.v("gets", "get")} the choice.", "702.11a", "115.1")
+                    state.outcomes += "${ley.name} doesn't stop ${item.source.name}: its trigger doesn't target (hexproof only stops targeting)."
+                }
                 when {
                     state.willPay.remove(opp.id) -> { trace.step("${opp.subject} ${opp.v("chooses", "choose")} to have ${item.source.name} deal ${effect.amount} damage to ${opp.subject.lowercase()}, so it does, and ${item.source.name} is sacrificed.", "608.2c"); dealDamage(item.source.name, Ref.Player(opp.id), effect.amount); if (item.source.isOnBattlefield()) sacrifice(item.controller, item.source.id) }
                     state.wontPay.remove(opp.id) -> { trace.step("${opp.subject} ${opp.v("declines", "decline")} the damage, so ${item.source.name} stays.", "608.2c"); state.outcomes += "${item.source.name} stays on the battlefield: ${opp.subject.lowercase()} didn't take the ${effect.amount}." }

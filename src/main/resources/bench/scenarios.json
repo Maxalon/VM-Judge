@@ -32374,5 +32374,108 @@
       "You choose which creature to sacrifice: Tarmogoyf or Spirit token; Spirit token is assumed (a token is the usual pick)."
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-bolt-via-spirit-guide-still-costs-2",
+    "text": "I have Thalia and they cast Lightning Bolt paying with Simian Spirit Guide. Does it still cost 2?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spirit-sac-saves-finks-from-wrath",
+    "text": "They cast Wrath of God. I have Selfless Spirit and Kitchen Finks. If I sacrifice Spirit, does Finks persist?",
+    "expect": [
+      "Kitchen Finks is indestructible and isn't destroyed.",
+      "No: Kitchen Finks is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-kills-spirit-token",
+    "text": "I have a Spirit token from Lingering Souls. They Bolt it. What happens?",
+    "expect": [
+      "Spirit token: the battlefield → your graveyard.",
+      "Spirit token ceases to exist; it doesn't stay in the zone it went to."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-into-untapped-snapcaster",
+    "text": "I attack with Tarmogoyf into their untapped Snapcaster Mage. Do they block?",
+    "expect": [
+      "Tarmogoyf: the battlefield → your graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "push-on-flipped-delver",
+    "text": "They cast Fatal Push on my Delver that already flipped. Does it die?",
+    "expect": [
+      "Insectile Aberration turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8).",
+      "Yes: Delver of Secrets died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-one-vs-probe-paying-life",
+    "text": "I have Chalice on 1. They cast Gitaxian Probe paying life. Is it countered?",
+    "expect": [
+      "Yes: Gitaxian Probe is countered (by Chalice of the Void)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-bolt-total-mana-under-thalia",
+    "text": "They have Thalia. I cast Snapcaster Mage and flash back Lightning Bolt. How much total mana?",
+    "expect": [
+      "You spend 4 mana in all on the spells described, taxes included"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vexing-devil-vs-leyline",
+    "text": "I have Vexing Devil in hand and they have Leyline of Sanctity. Can I cast Devil?",
+    "expect": [
+      "Leyline of Sanctity doesn't stop Vexing Devil: its trigger doesn't target (hexproof only stops targeting)."
+    ],
+    "cite": [
+      "702.11a"
+    ]
+  },
+  {
+    "id": "path-search-is-optional",
+    "text": "They Path my Tarmogoyf. Do I have to search for a basic?",
+    "expect": [
+      "No: Path to Exile says \"may search\", so you choose whether to search at all"
+    ],
+    "cite": []
+  },
+  {
+    "id": "shadow-owner-bolted-at-2",
+    "text": "I'm at 2 life with Death's Shadow. They Bolt my face. What happens to Shadow?",
+    "expect": [
+      "You lose the game."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-they-have-bolt-and-lands",
+    "text": "I cast Thoughtseize on them and they have only Lightning Bolt and lands. Do they lose 2 life too?",
+    "expect": [
+      "Lightning Bolt: opponent's hand → opponent's graveyard.",
+      "You lose 2 life.",
+      "No: opponent loses no life here."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-vs-my-spirit-tokens",
+    "text": "They have Ensnaring Bridge with 2 cards in hand. I have Spirit tokens from Lingering Souls. Can they attack?",
+    "expect": [
+      "opponent takes 1 damage."
+    ],
+    "cite": []
   }
 ]
