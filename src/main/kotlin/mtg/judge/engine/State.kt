@@ -404,7 +404,12 @@ class GameState(
         is CountExpr.CardsInGraveyard -> objects.values.count { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) && matches(expr.filter, it, obj.controller, obj, anyZone = true) }.takeIf { objects.values.any { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) } }
         is CountExpr.CardsInHand -> players.firstOrNull { it.id == obj.controller }?.handSize
         // "I Dismember my own Death's Shadow for 4 life. What size is it?": an unsaid life total starts at 20 (103.4).
-        is CountExpr.YourLifeTotal -> players.firstOrNull { it.id == obj.controller }?.let { p -> p.life ?: run { val note = "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; it's taken as the starting 20 (103.4) for ${obj.name}'s size, minus any life paid or lost here."; if (note !in assumptions) assumptions += note; p.life = 20; 20 } }
+        is CountExpr.YourLifeTotal -> players.firstOrNull { it.id == obj.controller }?.let { p -> p.life ?: run {
+            // A Death's Shadow described on the battlefield means its controller is already at 12 or less; otherwise the starting 20.
+            val alive = obj.isOnBattlefield() && obj.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.PtModifyByCount>().any { it.negative }
+            val guess = if (alive) 12 else 20
+            val note = if (alive) "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; ${obj.name} is on the battlefield, so it must be 12 or less, and it's taken as 12 (${obj.name} a 1/1) minus any life paid or lost here. Say the real total for exact sizes." else "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; it's taken as the starting 20 (103.4) for ${obj.name}'s size, minus any life paid or lost here."
+            if (note !in assumptions) assumptions += note; p.life = guess; guess } }
         is CountExpr.CountersOn -> obj.counters[expr.kind] ?: 0
         is CountExpr.Unknown -> null
     }

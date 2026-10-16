@@ -308,6 +308,7 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""(?i)\bdark confidant\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""\bBob\b"""), "Dark Confidant")
         // "Does the redirect still happen?" about Spellskite: the noun, not the card Redirect.
         if (Regex("""(?i)\bspellskite\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""(?i)\bthe redirect\b"""), "the redirection")
+            .replace(Regex("""(?i)\b(should|can|could|do|may|would) (i|we) redirect(\?|$)""")) { r -> "${r.groupValues[1]} ${r.groupValues[2]} redirect it${r.groupValues[3]}" }
         val text = spokenLoyalty.replace(text0) { r ->
             val n = r.groupValues[3].toIntOrNull() ?: (spokenNumbers.indexOf(r.groupValues[3].lowercase()) + 1)
             "${r.groupValues[1]} ${if (r.groupValues[2].lowercase() == "minus") "-" else "+"}$n"
@@ -961,6 +962,15 @@ class SituationParser(private val names: NameIndex) {
                 if (q?.display == "Spell Queller" && tgt != null && ctx.objects.values.none { it.card.oracleId == tgt.oracleId }) "they cast ${r.groupValues[3]}, in response i cast ${r.groupValues[2]} targeting ${r.groupValues[3]}" else t0 } ?: t0 }
         // "Does it exile Wrath?" after a Spell Queller: where the spell ended up.
         t2 = t2.replace(Regex("""^(?:does|did|will) (?:it|that|my c\d+|the c\d+|c\d+) (?:exile|eat|catch|get|snag|grab) (?:the |their |my opponent's )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "where does $1 go")
+        // "They cast Surgical Extraction on my Kitchen Finks after it died": the death first, the spell in response to what follows it.
+        t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent|i|we) (casts?|plays?) (c\d+) on (my |their |the )?(c\d+) (?:after|once|when) (?:it|that|he|she) (?:died|dies|is killed|got killed|was killed|hit the graveyard|went to the graveyard)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val owner = when (r.groupValues[4].trim().lowercase()) { "my" -> "my"; "their" -> "their"; else -> if (r.groupValues[1].lowercase() in setOf("i", "we")) "their" else "my" }
+                "$owner ${r.groupValues[5]} dies, in response ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} on it" } ?: t0 }
+        // "Then they Snapcaster it": Snapcaster Mage's name as the verb for casting it and flashing the spell back.
+        t2 = t2.let { t0 -> Regex("""^(?:then |and then |next )?(they|i|we|he|she|my opponent|the opponent) (c\d+) (it|that|the bolt|the spell|(?:the |my |their )?c\d+)( back)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[2]]?.display == "Snapcaster Mage") "${r.groupValues[1]} cast ${r.groupValues[2]}, snapflash-note ${r.groupValues[1]} ${if (r.groupValues[3].startsWith("c")) r.groupValues[3] else "last"}" else t0 } ?: t0 }
+        // "Does the flashback get countered too?": the second cast of the same spell.
+        t2 = t2.replace(Regex("""^(?:does|is|will|would) the (?:flashback|flashback copy|flashed back one|second one|second cast|recast) (?:get |be )?countered(?: too| as well| again)?\??$""", RegexOption.IGNORE_CASE), "flashbackcountered-question")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -4135,6 +4145,38 @@ class SituationParser(private val names: NameIndex) {
             ctx.events.add(ctx.events.indexOfFirst { it.verb == "attack" }.takeIf { it >= 0 } ?: ctx.events.size, EventSpec("transform", obj = id)); ctx.lastMentioned = id
             return true
         }
+        // "Does the flashback get countered too?": the last spell cast with flashback, asked about on its own.
+        if (clause0 == "flashbackcountered-question") {
+            val fb = ctx.events.lastOrNull { it.verb == "cast" && it.to == "flashback" } ?: return false
+            val card = fb.card ?: fb.obj?.let { ctx.objects[it]?.card } ?: return false
+            ctx.asks += EventSpec("ask", card = card, to = "countered:last"); return true
+        }
+        // "Then they Snapcaster it": the spell they cast before is flashed back with the Mage's trigger.
+        Regex("""^snapflash-note (\w+) (c\d+|last)$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else pronounPlayer(ctx, "their")
+            val entry = if (r.groupValues[2] != "last") m.cards[r.groupValues[2]] else ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == who && it.card?.name != "Snapcaster Mage" && (it.card?.name ?: it.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.let { e -> (e.card?.name ?: e.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n)) } }
+            if (entry == null) return@let
+            emitCast(who, entry, " with flashback", m, ctx); return true
+        }
+        // "Should I redirect?" with Spellskite: the redirect is played out and weighed.
+        Regex("""^should (?:i|we) (?:redirect|spellskite|skite)(?: (?:it|that|the spell|the bolt))?(?: (?:to|onto|with) (?:my )?(?:spellskite|c\d+|it))?$""").find(clause0)?.let {
+            val skite = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Spellskite" } ?: return@let
+            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
+            val target = spell.targets.firstOrNull()?.let { ctx.objects[it] }
+            val targetEntry = target?.card?.name?.let { names.lookup(Names.normalize(it)) }
+            val persist = targetEntry?.keywords?.contains("Persist", true) == true || targetEntry?.keywords?.contains("Undying", true) == true
+            val tough = targetEntry?.toughness?.toIntOrNull()
+            ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(spell.card?.name?.let { slug(it) + ":spell" } ?: return@let))
+            val spellName = spell.card?.name ?: "the spell"
+            val advice = when {
+                target == null -> "Redirecting costs {U/P} (or 2 life) and pulls $spellName onto Spellskite, a 0/4."
+                persist -> "Up to you: ${target.card.name} would ${if (tough != null && tough <= 3) "die to" else "take"} $spellName but it has ${if (targetEntry!!.keywords.contains("Persist", true)) "persist" else "undying"}, so it comes back anyway (smaller, with a counter); redirecting keeps it as it is and costs {U/P} or 2 life, with Spellskite (0/4) shrugging off 3 damage. Save the mana if the counter doesn't matter to you."
+                tough != null && tough <= 3 -> "Yes, if the mana or 2 life is worth it: ${target.card.name} dies to $spellName otherwise, and Spellskite (0/4) survives the 3 damage."
+                else -> "No need: ${target.card.name} survives $spellName as it is; redirecting only spends {U/P} or 2 life."
+            }
+            ctx.asks += EventSpec("ask", to = "text:$advice"); ctx.notes += "The redirect is played out below so you can see both ends of it."
+            return true
+        }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
             return true
@@ -4741,7 +4783,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = "me", to = "attackCount"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "I have Aether Vial with 2 counters. Can I flash in my Thalia in response?": the Vial puts the creature in.
-        Regex("""^(?:can (?:i|we) |i |we )?(?:flash(?:es)? in|vials? in|drop in|put in|sneak in) (?:my |the |an? )?(c\d+)(?: with (?:the |my )?(?:vial|aether vial|c\d+))?( in response)?$""").find(clause0)?.let { r ->
+        Regex("""^(?:can (?:i|we) |i |we )?(?:flash(?:es)? in|vials? in|drop in|put in|sneak in) (?:my |the |an? |a second |another |one more )?(c\d+)(?: with (?:the |my )?(?:vial|aether vial|c\d+))?( in response)?$""").find(clause0)?.let { r ->
             val vial = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && (it.card.name ?: "").contains("Vial", true) } ?: return@let
             val card = m.cards[r.groupValues[1]] ?: return@let
             if (!card.typeLine.contains("Creature")) return@let

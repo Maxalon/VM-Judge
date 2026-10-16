@@ -2109,6 +2109,23 @@ class Engine(val state: GameState) {
             state.outcomes += "${obj.name} doesn't come back: it had $had $kind counter${if (had == 1) "" else "s"} when it died, so $kw doesn't return it."
             return
         }
+        // Persist and undying are triggered abilities (702.79a, 702.93a): the return happens when the trigger resolves, so a
+        // Surgical Extraction or Scavenging Ooze in response can take the card out of the graveyard first.
+        val rule = if (undying) "702.93a" else "702.79a"
+        val ability = TriggeredAbility(Trigger.ThisDies, Effect.Narrated(if (undying) "~undying-return~" else "~persist-return~", listOf(rule)), "When this creature dies, if it had no $kind counters on it, return it to the battlefield under its owner's control with a $kind counter on it.")
+        trace.step("${obj.name}'s $kw triggers: it died with no $kind counters on it, so the ability goes on the stack and returns it when it resolves.", rule, "603.2")
+        putTriggerOnStack(obj, ability, emptyList())
+    }
+
+    /** The persist or undying trigger resolving: the card comes back if it's still in the graveyard. */
+    private fun persistReturnNow(obj: GameObject, undying: Boolean) {
+        val kw = if (undying) "undying" else "persist"
+        val kind = if (undying) "+1/+1" else "-1/-1"
+        if (obj.zone != Zone.GRAVEYARD) {
+            trace.step("${obj.name} is no longer in the graveyard (it's in ${zoneName(obj.zone, obj)}), so its $kw ability does nothing when it resolves: there is no card there to return (400.7).", if (undying) "702.93a" else "702.79a", "400.7")
+            state.outcomes += "${obj.name} doesn't come back: it left the graveyard before $kw could return it."
+            return
+        }
         val def = obj.def
         // Grafdigger's Cage: creature cards in graveyards can't enter the battlefield, persist or not; Containment Priest exiles it instead.
         uncastEntryBlocked(obj, Zone.GRAVEYARD)?.let { (name, how) ->
@@ -3276,6 +3293,7 @@ class Engine(val state: GameState) {
                 else trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${missing.joinToString(" or ") { "an $it" }}, so ${item.source.name} adds only what it says first, not ${effect.text}.", "605.1a")
             }
             is Effect.Narrated -> {
+                if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 if (quellerReturns(effect, item)) return
                 // "that many": the count of what the previous part affected (Settle the Wreckage's exiled attackers).
                 val effect = item.lastCount?.takeIf { effect.text.contains("that many") }?.let { n -> effect.copy(text = effect.text.replace("that many", "$n (that many)")) } ?: effect

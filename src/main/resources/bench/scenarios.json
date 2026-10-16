@@ -33872,5 +33872,92 @@
     "cite": [
       "104.3a"
     ]
+  },
+  {
+    "id": "shadow-at-9-probe-for-life",
+    "text": "I have Death's Shadow and I'm at 9. I cast Gitaxian Probe for life. How big is Shadow?",
+    "expect": [
+      "Death's Shadow is 4/4"
+    ],
+    "cite": []
+  },
+  {
+    "id": "should-i-redirect-bolt-off-finks",
+    "text": "They Bolt my Kitchen Finks and I have Spellskite. Should I redirect?",
+    "expect": [
+      "Up to you: Kitchen Finks would die to Lightning Bolt but it has persist",
+      "Lightning Bolt now targets Spellskite instead of Kitchen Finks"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-a-second-thalia",
+    "text": "I control Thalia and Aether Vial on 2. Can I Vial in a second Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield",
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-leylines-thoughtseize",
+    "text": "My opponent has two Leyline of Sanctity. Can I Thoughtseize them?",
+    "expect": [
+      "Thoughtseize can't target opponent"
+    ],
+    "cite": []
+  },
+  {
+    "id": "aberration-vs-2-2-reach",
+    "text": "I attack with Insectile Aberration and they block with a 2/2 reach creature. Does Delver die?",
+    "expect": [
+      "Delver of Secrets: the battlefield → your graveyard",
+      "a 2/2 creature with reach: the battlefield → opponent's graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-in-response-to-persist",
+    "text": "They cast Surgical Extraction on my Kitchen Finks after it died. Does persist still happen?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it left the graveyard before persist could return it"
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "snapcaster-it-under-chalice-1",
+    "text": "I have Chalice on 1 and they cast Lightning Bolt. Then they Snapcaster it. Does the flashback get countered too?",
+    "expect": [
+      "Yes: the flashback cast of Lightning Bolt is countered too"
+    ],
+    "cite": [
+      "702.34a"
+    ]
+  },
+  {
+    "id": "goyf-2-types-blocks-3-3",
+    "text": "They attack with a 3/3 and I block with Tarmogoyf with 2 types in graveyards. Does Goyf die?",
+    "expect": [
+      "Yes: Tarmogoyf died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-vs-chalice-2",
+    "text": "I cast Thalia with Chalice on 2 out. Is she countered?",
+    "expect": [
+      "Thalia, Guardian of Thraben is countered"
+    ],
+    "cite": []
+  },
+  {
+    "id": "push-shadow-regardless-of-size",
+    "text": "They Fatal Push my Death's Shadow. Does it die regardless of size?",
+    "expect": [
+      "Yes: Death's Shadow died"
+    ],
+    "cite": []
   }
 ]
