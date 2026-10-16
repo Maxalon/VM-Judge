@@ -35792,5 +35792,96 @@
     "expect": [
       "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)"
     ]
+  },
+  {
+    "id": "tt246-which-should-i-take-skite-thalia",
+    "text": "I cast Thoughtseize on them and they have Spellskite in hand and a Thalia. Which should I take?",
+    "expect": [
+      "Thoughtseize lets you choose a nonland card from opponent's hand: Spellskite, Thalia, Guardian of Thraben"
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben [thalia_guardian_of_thraben] (opponent's, 2/1)"
+    ]
+  },
+  {
+    "id": "tt246-trample-into-finks",
+    "text": "They attack with a 5/5 trample. I block with Kitchen Finks. How much do I take and does Finks come back?",
+    "expect": [
+      "You take 3 damage",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ]
+  },
+  {
+    "id": "tt246-sac-bob-before-upkeep",
+    "text": "I have Dark Confidant at 2 life. Can I sacrifice it to Viscera Seer before my upkeep trigger?",
+    "expect": [
+      "Only if you do it before your upkeep begins"
+    ]
+  },
+  {
+    "id": "tt246-probe-show-my-hand",
+    "text": "My opponent casts Gitaxian Probe. Do I have to show my hand?",
+    "expect": [
+      "Yes, to its caster. Gitaxian Probe says"
+    ]
+  },
+  {
+    "id": "tt246-hymn-with-two-cards-colon",
+    "text": "They Hymn me with two cards in my hand: Thalia and a Mountain. What do I lose?",
+    "expect": [
+      "You discard Thalia, Guardian of Thraben and Mountain"
+    ],
+    "notExpect": [
+      "Mountain [mountain] (your)\\n"
+    ]
+  },
+  {
+    "id": "tt246-skite-attacks-empty-board",
+    "text": "I attack with Spellskite into an empty board. How much damage?",
+    "expect": [
+      "No: opponent takes no damage"
+    ]
+  },
+  {
+    "id": "tt246-snapcaster-bolt-in-response-to-path",
+    "text": "They cast Path on my Goyf. I have a Snapcaster in hand and Bolt in graveyard. Can I flash in Snapcaster and Bolt their Delver in response?",
+    "expect": [
+      "Delver of Secrets: the battlefield → opponent's graveyard",
+      "Lightning Bolt has flashback until end of turn"
+    ]
+  },
+  {
+    "id": "tt246-surgical-the-instant-goyf",
+    "text": "I have Tarmogoyf with a land, creature and instant in graveyards. They Surgical the instant. How big is Goyf now?",
+    "expect": [
+      "an instant: your graveyard → exile",
+      "Tarmogoyf is 3/4"
+    ],
+    "notExpect": [
+      "Which?"
+    ]
+  },
+  {
+    "id": "tt246-who-can-attack-under-their-bridge",
+    "text": "My opponent has Ensnaring Bridge and 1 card. I have Goblin Guide and a 1/1. Who can attack?",
+    "expect": [
+      "Goblin Guide can't attack (Ensnaring Bridge)",
+      "opponent takes 1 damage"
+    ]
+  },
+  {
+    "id": "tt246-bolt-teferi-at-4",
+    "text": "They have Teferi, Time Raveler at 4 loyalty. I Bolt Teferi. Does he die?",
+    "expect": [
+      "Teferi, Time Raveler has 1 loyalty",
+      "No: Teferi, Time Raveler is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt246-skite-take-thoughtseize",
+    "text": "They cast Thoughtseize and I have Spellskite out. Can Spellskite take the Thoughtseize?",
+    "expect": [
+      "No. Spellskite's ability can change a target only to Spellskite itself"
+    ]
   }
 ]
