@@ -32808,7 +32808,7 @@
     "id": "bridge-one-card-vs-shadow-at-12",
     "text": "I have Ensnaring Bridge with 1 card in hand and they attack with Death's Shadow at 12 life. Can it attack?",
     "expect": [
-      "No: Death's Shadow can't attack (Ensnaring Bridge: You have 1 card in hand and Death's Shadow's power is 13, 508.1c)."
+      "Yes: Death's Shadow can attack"
     ],
     "cite": []
   },
@@ -33481,6 +33481,102 @@
     "expect": [
       "No: Gitaxian Probe isn't countered",
       "Gitaxian Probe's mana value is 1"
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-blocked-by-finks-bolted",
+    "text": "I attack with Tarmogoyf. They block with Kitchen Finks and I Bolt the Finks before damage. Does Goyf get through?",
+    "expect": [
+      "No: Tarmogoyf dealt no damage to opponent"
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "vial-respond-to-counterspell-on-thalia",
+    "text": "They cast Counterspell on my Thalia. Can I respond with Aether Vial on 2 to put her in?",
+    "expect": [
+      "Not that one. Thalia, Guardian of Thraben is a spell on the stack",
+      "the Vial could put a different Thalia"
+    ],
+    "cite": []
+  },
+  {
+    "id": "pyroclasm-delver-thalia",
+    "text": "I have Delver of Secrets and Thalia. They cast Pyroclasm. What dies?",
+    "expect": [
+      "Delver of Secrets died",
+      "Thalia, Guardian of Thraben died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-with-chalice-2-out",
+    "text": "I cast Snapcaster Mage with Chalice on 2 out. Is it countered?",
+    "expect": [
+      "Yes: Snapcaster Mage is countered (by Chalice of the Void)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-reveals-probe",
+    "text": "My Dark Confidant reveals Gitaxian Probe. How much life do I lose?",
+    "expect": [
+      "You lose 1 life (Gitaxian Probe's mana value)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-leyline-or-thalia-in-hand",
+    "text": "They cast Thoughtseize on me. I have Leyline of Sanctity and Thalia in hand. What happens?",
+    "expect": [
+      "Leyline of Sanctity: your hand → your graveyard",
+      "opponent loses 2 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dismember-own-shadow-at-10",
+    "text": "I'm at 10. I Dismember my own Death's Shadow for 4 life. What size is Shadow?",
+    "expect": [
+      "Death's Shadow is 2/2 (13/13 base, -5/-5 until end of turn)",
+      "You go from 10 to 6 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dismember-own-shadow-life-unsaid",
+    "text": "I Dismember my own Death's Shadow for 4 life. What size is Shadow?",
+    "expect": [
+      "Death's Shadow's size is its printed 13/13 minus your life total"
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-vs-pyroclasm",
+    "text": "I have Kor Firewalker. They cast Pyroclasm. Does it die?",
+    "expect": [
+      "Damage to Kor Firewalker from Pyroclasm is prevented (protection)",
+      "No: Kor Firewalker is still on the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-2-cards-what-attacks",
+    "text": "They have Ensnaring Bridge and 2 cards. I attack with a 2/2 and a 3/3. What can attack?",
+    "expect": [
+      "a 3/3 creature can't attack (Ensnaring Bridge)",
+      "opponent takes 2 damage"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ooze-3-counters-bolted",
+    "text": "I have Scavenging Ooze with 3 counters. They Bolt it. Does it die?",
+    "expect": [
+      "No: Scavenging Ooze is still on the battlefield"
     ],
     "cite": []
   }

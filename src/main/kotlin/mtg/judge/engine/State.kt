@@ -403,7 +403,8 @@ class GameState(
         // A graveyard nobody described is unknown, not empty: the size stays unknown rather than guessed.
         is CountExpr.CardsInGraveyard -> objects.values.count { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) && matches(expr.filter, it, obj.controller, obj, anyZone = true) }.takeIf { objects.values.any { it.zone == Zone.GRAVEYARD && (expr.who != Who.YOU || it.owner == obj.controller) } }
         is CountExpr.CardsInHand -> players.firstOrNull { it.id == obj.controller }?.handSize
-        is CountExpr.YourLifeTotal -> players.firstOrNull { it.id == obj.controller }?.life
+        // "I Dismember my own Death's Shadow for 4 life. What size is it?": an unsaid life total starts at 20 (103.4).
+        is CountExpr.YourLifeTotal -> players.firstOrNull { it.id == obj.controller }?.let { p -> p.life ?: run { val note = "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; it's taken as the starting 20 (103.4) for ${obj.name}'s size, minus any life paid or lost here."; if (note !in assumptions) assumptions += note; p.life = 20; 20 } }
         is CountExpr.CountersOn -> obj.counters[expr.kind] ?: 0
         is CountExpr.Unknown -> null
     }
