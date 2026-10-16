@@ -3899,6 +3899,8 @@ class Engine(val state: GameState) {
         val verb = words[0]
         val conj = when {
             verb in setOf("may", "can", "must", "can't") -> verb
+            // "Discards three cards at random": a verb the card text already wrote in the third person stays as it is.
+            verb.length > 3 && verb.endsWith("s") && !verb.endsWith("ss") && !verb.endsWith("us") && !verb.endsWith("is") -> verb
             verb.endsWith("s") || verb.endsWith("x") || verb.endsWith("ch") || verb.endsWith("sh") -> verb + "es"
             verb.endsWith("y") && verb.length > 1 && verb[verb.length - 2] !in "aeiou" -> verb.dropLast(1) + "ies"
             else -> verb + "s"

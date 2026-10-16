@@ -933,6 +933,10 @@ class SituationParser(private val names: NameIndex) {
                 if (m.cards[r.groupValues[1]]?.isSpellOnly == true && ctx.events.any { e -> e.verb == "cast" && e.card?.name == m.cards[r.groupValues[1]]?.display }) "i cast a second ${r.groupValues[1]} at ${r.groupValues[2].replace("their face", "them").replace("my face", "me")}, secondspell-note ${r.groupValues[1]}" else t0 } ?: t0 }
         // "Does my Colonnade still animate?" under Blood Moon: whether its own ability can be activated.
         t2 = t2.replace(Regex("""^(?:does|can|will) my (c\d+) still (?:animate|become a creature|turn into a creature|activate|be animated|flip on|turn on)\??$""", RegexOption.IGNORE_CASE), "can i animate my $1")
+        // "My Mishra's Factory, can it still become a creature?": the land named first, then asked about as "it".
+        t2 = t2.let { t0 -> Regex("""^(?:(?:my|i have) (c\d+),? )?(?:does|can|will) (?:it|that|my (c\d+)) still (?:animate|become a creature|turn into a creature|activate|be animated|flip on|turn on|attack as a creature)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val land = r.groupValues[1].ifEmpty { r.groupValues[2] }.ifEmpty { ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Land") } == true }?.card?.name?.let { n -> m.cards.entries.firstOrNull { it.value.display == n }?.key } ?: "" }
+                if (land.isEmpty()) t0 else "can i animate my $land" } ?: t0 }
         // "Do I get the land if I have no basics in my deck?": the empty search said as a condition.
         t2 = t2.let { t0 -> Regex("""^(.*?),? (?:if|when|given that|since|because|now that) (i|we|they) (?:have|'ve got|run) no (?:basics?|basic lands?|basic land cards?)(?: left)?(?: in (?:my |their |the )?(?:deck|library))?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 "nobasics-note ${if (r.groupValues[2].lowercase() == "they") "them" else "me"}, ${r.groupValues[1]}" } ?: t0 }
@@ -1027,7 +1031,6 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent) (activates?|uses?) ((?:(?!\b(?:me|us|and|attack)\b).)+?) (?:at|on|while at|being at) (\d+) life$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 if (Regex("""\b(?:at|on) \d+ life\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.groupValues[3])) t0 else "my opponent is at ${r.groupValues[4]} life, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}" } ?: t0 }
         // "I have two cards: Lightning Bolt and a Mountain": the hand, listed after a colon.
-        t2 = t2.replace(Regex("""^(?:i|we) (?:have|hold|'ve got) (?:two|three|four|five|\d+) cards?(?: in (?:my )?hand)?:? (?=(?:an? |the |two |three |\d+ )?(?:c\d+|lands?|basics?))""", RegexOption.IGNORE_CASE), "my hand is ")
         // "I attack with Death's Shadow at 4 life": the attacker's own life total.
         t2 = t2.let { t0 -> Regex("""^(i|we) (attacks?|swings?) with ((?:my |an? |the )?c\d+) at (\d+)(?: life)?(?=,|$| and\b)""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "i'm at ${r.groupValues[4]} life, ${r.groupValues[1]} ${r.groupValues[2]} with ${r.groupValues[3]}" + t0.substring(r.range.last + 1) } ?: t0 }
         // "How big is Shadow when damage happens?": its size at that point, which the outcome carries.
@@ -1157,6 +1160,30 @@ class SituationParser(private val names: NameIndex) {
         // "Can Spellskite deflect it?" about the spell just cast (a sweeper): whether it has a target to change.
         t2 = t2.let { t0 -> Regex("""^can (?:my )?(c\d+) (?:redirect|deflect|stop|take|eat|change|catch) (?:it|that|the spell)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 if (m.cards[r.groupValues[1]]?.display == "Spellskite" && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Spellskite" } && ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true) "skiteit-question" else t0 } ?: t0 }
+        // "What are the odds I keep the Bolt?" after Hymn to Tourach: a random discard from a known hand size.
+        t2 = t2.let { t0 -> Regex("""^what (?:are|is) (?:the )?(odds|chance|chances|probability|likelihood|c\d+) (?:that )?(?:i|we) (?:keep|hold on to|hold onto|still have|don't lose|lose|discard) (?:the |my )?(c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                // "the odds" is also a split card (Odds // Ends); here it's the word.
+                if (r.groupValues[1].startsWith("c") && m.cards[r.groupValues[1]]?.display?.startsWith("Odds") != true) t0
+                else "discardodds-question ${r.groupValues[2]} ${if (Regex("""\b(?:lose|discard)\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.value)) "lose" else "keep"}" } ?: t0 }
+        // "How big was it?" after the creature left: its size as it was, from what is known.
+        t2 = t2.replace(Regex("""^how (?:big|large) (?:was|had been) (it|that|(?:my |the )?c\d+)(?: when it (?:left|died|was exiled|got exiled))?\??$""", RegexOption.IGNORE_CASE), "how big is $1")
+        // "They reveal Lightning Bolt" with my Goblin Guide attacking: the trigger's reveal, not a cast.
+        t2 = t2.let { t0 -> Regex("""^(?:they|he|she|my opponent|the opponent) reveals? (?:an? |the )?(c\d+|land|basic land|basic|nonland card|creature|spell)(?: card)?(?: (?:off|from|to|for|with|on) (?:the |its |guide's |goblin guide's )?(?:trigger|guide|goblin guide|c\d+|reveal|ability|top))?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (ctx.events.none { e -> e.verb == "attack" && e.player != "opp" && ctx.objects[e.obj]?.card?.name == "Goblin Guide" && ctx.objects[e.obj]?.controller == "me" }) return@let t0
+                val w = r.groupValues[1].lowercase()
+                val card = if (w.startsWith("c")) m.cards[w] else null
+                val land = if (card != null) card.typeLine.contains("Land") else w.contains("land") && !w.startsWith("nonland")
+                "guidereveal-note ${if (land) "land" else "nonland"}${card?.let { " $w" } ?: ""}" } ?: t0 }
+        // "Can I Vial in a different Thalia?" with their counter on my Thalia: a second copy from the hand, never a spell.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:vial|vial in|put in|flash in|drop in|respond with (?:my |the )?(?:vial|aether vial|c\d+) (?:to |and )?(?:put|drop|flash) in) (?:a |another |a different |a second |my other |the other )(c\d+)(?: in response| instead| in| into play| onto the battlefield)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                // Only when their spell is aimed at a spell of mine on the stack (a counter); against a Bolt at a permanent the Vial simply puts the copy in.
+                val theirs = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" && it.targets.isNotEmpty() }
+                val atMySpell = theirs != null && theirs.targets.any { t -> ctx.objects[t]?.zone != "battlefield" }
+                if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && atMySpell) "vialrespond-question 0 ${r.groupValues[1]}" else t0 } ?: t0 }
+        // "Do I have to discard?" with my Leyline of Sanctity against their spell: whether the spell targets.
+        if (Regex("""^(?:do|will|must) (?:i|we) (?:have to|need to|still have to|still) (?:discard|lose life|sacrifice|reveal|mill|draw)(?: cards?| three| \d+| anything| too)?\??$|^(?:does|will) (?:it|that|(?:the |their )?c\d+) still (?:make|force) me (?:to )?(?:discard|lose life|sacrifice|reveal|mill)(?: cards?| anything)?\??$|^(?:does|will|can) (?:it|that|(?:the |their )?c\d+) still (?:hit|affect|get) me\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb", "Shalai, Voice of Plenty", "True Believer", "Sigarda, Heron's Grace", "Teyo, the Shieldmage") } && ctx.events.any { it.verb == "cast" && it.player != "me" }) t2 = "hexproofme-question"
+        // "I have one extra mana": mana still open after the casts described.
+        t2 = t2.replace(Regex("""^(?:i|we) (?:have|'ve got|still have) (\d+|one|two|three|four|five) (?:extra|spare|more|additional|other) (?:mana|lands?)(?: open| up| floating| left| untapped| available)?$""", RegexOption.IGNORE_CASE), "i have $1 mana open")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1186,6 +1213,8 @@ class SituationParser(private val names: NameIndex) {
         // "I alpha strike", "I go wide with three 1/1s": table talk for attacking with everything and for having
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
+        // "I have two cards: Lightning Bolt and a Mountain" / "three cards in hand: two lands and a Bolt": the hand, listed after a colon.
+        t2 = t2.replace(Regex("""(^|, |\s+and\s+)(?:i|we) (?:have|hold|'ve got) (?:two|three|four|five|\d+) cards?(?: in (?:my )?hand)?:? (?=(?:an? |the |two |three |\d+ )?(?:c\d+|lands?|basics?))""", RegexOption.IGNORE_CASE), "$1my hand is ")
         // "into their Ensnaring Bridge with one card in hand": the hand is the Bridge's controller's, not the attacker's.
         t2 = t2.replace(Regex("""\binto (their|his|her|my opponent's|the opponent's) (c\d+) with (\d+|one|two|three|four|no|zero) cards? in hand\b""", RegexOption.IGNORE_CASE), "into $1 $2, they have $3 cards in hand")
         // "They have Aether Vial on 3 and Spell Queller in hand": the hand belongs to the same player as the first half.
@@ -3069,7 +3098,10 @@ class SituationParser(private val names: NameIndex) {
             // "two Bolts and a land": a land said without its name is noted, not tracked as a card.
             Regex("""(?:(two|three|four|five|\d+) )?\b(lands?|basics?|basic lands?)\b""").find(r.groupValues[1])?.let { l -> ctx.notes += "The ${l.groupValues[2]} in ${if (who == "me") "your" else "that"} hand ${if (l.groupValues[1].isEmpty() && !l.groupValues[2].endsWith("s")) "isn't" else "aren't"} tracked by name; ${if (l.groupValues[1].isEmpty() && !l.groupValues[2].endsWith("s")) "it's a land, so it can't be chosen by anything that takes a nonland card" else "they're lands, so they can't be chosen by anything that takes a nonland card"}." }
             if (cards.isEmpty()) return@let
-            t2 = t2.substring(0, r.range.first).trim().trimEnd(',').trim().let { if (it.isEmpty()) "" else "$it, " }.replace(Regex("""(?:i|they|he|she|my opponent|the opponent|opponent|@\w+), $"""), "") + cards.joinToString(", ") { "${if (who == "me") "i have" else if (who == "opp") "they have" else "@$who has"} $it in hand" }
+            // "two lands and a Bolt": the lands are land cards in that hand too, so a random discard counts them.
+            val landCount = Regex("""(?:(an? |two |three |four |five |\d+ ))?\b(lands?|basics?|basic lands?)\b""").find(r.groupValues[1])?.let { l -> l.groupValues[1].trim().let { w -> if (w.isEmpty() || w == "a" || w == "an") 1 else number(w) ?: w.toIntOrNull() ?: 1 } } ?: 0
+            val landPart = if (landCount > 0) ", ${if (who == "me") "i have" else if (who == "opp") "they have" else "@$who has"} $landCount land cards in hand" else ""
+            t2 = t2.substring(0, r.range.first).trim().trimEnd(',').trim().let { if (it.isEmpty()) "" else "$it, " }.replace(Regex("""(?:i|they|he|she|my opponent|the opponent|opponent|@\w+), $"""), "") + cards.joinToString(", ") { "${if (who == "me") "i have" else if (who == "opp") "they have" else "@$who has"} $it in hand" } + landPart
         }
         // "they have an instant and a creature in their graveyard": card types in a graveyard (Tarmogoyf), kept together before the clause split.
         // "my graveyard has a land and an instant", "their graveyard contains a creature": the owner said first.
@@ -4135,6 +4167,238 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /** More early questions, split out of readEarlyQuestionsB for the JVM method size limit. */
+    private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        // "Does it get a Construct?" with the Saga under Blood Moon: no chapter abilities, so nothing triggers on the lore counter.
+        if (clause0 == "sagachapter-question") {
+            val saga = ctx.objects.values.lastOrNull { it.card.name == "Urza's Saga" } ?: return false
+            val moon = ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") }
+            ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (714.2b), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (714.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
+            return true
+        }
+        // "Does it stay a creature?": the animated land, whatever was cast after it.
+        if (clause0 == "manlandnow-question") {
+            val land = ctx.objects.values.lastOrNull { o -> o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.let { it.contains("Land") && !it.contains("Creature") } } == true && ctx.events.any { e -> (e.verb == "attack" || e.verb == "activate") && e.obj == o.id } }?.id ?: return false
+            ctx.asks += EventSpec("ask", obj = land, to = "identity"); return true
+        }
+        // "Can I Vial in response to the trigger to do anything?": a creature coming in doesn't change the card on top.
+        if (clause0 == "vialvstrigger-question") {
+            val bob = ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name in setOf("Dark Confidant", "Dark Tutelage") } ?: return false
+            val top = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "library" }?.card?.name
+            val mv = top?.let { names.lookup(Names.normalize(it))?.manaValue }
+            val life = ctx.life["me"]
+            ctx.asks += EventSpec("ask", to = "text:You can respond (Aether Vial's ability can be activated any time you have priority, 602.1), but it won't help: putting a creature onto the battlefield changes nothing about the card on top of your library, and ${bob.card.name}'s trigger still reveals it and takes its mana value in life when it resolves (113.7a)${if (top != null && mv != null) ". $top has mana value $mv${if (life != null) ", so you go from $life to ${life - mv}${if (life - mv <= 0) " and lose (704.5a)" else ""}" else ""}" else ""}. Only something that changes the top card (a shuffle, a draw, a Brainstorm) or removes the trigger (Stifle) would.")
+            return true
+        }
+        Regex("""^vialcounter-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
+            val spellName = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
+            val taxers = setOf("Thalia, Guardian of Thraben", "Vryn Wingmare", "Glowrider", "Thorn of Amethyst", "Sphere of Resistance", "Lodestone Golem", "Archon of Emeria", "Ethersworn Canonist", "Deafening Silence", "Drannith Magistrate")
+            val uncounterable = setOf("Supreme Verdict", "Abrupt Decay", "Loxodon Smiter", "Slaughter Games", "Combust", "Guttural Response", "Rending Volley", "Thrun, the Last Troll", "Carnage Tyrant", "Banefire", "Gaea's Revenge", "Great Sable Stag", "Vexing Shusher")
+            if (card.display in taxers) {
+                ctx.asks += EventSpec("ask", to = "text:No. ${card.display} doesn't counter anything: it makes spells cost more to cast, and a spell's total cost is determined and paid as it is cast (601.2f, 601.2h). $spellName is already on the stack with its cost paid, so putting ${card.display} onto the battlefield now changes nothing about it${if (spellName in uncounterable) ", and $spellName can't be countered in any case" else ""}; it resolves as normal. The Vial can still put ${card.display} in (602.1), but ${if (spellName in setOf("Supreme Verdict", "Wrath of God", "Damnation", "Terminus", "Anger of the Gods", "Pyroclasm", "Toxic Deluge", "Languish", "Sweltering Suns")) "a sweeper then takes it along with the rest" else "only to be on the battlefield for whatever comes after"}.")
+            } else if (card.display == "Spell Queller" || card.display == "Mystic Snake" || card.display == "Frilled Mystic" || card.display == "Draining Whelk") {
+                val mv = spell.card?.name?.let { n -> names.lookup(Names.normalize(n))?.manaValue } ?: 0
+                val queller = card.display == "Spell Queller"
+                ctx.asks += EventSpec("ask", to = "text:" + (if (queller && mv > 4) "No. Spell Queller's trigger exiles a spell with mana value 4 or less, and $spellName's mana value is $mv, so it has nothing to target; $spellName resolves as normal (603.3d)."
+                    else if (queller) "Not countered, but exiled: Aether Vial puts Spell Queller onto the battlefield in response (602.1), its enters-the-battlefield trigger targets $spellName (mana value $mv, 4 or less), and on resolution exiles it from the stack. That isn't countering, so it works even on a spell that can't be countered (701.6a); $spellName comes back only if Spell Queller leaves the battlefield."
+                    else "Yes, if the trigger resolves: Aether Vial puts ${card.display} onto the battlefield in response (602.1), and its enters-the-battlefield trigger counters $spellName${if (spellName in uncounterable) " — except that $spellName can't be countered, so here it resolves anyway (701.6a)" else ""}."))
+                ctx.notes += "${card.display} is put in with Aether Vial in response; its enters-the-battlefield trigger is what answers the spell."
+            } else {
+                ctx.asks += EventSpec("ask", to = "text:No. ${card.display} has no ability that counters or exiles a spell, so putting it onto the battlefield with Aether Vial does nothing to $spellName, which resolves as normal (608.1)${if (spellName in uncounterable) "; $spellName can't be countered anyway" else ""}.")
+            }
+            return true
+        }
+        Regex("""^beforedamage-question (\w+) (it|that|the attacker|c\d+|\d+/\d+)$""").find(clause0)?.let { r ->
+            val attack = ctx.events.lastOrNull { it.verb == "attack" } ?: return@let
+            // "They attack with a 5/5. I have Settle the Wreckage. Does it get exiled before damage?": the instant in hand is cast now.
+            val spell = ctx.events.lastOrNull { e -> e.verb == "cast" && ctx.events.indexOf(e) > ctx.events.indexOf(attack) }
+                ?: ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "hand" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.let { o ->
+                    val ev = EventSpec("cast", player = "me", card = CardRef(name = o.card.name, oracleId = o.card.oracleId)); ctx.events += ev; ctx.lastActor = "me"; ctx.lastVerb = "cast"
+                    ctx.notes += "\"Does it get exiled before damage?\" is read as you casting ${o.card.name} from your hand now, with the attack declared."; ev }
+                ?: return@let
+            val spellName = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
+            val block = ctx.events.any { e -> e.verb == "block" && ctx.events.indexOf(e) < ctx.events.indexOf(spell) }
+            ctx.asks += EventSpec("ask", to = "text:Yes, if it resolves: $spellName is cast in the ${if (block) "declare blockers" else "declare attackers"} step, after ${if (block) "blockers" else "attackers"} are declared, and players get priority there (${if (block) "509.2" else "508.2"}). It resolves before the combat damage step begins, and combat damage is dealt only then (510.1), so a creature it removes deals and takes no combat damage. The outcome below shows what the spell did.")
+            return true
+        }
+        // "They play Urza's Saga and go to chapter 2": where the Saga stands; the chapter asked about is handled by the question.
+        Regex("""^(?:and )?(?:(?:it |they |the saga )?(?:go|goes|get|gets|move|moves|is|are|'s) (?:to|on|at|up to) )?chapter (one|two|three|1|2|3|i|ii|iii)(?: trigger| already)?$""").find(clause0)?.let { r ->
+            val n = when (r.groupValues[1]) { "one", "1", "i" -> 1; "two", "2", "ii" -> 2; else -> 3 }
+            val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: return@let
+            ctx.notes += "$name is at chapter ${when (n) { 1 -> "I"; 2 -> "II"; else -> "III" }} ($n lore counter${if (n == 1) "" else "s"}): a lore counter is added as it enters and after each of its controller's draw steps, and each chapter ability triggers as the count reaches its number (714.2b)."
+            return true
+        }
+        Regex("""^motherprotect-question (\S+) (\S+)$""").find(clause0)?.let { r ->
+            if (r.groupValues[1] !in ctx.objects || r.groupValues[2] !in ctx.objects) return@let
+            ctx.events += EventSpec("activate", player = "me", obj = r.groupValues[1], targets = listOf(r.groupValues[2]))
+            ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = r.groupValues[2]
+            ctx.asks += EventSpec("ask", obj = r.groupValues[2], to = "survive")
+            return true
+        }
+        Regex("""^guidereveal-note (land|nonland)(?: (c\d+))?$""").find(clause0)?.let { r ->
+            val card = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { m.cards[it] }
+            val theirs = ctx.events.any { e -> e.verb == "attack" && ctx.objects[e.obj]?.card?.name == "Goblin Guide" && ctx.objects[e.obj]?.controller == "me" }
+            val who = if (theirs) "their" else "your"
+            val name = card?.display ?: if (r.groupValues[1] == "land") "a land" else "a nonland card"
+            if (card != null) { val id = addObject(card, if (theirs) pronounPlayer(ctx, "their") else "me", false, ctx, zone = "library", allowDuplicate = true); ctx.lastMentioned = id }
+            ctx.notes += if (r.groupValues[1] == "land") "Goblin Guide's trigger revealed $name: \"If it's a land card, that player puts it into their hand\" is not optional, so it goes to $who hand (it isn't a draw, 121.1)." else "Goblin Guide's trigger revealed $name, a nonland card: it stays on top of $who library, where everyone has now seen it, and nothing is drawn or cast by the trigger."
+            if (card != null && !card.typeLine.contains("Land")) ctx.asks += EventSpec("ask", to = "text:${card.display} was revealed by Goblin Guide's trigger, not drawn and not cast: a nonland card stays on top of $who library (the trigger only puts a land into the hand). ${if (theirs) "They" else "You"} draw it in the next draw step, as usual, and ${if (theirs) "they" else "you"} could cast it only from the hand.")
+            return true
+        }
+        if (clause0 == "guidehand-question") {
+            ctx.asks += EventSpec("ask", to = "text:Yes. Goblin Guide's trigger says \"Defending player reveals the top card of their library. If it's a land card, that player puts it into their hand\": there is no \"may\", so a revealed land goes into your hand whether you want it or not (608.2c). It isn't drawn, so nothing that cares about drawing sees it (121.1); a nonland card simply stays on top, revealed.")
+            return true
+        }
+        if (clause0 == "topbob-question") {
+            ctx.asks += EventSpec("ask", to = "text:Yes. Dark Confidant's trigger goes on the stack at the beginning of your upkeep, and you get priority before it resolves (603.3, 117.1). Sensei's Divining Top's first ability ({1}: Look at the top three cards of your library, then put them back in any order) is an activated ability you can use then; it resolves first (608.1), so you reorder the top three and the Confidant's trigger reveals whichever card you left on top. With no card you want to reveal, Top's second ability ({T}: Draw a card, then put Top on top of your library) puts Top itself on top, and the trigger reveals Top: mana value 1, so you lose 1 life.")
+            return true
+        }
+        // A creature spell resolving on its own, so its enters trigger is on the stack when the next clause responds.
+        if (clause0 == "resolvetop-marker") {
+            val last = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
+            val name = last.card?.name ?: last.obj?.let { ctx.objects[it]?.card?.name }
+            if (last.card?.name != null) triggerSourceFromCast(ctx, null)?.let { ctx.lastMentioned = it }
+            ctx.events += EventSpec("resolve")
+            ctx.notes += "${name ?: "The spell"} resolves first; its enters-the-battlefield trigger is on the stack when the response is cast (603.3, 117.1b)."
+            return true
+        }
+        if (clause0 == "delverbeforedraw-question") {
+            val delver = ctx.objects.values.last { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
+            ctx.asks += EventSpec("ask", to = "text:Yes, if the card revealed is an instant or sorcery. The beginning phase runs untap, upkeep, then draw (501.1): Delver's trigger goes on the stack at the beginning of the upkeep step and resolves there, so ${delver.card.name} is already Insectile Aberration (a 3/2 flier) when the draw step begins. The card it revealed stays on top of the library, so that is the card you draw next.")
+            return true
+        }
+        if (clause0 == "persistedcombat-question") {
+            val attacker = ctx.events.lastOrNull { it.verb == "attack" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
+            val blocker = ctx.events.lastOrNull { it.verb == "block" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the blocker"
+            ctx.asks += EventSpec("ask", to = "text:No. The $blocker that persist returns is a new object with no memory of having blocked (400.7): it isn't in combat, so it deals and takes no combat damage, and it can't be declared as a blocker now (509.1a). $attacker stays blocked, since a creature once blocked remains blocked even when its blocker leaves combat (509.1h); without trample it deals no combat damage to anyone, and the new $blocker is simply on the battlefield.")
+            return true
+        }
+        if (clause0 == "mazeuntap-question") {
+            val act = ctx.events.last { e -> e.verb == "activate" && ctx.objects[e.obj]?.card?.name in setOf("Maze of Ith", "Kor Haven", "Mystifying Maze") }
+            val maze = ctx.objects[act.obj]?.card?.name ?: "Maze of Ith"
+            val tgt = act.targets.firstOrNull()?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
+            ctx.asks += EventSpec("ask", to = "text:Yes, twice over. $maze's ability untaps $tgt as it resolves (that is part of the effect), so it is untapped right away, still attacking but dealing and taking no combat damage this turn; it stays an attacking creature until combat ends (506.4). And every permanent you control untaps in your untap step anyway (502.3), so it is ready to attack again next turn either way.")
+            return true
+        }
+        if (clause0 == "skiteit-question") {
+            val spell = ctx.events.last { it.verb == "cast" && it.player != "me" }.card ?: return false
+            ctx.asks += EventSpec("ask", card = spell, to = "skiteStops")
+            return true
+        }
+        Regex("""^discardodds-question (c\d+) (keep|lose)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val n = ctx.handSize["me"] ?: ctx.objects.values.count { it.controller == "me" && it.zone == "hand" }
+            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "Hymn to Tourach"
+            val k = when (spell) { "Hymn to Tourach" -> 2; "Burning Inquiry" -> 3; "Wrench Mind" -> 2; "Blightning" -> 2; "Raven's Crime" -> 1; else -> 2 }
+            val random = spell in setOf("Hymn to Tourach", "Burning Inquiry", "Wheel of Torture")
+            if (n <= 0) { ctx.asks += EventSpec("ask", to = "text:The hand size wasn't given, so the odds can't be worked out; say how many cards are in hand."); return true }
+            if (!random) { ctx.asks += EventSpec("ask", to = "text:There are no odds to it: $spell has you choose what to discard, so you keep ${card.display} if you want to (discarding $k other card${if (k == 1) "" else "s"} from the $n).") ; return true }
+            val kk = minOf(k, n)
+            val keep = (n - kk).toDouble() / n
+            val pct = { x: Double -> "${Math.round(x * 100)}%" }
+            ctx.asks += EventSpec("ask", to = "text:${if (r.groupValues[2] == "keep") "${pct(keep)} to keep it" else "${pct(1 - keep)} to lose it"}: $spell discards $kk card${if (kk == 1) "" else "s"} at random from your $n, every card equally likely (701.9a), so ${card.display} survives with probability ${n - kk}/$n = ${pct(keep)} and is discarded with probability $kk/$n = ${pct(1 - keep)}. The lands are discarded or kept by the same chance; nothing lets you weight the choice.")
+            return true
+        }
+        if (clause0 == "hexproofme-question") {
+            val cast = ctx.events.last { it.verb == "cast" && it.player != "me" }
+            val ref = cast.card ?: cast.obj?.let { o -> ctx.objects[o]?.card } ?: return false
+            ctx.asks += EventSpec("ask", card = ref, to = "hexproofPlayer")
+            return true
+        }
+        if (clause0 == "chalicelife-question") {
+            val cast = ctx.events.last { it.verb == "cast" && it.player == "me" }
+            val name = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
+            val entry = names.lookup(Names.normalize(name))
+            val mv = entry?.manaValue ?: 0
+            val chalice = ctx.objects.values.last { it.card.name == "Chalice of the Void" }
+            val n = chalice.counters["charge"]
+            ctx.asks += EventSpec("ask", to = "text:No. Paying 2 life for a Phyrexian mana symbol is only a way of paying the cost; a card's mana value comes from its mana cost, and a Phyrexian symbol counts as 1 whether it's paid with mana or life (202.3g). $name's mana value is $mv however you pay, so Chalice of the Void${n?.let { " on $it" } ?: ""} ${if (n == null || n == mv) "counters it all the same" else "doesn't counter it in any case ($n ≠ $mv)"}. The life payment changes the cost you pay, never what the spell is.")
+            return true
+        }
+        if (clause0 == "oozeripped-question") {
+            val ooze = ctx.objects.values.lastOrNull { o -> o.card.name == "Scavenging Ooze" }
+            val stop = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.card.name in setOf("Rest in Peace", "Leyline of the Void", "Dauthi Voidwalker", "Planar Void") }
+            if (ooze != null) ctx.asks += EventSpec("ask", obj = ooze.id, to = "pt")
+            ctx.asks += EventSpec("ask", to = "text:" + (if (stop == null) "Yes, whenever there is a card in any graveyard to exile: each activation ({G}) exiles target card from a graveyard, and if it was a creature card Scavenging Ooze gets a +1/+1 counter and you gain 1 life; the cards already in graveyards are its food."
+                else if (stop.card.name == "Rest in Peace") "Not while Rest in Peace is out. It exiled every graveyard as it entered, and now any card or token that would be put into a graveyard from anywhere is exiled instead (614.1a), so graveyards stay empty: Scavenging Ooze's ability has no legal target and can't even be activated (602.2b, 115.1), and with no creature card to exile it never gets a counter. It grows again only once Rest in Peace is gone${if (stop.controller != "me") " (your own graveyard too, since Rest in Peace affects everyone)" else ""}."
+                else "Only from your own graveyard. ${stop.card.name} exiles cards going to your opponents' graveyards, not yours (614.1a), so the Ooze can still eat creature cards from your graveyard; their creatures never reach a graveyard for it to target."))
+            return true
+        }
+        if (clause0 == "seedrawn-question") {
+            val theirs = ctx.events.last { it.verb == "cast" && it.player != "me" }.card?.name ?: "their spell"
+            val mine = ctx.events.last { it.verb == "cast" && it.player == "me" }.card?.name ?: "your spell"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $mine was cast in response, so it resolves first (608.1): you draw and put cards back before $theirs does anything. $theirs then resolves and has you reveal your hand as it is at that moment (608.2), so they see every card in it, the ones you just drew included; the two you put back on top of your library aren't in the hand and aren't revealed. That is the point of responding: you choose what to show and what to hide on top.")
+            return true
+        }
+        if (clause0 == "quellerback-question") {
+            val card = ctx.quelledCard ?: "the exiled card"
+            val entry = names.lookup(Names.normalize(card))
+            val sorcery = entry?.typeLine?.contains("Sorcery") == true
+            ctx.asks += EventSpec("ask", to = "text:Yes, you get the chance, and no, you don't have to. When Spell Queller leaves the battlefield its trigger lets $card's owner cast it without paying its mana cost; \"may\" means you can decline, and a card you don't cast then stays in exile for good (there is no later chance). If you do cast it, that happens as the trigger resolves, ignoring the usual timing${if (sorcery) " (a sorcery cast this way is fine on their turn or during combat)" else ""} (608.2g), you choose its targets then, and it goes on the stack to resolve as normal; any additional cost (life, discarding) still has to be paid, only the mana cost is waived (118.9).")
+            return true
+        }
+        if (clause0 == "skitehand-question") {
+            val threat = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:No. Spellskite is in your hand, and a permanent's abilities work only while it's on the battlefield (113.6): nothing in hand can redirect anything. It would have to be on the battlefield already (cast earlier, or put in with Aether Vial on 2) and even then it could only take a target it is legal for; ${threat} ${if (threat in setOf("Hymn to Tourach", "Thoughtseize", "Duress", "Inquisition of Kozilek", "Mind Rot") || threat == "the spell") "targets a player, which Spellskite can't become (115.7)" else "would need a target Spellskite can legally replace (115.7)"}.")
+            return true
+        }
+        if (clause0 == "searchsees-question") {
+            val spell = ctx.events.last { it.verb == "cast" && it.player == "me" && it.card != null }.card!!.name ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $spell has you search that player's graveyard, hand and library, and searching a zone means looking at every card in it, hidden or not (701.23a): you see their whole hand and their whole library while you look for the named card, and you may take every copy you find. The library is shuffled afterwards (the hand isn't hidden again by the spell, but they keep it).")
+            return true
+        }
+        if (clause0 == "delverflip-note") {
+            val delver = ctx.objects.values.last { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
+            ctx.asks += EventSpec("ask", to = "text:Delver of Secrets can't be flipped now. Its transform is a triggered ability that triggers only at the beginning of your upkeep (\"At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform ~\", 603.2); casting or revealing an instant at any other time does nothing to it. In this combat it stays a 1/1 ${delver.card.name}, and the outcome below is worked out that way.")
+            return true
+        }
+        Regex("""^sagachapter-question (\w+)$""").find(clause0)?.let { r ->
+            val n = when (r.groupValues[1]) { "one", "1", "i" -> 1; "two", "2", "ii" -> 2; else -> 3 }
+            val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: "the Saga"
+            val urza = name == "Urza's Saga"
+            val detail = if (!urza) "" else when (n) {
+                3 -> " For Urza's Saga that is chapter III itself: they still search for an artifact with mana cost {0} or {1} and put it onto the battlefield, and the Saga would have been sacrificed right after that chapter anyway (714.4), so destroying it in response to chapter III changes almost nothing."
+                2 -> " For Urza's Saga, chapter II only grants the Saga an ability (\"{2}, {T}: Create a 0/0 Construct\"); with the Saga gone as the trigger resolves there is nothing to grant, so they never get to make a Construct, and chapter III never comes. Responding to the chapter II trigger is the usual moment to Wasteland it."
+                else -> " For Urza's Saga, chapter I only grants the Saga \"{T}: Add {C}\"; with the Saga gone there is nothing to grant, and the later chapters never happen."
+            }
+            ctx.asks += EventSpec("ask", to = "text:Yes, you can respond: a chapter ability is a triggered ability, it goes on the stack when the lore counter is put on, and you get priority before it resolves (714.2b, 117.1). But destroying $name then doesn't stop that trigger: once triggered, an ability exists on the stack independently of its source, and removing the source doesn't affect it (113.7a); the chapter ${when (n) { 1 -> "I"; 2 -> "II"; else -> "III" }} ability still resolves.$detail")
+            return true
+        }
+        if (clause0 == "hexproofplayer-question") {
+            val cast = ctx.events.last { it.verb == "cast" && it.player == "me" }
+            val ref = cast.card ?: cast.obj?.let { o -> ctx.objects[o]?.card } ?: return false
+            ctx.asks += EventSpec("ask", card = ref, to = "hexproofPlayer")
+            return true
+        }
+        if (clause0 == "onebasic-note") {
+            val who = pronounPlayer(ctx, "their")
+            val search = ctx.events.lastOrNull { it.verb == "cast" && (it.card?.name in setOf("Path to Exile", "Settle the Wreckage", "Swords to Plowshares", "Rampant Growth", "Farseek", "Nature's Lore") || it.card?.name?.contains("Path") == true) }
+            val spell = search?.card?.name ?: "the search"
+            ctx.asks += EventSpec("ask", to = "text:Yes, if they want it: with one basic land left in their library the search can find it. $spell says \"may\", so they can decline the search altogether, and even a player who does search for a card of a stated quality isn't required to find it (701.23b); either way the library is shuffled afterwards.")
+            ctx.notes += "${if (who == "me") "You have" else "They have"} one basic land left in the library."
+            return true
+        }
+        if (clause0 == "revoltneeded-question") {
+            val push = ctx.events.lastOrNull { it.verb == "cast" && it.targets.isNotEmpty() && (it.card?.name == "Fatal Push" || it.card?.name == "Cling to Dust" || it.card?.name == "Renegade Rallier") } ?: ctx.events.lastOrNull { it.verb == "cast" && it.targets.isNotEmpty() } ?: return false
+            val spell = push.card?.name ?: "the spell"
+            val target = push.targets.firstOrNull()?.let { ctx.objects[it] } ?: return false
+            val mv = target.card.name?.let { n -> names.lookup(Names.normalize(n))?.manaValue } ?: return false
+            if (spell != "Fatal Push") { ctx.asks += EventSpec("ask", to = "text:Revolt is the rider \"if a permanent you controlled left the battlefield this turn\"; what $spell does with it is in its text, and the outcome below assumes it wasn't met unless said."); return true }
+            ctx.asks += EventSpec("ask", to = "text:" + if (mv <= 2) "No. Fatal Push destroys target creature with mana value 2 or less with no condition; ${target.card.name}'s mana value is $mv, so revolt (a permanent of theirs leaving the battlefield this turn) wasn't needed. Revolt only matters for a creature with mana value 3 or 4." else if (mv <= 4) "Yes. ${target.card.name}'s mana value is $mv, above Fatal Push's base limit of 2, so it's a legal target only if revolt is on: a permanent they controlled left the battlefield this turn. Without that, Fatal Push can't target it at all (601.2c)." else "Revolt wouldn't be enough: ${target.card.name}'s mana value is $mv, and even with revolt Fatal Push only destroys a creature with mana value 4 or less, so it can't target it (601.2c).")
+            return true
+        }
+        if (clause0 == "secondblocker-question") {
+            val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
+            val name = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: "the creature"
+            val first = ctx.events.lastOrNull { it.verb == "block" }?.obj?.let { ctx.objects[it]?.card?.name }
+            ctx.asks += EventSpec("ask", to = "text:No. Blockers are declared once, as the declare blockers step begins, from the untapped creatures the defending player controls at that moment (509.1a). $name entered the battlefield after that, so it isn't blocking and can't be added as a blocker later in this combat; it's simply on the battlefield, untapped and out of combat.${first?.let { " $it still blocks as declared." } ?: ""} Flashing a creature in after blockers is for its enters-the-battlefield effect or to have it ready next turn, not to block.")
+            return true
+        }
+        return null
+    }
+
     private fun readEarlyQuestionsB(clause0: String, m: Marked, ctx: Ctx): Boolean {
         if (clause0 == "oozeeat-question") {
             val ooze = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Scavenging Ooze" }
@@ -4326,8 +4590,10 @@ class SituationParser(private val names: NameIndex) {
             val n = number(clause0.split(' ').firstOrNull { number(it) != null } ?: "") ?: 1
             if (r.groupValues[1] in setOf("", "i", "we")) {
                 if (Regex("""\b(?:only|just)\b""").containsMatchIn(clause0)) return@let   // "only lands in hand" is read below as the whole hand
+                // The lands are land cards in the hand, so a random discard (Hymn) counts them and may take them.
+                repeat(n) { var nid = slug("land card"); var k = 2; while (ctx.objects.containsKey(nid)) nid = slug("land card") + "_" + (k++); ctx.objects[nid] = ObjectSpec(nid, CardRef(name = "a basic land"), zone = "hand", controller = "me") }
                 ctx.handSize["me"]?.let { ctx.handSize["me"] = it + n }
-                ctx.notes += "A land in your hand is noted; it isn't a nonland card, so a Thoughtseize or Duress can't take it."; return true
+                ctx.notes += "${if (n == 1) "A land" else "$n lands"} in your hand ${if (n == 1) "is" else "are"} noted as unnamed land cards; a land isn't a nonland card, so a Thoughtseize or Duress can't take it."; return true
             }
             // "They have a land in hand": unnamed land cards there, so a discard that wants a nonland finds nothing.
             val who = pronounPlayer(ctx, "their")
@@ -4471,207 +4737,7 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         readEarlyQuestionsC(clause0, m, ctx)?.let { return it }
-        // "Does it get a Construct?" with the Saga under Blood Moon: no chapter abilities, so nothing triggers on the lore counter.
-        if (clause0 == "sagachapter-question") {
-            val saga = ctx.objects.values.lastOrNull { it.card.name == "Urza's Saga" } ?: return false
-            val moon = ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") }
-            ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (714.2b), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (714.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
-            return true
-        }
-        // "Does it stay a creature?": the animated land, whatever was cast after it.
-        if (clause0 == "manlandnow-question") {
-            val land = ctx.objects.values.lastOrNull { o -> o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.let { it.contains("Land") && !it.contains("Creature") } } == true && ctx.events.any { e -> (e.verb == "attack" || e.verb == "activate") && e.obj == o.id } }?.id ?: return false
-            ctx.asks += EventSpec("ask", obj = land, to = "identity"); return true
-        }
-        // "Can I Vial in response to the trigger to do anything?": a creature coming in doesn't change the card on top.
-        if (clause0 == "vialvstrigger-question") {
-            val bob = ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name in setOf("Dark Confidant", "Dark Tutelage") } ?: return false
-            val top = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "library" }?.card?.name
-            val mv = top?.let { names.lookup(Names.normalize(it))?.manaValue }
-            val life = ctx.life["me"]
-            ctx.asks += EventSpec("ask", to = "text:You can respond (Aether Vial's ability can be activated any time you have priority, 602.1), but it won't help: putting a creature onto the battlefield changes nothing about the card on top of your library, and ${bob.card.name}'s trigger still reveals it and takes its mana value in life when it resolves (113.7a)${if (top != null && mv != null) ". $top has mana value $mv${if (life != null) ", so you go from $life to ${life - mv}${if (life - mv <= 0) " and lose (704.5a)" else ""}" else ""}" else ""}. Only something that changes the top card (a shuffle, a draw, a Brainstorm) or removes the trigger (Stifle) would.")
-            return true
-        }
-        Regex("""^vialcounter-question (c\d+)$""").find(clause0)?.let { r ->
-            val card = m.cards[r.groupValues[1]] ?: return@let
-            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
-            val spellName = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
-            val taxers = setOf("Thalia, Guardian of Thraben", "Vryn Wingmare", "Glowrider", "Thorn of Amethyst", "Sphere of Resistance", "Lodestone Golem", "Archon of Emeria", "Ethersworn Canonist", "Deafening Silence", "Drannith Magistrate")
-            val uncounterable = setOf("Supreme Verdict", "Abrupt Decay", "Loxodon Smiter", "Slaughter Games", "Combust", "Guttural Response", "Rending Volley", "Thrun, the Last Troll", "Carnage Tyrant", "Banefire", "Gaea's Revenge", "Great Sable Stag", "Vexing Shusher")
-            if (card.display in taxers) {
-                ctx.asks += EventSpec("ask", to = "text:No. ${card.display} doesn't counter anything: it makes spells cost more to cast, and a spell's total cost is determined and paid as it is cast (601.2f, 601.2h). $spellName is already on the stack with its cost paid, so putting ${card.display} onto the battlefield now changes nothing about it${if (spellName in uncounterable) ", and $spellName can't be countered in any case" else ""}; it resolves as normal. The Vial can still put ${card.display} in (602.1), but ${if (spellName in setOf("Supreme Verdict", "Wrath of God", "Damnation", "Terminus", "Anger of the Gods", "Pyroclasm", "Toxic Deluge", "Languish", "Sweltering Suns")) "a sweeper then takes it along with the rest" else "only to be on the battlefield for whatever comes after"}.")
-            } else if (card.display == "Spell Queller" || card.display == "Mystic Snake" || card.display == "Frilled Mystic" || card.display == "Draining Whelk") {
-                val mv = spell.card?.name?.let { n -> names.lookup(Names.normalize(n))?.manaValue } ?: 0
-                val queller = card.display == "Spell Queller"
-                ctx.asks += EventSpec("ask", to = "text:" + (if (queller && mv > 4) "No. Spell Queller's trigger exiles a spell with mana value 4 or less, and $spellName's mana value is $mv, so it has nothing to target; $spellName resolves as normal (603.3d)."
-                    else if (queller) "Not countered, but exiled: Aether Vial puts Spell Queller onto the battlefield in response (602.1), its enters-the-battlefield trigger targets $spellName (mana value $mv, 4 or less), and on resolution exiles it from the stack. That isn't countering, so it works even on a spell that can't be countered (701.6a); $spellName comes back only if Spell Queller leaves the battlefield."
-                    else "Yes, if the trigger resolves: Aether Vial puts ${card.display} onto the battlefield in response (602.1), and its enters-the-battlefield trigger counters $spellName${if (spellName in uncounterable) " — except that $spellName can't be countered, so here it resolves anyway (701.6a)" else ""}."))
-                ctx.notes += "${card.display} is put in with Aether Vial in response; its enters-the-battlefield trigger is what answers the spell."
-            } else {
-                ctx.asks += EventSpec("ask", to = "text:No. ${card.display} has no ability that counters or exiles a spell, so putting it onto the battlefield with Aether Vial does nothing to $spellName, which resolves as normal (608.1)${if (spellName in uncounterable) "; $spellName can't be countered anyway" else ""}.")
-            }
-            return true
-        }
-        Regex("""^beforedamage-question (\w+) (it|that|the attacker|c\d+|\d+/\d+)$""").find(clause0)?.let { r ->
-            val attack = ctx.events.lastOrNull { it.verb == "attack" } ?: return@let
-            // "They attack with a 5/5. I have Settle the Wreckage. Does it get exiled before damage?": the instant in hand is cast now.
-            val spell = ctx.events.lastOrNull { e -> e.verb == "cast" && ctx.events.indexOf(e) > ctx.events.indexOf(attack) }
-                ?: ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "hand" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.let { o ->
-                    val ev = EventSpec("cast", player = "me", card = CardRef(name = o.card.name, oracleId = o.card.oracleId)); ctx.events += ev; ctx.lastActor = "me"; ctx.lastVerb = "cast"
-                    ctx.notes += "\"Does it get exiled before damage?\" is read as you casting ${o.card.name} from your hand now, with the attack declared."; ev }
-                ?: return@let
-            val spellName = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
-            val block = ctx.events.any { e -> e.verb == "block" && ctx.events.indexOf(e) < ctx.events.indexOf(spell) }
-            ctx.asks += EventSpec("ask", to = "text:Yes, if it resolves: $spellName is cast in the ${if (block) "declare blockers" else "declare attackers"} step, after ${if (block) "blockers" else "attackers"} are declared, and players get priority there (${if (block) "509.2" else "508.2"}). It resolves before the combat damage step begins, and combat damage is dealt only then (510.1), so a creature it removes deals and takes no combat damage. The outcome below shows what the spell did.")
-            return true
-        }
-        // "They play Urza's Saga and go to chapter 2": where the Saga stands; the chapter asked about is handled by the question.
-        Regex("""^(?:and )?(?:(?:it |they |the saga )?(?:go|goes|get|gets|move|moves|is|are|'s) (?:to|on|at|up to) )?chapter (one|two|three|1|2|3|i|ii|iii)(?: trigger| already)?$""").find(clause0)?.let { r ->
-            val n = when (r.groupValues[1]) { "one", "1", "i" -> 1; "two", "2", "ii" -> 2; else -> 3 }
-            val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: return@let
-            ctx.notes += "$name is at chapter ${when (n) { 1 -> "I"; 2 -> "II"; else -> "III" }} ($n lore counter${if (n == 1) "" else "s"}): a lore counter is added as it enters and after each of its controller's draw steps, and each chapter ability triggers as the count reaches its number (714.2b)."
-            return true
-        }
-        Regex("""^motherprotect-question (\S+) (\S+)$""").find(clause0)?.let { r ->
-            if (r.groupValues[1] !in ctx.objects || r.groupValues[2] !in ctx.objects) return@let
-            ctx.events += EventSpec("activate", player = "me", obj = r.groupValues[1], targets = listOf(r.groupValues[2]))
-            ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = r.groupValues[2]
-            ctx.asks += EventSpec("ask", obj = r.groupValues[2], to = "survive")
-            return true
-        }
-        Regex("""^guidereveal-note (land|nonland)$""").find(clause0)?.let { r ->
-            ctx.notes += if (r.groupValues[1] == "land") "Goblin Guide's trigger revealed a land: \"If it's a land card, that player puts it into their hand\" is not optional, so it goes to your hand (it isn't a draw, 121.1)." else "Goblin Guide's trigger revealed a nonland card: it stays on top of your library, where everyone has now seen it."
-            return true
-        }
-        if (clause0 == "guidehand-question") {
-            ctx.asks += EventSpec("ask", to = "text:Yes. Goblin Guide's trigger says \"Defending player reveals the top card of their library. If it's a land card, that player puts it into their hand\": there is no \"may\", so a revealed land goes into your hand whether you want it or not (608.2c). It isn't drawn, so nothing that cares about drawing sees it (121.1); a nonland card simply stays on top, revealed.")
-            return true
-        }
-        if (clause0 == "topbob-question") {
-            ctx.asks += EventSpec("ask", to = "text:Yes. Dark Confidant's trigger goes on the stack at the beginning of your upkeep, and you get priority before it resolves (603.3, 117.1). Sensei's Divining Top's first ability ({1}: Look at the top three cards of your library, then put them back in any order) is an activated ability you can use then; it resolves first (608.1), so you reorder the top three and the Confidant's trigger reveals whichever card you left on top. With no card you want to reveal, Top's second ability ({T}: Draw a card, then put Top on top of your library) puts Top itself on top, and the trigger reveals Top: mana value 1, so you lose 1 life.")
-            return true
-        }
-        // A creature spell resolving on its own, so its enters trigger is on the stack when the next clause responds.
-        if (clause0 == "resolvetop-marker") {
-            val last = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
-            val name = last.card?.name ?: last.obj?.let { ctx.objects[it]?.card?.name }
-            if (last.card?.name != null) triggerSourceFromCast(ctx, null)?.let { ctx.lastMentioned = it }
-            ctx.events += EventSpec("resolve")
-            ctx.notes += "${name ?: "The spell"} resolves first; its enters-the-battlefield trigger is on the stack when the response is cast (603.3, 117.1b)."
-            return true
-        }
-        if (clause0 == "delverbeforedraw-question") {
-            val delver = ctx.objects.values.last { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
-            ctx.asks += EventSpec("ask", to = "text:Yes, if the card revealed is an instant or sorcery. The beginning phase runs untap, upkeep, then draw (501.1): Delver's trigger goes on the stack at the beginning of the upkeep step and resolves there, so ${delver.card.name} is already Insectile Aberration (a 3/2 flier) when the draw step begins. The card it revealed stays on top of the library, so that is the card you draw next.")
-            return true
-        }
-        if (clause0 == "persistedcombat-question") {
-            val attacker = ctx.events.lastOrNull { it.verb == "attack" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
-            val blocker = ctx.events.lastOrNull { it.verb == "block" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the blocker"
-            ctx.asks += EventSpec("ask", to = "text:No. The $blocker that persist returns is a new object with no memory of having blocked (400.7): it isn't in combat, so it deals and takes no combat damage, and it can't be declared as a blocker now (509.1a). $attacker stays blocked, since a creature once blocked remains blocked even when its blocker leaves combat (509.1h); without trample it deals no combat damage to anyone, and the new $blocker is simply on the battlefield.")
-            return true
-        }
-        if (clause0 == "mazeuntap-question") {
-            val act = ctx.events.last { e -> e.verb == "activate" && ctx.objects[e.obj]?.card?.name in setOf("Maze of Ith", "Kor Haven", "Mystifying Maze") }
-            val maze = ctx.objects[act.obj]?.card?.name ?: "Maze of Ith"
-            val tgt = act.targets.firstOrNull()?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
-            ctx.asks += EventSpec("ask", to = "text:Yes, twice over. $maze's ability untaps $tgt as it resolves (that is part of the effect), so it is untapped right away, still attacking but dealing and taking no combat damage this turn; it stays an attacking creature until combat ends (506.4). And every permanent you control untaps in your untap step anyway (502.3), so it is ready to attack again next turn either way.")
-            return true
-        }
-        if (clause0 == "skiteit-question") {
-            val spell = ctx.events.last { it.verb == "cast" && it.player != "me" }.card ?: return false
-            ctx.asks += EventSpec("ask", card = spell, to = "skiteStops")
-            return true
-        }
-        if (clause0 == "chalicelife-question") {
-            val cast = ctx.events.last { it.verb == "cast" && it.player == "me" }
-            val name = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
-            val entry = names.lookup(Names.normalize(name))
-            val mv = entry?.manaValue ?: 0
-            val chalice = ctx.objects.values.last { it.card.name == "Chalice of the Void" }
-            val n = chalice.counters["charge"]
-            ctx.asks += EventSpec("ask", to = "text:No. Paying 2 life for a Phyrexian mana symbol is only a way of paying the cost; a card's mana value comes from its mana cost, and a Phyrexian symbol counts as 1 whether it's paid with mana or life (202.3g). $name's mana value is $mv however you pay, so Chalice of the Void${n?.let { " on $it" } ?: ""} ${if (n == null || n == mv) "counters it all the same" else "doesn't counter it in any case ($n ≠ $mv)"}. The life payment changes the cost you pay, never what the spell is.")
-            return true
-        }
-        if (clause0 == "oozeripped-question") {
-            val ooze = ctx.objects.values.lastOrNull { o -> o.card.name == "Scavenging Ooze" }
-            val stop = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.card.name in setOf("Rest in Peace", "Leyline of the Void", "Dauthi Voidwalker", "Planar Void") }
-            if (ooze != null) ctx.asks += EventSpec("ask", obj = ooze.id, to = "pt")
-            ctx.asks += EventSpec("ask", to = "text:" + (if (stop == null) "Yes, whenever there is a card in any graveyard to exile: each activation ({G}) exiles target card from a graveyard, and if it was a creature card Scavenging Ooze gets a +1/+1 counter and you gain 1 life; the cards already in graveyards are its food."
-                else if (stop.card.name == "Rest in Peace") "Not while Rest in Peace is out. It exiled every graveyard as it entered, and now any card or token that would be put into a graveyard from anywhere is exiled instead (614.1a), so graveyards stay empty: Scavenging Ooze's ability has no legal target and can't even be activated (602.2b, 115.1), and with no creature card to exile it never gets a counter. It grows again only once Rest in Peace is gone${if (stop.controller != "me") " (your own graveyard too, since Rest in Peace affects everyone)" else ""}."
-                else "Only from your own graveyard. ${stop.card.name} exiles cards going to your opponents' graveyards, not yours (614.1a), so the Ooze can still eat creature cards from your graveyard; their creatures never reach a graveyard for it to target."))
-            return true
-        }
-        if (clause0 == "seedrawn-question") {
-            val theirs = ctx.events.last { it.verb == "cast" && it.player != "me" }.card?.name ?: "their spell"
-            val mine = ctx.events.last { it.verb == "cast" && it.player == "me" }.card?.name ?: "your spell"
-            ctx.asks += EventSpec("ask", to = "text:Yes. $mine was cast in response, so it resolves first (608.1): you draw and put cards back before $theirs does anything. $theirs then resolves and has you reveal your hand as it is at that moment (608.2), so they see every card in it, the ones you just drew included; the two you put back on top of your library aren't in the hand and aren't revealed. That is the point of responding: you choose what to show and what to hide on top.")
-            return true
-        }
-        if (clause0 == "quellerback-question") {
-            val card = ctx.quelledCard ?: "the exiled card"
-            val entry = names.lookup(Names.normalize(card))
-            val sorcery = entry?.typeLine?.contains("Sorcery") == true
-            ctx.asks += EventSpec("ask", to = "text:Yes, you get the chance, and no, you don't have to. When Spell Queller leaves the battlefield its trigger lets $card's owner cast it without paying its mana cost; \"may\" means you can decline, and a card you don't cast then stays in exile for good (there is no later chance). If you do cast it, that happens as the trigger resolves, ignoring the usual timing${if (sorcery) " (a sorcery cast this way is fine on their turn or during combat)" else ""} (608.2g), you choose its targets then, and it goes on the stack to resolve as normal; any additional cost (life, discarding) still has to be paid, only the mana cost is waived (118.9).")
-            return true
-        }
-        if (clause0 == "skitehand-question") {
-            val threat = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "the spell"
-            ctx.asks += EventSpec("ask", to = "text:No. Spellskite is in your hand, and a permanent's abilities work only while it's on the battlefield (113.6): nothing in hand can redirect anything. It would have to be on the battlefield already (cast earlier, or put in with Aether Vial on 2) and even then it could only take a target it is legal for; ${threat} ${if (threat in setOf("Hymn to Tourach", "Thoughtseize", "Duress", "Inquisition of Kozilek", "Mind Rot") || threat == "the spell") "targets a player, which Spellskite can't become (115.7)" else "would need a target Spellskite can legally replace (115.7)"}.")
-            return true
-        }
-        if (clause0 == "searchsees-question") {
-            val spell = ctx.events.last { it.verb == "cast" && it.player == "me" && it.card != null }.card!!.name ?: "the spell"
-            ctx.asks += EventSpec("ask", to = "text:Yes. $spell has you search that player's graveyard, hand and library, and searching a zone means looking at every card in it, hidden or not (701.23a): you see their whole hand and their whole library while you look for the named card, and you may take every copy you find. The library is shuffled afterwards (the hand isn't hidden again by the spell, but they keep it).")
-            return true
-        }
-        if (clause0 == "delverflip-note") {
-            val delver = ctx.objects.values.last { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
-            ctx.asks += EventSpec("ask", to = "text:Delver of Secrets can't be flipped now. Its transform is a triggered ability that triggers only at the beginning of your upkeep (\"At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform ~\", 603.2); casting or revealing an instant at any other time does nothing to it. In this combat it stays a 1/1 ${delver.card.name}, and the outcome below is worked out that way.")
-            return true
-        }
-        Regex("""^sagachapter-question (\w+)$""").find(clause0)?.let { r ->
-            val n = when (r.groupValues[1]) { "one", "1", "i" -> 1; "two", "2", "ii" -> 2; else -> 3 }
-            val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: "the Saga"
-            val urza = name == "Urza's Saga"
-            val detail = if (!urza) "" else when (n) {
-                3 -> " For Urza's Saga that is chapter III itself: they still search for an artifact with mana cost {0} or {1} and put it onto the battlefield, and the Saga would have been sacrificed right after that chapter anyway (714.4), so destroying it in response to chapter III changes almost nothing."
-                2 -> " For Urza's Saga, chapter II only grants the Saga an ability (\"{2}, {T}: Create a 0/0 Construct\"); with the Saga gone as the trigger resolves there is nothing to grant, so they never get to make a Construct, and chapter III never comes. Responding to the chapter II trigger is the usual moment to Wasteland it."
-                else -> " For Urza's Saga, chapter I only grants the Saga \"{T}: Add {C}\"; with the Saga gone there is nothing to grant, and the later chapters never happen."
-            }
-            ctx.asks += EventSpec("ask", to = "text:Yes, you can respond: a chapter ability is a triggered ability, it goes on the stack when the lore counter is put on, and you get priority before it resolves (714.2b, 117.1). But destroying $name then doesn't stop that trigger: once triggered, an ability exists on the stack independently of its source, and removing the source doesn't affect it (113.7a); the chapter ${when (n) { 1 -> "I"; 2 -> "II"; else -> "III" }} ability still resolves.$detail")
-            return true
-        }
-        if (clause0 == "hexproofplayer-question") {
-            val cast = ctx.events.last { it.verb == "cast" && it.player == "me" }
-            val ref = cast.card ?: cast.obj?.let { o -> ctx.objects[o]?.card } ?: return false
-            ctx.asks += EventSpec("ask", card = ref, to = "hexproofPlayer")
-            return true
-        }
-        if (clause0 == "onebasic-note") {
-            val who = pronounPlayer(ctx, "their")
-            val search = ctx.events.lastOrNull { it.verb == "cast" && (it.card?.name in setOf("Path to Exile", "Settle the Wreckage", "Swords to Plowshares", "Rampant Growth", "Farseek", "Nature's Lore") || it.card?.name?.contains("Path") == true) }
-            val spell = search?.card?.name ?: "the search"
-            ctx.asks += EventSpec("ask", to = "text:Yes, if they want it: with one basic land left in their library the search can find it. $spell says \"may\", so they can decline the search altogether, and even a player who does search for a card of a stated quality isn't required to find it (701.23b); either way the library is shuffled afterwards.")
-            ctx.notes += "${if (who == "me") "You have" else "They have"} one basic land left in the library."
-            return true
-        }
-        if (clause0 == "revoltneeded-question") {
-            val push = ctx.events.lastOrNull { it.verb == "cast" && it.targets.isNotEmpty() && (it.card?.name == "Fatal Push" || it.card?.name == "Cling to Dust" || it.card?.name == "Renegade Rallier") } ?: ctx.events.lastOrNull { it.verb == "cast" && it.targets.isNotEmpty() } ?: return false
-            val spell = push.card?.name ?: "the spell"
-            val target = push.targets.firstOrNull()?.let { ctx.objects[it] } ?: return false
-            val mv = target.card.name?.let { n -> names.lookup(Names.normalize(n))?.manaValue } ?: return false
-            if (spell != "Fatal Push") { ctx.asks += EventSpec("ask", to = "text:Revolt is the rider \"if a permanent you controlled left the battlefield this turn\"; what $spell does with it is in its text, and the outcome below assumes it wasn't met unless said."); return true }
-            ctx.asks += EventSpec("ask", to = "text:" + if (mv <= 2) "No. Fatal Push destroys target creature with mana value 2 or less with no condition; ${target.card.name}'s mana value is $mv, so revolt (a permanent of theirs leaving the battlefield this turn) wasn't needed. Revolt only matters for a creature with mana value 3 or 4." else if (mv <= 4) "Yes. ${target.card.name}'s mana value is $mv, above Fatal Push's base limit of 2, so it's a legal target only if revolt is on: a permanent they controlled left the battlefield this turn. Without that, Fatal Push can't target it at all (601.2c)." else "Revolt wouldn't be enough: ${target.card.name}'s mana value is $mv, and even with revolt Fatal Push only destroys a creature with mana value 4 or less, so it can't target it (601.2c).")
-            return true
-        }
-        if (clause0 == "secondblocker-question") {
-            val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
-            val name = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: "the creature"
-            val first = ctx.events.lastOrNull { it.verb == "block" }?.obj?.let { ctx.objects[it]?.card?.name }
-            ctx.asks += EventSpec("ask", to = "text:No. Blockers are declared once, as the declare blockers step begins, from the untapped creatures the defending player controls at that moment (509.1a). $name entered the battlefield after that, so it isn't blocking and can't be added as a blocker later in this combat; it's simply on the battlefield, untapped and out of combat.${first?.let { " $it still blocks as declared." } ?: ""} Flashing a creature in after blockers is for its enters-the-battlefield effect or to have it ready next turn, not to block.")
-            return true
-        }
+        readEarlyQuestionsD(clause0, m, ctx)?.let { return it }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
             return true
@@ -7728,9 +7794,14 @@ class SituationParser(private val names: NameIndex) {
         // "Opponent casts Abrupt Decay on my Tarmogoyf. It's a 4/5.": the size said in passing. It is noted; where the
         // answer depends on it (a CDA creature's graveyards weren't given) the note says so.
         Regex("""^(?:it's|it is|that's|that is|he's|she's) (?:an? |only an? |just an? )?(\d+)/(\d+)(?: right now| now| currently| at the moment)?$""").find(c)?.let { r ->
-            val id = ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.events.lastOrNull { it.verb == "cast" || it.verb == "activate" }?.targets?.firstOrNull { it in ctx.objects } ?: return@let
+            val isStar = { oid: String -> ctx.objects[oid]?.card?.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { e -> e.power == "*" || e.toughness == "*" } == true }
+            val candidates = listOfNotNull(ctx.lastMentioned, ctx.events.lastOrNull { it.verb == "block" }?.targets?.firstOrNull(), ctx.events.lastOrNull { it.verb == "attack" }?.obj, ctx.events.lastOrNull { it.verb == "cast" || it.verb == "activate" }?.targets?.firstOrNull()).filter { it in ctx.objects }
+            val id = candidates.firstOrNull(isStar) ?: candidates.firstOrNull() ?: return@let
             val o = ctx.objects.getValue(id)
             if (!isCreatureName(o.card.name)) return@let
+            // "I block their Tarmogoyf with Spellskite. It's 4/5.": a */* creature's size is taken as said.
+            val star = o.card.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { e -> e.power == "*" || e.toughness == "*" } == true
+            if (star && o.card.oracleId != null) { ctx.statedPt[o.card.oracleId] = "${r.groupValues[1]}/${r.groupValues[2]}"; ctx.notes += "${o.card.name} is taken as the ${r.groupValues[1]}/${r.groupValues[2]} it was said to be (its ability would set that from the game state, 604.3)."; return true }
             ctx.notes += "${o.card.name} is said to be ${r.groupValues[1]}/${r.groupValues[2]}; its size is worked out from the card and what was described, and the answer above doesn't turn on it unless it says so."
             return true
         }
@@ -7767,6 +7838,14 @@ class SituationParser(private val names: NameIndex) {
             repeat(n) { var id = slug("a land"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("a land") + "_" + (k++); ctx.objects[id] = ObjectSpec(id, CardRef(name = "a basic land"), controller = who, zone = "hand") }
             if (ctx.handSize[who] == null) ctx.notes += "${if (who == "me") "Your" else "Their"} hand is read as one land card, since only its being all lands was said; say how many cards for a precise count."
             ctx.note(who); return true
+        }
+        // "I have 2 land cards in hand" (from "two lands and a Bolt"): land cards alongside whatever else is there.
+        Regex("""^(?:(?:has|have|holds?|holding|with) )?(\d+|one|two|three|four|five) (?:basic )?land cards? in ($possPrefix)?hand$""").find(c)?.let { r ->
+            val who = possessiveOwner(r.groupValues[2], ctx, m) ?: actor ?: subject ?: "me"
+            val n = r.groupValues[1].toIntOrNull() ?: number(r.groupValues[1]) ?: 1
+            repeat(n) { var id = slug("a land"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("a land") + "_" + (k++); ctx.objects[id] = ObjectSpec(id, CardRef(name = "a basic land"), controller = who, zone = "hand") }
+            ctx.handSize[who] = ctx.objects.values.count { it.controller == who && it.zone == "hand" }
+            ctx.note(who); ctx.lastVerb = "have"; return true
         }
         Regex("""^(?:there (?:is|are) )?(?:(?:has|have|holds?|holding|with) )?(\d+|\w+|no) cards? in ($possPrefix)?hand(?: (?:at|during|in) (?:(?:their|my|his|her|the) )?(cleanup|end of turn|end|discard)(?: step)?)?$""").find(c)?.let { r ->
             if (r.groupValues[3].isNotEmpty()) { val who = actor ?: subject ?: "me"; ctx.activePlayer = who; ctx.events += EventSpec("step", player = who, to = if (r.groupValues[3].startsWith("end")) "end" else "cleanup") }

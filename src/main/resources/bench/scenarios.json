@@ -31390,7 +31390,7 @@
     "id": "thoughtseize-bolt-and-land",
     "text": "My opponent casts Thoughtseize and I have Lightning Bolt and a land in hand. What can they take?",
     "expect": [
-      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt."
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt"
     ],
     "cite": []
   },
@@ -31810,7 +31810,7 @@
     "id": "thoughtseize-only-lands-and-smiter",
     "text": "They Thoughtseize me and I have only lands and a Loxodon Smiter. Do they take the Smiter?",
     "expect": [
-      "Thoughtseize lets opponent choose a nonland card from your hand: Loxodon Smiter.",
+      "Thoughtseize lets opponent choose a nonland card from your hand: Loxodon Smiter",
       "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)."
     ],
     "cite": []
@@ -35326,6 +35326,104 @@
     "expect": [
       "Insectile Aberration turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8)",
       "Delver of Secrets: the battlefield → your hand"
+    ]
+  },
+  {
+    "id": "tt241-which-of-two-to-block",
+    "text": "They attack with two 2/2s. I have one 3/3 untapped. Which should I block?",
+    "expect": [
+      "Blocking a 2/2 creature with a 3/3 creature: saves you 2 damage"
+    ]
+  },
+  {
+    "id": "tt241-pierce-with-extra-mana",
+    "text": "I cast Thoughtseize and they Spell Pierce it. I have one extra mana. Can I pay?",
+    "expect": [
+      "You can't pay {2} for Spell Pierce: you have only 1 mana available",
+      "Thoughtseize is countered"
+    ]
+  },
+  {
+    "id": "tt241-hymn-odds-colon-hand",
+    "text": "They cast Hymn to Tourach and I have three cards in hand: two lands and a Bolt. What are the odds I keep the Bolt?",
+    "expect": [
+      "33% to keep it",
+      "You discard 2 of Lightning Bolt, a basic land and a basic land at random"
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "tt241-goyf-attacking-bolted-growth",
+    "text": "My Tarmogoyf is attacking. They Lightning Bolt it and I have Giant Growth. Does it live if I respond?",
+    "expect": [
+      "Yes: Tarmogoyf is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt241-vial-different-thalia",
+    "text": "I have Aether Vial on 2 and they cast Counterspell on my Thalia. Can I Vial in a different Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben is countered",
+      "Not that one. Thalia, Guardian of Thraben is a spell on the stack"
+    ]
+  },
+  {
+    "id": "tt241-two-bolts-two-mountains-thalia",
+    "text": "They have Thalia and I cast Lightning Bolt with two Mountains. Can I also cast a second Bolt?",
+    "expect": [
+      "Lightning Bolt can't be cast (costs 2, only 0 mana available)"
+    ]
+  },
+  {
+    "id": "tt241-guide-reveals-bolt",
+    "text": "I attack with Goblin Guide and they have no blockers. They reveal Lightning Bolt. Do they draw it?",
+    "expect": [
+      "Lightning Bolt was revealed by Goblin Guide's trigger, not drawn and not cast",
+      "No: opponent doesn't draw"
+    ],
+    "notExpect": [
+      "You take 3 damage"
+    ]
+  },
+  {
+    "id": "tt241-shadow-pathed-how-big-was-it",
+    "text": "They Path my Death's Shadow while I'm at 5 life. How big was it?",
+    "expect": [
+      "at 5 life, 8/8"
+    ]
+  },
+  {
+    "id": "tt241-goyf-its-4-5-vs-skite",
+    "text": "I block their Tarmogoyf with Spellskite. It's 4/5. Does Spellskite die?",
+    "expect": [
+      "Yes: Spellskite died"
+    ]
+  },
+  {
+    "id": "tt241-leyline-burning-inquiry-me",
+    "text": "I have Leyline of Sanctity. They cast Burning Inquiry. Do I have to discard?",
+    "expect": [
+      "Yes. Burning Inquiry doesn't target"
+    ],
+    "notExpect": [
+      "discardses"
+    ]
+  },
+  {
+    "id": "tt241-dismember-at-4-paying-4",
+    "text": "I Dismember their Spellskite paying 4 life at 4 life. Do I lose?",
+    "expect": [
+      "Yes: You have lost the game",
+      "You go from 4 to 0 life"
+    ]
+  },
+  {
+    "id": "tt241-factory-under-moon-animate",
+    "text": "My opponent plays Blood Moon. My Mishra's Factory, can it still become a creature?",
+    "expect": [
+      "No: Blood Moon makes Mishra's Factory a Mountain with none of its own abilities"
     ]
   }
 ]
