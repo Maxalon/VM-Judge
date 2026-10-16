@@ -381,6 +381,12 @@ class Engine(val state: GameState) {
             trace.step("${card.name} has no flashback of its own, and the enters-the-battlefield trigger that would have given it flashback didn't trigger, so ${card.name} can't be cast from the graveyard.", "702.34a", "601.3")
             state.outcomes += "No: ${card.name} can't be cast from your graveyard. It has no flashback, and the trigger that would have granted it never happened (Torpor Orb)."; return null
         }
+        // "My Snapcaster Mage is countered. Can I still flashback the Bolt?": the trigger that would have granted flashback never happened.
+        if (flashback && !obj.has("flashback") && state.outcomes.any { it == "Snapcaster Mage is countered." || it == "Torrential Gearhulk is countered." }) {
+            val mage = if (state.outcomes.any { it == "Snapcaster Mage is countered." }) "Snapcaster Mage" else "Torrential Gearhulk"
+            trace.step("$mage was countered, so it never entered the battlefield and its enters-the-battlefield trigger never happened; ${card.name} has no flashback of its own and can't be cast from the graveyard.", "702.34a", "601.3")
+            state.outcomes += "No: ${card.name} can't be cast from ${player.possessive} graveyard. $mage was countered, so the trigger that would have given it flashback never happened, and it has no flashback itself (702.34a, 601.3)."; return null
+        }
         if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
         if (item.flashback) { obj.zone = Zone.STACK; trace.step("${card.name} is cast from ${player.possessive} graveyard for its flashback cost, an alternative cost paid instead of its mana cost.", "702.34a", "601.2b") }
         if (evoked && !card.has("evoke")) { state.clarifications += Clarification("${card.name}'s evoke", "${card.name} doesn't have evoke, so it can't be cast for an evoke cost; treating it as cast normally.") }
@@ -1362,7 +1368,17 @@ class Engine(val state: GameState) {
         state.outcomes += "${taker.subject} ${taker.v("is", "are")} the monarch."
     }
 
+    /** Once a player has lost and only one remains, the game is over (104.2a): nothing more resolves. */
+    private fun gameOver(): Boolean {
+        fun reallyLost(p: Player) = p.lost && p.id !in state.cantLoseThisTurn && state.objects.values.none { it.isOnBattlefield() && it.controller == p.id && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.CantLose } }
+        return state.players.any { reallyLost(it) } && state.players.count { !reallyLost(it) } <= 1
+    }
+
     fun resolveTop() {
+        if (gameOver() && state.stack.isNotEmpty()) {
+            if (state.trace.steps.none { it.text.startsWith("The game is over") }) trace.step("The game is over: a player has lost (104.2a), so nothing left on the stack resolves.", "104.2a", "104.3a")
+            state.stack.clear(); return
+        }
         val item = state.stack.removeLastOrNull() ?: run { trace.step("The stack is empty; nothing resolves."); return }
         state.discardCause = item.controller   // whose spell or ability is making anyone discard while this resolves (Loxodon Smiter)
         trace.step("All players pass priority; ${item.describe} (top of the stack) starts to resolve.", "117.4", "608.1")

@@ -197,7 +197,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 // "Thoughtseize targeting me and I have Spellskite. Can I redirect it?": the response is the question, not the hand.
                 val discardIdx = sit.events.indexOfLast { it.verb == "cast" && it.card?.name?.lowercase() in setOf("thoughtseize", "duress", "inquisition of kozilek", "hymn to tourach", "mind rot", "raven's crime", "distress", "despise", "wrench mind") }
                 val responded = discardIdx >= 0 && sit.events.drop(discardIdx + 1).any { it.verb == "activate" }
-                !(hidden && (asks.isNotEmpty() || responded) && !aboutHidden) }.map { "${it.about}: ${it.why}" },
+                // A countered spell's unsaid target is moot (Pact of Negation under Chalice on 0).
+                val mootTarget = c.about.endsWith("'s target") && state.outcomes.any { it == "${c.about.removeSuffix("'s target")} is countered." }
+                !mootTarget && !(hidden && (asks.isNotEmpty() || responded) && !aboutHidden) }.map { "${it.about}: ${it.why}" },
             unsupported = state.unsupported.distinct().map { "${it.what}: ${it.detail}" },
             citations = citations,
             understood = understood,

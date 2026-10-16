@@ -34065,5 +34065,118 @@
       "opponent takes 3 damage"
     ],
     "cite": []
+  },
+  {
+    "id": "surgical-in-response-to-undying",
+    "text": "My Young Wolf dies and they Surgical it in response to undying. Does it come back?",
+    "expect": [
+      "Young Wolf doesn't come back: it left the graveyard before undying could return it"
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "ooze-eat-finks-under-wrath",
+    "text": "I have Kitchen Finks and Scavenging Ooze. They Wrath. Can I eat Finks before it persists?",
+    "expect": [
+      "Scavenging Ooze: the battlefield → your graveyard",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-bolted-with-trigger-on-stack-reveal",
+    "text": "They cast Lightning Bolt at my Dark Confidant during my upkeep with the trigger on the stack. Do I still reveal?",
+    "expect": [
+      "Yes: Dark Confidant's ability was already on the stack"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "persisted-finks-still-blocks",
+    "text": "I block their Tarmogoyf with Kitchen Finks and they Bolt Finks before damage. Does the persisted Finks still block?",
+    "expect": [
+      "It comes back, but not as a blocker",
+      "Tarmogoyf deals no combat damage: its blocker left combat and it stays blocked"
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "their-spellskite-and-thalia-vs-path",
+    "text": "They have Spellskite and Thalia. I cast Path on Thalia. Can they redirect it and does Path cost more?",
+    "expect": [
+      "Path to Exile now targets Spellskite instead of Thalia, Guardian of Thraben",
+      "Path to Exile costs {W} plus {1}"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dismember-own-shadow-for-1-and-4",
+    "text": "I cast Dismember for 1 mana and 4 life at 5 life on my own Death's Shadow. What happens?",
+    "expect": [
+      "You go from 5 to 1 life",
+      "Death's Shadow is 7/7 until end of turn"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-pays-2-at-2-loses-first",
+    "text": "They activate Spellskite paying 2 life at 2 life. Do they lose before the redirect resolves?",
+    "expect": [
+      "opponent loses the game",
+      "State-based actions are checked before any player would receive priority (704.3)"
+    ],
+    "cite": [
+      "704.3"
+    ]
+  },
+  {
+    "id": "snapcaster-countered-no-flashback",
+    "text": "My Snapcaster Mage is countered. Can I still flashback the Bolt in my graveyard?",
+    "expect": [
+      "No: Lightning Bolt can't be cast from your graveyard. Snapcaster Mage was countered"
+    ],
+    "cite": [
+      "702.34a"
+    ]
+  },
+  {
+    "id": "vial-3-finks-in-response-to-wrath",
+    "text": "I have Aether Vial on 3. Can I put in Kitchen Finks at instant speed in response to their Wrath?",
+    "expect": [
+      "Kitchen Finks enters the battlefield",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "second-queller-vs-thoughtseize",
+    "text": "They Thoughtseize me and take my Spell Queller. I have another Queller in hand. Can I Queller the Thoughtseize?",
+    "expect": [
+      "Thoughtseize: the stack → exile (Spell Queller); it doesn't resolve"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-their-firewalker",
+    "text": "I Bolt their Kor Firewalker. What happens?",
+    "expect": [
+      "Lightning Bolt can't target Kor Firewalker"
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-0-probe-and-pact",
+    "text": "They have Chalice on 0 and I cast Gitaxian Probe for 2 life and Pact of Negation. Which is countered?",
+    "expect": [
+      "Pact of Negation is countered",
+      "You draw 1 card"
+    ],
+    "cite": []
   }
 ]

@@ -307,6 +307,8 @@ class SituationParser(private val names: NameIndex) {
         var text0 = text00
         if (Regex("""(?i)\bdark confidant\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""\bBob\b"""), "Dark Confidant")
         // "Does the redirect still happen?" about Spellskite: the noun, not the card Redirect.
+        // "the persisted Finks": a participle, not the card Persist.
+        text0 = text0.replace(Regex("""(?i)\bpersisted\b"""), "returned")
         if (Regex("""(?i)\bspellskite\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""(?i)\b(the|my|its|their) redirect\b""")) { r -> "${r.groupValues[1]} redirection" }
             .replace(Regex("""(?i)\b(should|can|could|do|may|would) (i|we|they|he|she) redirect(\?|$)""")) { r -> "${r.groupValues[1]} ${r.groupValues[2]} redirect it${r.groupValues[3]}" }
             .replace(Regex("""(?i)\bredirect(s|ed|ing)?\b""")) { r -> "deflect${r.groupValues[1]}" }
@@ -975,7 +977,7 @@ class SituationParser(private val names: NameIndex) {
         // "Does the flashback get countered too?": the second cast of the same spell.
         t2 = t2.replace(Regex("""^(?:does|is|will|would) the (?:flashback|flashback copy|flashed back one|second one|second cast|recast) (?:get |be )?countered(?: too| as well| again)?\??$""", RegexOption.IGNORE_CASE), "flashbackcountered-question")
         // "Can I eat it before it persists?": Scavenging Ooze at the card while the persist trigger waits.
-        t2 = t2.replace(Regex("""^can (?:i|we) (?:eat|exile|ooze|munch|get rid of) (?:it|that|the card|(?:the |my )?c\d+) (?:before (?:it|that) (?:persists?|comes back|returns|undying triggers|undies)|in response to (?:the )?(?:persist|undying)(?: trigger)?|with (?:the )?(?:persist|undying) (?:trigger )?on the stack)\??$""", RegexOption.IGNORE_CASE), "oozepersist-question")
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:eat|exile|ooze|munch|get rid of) (it|that|the card|(?:the |my )?c\d+) (?:before (?:it|that) (?:persists?|comes back|returns|undying triggers|undies)|in response to (?:the )?(?:persist|undying)(?: trigger)?|with (?:the )?(?:persist|undying) (?:trigger )?on the stack)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "oozepersist-question ${r.groupValues[1].removePrefix("the ").removePrefix("my ")}" } ?: t0 }
         // "They cast Vapor Snag on my Spellskite in response to my redirection": the spell being redirected, then the Snag.
         t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent) (casts?|plays?) (c\d+) on my (c\d+) in response to my redirection$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 if (m.cards[r.groupValues[4]]?.display == "Spellskite") "skitesnag-note ${r.groupValues[3]} ${r.groupValues[4]}" else t0 } ?: t0 }
@@ -983,6 +985,23 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(?:do they (?:still )?gain (?:the )?life|how much life do they gain) even (?:if|when) (?:i|we) (?:target|aim (?:it )?at|point (?:it )?at|bolt) my own (?:creature|guy|dude|c\d+|face|self)\??$""", RegexOption.IGNORE_CASE), "firewalkerown-question")
         // "into their untapped Spellskite and Thalia": both defenders stay in the attack clause through the split.
         t2 = t2.replace(Regex("""\binto ((?:their |my opponent's |the opponent's |an? |the )?(?:untapped |tapped |open )?c\d+) and ((?:their |an? |the )?(?:untapped |tapped )?c\d+)\b""", RegexOption.IGNORE_CASE), "into $1 plus $2")
+        // "they Surgical it in response to undying": the spell cast with the persist or undying trigger on the stack.
+        t2 = t2.let { t0 -> Regex("""\b(they|he|she|my opponent|the opponent|i|we) (c\d+) (it|that|the card|(?:the |my |their )?c\d+) in response to (?:the |its )?(?:undying|persist)(?: trigger| triggering)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                t0.substring(0, r.range.first) + "in response ${r.groupValues[1]} cast ${r.groupValues[2]} on ${r.groupValues[3]}" } ?: t0 }
+        // "Does the persisted Finks still block?": the returned creature is a new object.
+        t2 = t2.replace(Regex("""^does the (?:persisted|returned|new|undying) (c\d+) still (?:block|attack|fight|deal damage)\??$""", RegexOption.IGNORE_CASE), "does $1 come back, persistblock-note")
+        // "Dismember for 1 mana and 4 life ... on my own Death's Shadow": the life paid, then the target.
+        t2 = t2.replace(Regex("""\bfor (?:\d+|one|two|three) mana and (\d+) life\b""", RegexOption.IGNORE_CASE), "paying $1 life")
+        t2 = t2.replace(Regex("""\bon my own (c\d+)\b""", RegexOption.IGNORE_CASE), "targeting my $1")
+        // "Do they lose before the redirect resolves?": state-based actions come before anything resolves.
+        t2 = t2.let { t0 -> Regex("""^(?:do|does|will|would) (they|he|she|my opponent|the opponent|i|we) (?:lose|die|lose the game) (?:before|while|with) (?:the |its |spellskite's |that )?(?:redirect|redirection|deflect|deflection|ability|activation)(?: still)? (?:resolves|on the stack|is on the stack|goes off)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "sbabeforeresolve-question ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else "they"}" } ?: t0 }
+        // "Can I put in Kitchen Finks at instant speed in response to their Wrath?": their spell first, the Vial in response.
+        t2 = t2.let { t0 -> Regex("""^(.*\b(?:vial in|put in|flash in|drop in|sneak in) .*?)(?: at instant speed| right away| now)? in response to (?:their |my opponent's |the |a )?(c\d+)(?: (?:on|at|targeting) .*)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "they cast ${r.groupValues[2]}, ${r.groupValues[1]} in response" } ?: t0 }
+        // "Do I still reveal?" with Dark Confidant bolted mid-upkeep: whether the trigger still resolves.
+        t2 = t2.replace(Regex("""^do (?:i|we) still (?:reveal|get the reveal|get to reveal|get the trigger|lose the life|lose life from it)\??$""", RegexOption.IGNORE_CASE), "stillreveal-question")
+        // "They activate Spellskite paying 2 life at 2 life": the life total after the action is the actor's.
+        t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent) (activates?|uses?) ((?:(?!\b(?:me|us|and|attack)\b).)+?) (?:at|on|while at|being at) (\d+) life$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (Regex("""\b(?:at|on) \d+ life\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.groupValues[3])) t0 else "my opponent is at ${r.groupValues[4]} life, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}" } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -3861,12 +3880,35 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         // "Can I eat it before it persists?": the Ooze's ability in response to the persist trigger.
-        if (clause0 == "oozepersist-question") {
+        Regex("""^oozepersist-question (it|that|the card|c\d+)$""").find(clause0)?.let { r ->
             val ooze = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Scavenging Ooze" } ?: return false
-            val dead = ctx.events.lastOrNull { it.verb == "leave" && it.to == "graveyard" && it.obj != null }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return false
+            val dead = (if (r.groupValues[1].startsWith("c")) m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) } else null)
+                ?: ctx.events.lastOrNull { it.verb == "leave" && it.to == "graveyard" && it.obj != null }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return false
+            val sweeper = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name?.lowercase() in setOf("wrath of god", "damnation", "day of judgment", "supreme verdict", "terminus", "pyroclasm", "anger of the gods", "toxic deluge", "languish")
             ctx.events += EventSpec("activate", player = "me", obj = ooze.id, targets = listOf(dead))
-            ctx.asks += EventSpec("ask", to = "text:Yes. Persist is a triggered ability: when the creature dies it goes on the stack, and before it resolves every player gets priority (603.3, 117.1). Scavenging Ooze's ability can be activated then, targeting the card in your graveyard; it resolves first (608.1), exiles the card, and the persist trigger then finds nothing to return (400.7), so the creature stays gone. The Ooze gets its counter and you gain 1 life, since it was a creature card.")
+            ctx.asks += EventSpec("ask", to = "text:${if (sweeper) "Only if Scavenging Ooze survived the sweeper: a creature that died alongside the persist creature is in the graveyard too, with no ability to activate (see above). If it is still there, yes. " else "Yes. "}Persist is a triggered ability: when the creature dies it goes on the stack, and before it resolves every player gets priority (603.3, 117.1). Scavenging Ooze's ability can be activated then, targeting the card in your graveyard; it resolves first (608.1), exiles the card, and the persist trigger then finds nothing to return (400.7), so the creature stays gone. The Ooze gets its counter and you gain 1 life, since it was a creature card.")
             return true
+        }
+        // "Do they lose before the redirect resolves?": paying life to 0 loses at the next state-based check, with the ability still on the stack.
+        Regex("""^sbabeforeresolve-question (me|they)$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1] == "me") "you" else "they"
+            // The spell being redirected wasn't named: an opposing Lightning Bolt at the Spellskite's controller stands in, so the activation has a target.
+            val skiteAct = ctx.events.indexOfLast { it.verb == "activate" && it.obj?.let { o -> ctx.objects[o]?.card?.name } == "Spellskite" && it.targets.isEmpty() }
+            if (skiteAct >= 0 && ctx.events.none { it.verb == "cast" }) {
+                val act = ctx.events[skiteAct]; val skiteOwner = act.player ?: ctx.objects[act.obj]?.controller ?: "opp"
+                names.lookup(Names.normalize("Lightning Bolt"))?.let { bolt ->
+                    ctx.events.add(skiteAct, EventSpec("cast", player = ctx.other(skiteOwner) ?: "me", card = CardRef(name = bolt.display, oracleId = bolt.oracleId), targets = listOf(skiteOwner)))
+                    ctx.events[skiteAct + 1] = act.copy(targets = listOf(slug(bolt.display) + ":spell"))
+                    ctx.notes += "The spell being redirected wasn't named; a Lightning Bolt aimed at Spellskite's controller stands in."
+                }
+            }
+            ctx.asks += EventSpec("ask", to = "text:Yes. Paying life is part of the cost, paid as the ability is activated (602.2b, 119.4), so ${who} ${if (who == "you") "are" else "are"} at 0 the moment it goes on the stack. State-based actions are checked before any player would receive priority (704.3), so ${who} lose the game right then (704.5a), before the ability can resolve; it stays on the stack and is removed when the game ends. If you were the one paying, the same applies to you.")
+            return true
+        }
+        // "Do I still reveal?": the upkeep trigger already on the stack resolves without its source.
+        if (clause0 == "stillreveal-question") {
+            val bob = ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name in setOf("Dark Confidant", "Dark Tutelage") } ?: return false
+            ctx.asks += EventSpec("ask", obj = bob.id, to = "stillResolves"); return true
         }
         // "They cast Vapor Snag on my Spellskite in response to my redirection": the redirect fails for want of its new target.
         Regex("""^skitesnag-note (c\d+) (c\d+)$""").find(clause0)?.let { r ->
@@ -4202,7 +4244,9 @@ class SituationParser(private val names: NameIndex) {
         // "Does persist still work later?" after Surgical Extraction took the card from the graveyard.
         if (Regex("""^(?:does|will|can) (?:persist|undying|it) (?:still )?(?:work|persist|come back|return)(?: later| now| on it| from exile| afterwards)?$""").matches(clause0) && ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Surgical Extraction", "Extirpate") }) {
             val card = ctx.lastMentioned?.let { ctx.objects[it] }?.card?.name ?: "the card"
-            ctx.asks += EventSpec("ask", to = "text:No, not for that card. Persist returns a creature only when it dies, that is, goes from the battlefield to a graveyard (702.79a, 700.4); a card exiled from the graveyard is simply gone, and nothing about persist brings it back from exile. Any other copy of $card still on the battlefield keeps its persist as usual.")
+            val undying = names.lookup(Names.normalize(card))?.keywords?.contains("Undying", true) == true
+            val kw = if (undying) "Undying" else "Persist"; val kwRule = if (undying) "702.93a" else "702.79a"
+            ctx.asks += EventSpec("ask", to = "text:No, not for that card. $kw returns a creature only when it dies, that is, goes from the battlefield to a graveyard ($kwRule, 700.4); a card exiled from the graveyard is simply gone, and nothing about ${kw.lowercase()} brings it back from exile. Any other copy of $card still on the battlefield keeps its persist as usual.")
             return true
         }
         if (clause0 == "persistblock-note") {
