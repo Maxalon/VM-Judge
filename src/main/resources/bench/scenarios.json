@@ -33959,5 +33959,111 @@
       "Yes: Death's Shadow died"
     ],
     "cite": []
+  },
+  {
+    "id": "ooze-eats-finks-before-persist",
+    "text": "My Kitchen Finks dies and I have Scavenging Ooze. Can I eat it before it persists?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it left the graveyard before persist could return it",
+      "Yes. Persist is a triggered ability"
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "young-wolf-undying-bigger",
+    "text": "They Bolt my Young Wolf. Does undying bring it back bigger?",
+    "expect": [
+      "Young Wolf comes back with a +1/+1 counter (undying); it's now 2/2"
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-with-counter-dismembered",
+    "text": "I have Kitchen Finks with a -1/-1 counter and they Dismember it. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-thalia-only-and-cost",
+    "text": "They cast Thoughtseize targeting me and I have Thalia in hand only. What do they take and what does it cost?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Thalia, Guardian of Thraben"
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-into-spellskite-and-thalia",
+    "text": "I attack with Tarmogoyf into their untapped Spellskite and Thalia. Do they block?",
+    "expect": [
+      "Tarmogoyf: the battlefield → your graveyard"
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben has been under your control"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-the-path",
+    "text": "They Path my Tarmogoyf. Can I Spellskite the Path?",
+    "expect": [
+      "Path to Exile now targets Spellskite instead of Tarmogoyf"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-at-1-thalia-on-top-upkeep",
+    "text": "I have Dark Confidant and I'm at 1. My top card is Thalia. Do I die on upkeep?",
+    "expect": [
+      "You lose 2 life (Thalia, Guardian of Thraben's mana value)",
+      "Yes: You have lost the game"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snag-spellskite-in-response-to-redirect",
+    "text": "They cast Vapor Snag on my Spellskite in response to my redirect. What happens to their Bolt?",
+    "expect": [
+      "Spellskite: the battlefield → your hand",
+      "You take 3 damage"
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-gains-on-own-target",
+    "text": "I cast Lightning Bolt and they have Kor Firewalker. Do they gain life even if I target my own creature?",
+    "expect": [
+      "opponent gains 1 life in all",
+      "a 2/2 creature has 3 damage marked"
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-1-probe-paid-with-life",
+    "text": "My opponent has Chalice on 1. I cast Gitaxian Probe paying 2 life. Is it countered?",
+    "expect": [
+      "Yes: Gitaxian Probe is countered (by Chalice of the Void)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "redirect-dismember-to-itself",
+    "text": "I Dismember their Spellskite. Can they redirect Dismember to itself?",
+    "expect": [
+      "already targets Spellskite"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-3-cards-4-4-and-3-3",
+    "text": "They have Ensnaring Bridge with 3 cards. I attack with a 4/4 and a 3/3. What happens?",
+    "expect": [
+      "a 4/4 creature can't attack (Ensnaring Bridge)",
+      "opponent takes 3 damage"
+    ],
+    "cite": []
   }
 ]

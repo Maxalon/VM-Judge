@@ -307,8 +307,9 @@ class SituationParser(private val names: NameIndex) {
         var text0 = text00
         if (Regex("""(?i)\bdark confidant\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""\bBob\b"""), "Dark Confidant")
         // "Does the redirect still happen?" about Spellskite: the noun, not the card Redirect.
-        if (Regex("""(?i)\bspellskite\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""(?i)\bthe redirect\b"""), "the redirection")
-            .replace(Regex("""(?i)\b(should|can|could|do|may|would) (i|we) redirect(\?|$)""")) { r -> "${r.groupValues[1]} ${r.groupValues[2]} redirect it${r.groupValues[3]}" }
+        if (Regex("""(?i)\bspellskite\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""(?i)\b(the|my|its|their) redirect\b""")) { r -> "${r.groupValues[1]} redirection" }
+            .replace(Regex("""(?i)\b(should|can|could|do|may|would) (i|we|they|he|she) redirect(\?|$)""")) { r -> "${r.groupValues[1]} ${r.groupValues[2]} redirect it${r.groupValues[3]}" }
+            .replace(Regex("""(?i)\bredirect(s|ed|ing)?\b""")) { r -> "deflect${r.groupValues[1]}" }
         val text = spokenLoyalty.replace(text0) { r ->
             val n = r.groupValues[3].toIntOrNull() ?: (spokenNumbers.indexOf(r.groupValues[3].lowercase()) + 1)
             "${r.groupValues[1]} ${if (r.groupValues[2].lowercase() == "minus") "-" else "+"}$n"
@@ -671,6 +672,8 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""(?<=\bwith (?:my |the )?c\d|\bwith (?:my |the )?c\d\d)(?:,| and)? ?(?:by |while )?(?:paying|pay|using) (?:the |2 |two )?life(?: for it| instead| for the mana| instead of mana)?(?=\?|$)""", RegexOption.IGNORE_CASE), "")
         // "Then on my turn, can I cast Bolt again?": the lead-in is dropped; whether the card can be cast again is what's asked.
         t2 = t2.replace(Regex("""^(?:then\s+|and then\s+)?(?:(?:on|in|during) my (?:next |own )?turn,?\s+|next turn,?\s+|later,?\s+)?(can (?:i|we) (?:still |even |then )?(?:cast|play|flashback|flash back|recast|re-cast) (?:my |the )?c\d+ again\??)$""", RegexOption.IGNORE_CASE), "$1")
+        // "Do I die on upkeep?" (Dark Confidant at 1 with a known top card): the upkeep begins, then the question.
+        t2 = t2.replace(Regex("""^(do|will|would|am) (i|we) (die|lose|lose the game|dead|survive|live) (?:on|in|during|at) (?:my )?(?:next )?upkeep\??$""", RegexOption.IGNORE_CASE), "my upkeep begins, $1 $2 $3")
         // "Do I lose on upkeep if I reveal a land?" (Dark Confidant at 1 life): the reveal, then the question.
         t2 = t2.replace(Regex("""^(do|will|would) (i|we) (lose|die|lose the game|survive|live) (?:on|in|during|at) (?:my )?(?:next )?upkeep if (?:i|we) (?:reveal|flip|hit|trigger into|draw into) (an? |the )?(land|basic land|c\d+|instant|sorcery|creature|artifact|enchantment|planeswalker)\??$""", RegexOption.IGNORE_CASE), "i reveal $4$5, $1 $2 $3")
         // "Can I flash it back?": the verb's two words around the object.
@@ -779,7 +782,7 @@ class SituationParser(private val names: NameIndex) {
         // "Do both come back?": the two creatures of mine just described.
         if (Regex("""^do both (?:come back|persist|return|undying back|survive|die)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "bothback-question " + (if (Regex("""\b(?:survive)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "survive" else if (Regex("""\bdie\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "die" else "comesBack")
         // "Does Spellskite stop the Devil trigger?": whether that trigger has a target to change.
-        t2 = t2.let { t0 -> Regex("""^(?:does|can|will) (?:their |my |the )?(c\d+) (?:stop|affect|redirect|take|change|counter|eat) (?:the |my |their )?(c\d+)(?:'s)? (?:trigger|triggered ability|ability|etb|etb trigger)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display == "Spellskite") "skitestops-question ${r.groupValues[2]}" else t0 } ?: t0 }
+        t2 = t2.let { t0 -> Regex("""^(?:does|can|will) (?:their |my |the )?(c\d+) (?:stop|affect|redirect|deflect|deflect|take|change|counter|eat) (?:the |my |their )?(c\d+)(?:'s)? (?:trigger|triggered ability|ability|etb|etb trigger)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display == "Spellskite") "skitestops-question ${r.groupValues[2]}" else t0 } ?: t0 }
         // "I respond by flipping it" / "Can I transform Delver at instant speed?": a transform isn't something a player does on demand.
         t2 = t2.replace(Regex("""^(?:i|we) (?:respond by|try to|want to) (?:flipping|transforming|flip|transform) (?:it|that|my c\d+|the c\d+|c\d+)\??$""", RegexOption.IGNORE_CASE), "can i transform it in response")
         if (Regex("""^can (?:i|we) (?:transform|flip) (?:my |the )?(?:c\d+|it|that|delver) (?:at instant speed|in response|now|right now|manually|whenever i want|on demand|at will)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "flipondemand-question"
@@ -787,7 +790,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""\b(?:(i|we|they|he|she|my opponent|the opponent) (?:have|has) )?(?:one|a|1|a single|only one) blockers?,? (?:(?:i|they) have )?(an? \d+/\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r ->
             if (r.groupValues[1].lowercase() in setOf("they", "he", "she", "my opponent", "the opponent")) "they have ${r.groupValues[2]}, they block with it" else "i have ${r.groupValues[2]}" } }
         // "Can Spellskite redirect Wrath?": whether that spell has a target to change.
-        t2 = t2.let { t0 -> Regex("""^can (?:my |the )?(c\d+) (redirect|take|eat|stop|absorb|c\d+) (?:the |their |a )?(c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+        t2 = t2.let { t0 -> Regex("""^can (?:my |the )?(c\d+) (redirect|deflect|take|eat|stop|absorb|c\d+) (?:the |their |a )?(c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             val verbIsRedirectCard = r.groupValues[2].startsWith("c") && m.cards[r.groupValues[2]]?.display == "Redirect"
             if (m.cards[r.groupValues[1]]?.display == "Spellskite" && (!r.groupValues[2].startsWith("c") || verbIsRedirectCard)) "skitestops-question ${r.groupValues[3]}" else t0 } ?: t0 }
         // "How many Spirits do I have?": a creature type read as a card name is the type word.
@@ -827,7 +830,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(?:both|they both|both of them) (?:trigger|triggers|go off) (?:on|at|in|during) (?:my |the )?upkeep\??$""", RegexOption.IGNORE_CASE), "my upkeep begins")
         // "I Spellskite it to my Spellskite at 2 life. Do I pay life?": the redirect, the life total first.
         t2 = t2.let { t0 -> Regex("""^(.*?)\b(i|we) (c\d+) (it|that|the spell|c\d+) (?:to|onto) (?:my |the )?(c\d+)(?: at (\d+)(?: life)?)?(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[3]]?.display == "Spellskite") "${if (r.groupValues[6].isNotEmpty()) "i'm at ${r.groupValues[6]} life, " else ""}${r.groupValues[1]}i activate ${r.groupValues[5]} targeting ${r.groupValues[4]}${r.groupValues[7]}" else t0 } ?: t0 }
-        if (ctx.objects.values.any { it.card.name == "Spellskite" }) Regex("""^do (?:i|we) (have to |need to )?pay (?:2 |two )?life(?: for (?:it|that)| to redirect(?: it)?| to do that)?\??$""", RegexOption.IGNORE_CASE).find(t2.trim())?.let { r -> t2 = if (r.groupValues[1].isNotEmpty()) "spellskite-life-question must" else "spellskite-life-question" }
+        if (ctx.objects.values.any { it.card.name == "Spellskite" }) Regex("""^do (?:i|we) (have to |need to )?pay (?:2 |two )?life(?: for (?:it|that)| to (?:redirect|deflect)(?: it)?| to do that)?\??$""", RegexOption.IGNORE_CASE).find(t2.trim())?.let { r -> t2 = if (r.groupValues[1].isNotEmpty()) "spellskite-life-question must" else "spellskite-life-question" }
         // "I have two Death's Shadows at 7 life": the life total, then the creatures.
         t2 = t2.replace(Regex("""^(?:i|we) have (two|2|three|3|four) (c\d+)s? at (\d+)(?: life)?$""", RegexOption.IGNORE_CASE), "i'm at $3 life and i have $1 $2")
         if (Regex("""^what size are they(?: now| after)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "bothsize-question"
@@ -971,6 +974,15 @@ class SituationParser(private val names: NameIndex) {
                 if (m.cards[r.groupValues[2]]?.display == "Snapcaster Mage") "${r.groupValues[1]} cast ${r.groupValues[2]}, snapflash-note ${r.groupValues[1]} ${if (r.groupValues[3].startsWith("c")) r.groupValues[3] else "last"}" else t0 } ?: t0 }
         // "Does the flashback get countered too?": the second cast of the same spell.
         t2 = t2.replace(Regex("""^(?:does|is|will|would) the (?:flashback|flashback copy|flashed back one|second one|second cast|recast) (?:get |be )?countered(?: too| as well| again)?\??$""", RegexOption.IGNORE_CASE), "flashbackcountered-question")
+        // "Can I eat it before it persists?": Scavenging Ooze at the card while the persist trigger waits.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:eat|exile|ooze|munch|get rid of) (?:it|that|the card|(?:the |my )?c\d+) (?:before (?:it|that) (?:persists?|comes back|returns|undying triggers|undies)|in response to (?:the )?(?:persist|undying)(?: trigger)?|with (?:the )?(?:persist|undying) (?:trigger )?on the stack)\??$""", RegexOption.IGNORE_CASE), "oozepersist-question")
+        // "They cast Vapor Snag on my Spellskite in response to my redirection": the spell being redirected, then the Snag.
+        t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent) (casts?|plays?) (c\d+) on my (c\d+) in response to my redirection$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[4]]?.display == "Spellskite") "skitesnag-note ${r.groupValues[3]} ${r.groupValues[4]}" else t0 } ?: t0 }
+        // "Do they gain life even if I target my own creature?" (Kor Firewalker): the cast trigger doesn't care where the spell is aimed.
+        t2 = t2.replace(Regex("""^(?:do they (?:still )?gain (?:the )?life|how much life do they gain) even (?:if|when) (?:i|we) (?:target|aim (?:it )?at|point (?:it )?at|bolt) my own (?:creature|guy|dude|c\d+|face|self)\??$""", RegexOption.IGNORE_CASE), "firewalkerown-question")
+        // "into their untapped Spellskite and Thalia": both defenders stay in the attack clause through the split.
+        t2 = t2.replace(Regex("""\binto ((?:their |my opponent's |the opponent's |an? |the )?(?:untapped |tapped |open )?c\d+) and ((?:their |an? |the )?(?:untapped |tapped )?c\d+)\b""", RegexOption.IGNORE_CASE), "into $1 plus $2")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1567,7 +1579,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(i|we|they|he|she|my opponent|the opponent|@\w+) casts? (?:an? |the )?(c\d+)(?:,? (?:pitching|exiling|by exiling|and exiles?) (?:an? |the |my |their )?c\d+(?: to it| for it)?)? to counter (?:my |their |the )?(c\d+)\b""", RegexOption.IGNORE_CASE), "$3-cast-first $1 cast $2 targeting it")
         t2 = t2.let { t0 -> Regex("""^(c\d+)-cast-first (i|we|they|he|she|my opponent|the opponent|@\w+) cast (c\d+) targeting it""", RegexOption.IGNORE_CASE).replace(t0) { r -> val other = if (r.groupValues[2].lowercase() in setOf("i", "we")) "they" else "i"; "$other cast ${r.groupValues[1]}, ${r.groupValues[2]} cast ${r.groupValues[3]} targeting it" } }
             // "Can I redirect it to my Grizzly Bears?" (Spellskite): it only ever pulls a spell onto itself.
-        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:redirect|move|point|send) (?:it|that|the spell|(?:the |their |my opponent's )?c\d+) (?:to|onto|at|towards) (?:my |another |a different |one of my )?(c\d+|creatures?|\d+/\d+)(?: instead)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:redirect|deflect|move|point|send) (?:it|that|the spell|(?:the |their |my opponent's )?c\d+) (?:to|onto|at|towards) (?:my |another |a different |one of my )?(c\d+|creatures?|\d+/\d+)(?: instead)?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
             if (ctx.objects.values.any { o -> o.zone == "battlefield" && (o.card.name ?: "") == "Spellskite" } && m.cards[r.groupValues[1]]?.display != "Spellskite") "spellskite-away-question" else r.value } }
             // "a 5/5 Wurm", "a 2/2 Goblin": a creature type standing for an unnamed creature is just a creature of that size,
             // and "the Wurm" afterwards is that creature.
@@ -1705,7 +1717,7 @@ class SituationParser(private val names: NameIndex) {
                 val sfm = m.cards.values.any { it.display == "Stoneforge Mystic" } || ctx.objects.values.any { it.card.name == "Stoneforge Mystic" }
                 if (equip && sfm) "stoneforge-instant-question" else r.value } }
             // "Can I redirect it to Spellskite?" when the spell already targets Spellskite: nothing to change.
-        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:redirect|move|point|send) (?:it|that|the spell|(?:the |their |my opponent's )?c\d+) (?:to|onto|at|towards) (?:my |the )?(c\d+)\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:redirect|deflect|move|point|send) (?:it|that|the spell|(?:the |their |my opponent's )?c\d+) (?:to|onto|at|towards) (?:my |the )?(c\d+)\??$""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 val sk = ctx.objects.values.firstOrNull { it.card.name == "Spellskite" && it.controller == "me" }
                 val lc = ctx.events.lastOrNull { it.verb == "cast" }
                 if (m.cards[r.groupValues[1]]?.display == "Spellskite" && sk != null && lc != null && lc.player != "me" && sk.id in lc.targets) "spellskite-already-question" else r.value } }
@@ -1817,7 +1829,7 @@ class SituationParser(private val names: NameIndex) {
         // "What survives if I sacrifice Spirit?": the action is done first (in response), then the question is asked.
         t2 = t2.replace(Regex("""^(what (?:survives|dies|happens|is left|do (?:i|we) have left)|(?:does|will|is) (?:my |the )?(?:c\d+|it|that) (?:survive|die|live|still (?:die|live)|dead|alive)|do (?:i|we) (?:win|lose|die|survive)) if (?:i|we) ((?:(?:sacrifice|sac|activate|tap|cast|play|use|crack|pump|flash in|kill|counter|bolt|path|respond with|fire off) (?:my |the |a |an )?(?:c\d+|it|that)(?: (?:first|in response|now|at instant speed))?|block(?: with (?:it|that|(?:my |the )?c\d+|my \d+/\d+)| one| one of them| either| the first one| an attacker)?|chump(?: (?:it|with it))?|don't block))\??$""", RegexOption.IGNORE_CASE)) { r -> val act = r.groupValues[2].let { a -> if (a == "block" || a == "chump" || a == "chump it") "block with it" else if (a == "chump with it") "block with it" else if (a in setOf("block one", "block one of them", "block either", "block the first one", "block an attacker")) "block with my creature" else a }; "i $act, ${r.groupValues[1]}" }
         // "They pay 2 life to redirect my other Bolt to it": Spellskite's Phyrexian cost paid with life, aimed at a second spell.
-        if (ctx.objects.values.any { it.card.name == "Spellskite" }) Regex("""^(?:they|my opponent|the opponent|he|she|i|we) pays? (?:2|two) life to (?:redirect|change|move|point|switch) (?:my |their |the )?(other |second |another |next )?(?:c\d+|spell|it|bolt) (?:to|onto|at|towards?) (?:it|the skite|(?:the |their |my )?c\d+)\??$""", RegexOption.IGNORE_CASE).find(t2.trim())?.let { r -> t2 = if (r.groupValues[1].isNotEmpty()) "spellskite-life-question two" else "spellskite-life-question" }
+        if (ctx.objects.values.any { it.card.name == "Spellskite" }) Regex("""^(?:they|my opponent|the opponent|he|she|i|we) pays? (?:2|two) life to (?:redirect|deflect|change|move|point|switch) (?:my |their |the )?(other |second |another |next )?(?:c\d+|spell|it|bolt) (?:to|onto|at|towards?) (?:it|the skite|(?:the |their |my )?c\d+)\??$""", RegexOption.IGNORE_CASE).find(t2.trim())?.let { r -> t2 = if (r.groupValues[1].isNotEmpty()) "spellskite-life-question two" else "spellskite-life-question" }
         // "choosing discard and shock their Snapcaster": a burn spell's name stands for the damage mode; the thing after it is that mode's target.
         t2 = t2.let { t0 -> Regex("""\b(choosing|picking|selecting) ([a-z][a-z0-9' ]*?) (?:&|and) (c\d+) ((?:my |their |the |his |her )?(?:opponent's )?(?:c\d+|it|that|me|them|my face|my opponent|the opponent|myself))\b""").replace(t0) { r ->
             if (m.cards[r.groupValues[3]]?.display in setOf("Shock", "Lightning Bolt", "Burst Lightning", "Lightning Strike", "Incinerate", "Searing Spear", "Play with Fire")) "${r.groupValues[1]} ${r.groupValues[2]} & deal damage targeting ${r.groupValues[4]}" else r.value } }
@@ -1988,7 +2000,7 @@ class SituationParser(private val names: NameIndex) {
                     val size = r.groupValues[3].ifEmpty { "2/2" }
                     "i attack ${r.groupValues[1]} with a $size" + (2..n).joinToString("") { " and i attack my opponent with another $size" } + ", splitattack-question" + (if (r.groupValues[3].isEmpty()) " unsized" else "") } } }
             // "I redirect the Bolt to their Jace": the redirection rule is gone; the answer is the rule, not a play.
-        t2 = t2.let { t0 -> Regex("""^(?:can |could )?(?:i|we) (?:redirect|move|point) (?:the |my |a |that )?(c\d+) (?:to|onto|at) (?:their |the |his |her |my opponent's )?(c\d+|planeswalker)( instead)?\??(?=[,.]|$)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
+        t2 = t2.let { t0 -> Regex("""^(?:can |could )?(?:i|we) (?:redirect|deflect|move|point) (?:the |my |a |that )?(c\d+) (?:to|onto|at) (?:their |the |his |her |my opponent's )?(c\d+|planeswalker)( instead)?\??(?=[,.]|$)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
                 val isPw = r.groupValues[2] == "planeswalker" || m.cards[r.groupValues[2]]?.typeLine?.contains("Planeswalker") == true
                 if (isPw && m.cards[r.groupValues[1]]?.isSpellOnly == true) "redirectpw-question" else r.value } }
             // "3 dudes, 2/2s": three 2/2s.
@@ -3663,6 +3675,225 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** The second half of [readEarlyQuestions], split under the JVM method size limit. */
+    /** The newer early question handlers, split off readEarlyQuestionsB under the JVM method size limit. Returns null when none applies. */
+    private fun readEarlyQuestionsC(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        // "Can I ultimate next turn if I plus now?": the planeswalker's loyalty against its most expensive minus.
+        Regex("""^ultimatewhen-question (\d+) ([01]) (\d+)$""").find(clause0)?.let { r ->
+            fun isWalker(n: String?) = n?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Planeswalker") } == true
+            val pw = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && isWalker(it.card.name) }?.id
+                ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && isWalker(it.card.name) }?.id ?: return@let
+            ctx.asks += EventSpec("ask", obj = pw, to = "ultimateWhen:${r.groupValues[1]}:${r.groupValues[2]}:${r.groupValues[3]}"); ctx.lastMentioned = pw; return true
+        }
+        // "Do I still get to search?" after a Stifle: whether the search in a trigger or spell happened.
+        Regex("""^(?:do|will|would) (i|we|they|he|she|my opponent|the opponent) (?:still |even |also )?(?:get to |get the |get a |get my )?(?:search|tutor|fetch|find|dig)(?: (?:for |up )?(?:an? |the |my |their )?(?:c\d+|[a-z]+(?: [a-z]+)?))?$""").find(clause0)?.let { r ->
+            if (ctx.asks.any { it.to == "searchHappens" }) return true
+            val who = when (r.groupValues[1]) { "i", "we" -> "me"; else -> pronounPlayer(ctx, "their") }
+            ctx.asks += EventSpec("ask", player = who, to = "searchHappens"); ctx.note(who); return true
+        }
+        // "Does my other attacker still deal damage?": the attacker the removal didn't touch.
+        if (clause0 == "otherattacker-question") {
+            val removed = ctx.events.filter { it.verb == "cast" && it.player != "me" }.flatMap { it.targets }.toSet()
+            val attackers = ctx.events.filter { it.verb == "attack" && (it.player ?: "me") == "me" }.mapNotNull { it.obj }
+            val other = attackers.lastOrNull { it !in removed } ?: return false
+            val defender = ctx.other("me") ?: "opp"
+            ctx.asks += EventSpec("ask", obj = other, to = "damage", targets = listOf(defender)); ctx.note(defender); return true
+        }
+        // "How do I assign damage?": the attacker's power, split among its blockers as its controller likes (510.1c).
+        if (clause0 == "damageassign-question" || clause0 == "assigndamage-question") {
+            val atk = ctx.events.lastOrNull { it.verb == "attack" && it.obj != null && ctx.events.any { b -> b.verb == "block" && it.obj in b.targets } }?.obj
+                ?: ctx.events.lastOrNull { it.verb == "attack" && it.obj != null }?.obj ?: return false
+            val blockers = ctx.events.filter { it.verb == "block" && atk in it.targets }.mapNotNull { it.obj }.distinct()
+            fun pt(id: String): Pair<Int, Int>? { val n = ctx.objects[id]?.card?.name ?: return null; return Regex("""(\d+)/(\d+)""").find(n)?.let { it.groupValues[1].toInt() to it.groupValues[2].toInt() } ?: names.lookup(Names.normalize(n))?.let { e -> e.power?.toIntOrNull()?.let { p -> e.toughness?.toIntOrNull()?.let { t -> p to t } } } }
+            val name = { id: String -> ctx.objects[id]?.card?.name ?: id }
+            val power = pt(atk)?.first
+            val text = if (blockers.isEmpty()) "Nothing is blocking ${name(atk)}: an unblocked attacker deals all its damage to the player or planeswalker it's attacking (510.1b); there is nothing to divide."
+                else if (blockers.size == 1) "${name(atk)} is blocked by one creature, so all its damage goes to that blocker (510.1c); there is no choice to make."
+                else {
+                    val parts = blockers.map { b -> b to pt(b) }
+                    val lethalAll = power != null && parts.all { it.second != null } && parts.sumOf { it.second!!.second } <= power
+                    "You divide ${name(atk)}'s combat damage${power?.let { " ($it)" } ?: ""} among the creatures blocking it however you like (510.1c): there is no longer a damage assignment order and no need to assign lethal damage to one blocker before the next. " +
+                        (if (lethalAll) "Assigning ${parts.joinToString(" and ") { (b, t) -> "${t!!.second} to ${name(b)}" }} kills every blocker${if (parts.sumOf { it.second!!.second } < power!!) ", with ${power - parts.sumOf { it.second!!.second }} to spare that can go anywhere among them" else ""}." else if (power != null && parts.all { it.second != null }) "Its $power damage isn't enough to kill both (${parts.joinToString(" and ") { (b, t) -> "${name(b)} has toughness ${t!!.second}" }}), so choose which to kill: ${parts.filter { it.second!!.second <= power }.joinToString(" or ") { (b, t) -> "${t!!.second} to ${name(b)}" }.ifEmpty { "neither dies to this attacker alone" }}, with the rest wherever you like." else "Each blocker needs damage equal to its toughness to die (704.5g); the split is announced as combat damage is assigned, with all blockers dealing their damage back at the same time (510.2).")
+                }
+            ctx.asks += EventSpec("ask", to = "text:$text"); return true
+        }
+        // "Does the redirection still happen?": Spellskite's ability on the stack, asked whether it still resolves.
+        if (clause0 == "skiteresolves-question") {
+            val skite = ctx.objects.values.lastOrNull { it.card.name == "Spellskite" }?.id ?: return false
+            ctx.asks += EventSpec("ask", obj = skite, to = "stillResolves"); return true
+        }
+        // "Does my next spell cost more?": the taxes on the battlefield.
+        Regex("""^nextspelltax-question (me|they) (\w+)$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1] == "me") "me" else pronounPlayer(ctx, "their")
+            ctx.asks += EventSpec("ask", player = who, to = "nextSpellTax:${r.groupValues[2]}"); ctx.note(who); return true
+        }
+        // "Does Thalia tax Bob's trigger?": spells have costs that can be increased; abilities don't get taxed by spell taxes.
+        Regex("""^taxtrigger-question (c\d+) (c\d+)$""").find(clause0)?.let { r ->
+            val taxer = m.cards[r.groupValues[1]] ?: return@let
+            val src = m.cards[r.groupValues[2]] ?: return@let
+            ctx.asks += EventSpec("ask", to = "text:No. ${taxer.display}'s effect raises the cost of spells (a cost increase applies when the spell's total cost is worked out, 601.2f), and ${src.display}'s ability isn't a spell: a triggered ability has no mana cost and nothing is paid to put it on the stack (113.3c, 603.3). Only an effect that specifically taxes abilities, like Suppression Field for activated abilities, could touch it.")
+            return true
+        }
+        // "Can I flash it back first?": only a card with flashback (printed or granted) can be cast from the graveyard.
+        Regex("""^flashfirst-question (it|that|c\d+)$""").find(clause0)?.let { r ->
+            val lastCast = ctx.events.lastOrNull { it.verb == "cast" }
+            val id = if (r.groupValues[1].startsWith("c")) m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) } else lastCast?.targets?.firstOrNull { it in ctx.objects } ?: ctx.lastMentioned?.takeIf { it in ctx.objects }
+            val obj = id?.let { ctx.objects[it] } ?: return@let
+            val entry = obj.card.name?.let { names.lookup(Names.normalize(it)) } ?: return@let
+            val snap = ctx.objects.values.any { it.controller == obj.controller && it.zone == "battlefield" && it.card.name == "Snapcaster Mage" }
+            if (Regex("""(?i)\bflashback\b""").containsMatchIn(entry.keywords) || snap) return@let
+            val spellName = lastCast?.card?.name ?: lastCast?.obj?.let { ctx.objects[it]?.card?.name } ?: "that spell"
+            ctx.asks += EventSpec("ask", to = "text:No. ${entry.display} has no flashback and nothing described gives it one, so it can't be cast from ${if (obj.controller == "me") "your" else "their"} graveyard at all (601.3, 702.34a); ${if (entry.isSpellOnly) "it's an ordinary card in the graveyard" else "a creature card in the graveyard can only be returned by an effect, not cast from there"}. ${if (obj.controller == "me") "You" else "They"} may respond to $spellName with instants and abilities, but ${entry.display} itself stays put, and $spellName exiles it when it resolves.")
+            return true
+        }
+        // "Do I have to flip it?" after a Delver reveal: revealing is "you may", so the transform is the player's choice.
+        if (Regex("""^(?:do|must|would) (?:i|we) (?:have to|need to|got to) (?:flip|transform|reveal) (?:it|that|him|her|(?:my )?c\d+)$""").matches(clause0) && (ctx.objects.values.any { it.card.name?.startsWith("Delver of Secrets") == true } || ctx.notes.any { it.startsWith("Delver of Secrets") })) {
+            ctx.asks.removeAll { it.to?.startsWith("text:Yes. Delver of Secrets' upkeep trigger") == true }
+            ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets' trigger says \"you may reveal that card\": the look is mandatory, the reveal isn't, and Delver transforms only if an instant or sorcery card is revealed this way. Keep the card hidden and Delver stays a 1/1 (the card stays on top either way). If you do reveal an instant or sorcery, the transform then isn't optional (701.27a).")
+            return true
+        }
+        // "Can I Vial in response to save it?": the card being taken against the Vial's counters.
+        if (clause0 == "vialsave-question") {
+            val vial = ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name == "Aether Vial" } ?: return false
+            val counters = vial.counters["charge"] ?: 0
+            val taken = ctx.events.lastOrNull { it.verb == "discard" && (it.player ?: "me") == "me" && it.obj != null }
+            val cardId = taken?.obj ?: ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "hand" }?.id ?: return false
+            val entry = ctx.objects[cardId]?.card?.name?.let { names.lookup(Names.normalize(it)) } ?: return false
+            val mv = entry.manaValue
+            if (!entry.typeLine.contains("Creature")) { ctx.asks += EventSpec("ask", to = "text:No. Aether Vial puts only a creature card onto the battlefield, and ${entry.display} isn't one."); return true }
+            if (mv != counters) {
+                ctx.asks += EventSpec("ask", to = "text:No. Aether Vial with $counters charge counter${if (counters == 1) "" else "s"} puts a creature card with mana value exactly $counters onto the battlefield, and ${entry.display}'s mana value is $mv. You can respond with the Vial (it's an activated ability, usable any time you have priority, 602.1, 117.1), but only to put in a $counters-drop; ${entry.display} is still in your hand when the discard spell resolves and can be taken.")
+                return true
+            }
+            if (taken != null) ctx.events.remove(taken)
+            ctx.events += EventSpec("choose", player = "me", obj = vial.id, to = "put:$cardId")
+            ctx.events += EventSpec("activate", player = "me", obj = vial.id); ctx.lastMentioned = cardId
+            ctx.asks += EventSpec("ask", player = "me", to = "respond")
+            ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Aether Vial in response, putting ${entry.display} onto the battlefield before the discard spell resolves."
+            return true
+        }
+        // "Can I Bolt their face again?" after a redirect: a second copy is a new spell, aimed afresh.
+        Regex("""^secondspell-note (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val skite = ctx.objects.values.any { it.card.name == "Spellskite" && it.controller != "me" }
+            ctx.asks += EventSpec("ask", to = "text:Yes, with a second ${card.display} in hand and the mana for it: each copy is its own spell, and you choose its target as you cast it (601.2c). ${if (skite) "Spellskite changed only the first one's target; it can be activated again at the second, if its controller pays {U/P} again, so expect that unless they're out of mana and life to spend." else "Nothing that happened to the first one carries over to the second."}")
+            return true
+        }
+        // "They cast Counterspell on my Thalia. Can I respond with Aether Vial on 2 to put her in?": the spell on the stack isn't a card in hand.
+        Regex("""^vialrespond-question (\d+) (her|him|it|that|them|c\d+)$""").find(clause0)?.let { r ->
+            val counters = r.groupValues[1].toInt().takeIf { it > 0 } ?: ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name == "Aether Vial" }?.counters?.get("charge") ?: 0
+            val countered = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" && it.targets.isNotEmpty() }
+            val mySpell = ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == "me" }
+            val cardName = (if (r.groupValues[2].startsWith("c")) m.cards[r.groupValues[2]]?.display else null) ?: mySpell?.card?.name ?: mySpell?.obj?.let { ctx.objects[it]?.card?.name } ?: return@let
+            val entry = names.lookup(Names.normalize(cardName)) ?: return@let
+            val mv = entry.manaValue
+            val onStack = mySpell != null && (mySpell.card?.name == cardName || mySpell.obj?.let { ctx.objects[it]?.card?.name } == cardName)
+            val counterName = countered?.card?.name ?: "the counterspell"
+            val text = if (onStack) "Not that one. $cardName is a spell on the stack, and Aether Vial puts a creature card from your hand onto the battlefield (its ability can be activated in response, 602.1, 117.1); it can't touch the copy $counterName is aimed at, which is countered when $counterName resolves (701.5a). " +
+                    (if (mv == counters) "With $counters counters the Vial could put a different $cardName from your hand in, uncounterable since it's never cast (608.3)." else "And with $counters counter${if (counters == 1) "" else "s"} the Vial only puts in a creature with mana value $counters; $cardName's is $mv.")
+                else if (mv == counters) "Yes: Aether Vial's ability can be activated any time you have priority (602.1), so in response you may put $cardName (mana value $mv) onto the battlefield; it's never cast and can't be countered (608.3)."
+                else "No: Aether Vial with $counters counter${if (counters == 1) "" else "s"} puts in only a creature card with mana value exactly $counters, and $cardName's mana value is $mv."
+            ctx.asks += EventSpec("ask", to = "text:$text"); return true
+        }
+        // "Can I take Thalia?" with Thalia on the stack: Thoughtseize chooses from the hand only.
+        Regex("""^takestack-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val mine = ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == "me" && it.card?.name?.lowercase() in discardSpells }?.card?.name ?: "your discard spell"
+            ctx.asks += EventSpec("ask", to = "text:No. ${card.display} is a spell on the stack, not a card in their hand, and $mine has them reveal their hand and lets you choose a card from there (701.9a, 400.1). $mine resolves first, since it's on top of the stack (608.1), so you see the hand without ${card.display} in it and take some other nonland card; then ${card.display} resolves and enters as normal. To stop ${card.display} itself you need a counterspell, not discard.")
+            return true
+        }
+        // "Who can I target?": the players a player-targeting spell may be aimed at.
+        if (clause0 == "legaltargets-question") {
+            val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
+            val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
+            ctx.asks += EventSpec("ask", card = card, player = lc.player ?: "me", to = "legalTargets"); return true
+        }
+        // "What should I do?": a Vial with the right counters against a discard spell is the play; otherwise the outcome speaks.
+        if (clause0 == "advice-question") {
+            val discard = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" && it.card?.name?.lowercase() in discardSpells } ?: return false
+            val vial = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Aether Vial" } ?: return false
+            val counters = vial.counters["charge"] ?: 0
+            val inHand = ctx.objects.values.filter { it.controller == "me" && it.zone == "hand" }.mapNotNull { o -> o.card.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { e -> o to e } }
+            val fit = inHand.firstOrNull { (_, e) -> e.typeLine.contains("Creature") && e.manaValue == counters }
+            if (fit == null) { ctx.asks += EventSpec("ask", to = "text:Aether Vial with $counters counter${if (counters == 1) "" else "s"} puts in only a creature with mana value $counters, and nothing in your hand fits, so the Vial doesn't answer ${discard.card?.name}; let it resolve (you choose nothing: they pick the card)."); return true }
+            ctx.events.removeAll { it.verb == "discard" && (it.player ?: "me") == "me" }
+            ctx.events += EventSpec("choose", player = "me", obj = vial.id, to = "put:${fit.first.id}")
+            ctx.events += EventSpec("activate", player = "me", obj = vial.id); ctx.lastMentioned = fit.first.id
+            ctx.asks += EventSpec("ask", to = "text:Activate Aether Vial in response. Its ability can be activated any time you have priority (602.1), and you get priority after ${discard.card?.name} is cast (117.3c), so ${fit.second.display} (mana value ${fit.second.manaValue}, matching the $counters counters) goes onto the battlefield first; when ${discard.card?.name} resolves it isn't in your hand to be taken, and a creature put onto the battlefield was never cast, so it can't be countered either (608.3).")
+            return true
+        }
+        // "I attack with two Delvers, one flipped": one of the copies is transformed.
+        if (Regex("""^(?:one|one of them|one of which|one of the \w+|one of my \w+) (?:is |has |already )?(?:flipped|transformed|flipped over|turned over)$""").matches(clause0)) {
+            val id = ctx.objects.values.filter { it.controller == (ctx.lastActor ?: "me") && it.zone == "battlefield" && it.card.name?.let { n -> names.lookup(Names.normalize(n))?.let { e -> names.isBackFace(e) || names.fullNameOf(e.oracleId)?.contains(" // ") == true } } == true }
+                .firstOrNull { o -> ctx.events.none { it.verb == "transform" && it.obj == o.id } }?.id ?: return false
+            ctx.events.add(ctx.events.indexOfFirst { it.verb == "attack" }.takeIf { it >= 0 } ?: ctx.events.size, EventSpec("transform", obj = id)); ctx.lastMentioned = id
+            return true
+        }
+        // "Does the flashback get countered too?": the last spell cast with flashback, asked about on its own.
+        if (clause0 == "flashbackcountered-question") {
+            val fb = ctx.events.lastOrNull { it.verb == "cast" && it.to == "flashback" } ?: return false
+            val card = fb.card ?: fb.obj?.let { ctx.objects[it]?.card } ?: return false
+            ctx.asks += EventSpec("ask", card = card, to = "countered:last"); return true
+        }
+        // "Then they Snapcaster it": the spell they cast before is flashed back with the Mage's trigger.
+        Regex("""^snapflash-note (\w+) (c\d+|last)$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else pronounPlayer(ctx, "their")
+            val entry = if (r.groupValues[2] != "last") m.cards[r.groupValues[2]] else ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == who && it.card?.name != "Snapcaster Mage" && (it.card?.name ?: it.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.let { e -> (e.card?.name ?: e.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n)) } }
+            if (entry == null) return@let
+            emitCast(who, entry, " with flashback", m, ctx); return true
+        }
+        // "Should I redirect?" with Spellskite: the redirect is played out and weighed.
+        Regex("""^should (?:i|we) (?:redirect|deflect|spellskite|skite)(?: (?:it|that|the spell|the bolt))?(?: (?:to|onto|with) (?:my )?(?:spellskite|c\d+|it))?$""").find(clause0)?.let {
+            val skite = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Spellskite" } ?: return@let
+            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
+            val target = spell.targets.firstOrNull()?.let { ctx.objects[it] }
+            val targetEntry = target?.card?.name?.let { names.lookup(Names.normalize(it)) }
+            val persist = targetEntry?.keywords?.contains("Persist", true) == true || targetEntry?.keywords?.contains("Undying", true) == true
+            val tough = targetEntry?.toughness?.toIntOrNull()
+            ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(spell.card?.name?.let { slug(it) + ":spell" } ?: return@let))
+            val spellName = spell.card?.name ?: "the spell"
+            val advice = when {
+                target == null -> "Redirecting costs {U/P} (or 2 life) and pulls $spellName onto Spellskite, a 0/4."
+                persist -> "Up to you: ${target.card.name} would ${if (tough != null && tough <= 3) "die to" else "take"} $spellName but it has ${if (targetEntry!!.keywords.contains("Persist", true)) "persist" else "undying"}, so it comes back anyway (smaller, with a counter); redirecting keeps it as it is and costs {U/P} or 2 life, with Spellskite (0/4) shrugging off 3 damage. Save the mana if the counter doesn't matter to you."
+                tough != null && tough <= 3 -> "Yes, if the mana or 2 life is worth it: ${target.card.name} dies to $spellName otherwise, and Spellskite (0/4) survives the 3 damage."
+                else -> "No need: ${target.card.name} survives $spellName as it is; redirecting only spends {U/P} or 2 life."
+            }
+            ctx.asks += EventSpec("ask", to = "text:$advice"); ctx.notes += "The redirect is played out below so you can see both ends of it."
+            return true
+        }
+        // "Can I eat it before it persists?": the Ooze's ability in response to the persist trigger.
+        if (clause0 == "oozepersist-question") {
+            val ooze = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Scavenging Ooze" } ?: return false
+            val dead = ctx.events.lastOrNull { it.verb == "leave" && it.to == "graveyard" && it.obj != null }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return false
+            ctx.events += EventSpec("activate", player = "me", obj = ooze.id, targets = listOf(dead))
+            ctx.asks += EventSpec("ask", to = "text:Yes. Persist is a triggered ability: when the creature dies it goes on the stack, and before it resolves every player gets priority (603.3, 117.1). Scavenging Ooze's ability can be activated then, targeting the card in your graveyard; it resolves first (608.1), exiles the card, and the persist trigger then finds nothing to return (400.7), so the creature stays gone. The Ooze gets its counter and you gain 1 life, since it was a creature card.")
+            return true
+        }
+        // "They cast Vapor Snag on my Spellskite in response to my redirection": the redirect fails for want of its new target.
+        Regex("""^skitesnag-note (c\d+) (c\d+)$""").find(clause0)?.let { r ->
+            val snag = m.cards[r.groupValues[1]] ?: return@let
+            val skite = m.cards[r.groupValues[2]]?.let { objectIdFor(it, ctx) ?: addObject(it, "me", false, ctx) } ?: return@let
+            val bolt = names.lookup(Names.normalize("Lightning Bolt")) ?: return@let
+            ctx.events += EventSpec("cast", player = pronounPlayer(ctx, "their"), card = CardRef(name = bolt.display, oracleId = bolt.oracleId), targets = listOf("me"))
+            ctx.events += EventSpec("activate", player = "me", obj = skite, targets = listOf(slug(bolt.display) + ":spell"))
+            ctx.events += EventSpec("cast", player = pronounPlayer(ctx, "their"), card = CardRef(name = snag.display, oracleId = snag.oracleId), targets = listOf(skite))
+            ctx.notes += "The spell being redirected wasn't named; it's read as their Lightning Bolt aimed at you, with Spellskite's ability on the stack when ${snag.display} is cast."
+            ctx.lastActor = pronounPlayer(ctx, "their"); ctx.lastVerb = "cast"
+            return true
+        }
+        // "Do they gain life even if I target my own creature?": the red spell is cast at the asker's own creature.
+        if (clause0 == "firewalkerown-question") {
+            val idx = ctx.events.indexOfLast { it.verb == "cast" && (it.player ?: "me") == "me" }
+            if (idx < 0) return false
+            val mine = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }?.id
+                ?: run { var id = slug("a creature"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("a creature") + "_" + (k++); ctx.objects[id] = ObjectSpec(id, CardRef(name = "a 2/2 creature"), controller = "me"); id }
+            ctx.events[idx] = ctx.events[idx].copy(targets = listOf(mine))
+            ctx.asks += EventSpec("ask", player = pronounPlayer(ctx, "their"), to = "playerGain"); ctx.note(pronounPlayer(ctx, "their"))
+            ctx.notes += "The spell is read as aimed at your own creature, as the question says; Kor Firewalker's trigger looks only at the spell being cast and its colour, not its target."
+            return true
+        }
+        return null
+    }
+
     private fun readEarlyQuestionsB(clause0: String, m: Marked, ctx: Ctx): Boolean {
         if (clause0 == "oozeeat-question") {
             val ooze = ctx.objects.values.first { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Scavenging Ooze" }
@@ -3994,189 +4225,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "With no ${r.groupValues[1]} mana available, a {$sym/P} cost can only be paid with 2 life (107.4f)."
             return true
         }
-        // "Can I ultimate next turn if I plus now?": the planeswalker's loyalty against its most expensive minus.
-        Regex("""^ultimatewhen-question (\d+) ([01]) (\d+)$""").find(clause0)?.let { r ->
-            fun isWalker(n: String?) = n?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Planeswalker") } == true
-            val pw = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && isWalker(it.card.name) }?.id
-                ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && isWalker(it.card.name) }?.id ?: return@let
-            ctx.asks += EventSpec("ask", obj = pw, to = "ultimateWhen:${r.groupValues[1]}:${r.groupValues[2]}:${r.groupValues[3]}"); ctx.lastMentioned = pw; return true
-        }
-        // "Do I still get to search?" after a Stifle: whether the search in a trigger or spell happened.
-        Regex("""^(?:do|will|would) (i|we|they|he|she|my opponent|the opponent) (?:still |even |also )?(?:get to |get the |get a |get my )?(?:search|tutor|fetch|find|dig)(?: (?:for |up )?(?:an? |the |my |their )?(?:c\d+|[a-z]+(?: [a-z]+)?))?$""").find(clause0)?.let { r ->
-            if (ctx.asks.any { it.to == "searchHappens" }) return true
-            val who = when (r.groupValues[1]) { "i", "we" -> "me"; else -> pronounPlayer(ctx, "their") }
-            ctx.asks += EventSpec("ask", player = who, to = "searchHappens"); ctx.note(who); return true
-        }
-        // "Does my other attacker still deal damage?": the attacker the removal didn't touch.
-        if (clause0 == "otherattacker-question") {
-            val removed = ctx.events.filter { it.verb == "cast" && it.player != "me" }.flatMap { it.targets }.toSet()
-            val attackers = ctx.events.filter { it.verb == "attack" && (it.player ?: "me") == "me" }.mapNotNull { it.obj }
-            val other = attackers.lastOrNull { it !in removed } ?: return false
-            val defender = ctx.other("me") ?: "opp"
-            ctx.asks += EventSpec("ask", obj = other, to = "damage", targets = listOf(defender)); ctx.note(defender); return true
-        }
-        // "How do I assign damage?": the attacker's power, split among its blockers as its controller likes (510.1c).
-        if (clause0 == "damageassign-question" || clause0 == "assigndamage-question") {
-            val atk = ctx.events.lastOrNull { it.verb == "attack" && it.obj != null && ctx.events.any { b -> b.verb == "block" && it.obj in b.targets } }?.obj
-                ?: ctx.events.lastOrNull { it.verb == "attack" && it.obj != null }?.obj ?: return false
-            val blockers = ctx.events.filter { it.verb == "block" && atk in it.targets }.mapNotNull { it.obj }.distinct()
-            fun pt(id: String): Pair<Int, Int>? { val n = ctx.objects[id]?.card?.name ?: return null; return Regex("""(\d+)/(\d+)""").find(n)?.let { it.groupValues[1].toInt() to it.groupValues[2].toInt() } ?: names.lookup(Names.normalize(n))?.let { e -> e.power?.toIntOrNull()?.let { p -> e.toughness?.toIntOrNull()?.let { t -> p to t } } } }
-            val name = { id: String -> ctx.objects[id]?.card?.name ?: id }
-            val power = pt(atk)?.first
-            val text = if (blockers.isEmpty()) "Nothing is blocking ${name(atk)}: an unblocked attacker deals all its damage to the player or planeswalker it's attacking (510.1b); there is nothing to divide."
-                else if (blockers.size == 1) "${name(atk)} is blocked by one creature, so all its damage goes to that blocker (510.1c); there is no choice to make."
-                else {
-                    val parts = blockers.map { b -> b to pt(b) }
-                    val lethalAll = power != null && parts.all { it.second != null } && parts.sumOf { it.second!!.second } <= power
-                    "You divide ${name(atk)}'s combat damage${power?.let { " ($it)" } ?: ""} among the creatures blocking it however you like (510.1c): there is no longer a damage assignment order and no need to assign lethal damage to one blocker before the next. " +
-                        (if (lethalAll) "Assigning ${parts.joinToString(" and ") { (b, t) -> "${t!!.second} to ${name(b)}" }} kills every blocker${if (parts.sumOf { it.second!!.second } < power!!) ", with ${power - parts.sumOf { it.second!!.second }} to spare that can go anywhere among them" else ""}." else if (power != null && parts.all { it.second != null }) "Its $power damage isn't enough to kill both (${parts.joinToString(" and ") { (b, t) -> "${name(b)} has toughness ${t!!.second}" }}), so choose which to kill: ${parts.filter { it.second!!.second <= power }.joinToString(" or ") { (b, t) -> "${t!!.second} to ${name(b)}" }.ifEmpty { "neither dies to this attacker alone" }}, with the rest wherever you like." else "Each blocker needs damage equal to its toughness to die (704.5g); the split is announced as combat damage is assigned, with all blockers dealing their damage back at the same time (510.2).")
-                }
-            ctx.asks += EventSpec("ask", to = "text:$text"); return true
-        }
-        // "Does the redirection still happen?": Spellskite's ability on the stack, asked whether it still resolves.
-        if (clause0 == "skiteresolves-question") {
-            val skite = ctx.objects.values.lastOrNull { it.card.name == "Spellskite" }?.id ?: return false
-            ctx.asks += EventSpec("ask", obj = skite, to = "stillResolves"); return true
-        }
-        // "Does my next spell cost more?": the taxes on the battlefield.
-        Regex("""^nextspelltax-question (me|they) (\w+)$""").find(clause0)?.let { r ->
-            val who = if (r.groupValues[1] == "me") "me" else pronounPlayer(ctx, "their")
-            ctx.asks += EventSpec("ask", player = who, to = "nextSpellTax:${r.groupValues[2]}"); ctx.note(who); return true
-        }
-        // "Does Thalia tax Bob's trigger?": spells have costs that can be increased; abilities don't get taxed by spell taxes.
-        Regex("""^taxtrigger-question (c\d+) (c\d+)$""").find(clause0)?.let { r ->
-            val taxer = m.cards[r.groupValues[1]] ?: return@let
-            val src = m.cards[r.groupValues[2]] ?: return@let
-            ctx.asks += EventSpec("ask", to = "text:No. ${taxer.display}'s effect raises the cost of spells (a cost increase applies when the spell's total cost is worked out, 601.2f), and ${src.display}'s ability isn't a spell: a triggered ability has no mana cost and nothing is paid to put it on the stack (113.3c, 603.3). Only an effect that specifically taxes abilities, like Suppression Field for activated abilities, could touch it.")
-            return true
-        }
-        // "Can I flash it back first?": only a card with flashback (printed or granted) can be cast from the graveyard.
-        Regex("""^flashfirst-question (it|that|c\d+)$""").find(clause0)?.let { r ->
-            val lastCast = ctx.events.lastOrNull { it.verb == "cast" }
-            val id = if (r.groupValues[1].startsWith("c")) m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) } else lastCast?.targets?.firstOrNull { it in ctx.objects } ?: ctx.lastMentioned?.takeIf { it in ctx.objects }
-            val obj = id?.let { ctx.objects[it] } ?: return@let
-            val entry = obj.card.name?.let { names.lookup(Names.normalize(it)) } ?: return@let
-            val snap = ctx.objects.values.any { it.controller == obj.controller && it.zone == "battlefield" && it.card.name == "Snapcaster Mage" }
-            if (Regex("""(?i)\bflashback\b""").containsMatchIn(entry.keywords) || snap) return@let
-            val spellName = lastCast?.card?.name ?: lastCast?.obj?.let { ctx.objects[it]?.card?.name } ?: "that spell"
-            ctx.asks += EventSpec("ask", to = "text:No. ${entry.display} has no flashback and nothing described gives it one, so it can't be cast from ${if (obj.controller == "me") "your" else "their"} graveyard at all (601.3, 702.34a); ${if (entry.isSpellOnly) "it's an ordinary card in the graveyard" else "a creature card in the graveyard can only be returned by an effect, not cast from there"}. ${if (obj.controller == "me") "You" else "They"} may respond to $spellName with instants and abilities, but ${entry.display} itself stays put, and $spellName exiles it when it resolves.")
-            return true
-        }
-        // "Do I have to flip it?" after a Delver reveal: revealing is "you may", so the transform is the player's choice.
-        if (Regex("""^(?:do|must|would) (?:i|we) (?:have to|need to|got to) (?:flip|transform|reveal) (?:it|that|him|her|(?:my )?c\d+)$""").matches(clause0) && (ctx.objects.values.any { it.card.name?.startsWith("Delver of Secrets") == true } || ctx.notes.any { it.startsWith("Delver of Secrets") })) {
-            ctx.asks.removeAll { it.to?.startsWith("text:Yes. Delver of Secrets' upkeep trigger") == true }
-            ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets' trigger says \"you may reveal that card\": the look is mandatory, the reveal isn't, and Delver transforms only if an instant or sorcery card is revealed this way. Keep the card hidden and Delver stays a 1/1 (the card stays on top either way). If you do reveal an instant or sorcery, the transform then isn't optional (701.27a).")
-            return true
-        }
-        // "Can I Vial in response to save it?": the card being taken against the Vial's counters.
-        if (clause0 == "vialsave-question") {
-            val vial = ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name == "Aether Vial" } ?: return false
-            val counters = vial.counters["charge"] ?: 0
-            val taken = ctx.events.lastOrNull { it.verb == "discard" && (it.player ?: "me") == "me" && it.obj != null }
-            val cardId = taken?.obj ?: ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "hand" }?.id ?: return false
-            val entry = ctx.objects[cardId]?.card?.name?.let { names.lookup(Names.normalize(it)) } ?: return false
-            val mv = entry.manaValue
-            if (!entry.typeLine.contains("Creature")) { ctx.asks += EventSpec("ask", to = "text:No. Aether Vial puts only a creature card onto the battlefield, and ${entry.display} isn't one."); return true }
-            if (mv != counters) {
-                ctx.asks += EventSpec("ask", to = "text:No. Aether Vial with $counters charge counter${if (counters == 1) "" else "s"} puts a creature card with mana value exactly $counters onto the battlefield, and ${entry.display}'s mana value is $mv. You can respond with the Vial (it's an activated ability, usable any time you have priority, 602.1, 117.1), but only to put in a $counters-drop; ${entry.display} is still in your hand when the discard spell resolves and can be taken.")
-                return true
-            }
-            if (taken != null) ctx.events.remove(taken)
-            ctx.events += EventSpec("choose", player = "me", obj = vial.id, to = "put:$cardId")
-            ctx.events += EventSpec("activate", player = "me", obj = vial.id); ctx.lastMentioned = cardId
-            ctx.asks += EventSpec("ask", player = "me", to = "respond")
-            ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Aether Vial in response, putting ${entry.display} onto the battlefield before the discard spell resolves."
-            return true
-        }
-        // "Can I Bolt their face again?" after a redirect: a second copy is a new spell, aimed afresh.
-        Regex("""^secondspell-note (c\d+)$""").find(clause0)?.let { r ->
-            val card = m.cards[r.groupValues[1]] ?: return@let
-            val skite = ctx.objects.values.any { it.card.name == "Spellskite" && it.controller != "me" }
-            ctx.asks += EventSpec("ask", to = "text:Yes, with a second ${card.display} in hand and the mana for it: each copy is its own spell, and you choose its target as you cast it (601.2c). ${if (skite) "Spellskite changed only the first one's target; it can be activated again at the second, if its controller pays {U/P} again, so expect that unless they're out of mana and life to spend." else "Nothing that happened to the first one carries over to the second."}")
-            return true
-        }
-        // "They cast Counterspell on my Thalia. Can I respond with Aether Vial on 2 to put her in?": the spell on the stack isn't a card in hand.
-        Regex("""^vialrespond-question (\d+) (her|him|it|that|them|c\d+)$""").find(clause0)?.let { r ->
-            val counters = r.groupValues[1].toInt().takeIf { it > 0 } ?: ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name == "Aether Vial" }?.counters?.get("charge") ?: 0
-            val countered = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" && it.targets.isNotEmpty() }
-            val mySpell = ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == "me" }
-            val cardName = (if (r.groupValues[2].startsWith("c")) m.cards[r.groupValues[2]]?.display else null) ?: mySpell?.card?.name ?: mySpell?.obj?.let { ctx.objects[it]?.card?.name } ?: return@let
-            val entry = names.lookup(Names.normalize(cardName)) ?: return@let
-            val mv = entry.manaValue
-            val onStack = mySpell != null && (mySpell.card?.name == cardName || mySpell.obj?.let { ctx.objects[it]?.card?.name } == cardName)
-            val counterName = countered?.card?.name ?: "the counterspell"
-            val text = if (onStack) "Not that one. $cardName is a spell on the stack, and Aether Vial puts a creature card from your hand onto the battlefield (its ability can be activated in response, 602.1, 117.1); it can't touch the copy $counterName is aimed at, which is countered when $counterName resolves (701.5a). " +
-                    (if (mv == counters) "With $counters counters the Vial could put a different $cardName from your hand in, uncounterable since it's never cast (608.3)." else "And with $counters counter${if (counters == 1) "" else "s"} the Vial only puts in a creature with mana value $counters; $cardName's is $mv.")
-                else if (mv == counters) "Yes: Aether Vial's ability can be activated any time you have priority (602.1), so in response you may put $cardName (mana value $mv) onto the battlefield; it's never cast and can't be countered (608.3)."
-                else "No: Aether Vial with $counters counter${if (counters == 1) "" else "s"} puts in only a creature card with mana value exactly $counters, and $cardName's mana value is $mv."
-            ctx.asks += EventSpec("ask", to = "text:$text"); return true
-        }
-        // "Can I take Thalia?" with Thalia on the stack: Thoughtseize chooses from the hand only.
-        Regex("""^takestack-question (c\d+)$""").find(clause0)?.let { r ->
-            val card = m.cards[r.groupValues[1]] ?: return@let
-            val mine = ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == "me" && it.card?.name?.lowercase() in discardSpells }?.card?.name ?: "your discard spell"
-            ctx.asks += EventSpec("ask", to = "text:No. ${card.display} is a spell on the stack, not a card in their hand, and $mine has them reveal their hand and lets you choose a card from there (701.9a, 400.1). $mine resolves first, since it's on top of the stack (608.1), so you see the hand without ${card.display} in it and take some other nonland card; then ${card.display} resolves and enters as normal. To stop ${card.display} itself you need a counterspell, not discard.")
-            return true
-        }
-        // "Who can I target?": the players a player-targeting spell may be aimed at.
-        if (clause0 == "legaltargets-question") {
-            val lc = ctx.events.lastOrNull { it.verb == "cast" } ?: return false
-            val card = lc.card ?: lc.obj?.let { ctx.objects[it]?.card } ?: return false
-            ctx.asks += EventSpec("ask", card = card, player = lc.player ?: "me", to = "legalTargets"); return true
-        }
-        // "What should I do?": a Vial with the right counters against a discard spell is the play; otherwise the outcome speaks.
-        if (clause0 == "advice-question") {
-            val discard = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" && it.card?.name?.lowercase() in discardSpells } ?: return false
-            val vial = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Aether Vial" } ?: return false
-            val counters = vial.counters["charge"] ?: 0
-            val inHand = ctx.objects.values.filter { it.controller == "me" && it.zone == "hand" }.mapNotNull { o -> o.card.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { e -> o to e } }
-            val fit = inHand.firstOrNull { (_, e) -> e.typeLine.contains("Creature") && e.manaValue == counters }
-            if (fit == null) { ctx.asks += EventSpec("ask", to = "text:Aether Vial with $counters counter${if (counters == 1) "" else "s"} puts in only a creature with mana value $counters, and nothing in your hand fits, so the Vial doesn't answer ${discard.card?.name}; let it resolve (you choose nothing: they pick the card)."); return true }
-            ctx.events.removeAll { it.verb == "discard" && (it.player ?: "me") == "me" }
-            ctx.events += EventSpec("choose", player = "me", obj = vial.id, to = "put:${fit.first.id}")
-            ctx.events += EventSpec("activate", player = "me", obj = vial.id); ctx.lastMentioned = fit.first.id
-            ctx.asks += EventSpec("ask", to = "text:Activate Aether Vial in response. Its ability can be activated any time you have priority (602.1), and you get priority after ${discard.card?.name} is cast (117.3c), so ${fit.second.display} (mana value ${fit.second.manaValue}, matching the $counters counters) goes onto the battlefield first; when ${discard.card?.name} resolves it isn't in your hand to be taken, and a creature put onto the battlefield was never cast, so it can't be countered either (608.3).")
-            return true
-        }
-        // "I attack with two Delvers, one flipped": one of the copies is transformed.
-        if (Regex("""^(?:one|one of them|one of which|one of the \w+|one of my \w+) (?:is |has |already )?(?:flipped|transformed|flipped over|turned over)$""").matches(clause0)) {
-            val id = ctx.objects.values.filter { it.controller == (ctx.lastActor ?: "me") && it.zone == "battlefield" && it.card.name?.let { n -> names.lookup(Names.normalize(n))?.let { e -> names.isBackFace(e) || names.fullNameOf(e.oracleId)?.contains(" // ") == true } } == true }
-                .firstOrNull { o -> ctx.events.none { it.verb == "transform" && it.obj == o.id } }?.id ?: return false
-            ctx.events.add(ctx.events.indexOfFirst { it.verb == "attack" }.takeIf { it >= 0 } ?: ctx.events.size, EventSpec("transform", obj = id)); ctx.lastMentioned = id
-            return true
-        }
-        // "Does the flashback get countered too?": the last spell cast with flashback, asked about on its own.
-        if (clause0 == "flashbackcountered-question") {
-            val fb = ctx.events.lastOrNull { it.verb == "cast" && it.to == "flashback" } ?: return false
-            val card = fb.card ?: fb.obj?.let { ctx.objects[it]?.card } ?: return false
-            ctx.asks += EventSpec("ask", card = card, to = "countered:last"); return true
-        }
-        // "Then they Snapcaster it": the spell they cast before is flashed back with the Mage's trigger.
-        Regex("""^snapflash-note (\w+) (c\d+|last)$""").find(clause0)?.let { r ->
-            val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else pronounPlayer(ctx, "their")
-            val entry = if (r.groupValues[2] != "last") m.cards[r.groupValues[2]] else ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == who && it.card?.name != "Snapcaster Mage" && (it.card?.name ?: it.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.let { e -> (e.card?.name ?: e.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n)) } }
-            if (entry == null) return@let
-            emitCast(who, entry, " with flashback", m, ctx); return true
-        }
-        // "Should I redirect?" with Spellskite: the redirect is played out and weighed.
-        Regex("""^should (?:i|we) (?:redirect|spellskite|skite)(?: (?:it|that|the spell|the bolt))?(?: (?:to|onto|with) (?:my )?(?:spellskite|c\d+|it))?$""").find(clause0)?.let {
-            val skite = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Spellskite" } ?: return@let
-            val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
-            val target = spell.targets.firstOrNull()?.let { ctx.objects[it] }
-            val targetEntry = target?.card?.name?.let { names.lookup(Names.normalize(it)) }
-            val persist = targetEntry?.keywords?.contains("Persist", true) == true || targetEntry?.keywords?.contains("Undying", true) == true
-            val tough = targetEntry?.toughness?.toIntOrNull()
-            ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(spell.card?.name?.let { slug(it) + ":spell" } ?: return@let))
-            val spellName = spell.card?.name ?: "the spell"
-            val advice = when {
-                target == null -> "Redirecting costs {U/P} (or 2 life) and pulls $spellName onto Spellskite, a 0/4."
-                persist -> "Up to you: ${target.card.name} would ${if (tough != null && tough <= 3) "die to" else "take"} $spellName but it has ${if (targetEntry!!.keywords.contains("Persist", true)) "persist" else "undying"}, so it comes back anyway (smaller, with a counter); redirecting keeps it as it is and costs {U/P} or 2 life, with Spellskite (0/4) shrugging off 3 damage. Save the mana if the counter doesn't matter to you."
-                tough != null && tough <= 3 -> "Yes, if the mana or 2 life is worth it: ${target.card.name} dies to $spellName otherwise, and Spellskite (0/4) survives the 3 damage."
-                else -> "No need: ${target.card.name} survives $spellName as it is; redirecting only spends {U/P} or 2 life."
-            }
-            ctx.asks += EventSpec("ask", to = "text:$advice"); ctx.notes += "The redirect is played out below so you can see both ends of it."
-            return true
-        }
+        readEarlyQuestionsC(clause0, m, ctx)?.let { return it }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
             return true
@@ -4585,17 +4634,18 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:" + (if (creature) "Only in a main phase of your own turn, with the stack empty and the mana to pay for it again (302.1): a creature card can't be cast at instant speed. If ${name} was bounced during your turn, you can recast it in your main phase this turn; if it was bounced on your opponent's turn, it waits for your next turn. It comes back as a new object, summoning sick again (302.6)." else "Only when its timing allows (an instant any time you have priority, anything else in your own main phase with the stack empty, 307.1) and with the mana to pay for it again. It's a new object with no memory of having been on the battlefield (400.7).")); return true
         }
         // "They Bolt my face and I have Spellskite. Can I redirect it?": Spellskite's ability, aimed at the spell.
-        Regex("""^can (?:i|we) (?:still )?(redirect|deflect|spellskite|skite|c\d+)(?: (?:it|that|the spell|the bolt|their spell))?(?: (?:to|onto|with|at|into) (?:my |the )?(?:c\d+|it))?$""").find(clause0)?.let { r ->
+        Regex("""^can (?:i|we) (?:still )?(redirect|deflect|spellskite|skite|c\d+)(?: (?:it|that|the spell|the bolt|their spell|(?:the |their )?c\d+))?(?: (?:to|onto|with|at|into) (?:my |the )?(?:c\d+|it))?$""").find(clause0)?.let { r ->
             // "Redirect" is also a card name, so the verb may have been read as one.
             if (r.groupValues[1].startsWith("c") && m.cards[r.groupValues[1]]?.display != "Redirect") return@let
-            val skite = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && (it.card.name ?: "") == "Spellskite" } ?: return@let
+            val skite = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && (it.card.name ?: "") == "Spellskite" }
+                ?: m.cards.values.firstOrNull { it.display == "Spellskite" }?.let { e -> ctx.objects.getValue(addObject(e, "me", false, ctx)).also { ctx.notes += "Spellskite wasn't described before; it's assumed on the battlefield under your control, untapped." } } ?: return@let
             val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
             val name = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: return@let
             ctx.events += EventSpec("activate", player = "me", obj = skite.id, targets = listOf(slug(name) + ":spell"))
             ctx.notes += "\"${restore(clause0, m)}?\" is read as activating Spellskite targeting $name; the outcome says where the spell ends up aimed."; return true
         }
         // "My opponent has Spellskite. I cast Fatal Push on their Goyf. Can they redirect it?": their Spellskite against your spell.
-        Regex("""^can (?:they|he|she|my opponent|the opponent) (?:still |even )?(?:redirect|deflect|spellskite|skite|move|point) (?:it|that|the spell|my spell|my c\d+|the c\d+)(?: (?:to|onto|at|into) (?:their |the )?(?:c\d+|it|spellskite))?$""").find(clause0)?.let {
+        Regex("""^can (?:they|he|she|my opponent|the opponent) (?:still |even )?(?:redirect|deflect|spellskite|skite|move|point) (?:it|that|the spell|my spell|(?:my |the )?c\d+)(?: (?:to|onto|at|into) (?:their |the )?(?:c\d+|it|itself|spellskite))?$""").find(clause0)?.let {
             val skite = ctx.objects.values.lastOrNull { it.controller != "me" && it.zone == "battlefield" && (it.card.name ?: "") == "Spellskite" } ?: return@let
             val spell = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" } ?: return@let
             val name = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: return@let
@@ -5305,7 +5355,7 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^(?:can|could|may|should|is it legal for|am i allowed to|are they allowed to|do|does|will|would|am|is|are) ((?:i|my opponent|the opponent|opponent|they|he|she|we|it|that|@\w+|(?:my |the |their |his |her |an? )?(?:c\d+|\d+/\d+(?: [a-z]+)*|creature|token|guy|attacker|blocker|dude|beater))\b.*)$""").find(clause0)?.let { r ->
             // A question about what can be done now comes after what was described, unless it says "in response".
             // "Can I counter it?" / "can I save it?" / "can I sacrifice it first?": answers to the spell, so it stays on the stack.
-            val answersTheStack = Regex("""\b(?:in response|respond|responding|counter|counters|save|protect|rescue|stifle|redirect|fizzle|sacrifice it|sac it|first|before it resolves|stop it|stop that|stop the spell|prevent it|answer it|deal with it|do anything about it)\b""").containsMatchIn(r.groupValues[1]) ||
+            val answersTheStack = Regex("""\b(?:in response|respond|responding|counter|counters|save|protect|rescue|stifle|redirect|deflect|fizzle|sacrifice it|sac it|first|before it resolves|stop it|stop that|stop the spell|prevent it|answer it|deal with it|do anything about it)\b""").containsMatchIn(r.groupValues[1]) ||
                 Regex("""c\d+""").findAll(r.groupValues[1]).any { ph -> m.cards[ph.value]?.let { c -> needsSpellTarget(c) || c.display in setOf("Stifle", "Trickbind", "Tale's End", "Disallow", "Voidslime") } == true }
             if (!answersTheStack && ctx.events.lastOrNull()?.verb in setOf("cast", "activate", "trigger")) ctx.events += EventSpec("resolveAll")
             // "My Grizzly Bears. Does it die to Lightning Bolt?": the spell the question names is cast at the
@@ -7966,9 +8016,11 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         // "attack with Bears into their untapped Serra Angel": the defender's creature is on the battlefield; the attack is at the player.
-        Regex("""^((?:attacks?|attacking|swings?|swinging)(?: with)? .+?) into (?:their |my opponent's |the opponent's |an? |the )?(?:untapped |tapped |open )?(c\d+)$""").find(c)?.let { r ->
+        Regex("""^((?:attacks?|attacking|swings?|swinging)(?: with)? .+?) into (?:their |my opponent's |the opponent's |an? |the )?(?:untapped |tapped |open )?(c\d+)(?: (?:and|plus) (?:their |an? |the )?(?:untapped |tapped )?(c\d+))?$""").find(c)?.let { r ->
             val who = actor ?: subject ?: "me"
             addObject(m.cards.getValue(r.groupValues[2]), ctx.other(who) ?: "opp", c.contains(" tapped "), ctx)
+            // "into their untapped Spellskite and Thalia": both are the defender's.
+            if (r.groupValues[3].isNotEmpty()) addObject(m.cards.getValue(r.groupValues[3]), ctx.other(who) ?: "opp", false, ctx)
             return readClause((actor?.let { if (it == "me") "i " else if (it == "opp") "they " else "@$it " } ?: "") + r.groupValues[1], m, ctx)
         }
         // "Rhystic Study triggers (for me) and I draw": the trigger is the engine's business; nothing to add.
