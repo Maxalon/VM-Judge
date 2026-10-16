@@ -4179,7 +4179,11 @@ class Engine(val state: GameState) {
         obj.castForAlternativeCost?.let { alt -> val what = alt.replace("your hand", "${p.possessive} hand").trimEnd('.')
             return "${card.name} was cast for its alternative cost, not its mana cost: $what (601.2b). " +
                 (if (tax > 0) "${taxes.joinToString("; ") { (o, t) -> "${o.name} makes it cost {${kotlin.math.abs(t.amount)}} more" }}: a tax applies to whatever cost is paid (601.2f), so ${p.subject.lowercase()} ${p.v("pays", "pay")} {$tax} on top of that. Yes." else "No mana was paid for it; its printed cost, $printed, is what it costs cast normally.") }
-        if (taxes.isEmpty() && commanderTax == 0 && self.first == 0) return "${card.name} costs $printed — $total mana. Nothing on the battlefield changes it." +
+        // "Chalice on 1. Can I cast Dismember paying life?": a Chalice set to another number doesn't touch it, and life payments don't change mana value.
+        val chaliceNote = state.objects.values.filter { it.isOnBattlefield() && it.def.name == "Chalice of the Void" }.map { it.counters["charge"] ?: 0 }.filter { it != card.manaValue.toInt() + xPart }.takeIf { it.isNotEmpty() }?.let { ns ->
+            val phyrexian = printed.contains("/P}")
+            " Chalice of the Void on ${ns.joinToString(" or ")} only counters spells with mana value ${ns.joinToString(" or ")}; ${card.name}'s mana value is ${card.manaValue.toInt() + xPart}${if (phyrexian) " (each Phyrexian symbol counts 1 whether it's paid with mana or 2 life, 202.3g)" else ""}, so it isn't countered (202.3)." } ?: ""
+        if (taxes.isEmpty() && commanderTax == 0 && self.first == 0) return "${card.name} costs $printed — $total mana. Nothing on the battlefield changes it.$chaliceNote" +
             // "I have 3 lands untapped, can I pay for Cryptic Command?": the cost alone doesn't answer that.
             ((obj.manaAvailableAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.manaAvailableAtCast }.lastOrNull() ?: availableMana(p))?.let { avail -> if (avail >= total) " ${p.subject} ${p.v("has", "have")} $avail available${poolNote(p)}, enough." else " ${p.subject} ${p.v("has", "have")} only $avail available${poolNote(p)}, so it can't be cast." } ?: "")
         val parts = taxes.map { (o, t) -> "${o.name} makes it cost {${kotlin.math.abs(t.amount)}} ${if (t.amount < 0) "less" else "more"}" } +

@@ -990,6 +990,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         state.outcomes.any { it == "$name is countered." } -> "Yes: $name is countered" + (by?.let { st -> (bySrc.find(st.text)?.groupValues?.get(1) ?: Regex("""^(.+?)(?:'s (?:triggered |activated )?ability)? (?:resolves|triggers)""").find(st.text)?.groupValues?.get(1))?.takeIf { src -> src != name && !src.startsWith("All players") && !src.contains(" is countered") }?.let { src -> " (by $src)" } } ?: "") + "."
                         state.outcomes.any { it.startsWith("$name isn't countered") || it.startsWith("$name can't be countered") } -> "No: $name isn't countered (it can't be)."
                         state.outcomes.any { it.startsWith("$name can't be cast") } -> "It's never cast: see above."
+                        // "Leyline of Sanctity in response to my Bolt at them. Is my Bolt countered?": not countered, but it doesn't resolve either.
+                        state.outcomes.any { it.startsWith("$name doesn't resolve") } -> "No, $name isn't countered, but it doesn't resolve either: ${if (state.outcomes.any { it.startsWith("$name doesn't resolve (all targets illegal)") }) "every target it had became illegal, so it's removed from the stack as it would resolve and does nothing (608.2b)" else "see above"}. The result is the same as a counter (it goes to the graveyard without effect), but it isn't \"countered\", so \"can't be countered\" wouldn't have saved it and nothing that triggers on a spell being countered triggers."
                         else -> "No: $name isn't countered; it resolves."
                     }
                     return true

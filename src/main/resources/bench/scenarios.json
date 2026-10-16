@@ -29983,7 +29983,8 @@
     "id": "spellskite-pay-life-second-bolt",
     "text": "I cast Lightning Bolt on my opponent's Spellskite. They pay 2 life to redirect my other Bolt to it. Can they?",
     "expect": [
-      "Yes. Spellskite's ability costs {U/P}, and Phyrexian mana can be paid with either {U} or 2 life (107.4f)"
+      "Spellskite's ability costs {U/P}, and Phyrexian mana can be paid with either {U} or 2 life (107.4f)",
+      "activated again for the second spell"
     ],
     "notExpect": [
       "Lightning Bolt costs {R}"
@@ -32946,6 +32947,109 @@
     "text": "They have Ensnaring Bridge and 2 cards. I attack with Tarmogoyf at 2/3. Can it attack?",
     "expect": [
       "Yes: Tarmogoyf can attack."
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-persist-and-block",
+    "text": "They cast Lightning Bolt on my Kitchen Finks and I block their 2/2 with it the same turn. Does Finks persist and still block?",
+    "expect": [
+      "It comes back, but not as a blocker"
+    ],
+    "cite": [
+      "702.79a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "goblin-guide-reveal-not-a-draw",
+    "text": "I attack with Goblin Guide and they reveal a Mountain. Do they draw it?",
+    "expect": [
+      "hand"
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-shadows-at-7",
+    "text": "I have two Death's Shadows at 7 life. What size are they?",
+    "expect": [
+      "6/6"
+    ],
+    "cite": []
+  },
+  {
+    "id": "needle-liliana-minus-2",
+    "text": "They Pithing Needle my Liliana of the Veil. Can I minus 2 her?",
+    "expect": [
+      "can't be activated (Pithing Needle names it)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-snapcaster-flashback",
+    "text": "I have Aether Vial on 2. I cast Snapcaster Mage with Vial. Can I flashback Bolt?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn"
+    ],
+    "cite": []
+  },
+  {
+    "id": "blood-moon-saga-construct-survives",
+    "text": "They cast Blood Moon with my Urza's Saga on chapter 1. Does the Saga's construct token survive?",
+    "expect": [
+      "Yes. The Construct token is its own permanent"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-redirect-at-2-life",
+    "text": "They cast Lightning Bolt at me and I Spellskite it to my Spellskite at 2 life. Do I pay life?",
+    "expect": [
+      "Only if you want to lose",
+      "704.5a"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-have-to-pay-life",
+    "text": "I have Spellskite untapped and no blue. They Bolt my Goyf. Do I have to pay 2 life to redirect it?",
+    "expect": [
+      "not a tax on top",
+      "107.4f"
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-in-response-to-bolt",
+    "text": "They cast Leyline of Sanctity in response to my Bolt at them. Is my Bolt countered?",
+    "expect": [
+      "isn't countered, but it doesn't resolve either",
+      "608.2b"
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-at-1-bolt-face",
+    "text": "I'm at 1 and they Bolt me with my Kor Firewalker out. Do I die?",
+    "expect": [
+      "lose the game"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dismember-4-life-at-5",
+    "text": "I cast Dismember paying 4 life at 5 life. What happens?",
+    "expect": [
+      "1 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-1-dismember",
+    "text": "They have Chalice of the Void on 1. Can I cast Dismember paying life?",
+    "expect": [
+      "Chalice of the Void on 1 only counters spells with mana value 1",
+      "202.3g"
     ],
     "cite": []
   }
