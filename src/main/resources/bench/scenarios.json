@@ -35226,5 +35226,106 @@
     "notExpect": [
       "opponent takes 2 damage"
     ]
+  },
+  {
+    "id": "tt240-thalia-growth-she-survives-tax",
+    "text": "They cast Lightning Bolt at my Thalia. I respond with Giant Growth. Does she survive and does the tax still apply to the Bolt?",
+    "expect": [
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield",
+      "Lightning Bolt costs {R} plus {1}"
+    ],
+    "notExpect": [
+      "opponent is still in the game"
+    ]
+  },
+  {
+    "id": "tt240-bob-reveals-thalia",
+    "text": "I have Dark Confidant and Thalia. At upkeep I reveal Thalia. How much life do I lose?",
+    "expect": [
+      "You lose 2 life (Thalia, Guardian of Thraben's mana value)"
+    ]
+  },
+  {
+    "id": "tt240-pyroclasm-my-skite-and-thalia",
+    "text": "My opponent casts Pyroclasm with my Spellskite and Thalia out. Can Spellskite redirect it? What dies?",
+    "expect": [
+      "Yes: Thalia, Guardian of Thraben died",
+      "No: Spellskite is still on the battlefield",
+      "No. Spellskite's ability changes a target of a spell or ability, and Pyroclasm has no targets"
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben: the battlefield → opponent's graveyard"
+    ]
+  },
+  {
+    "id": "tt240-aberration-vs-skite-block",
+    "text": "They attack with Insectile Aberration. I block with Spellskite. Does the Aberration die?",
+    "expect": [
+      "Spellskite can't block Insectile Aberration (flying)",
+      "No: Insectile Aberration is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt240-thoughtseize-self-under-own-leyline",
+    "text": "I cast Thoughtseize targeting myself with Leyline of Sanctity out. Can I?",
+    "expect": [
+      "Yes: Thoughtseize can be cast"
+    ]
+  },
+  {
+    "id": "tt240-finks-dismembered-returns",
+    "text": "I have Kitchen Finks and they cast Dismember on it. Does it come back?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "Yes: Kitchen Finks is back on the battlefield"
+    ]
+  },
+  {
+    "id": "tt240-chalice-pay-life-around",
+    "text": "They have Chalice on 1 and I cast Gitaxian Probe. Can I pay life to get around it?",
+    "expect": [
+      "Gitaxian Probe is countered",
+      "No. Paying 2 life for a Phyrexian mana symbol is only a way of paying the cost"
+    ]
+  },
+  {
+    "id": "tt240-goyf-into-maze",
+    "text": "I attack with Tarmogoyf into their Maze of Ith. They Maze it. Does it untap for my next turn?",
+    "expect": [
+      "Tarmogoyf's combat damage this turn (dealt and received) is prevented",
+      "Yes, twice over"
+    ],
+    "notExpect": [
+      "Maze of Ith can't block"
+    ]
+  },
+  {
+    "id": "tt240-two-thalias-verdict-cost",
+    "text": "I have two Thalias in play and they cast Supreme Verdict. How much does it cost?",
+    "expect": [
+      "Supreme Verdict costs {1}{W}{W}{U} plus {1}",
+      "5 mana in all"
+    ],
+    "cite": [
+      "704.5j"
+    ]
+  },
+  {
+    "id": "tt240-settle-but-only-three-lands",
+    "text": "They attack with a 4/4 and I have Settle the Wreckage but only 3 lands. Can I cast it?",
+    "expect": [
+      "Settle the Wreckage can't be cast (costs 4, only 3 mana available)"
+    ],
+    "notExpect": [
+      "a 4/4 creature: the battlefield → exile"
+    ]
+  },
+  {
+    "id": "tt240-flipped-delver-snagged",
+    "text": "My Delver flipped. They cast Vapor Snag on it. What comes back to my hand?",
+    "expect": [
+      "Insectile Aberration turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8)",
+      "Delver of Secrets: the battlefield → your hand"
+    ]
   }
 ]
