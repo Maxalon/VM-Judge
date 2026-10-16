@@ -1082,6 +1082,16 @@ class SituationParser(private val names: NameIndex) {
             val cast = ctx.events.lastOrNull { it.verb == "cast" && (it.card?.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Creature") == true } == true || it.obj?.let { o -> ctx.objects[o]?.card?.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Creature") == true } } == true) }
             if (block != null && cast != null && ctx.events.indexOf(cast) > ctx.events.indexOf(block)) t2 = "secondblocker-question"
         }
+        // "I flip it with a Brainstorm reveal in response": Delver transforms only with its upkeep trigger.
+        if (Regex("""^(?:i|we) (?:flip|transform) (?:it|that|(?:my |the )?c\d+) (?:with|off|using|by revealing|revealing) (?:an? |the |my )?(?:c\d+|instant|sorcery)(?: reveal| cast| on top)?(?: in response| now| in combat| mid-combat| after blockers| before damage)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }) t2 = "delverflip-note"
+        // "Can I Wasteland it in response to the chapter 3 trigger?": the chapter ability resolves whatever happens to the Saga.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:wasteland|destroy|blow up|kill|strip mine|bounce|c\d+) (?:it|that|the saga|(?:their |the )?c\d+) (?:in response to|with|before|during|while) (?:the |its )?(?:chapter )?(one|two|three|1|2|3|i|ii|iii)(?:st|nd|rd)?(?: chapter)? (?:trigger|ability)(?: (?:is )?on the stack| resolves| triggers)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if ((ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).any { n -> n?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true }) "sagachapter-question ${r.groupValues[1].lowercase()}" else t0 } ?: t0 }
+        // "Does it still make them discard?" with Leyline of Sanctity out: whether the spell targets is what matters.
+        if (Regex("""^(?:does|will|can) (?:it|that|(?:the |my )?c\d+) still (?:make|force) (?:them|him|her|my opponent|the opponent) (?:to )?(?:discard|lose life|mill|sacrifice|reveal|draw)(?: cards| three| \d+| anything)?\??$|^(?:does|will|can) (?:it|that|(?:the |my )?c\d+) still (?:work|hit them|affect them|get through|resolve against them|apply to them)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller != "me" && o.zone == "battlefield" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb", "Shalai, Voice of Plenty", "True Believer", "Sigarda, Heron's Grace", "Teyo, the Shieldmage") } && ctx.events.any { it.verb == "cast" && it.player == "me" }) t2 = "hexproofplayer-question"
+        // "and they have only one basic left in library": the search may still find it, or choose not to.
+        t2 = t2.let { t0 -> Regex("""(^|,\s*|\s+and\s+|\s+but\s+)(?:they|he|she|my opponent|the opponent) (?:have|has|have got|'ve got) (?:only |just )?(?:one|a single|1) (?:basic|basic land|basic land card)(?: left)?(?: in (?:their |the )?(?:library|deck))?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> t0.substring(0, r.range.first).let { if (it.isBlank()) "onebasic-note" else "$it, onebasic-note" } } ?: t0 }
+        // "Did they need revolt?": whether Fatal Push's rider mattered for that target.
+        if (Regex("""^(?:did|do|does|would|will) (?:they|he|she|my opponent|the opponent|i|we) (?:even )?need (?:to have )?revolt(?: for (?:it|that|this))?\??$|^(?:was|is) revolt (?:needed|necessary|required|on|relevant)(?: for (?:it|that|this))?\??$|^(?:does|did) revolt matter\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "revoltneeded-question"
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -2947,7 +2957,7 @@ class SituationParser(private val names: NameIndex) {
             // "I have Dark Confidant and reveal Emrakul": a creature's reveal is from the library, read clause by clause.
             if (Regex("""\bhave (c\d+) and reveals? c\d+$""").find(t2)?.let { h -> m.cards[h.groupValues[1]]?.typeLine?.contains("Creature") } == true) return@let
             // "I have a Dark Confidant. I reveal a Griselbrand.": the reveal is Bob's, from the library, not a hand shown.
-            if (Regex("""^(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") || o.card.name?.startsWith("Delver of Secrets") == true) }) return@let
+            if (Regex("""^(?:i|we) reveals? |\band reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") || o.card.name?.startsWith("Delver of Secrets") == true) }) return@let
             // "My Delver is a 1/1 and I reveal Lightning Bolt": the reveal belongs to the Delver named in the same sentence.
             if (Regex("""\b(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2) && m.cards.values.any { it.display.startsWith("Delver of Secrets") || it.display in setOf("Dark Confidant", "Dark Tutelage") }) return@let
             val before = t2.substring(0, r.range.first)
@@ -4414,6 +4424,53 @@ class SituationParser(private val names: NameIndex) {
             val spellName = spell.card?.name ?: spell.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
             val block = ctx.events.any { e -> e.verb == "block" && ctx.events.indexOf(e) < ctx.events.indexOf(spell) }
             ctx.asks += EventSpec("ask", to = "text:Yes, if it resolves: $spellName is cast in the ${if (block) "declare blockers" else "declare attackers"} step, after ${if (block) "blockers" else "attackers"} are declared, and players get priority there (${if (block) "509.2" else "508.2"}). It resolves before the combat damage step begins, and combat damage is dealt only then (510.1), so a creature it removes deals and takes no combat damage. The outcome below shows what the spell did.")
+            return true
+        }
+        // "They play Urza's Saga and go to chapter 2": where the Saga stands; the chapter asked about is handled by the question.
+        Regex("""^(?:and )?(?:(?:it |they |the saga )?(?:go|goes|get|gets|move|moves|is|are|'s) (?:to|on|at|up to) )?chapter (one|two|three|1|2|3|i|ii|iii)(?: trigger| already)?$""").find(clause0)?.let { r ->
+            val n = when (r.groupValues[1]) { "one", "1", "i" -> 1; "two", "2", "ii" -> 2; else -> 3 }
+            val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: return@let
+            ctx.notes += "$name is at chapter ${when (n) { 1 -> "I"; 2 -> "II"; else -> "III" }} ($n lore counter${if (n == 1) "" else "s"}): a lore counter is added as it enters and after each of its controller's draw steps, and each chapter ability triggers as the count reaches its number (714.2b)."
+            return true
+        }
+        if (clause0 == "delverflip-note") {
+            val delver = ctx.objects.values.last { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
+            ctx.asks += EventSpec("ask", to = "text:Delver of Secrets can't be flipped now. Its transform is a triggered ability that triggers only at the beginning of your upkeep (\"At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform ~\", 603.2); casting or revealing an instant at any other time does nothing to it. In this combat it stays a 1/1 ${delver.card.name}, and the outcome below is worked out that way.")
+            return true
+        }
+        Regex("""^sagachapter-question (\w+)$""").find(clause0)?.let { r ->
+            val n = when (r.groupValues[1]) { "one", "1", "i" -> 1; "two", "2", "ii" -> 2; else -> 3 }
+            val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: "the Saga"
+            val urza = name == "Urza's Saga"
+            val detail = if (!urza) "" else when (n) {
+                3 -> " For Urza's Saga that is chapter III itself: they still search for an artifact with mana cost {0} or {1} and put it onto the battlefield, and the Saga would have been sacrificed right after that chapter anyway (714.4), so destroying it in response to chapter III changes almost nothing."
+                2 -> " For Urza's Saga, chapter II only grants the Saga an ability (\"{2}, {T}: Create a 0/0 Construct\"); with the Saga gone as the trigger resolves there is nothing to grant, so they never get to make a Construct, and chapter III never comes. Responding to the chapter II trigger is the usual moment to Wasteland it."
+                else -> " For Urza's Saga, chapter I only grants the Saga \"{T}: Add {C}\"; with the Saga gone there is nothing to grant, and the later chapters never happen."
+            }
+            ctx.asks += EventSpec("ask", to = "text:Yes, you can respond: a chapter ability is a triggered ability, it goes on the stack when the lore counter is put on, and you get priority before it resolves (714.2b, 117.1). But destroying $name then doesn't stop that trigger: once triggered, an ability exists on the stack independently of its source, and removing the source doesn't affect it (113.7a); the chapter ${when (n) { 1 -> "I"; 2 -> "II"; else -> "III" }} ability still resolves.$detail")
+            return true
+        }
+        if (clause0 == "hexproofplayer-question") {
+            val cast = ctx.events.last { it.verb == "cast" && it.player == "me" }
+            val ref = cast.card ?: cast.obj?.let { o -> ctx.objects[o]?.card } ?: return false
+            ctx.asks += EventSpec("ask", card = ref, to = "hexproofPlayer")
+            return true
+        }
+        if (clause0 == "onebasic-note") {
+            val who = pronounPlayer(ctx, "their")
+            val search = ctx.events.lastOrNull { it.verb == "cast" && (it.card?.name in setOf("Path to Exile", "Settle the Wreckage", "Swords to Plowshares", "Rampant Growth", "Farseek", "Nature's Lore") || it.card?.name?.contains("Path") == true) }
+            val spell = search?.card?.name ?: "the search"
+            ctx.asks += EventSpec("ask", to = "text:Yes, if they want it: with one basic land left in their library the search can find it. $spell says \"may\", so they can decline the search altogether, and even a player who does search for a card of a stated quality isn't required to find it (701.23b); either way the library is shuffled afterwards.")
+            ctx.notes += "${if (who == "me") "You have" else "They have"} one basic land left in the library."
+            return true
+        }
+        if (clause0 == "revoltneeded-question") {
+            val push = ctx.events.lastOrNull { it.verb == "cast" && it.targets.isNotEmpty() && (it.card?.name == "Fatal Push" || it.card?.name == "Cling to Dust" || it.card?.name == "Renegade Rallier") } ?: ctx.events.lastOrNull { it.verb == "cast" && it.targets.isNotEmpty() } ?: return false
+            val spell = push.card?.name ?: "the spell"
+            val target = push.targets.firstOrNull()?.let { ctx.objects[it] } ?: return false
+            val mv = target.card.name?.let { n -> names.lookup(Names.normalize(n))?.manaValue } ?: return false
+            if (spell != "Fatal Push") { ctx.asks += EventSpec("ask", to = "text:Revolt is the rider \"if a permanent you controlled left the battlefield this turn\"; what $spell does with it is in its text, and the outcome below assumes it wasn't met unless said."); return true }
+            ctx.asks += EventSpec("ask", to = "text:" + if (mv <= 2) "No. Fatal Push destroys target creature with mana value 2 or less with no condition; ${target.card.name}'s mana value is $mv, so revolt (a permanent of theirs leaving the battlefield this turn) wasn't needed. Revolt only matters for a creature with mana value 3 or 4." else if (mv <= 4) "Yes. ${target.card.name}'s mana value is $mv, above Fatal Push's base limit of 2, so it's a legal target only if revolt is on: a permanent they controlled left the battlefield this turn. Without that, Fatal Push can't target it at all (601.2c)." else "Revolt wouldn't be enough: ${target.card.name}'s mana value is $mv, and even with revolt Fatal Push only destroys a creature with mana value 4 or less, so it can't target it (601.2c).")
             return true
         }
         if (clause0 == "secondblocker-question") {
@@ -10495,7 +10552,10 @@ class SituationParser(private val names: NameIndex) {
         } ?: 1
         val secondTime = Regex("""\s*\b(?:for (?:the|a) second time|a second time|for the 2nd time)(?: this game)?\b""").find(rest1)
         // "Vandalblast not overloaded on my Sol Ring": the negation is read, and the words dropped so they aren't a target.
-        val rest = (secondTime?.let { rest1.removeRange(it.range) } ?: rest1).replace(Regex("""\s*\b(?:not overloaded|without overload|unoverloaded|not for (?:its|the) overload cost)\b"""), "")
+        val pitchRx = Regex("""\s*\b(?:by )?(?:pitching|exiling|and exiles?|and pitch(?:es)?) (?:an? |the |my |their )?(c\d+)\b(?: to it| for it| from (?:my|their) hand)?""", RegexOption.IGNORE_CASE)
+        val pitched = pitchRx.find(rest1)?.let { r -> m.cards[r.groupValues[1].lowercase()] }?.takeIf { card.display == "Force of Will" || card.display == "Force of Negation" || card.display == "Daze" || card.display == "Misdirection" || card.display == "Foil" || card.display == "Snuff Out" || card.display == "Commandeer" || card.display == "Solitude" || card.display == "Fury" || card.display == "Endurance" || card.display == "Subtlety" || card.display == "Grief" }
+        if (pitched != null) ctx.notes += "\"pitching ${pitched.display}\" is ${card.display}'s alternative cost: ${pitched.display} is exiled from ${if (who == "me") "your" else "their"} hand as the cost (118.9), not cast."
+        val rest = (secondTime?.let { rest1.removeRange(it.range) } ?: rest1).let { if (pitched != null) pitchRx.replace(it, "") else it }.replace(Regex("""\s*\b(?:not overloaded|without overload|unoverloaded|not for (?:its|the) overload cost)\b"""), "")
         val n = times?.let { if (it.groupValues[2].isNotEmpty()) it.groupValues[2].toInt() else if (it.groupValues[1].startsWith("three")) 3 else 2 } ?: if (secondTime != null) 2 else 1
         if (secondTime != null) ctx.notes += "\"For the second time\": the first ${card.display} is shown resolving earlier this game, then this one."
 
@@ -10527,7 +10587,7 @@ class SituationParser(private val names: NameIndex) {
             ?: payLife
         val kicked = Regex("""\b(?:kicked|with (?:the )?kicker|with kicker paid|paying (?:the )?kicker|kicking it)\b""").containsMatchIn(rest)
         // "for free" / "pitching a blue card" / "for its alternative cost": Force of Will's kind of cost (118.9).
-        val altCost = Regex("""\b(?:for free|for its alt(?:ernative)? cost|with (?:its )?alt(?:ernative)? cost|via alt(?:ernative)? cost|(?:by )?(?:pitching|exiling) an? (?:blue|green|black|red|white) card|pitching a card|without paying its mana cost)\b""").containsMatchIn(rest)
+        val altCost = pitched != null || Regex("""\b(?:for free|for its alt(?:ernative)? cost|with (?:its )?alt(?:ernative)? cost|via alt(?:ernative)? cost|(?:by )?(?:pitching|exiling) an? (?:blue|green|black|red|white) card|pitching a card|without paying its mana cost)\b""").containsMatchIn(rest)
         // "copying their Grizzly Bears", "as a copy of Serra Angel": which permanent a Clone enters as a copy of.
         val copyOf = Regex("""\b(?:copying|as a copy of|to copy) (?:it|that|them)\b""").find(rest)?.let { ctx.lastMentioned?.takeIf { lm -> lm in ctx.objects } }
             ?: Regex("""\b(?:copying|as a copy of|to copy) ($possPrefix|an? )?(c\d+)\b""").find(rest)?.let { r ->

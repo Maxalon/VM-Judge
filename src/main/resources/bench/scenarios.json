@@ -34692,5 +34692,157 @@
     "notExpect": [
       "takes 5 damage"
     ]
+  },
+  {
+    "id": "tt235-thoughtseize-self-at-2",
+    "text": "I cast Thoughtseize on myself to find a Death's Shadow. I'm at 2 life. Can I?",
+    "expect": [
+      "Yes: Thoughtseize can be cast",
+      "Losing 2 life is part of Thoughtseize's effect, not a cost",
+      "You lose the game."
+    ],
+    "cite": [
+      "119.4"
+    ]
+  },
+  {
+    "id": "tt235-bridge-zero-cards-skite",
+    "text": "They have Ensnaring Bridge with no cards in hand. I attack with a 0/1 Spellskite. Can it attack?",
+    "expect": [
+      "Yes: Spellskite can attack"
+    ]
+  },
+  {
+    "id": "tt235-snapcaster-flashed-blocks-goyf",
+    "text": "I attack with Tarmogoyf. They flash in Snapcaster Mage before blockers and block with it. Does Goyf die?",
+    "expect": [
+      "Yes: Tarmogoyf died"
+    ]
+  },
+  {
+    "id": "tt235-wasteland-vs-chapter-three",
+    "text": "I have Wasteland. They play Urza's Saga and go to chapter 2. Can I Wasteland it in response to the chapter 3 trigger?",
+    "expect": [
+      "Yes, you can respond",
+      "the chapter III ability still resolves",
+      "they still search for an artifact with mana cost {0} or {1}"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "tt235-wasteland-vs-chapter-two",
+    "text": "They play Urza's Saga. Can I Wasteland it in response to the chapter 2 trigger?",
+    "expect": [
+      "the chapter II ability still resolves",
+      "they never get to make a Construct"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "tt235-angels-grace-vs-bolt",
+    "text": "My opponent is at 3. I cast Lightning Bolt and they respond with Angel's Grace. Do they lose?",
+    "expect": [
+      "No: opponent is still in the game at 1 life"
+    ]
+  },
+  {
+    "id": "tt235-force-pitching-brainstorm-dazed",
+    "text": "I cast Ponder. They Force of Will it pitching Brainstorm. I Daze the Force. What happens?",
+    "expect": [
+      "Force of Will is countered",
+      "You draw 1 card"
+    ],
+    "notExpect": [
+      "You draw 3 cards"
+    ]
+  },
+  {
+    "id": "tt235-bob-angel-emrakul",
+    "text": "I have Dark Confidant and Platinum Angel. I'm at 1 and reveal Emrakul. Do I lose?",
+    "expect": [
+      "You lose 15 life",
+      "Platinum Angel keeps you from losing",
+      "No: You are still in the game at -14 life"
+    ]
+  },
+  {
+    "id": "tt235-delver-flip-in-combat",
+    "text": "My Delver of Secrets is blocked by a 2/2. I flip it with a Brainstorm reveal in response. Does it survive?",
+    "expect": [
+      "Delver of Secrets can't be flipped now",
+      "No: Delver of Secrets is in the graveyard"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "tt235-leyline-vs-burning-inquiry",
+    "text": "They have Leyline of Sanctity. I cast Burning Inquiry. Does it still make them discard?",
+    "expect": [
+      "Yes. Burning Inquiry doesn't target"
+    ],
+    "cite": [
+      "702.11c"
+    ]
+  },
+  {
+    "id": "tt235-leyline-vs-thoughtseize-still",
+    "text": "They have Leyline of Sanctity. I cast Thoughtseize. Does it still make them discard?",
+    "expect": [
+      "No. Thoughtseize says \"target player\""
+    ],
+    "cite": [
+      "702.11c"
+    ]
+  },
+  {
+    "id": "tt235-finks-counter-no-persist",
+    "text": "I have Kitchen Finks with a -1/-1 counter. It dies. Does it persist?",
+    "expect": [
+      "Kitchen Finks doesn't come back",
+      "No: Kitchen Finks is in your graveyard"
+    ]
+  },
+  {
+    "id": "tt235-path-one-basic-left",
+    "text": "I Path to Exile their Tarmogoyf and they have only one basic left in library. Do they get it?",
+    "expect": [
+      "Yes, if they want it",
+      "isn't required to find it (701.23b)"
+    ],
+    "cite": [
+      "701.23b"
+    ]
+  },
+  {
+    "id": "tt235-push-shadow-revolt-needed",
+    "text": "They cast Fatal Push on my Death's Shadow. Did they need revolt?",
+    "expect": [
+      "No. Fatal Push destroys target creature with mana value 2 or less",
+      "Death's Shadow's mana value is 1"
+    ]
+  },
+  {
+    "id": "tt235-push-goyf-revolt-needed",
+    "text": "They cast Fatal Push on my Tarmogoyf. Did they need revolt?",
+    "expect": [
+      "No. Fatal Push destroys target creature with mana value 2 or less",
+      "Tarmogoyf's mana value is 2"
+    ]
+  },
+  {
+    "id": "tt235-push-rhino-revolt-needed",
+    "text": "They cast Fatal Push on my Siege Rhino. Did they need revolt?",
+    "expect": [
+      "Yes. Siege Rhino's mana value is 4"
+    ],
+    "cite": [
+      "601.2c"
+    ]
   }
 ]
