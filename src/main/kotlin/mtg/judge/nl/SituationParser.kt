@@ -1684,6 +1684,15 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""\bwith (?:an? |my |their )?(c\d+)((?: on \d+)?) on (my|their) side\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> ", ${if (r.groupValues[3].lowercase() == "my") "i" else "they"} have ${r.groupValues[1]}${r.groupValues[2]}" } }
         // "my graveyard Bolt": the card in that graveyard.
         t2 = t2.replace(Regex("""\b(my|their|his|her) graveyard (c\d+)\b""", RegexOption.IGNORE_CASE), "the $2 in $1 graveyard")
+        // "My Death's Shadow is 5/5": its size says the life total (13 minus the power).
+        t2 = t2.let { t0 -> Regex("""^(?:my |the )?(c\d+) is (?:a )?(\d+)/(\d+)(?: right now| currently| at the moment)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (m.cards[r.groupValues[1]]?.display == "Death's Shadow") { val life = 13 - r.groupValues[2].toInt(); ctx.notes += "Death's Shadow at ${r.groupValues[2]}/${r.groupValues[3]} means you're at $life life (13/13 minus your life total)."; "i'm at $life life and i have ${r.groupValues[1]}" } else t0 } ?: t0 }
+        // "Wrath of God." on its own after a board was described: the other player casts it.
+        if (Regex("""^c\d+\.?$""").matches(t2.trim()) && m.cards[t2.trim().trimEnd('.')]?.isSpellOnly == true && ctx.objects.values.any { it.controller == "me" && it.zone == "battlefield" } && ctx.events.none { it.verb == "cast" }) { t2 = "they cast ${t2.trim().trimEnd('.')}"; ctx.notes += "\"${m.cards.getValue(t2.removePrefix("they cast ")).display}.\" on its own is read as your opponent casting it; say \"I cast\" if it was yours." }
+        // "Do both come back?": the two creatures of mine just described.
+        if (Regex("""^do both (?:come back|persist|return|undying back|survive|die)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "bothback-question " + (if (Regex("""\b(?:survive)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "survive" else if (Regex("""\bdie\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2)) "die" else "comesBack")
+        // "Does Spellskite stop the Devil trigger?": whether that trigger has a target to change.
+        t2 = t2.let { t0 -> Regex("""^(?:does|can|will) (?:their |my |the )?(c\d+) (?:stop|affect|redirect|take|change|counter|eat) (?:the |my |their )?(c\d+)(?:'s)? (?:trigger|triggered ability|ability|etb|etb trigger)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display == "Spellskite") "skitestops-question ${r.groupValues[2]}" else t0 } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
@@ -3696,6 +3705,16 @@ class SituationParser(private val names: NameIndex) {
                 ?: ctx.lastMentioned?.let { ctx.objects[it] }?.takeIf { it.zone == "graveyard" } ?: ctx.objects.values.lastOrNull { it.zone == "graveyard" } ?: return@let
             ctx.events += EventSpec("activate", player = "me", obj = drs.id, targets = listOf(food.id)); ctx.lastActor = "me"; ctx.lastVerb = "activate"
             ctx.notes += "\"${restore(clause0, m)}?\" is read as Deathrite Shaman's ability aimed at ${food.card.name}; which of its three abilities applies depends on that card's type, and the outcome says what it does."; return true
+        }
+        Regex("""^bothback-question (comesBack|survive|die)$""").find(clause0)?.let { r ->
+            val mine = ctx.objects.values.filter { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }.takeLast(2)
+            if (mine.size < 2) return@let
+            for (o in mine) ctx.asks += EventSpec("ask", obj = o.id, to = r.groupValues[1])
+            ctx.notes += "\"${restore(clause0, m)}?\" is asked of ${mine.joinToString(" and ") { it.card.name ?: it.id }}."; return true
+        }
+        Regex("""^skitestops-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "skiteStops"); return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")

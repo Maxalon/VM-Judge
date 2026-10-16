@@ -32576,5 +32576,96 @@
       "Lightning Bolt: your graveyard → exile."
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-taxes-their-snapcaster-bolt",
+    "text": "I have Thalia, Guardian of Thraben. They cast Snapcaster Mage and flash back Lightning Bolt. Does the Bolt cost 2?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "crusader-unblocked-at-3-poison",
+    "text": "They attack with Phyrexian Crusader and I'm at 3 poison. I don't block. What happens?",
+    "expect": [
+      "You have 5 poison counters."
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-snapcaster-trigger-no-target",
+    "text": "I control Rest in Peace and cast Snapcaster Mage. Does the trigger have a target?",
+    "expect": [
+      "Snapcaster Mage's trigger has no legal target (Rest in Peace keeps graveyards empty) and does nothing."
+    ],
+    "cite": []
+  },
+  {
+    "id": "shadow-55-dismembered",
+    "text": "My Death's Shadow is 5/5. They Dismember it. Does it die?",
+    "expect": [
+      "Yes: Death's Shadow died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-vs-devil-trigger",
+    "text": "I have Vexing Devil. They have Spellskite. Does Spellskite stop the Devil trigger?",
+    "expect": [
+      "No. Spellskite's ability changes a target of a spell or ability, and Vexing Devil's trigger has no target"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spell-pierce-counters-thoughtseize",
+    "text": "They cast Thoughtseize. I have Spell Pierce and two Islands untapped. Can I counter it?",
+    "expect": [
+      "Thoughtseize is countered."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-one-card-which-attacks",
+    "text": "I have Ensnaring Bridge and 1 card in hand. I attack with a 1/1 and a 2/2. Which can attack?",
+    "expect": [
+      "Yes: a 1/1 creature can attack.",
+      "No: a 2/2 creature can't attack (Ensnaring Bridge: You have 1 card in hand and a 2/2 creature's power is 2, 508.1c)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "maze-of-ith-on-goyf",
+    "text": "I attack with Tarmogoyf while they have Maze of Ith. Does it deal damage?",
+    "expect": [
+      "No: Tarmogoyf dealt no damage to opponent."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-zero-vs-probe",
+    "text": "They cast Chalice of the Void for 0. Can I still cast Gitaxian Probe?",
+    "expect": [
+      "You draw 1 card.",
+      "Gitaxian Probe costs {U/P} — 1 mana. Nothing on the battlefield changes it."
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-finks-wrath-both-persist",
+    "text": "I have two Kitchen Finks. Wrath of God. Do both come back?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1. (×2)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-bolted-twice",
+    "text": "They Lightning Bolt my Spellskite twice. Does it die?",
+    "expect": [
+      "Spellskite has 6 damage marked.",
+      "Yes: Spellskite died (it's in the graveyard)."
+    ],
+    "cite": []
   }
 ]
