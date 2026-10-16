@@ -1264,6 +1264,25 @@ class SituationParser(private val names: NameIndex) {
         // "I alpha strike", "I go wide with three 1/1s": table talk for attacking with everything and for having
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
+        // "They Path the Angel in my upkeep with Emrakul on top": the top card and the step first, then the spell.
+        t2 = t2.let { t0 -> Regex("""^(.*?) (?:in|during|on) my upkeep,? with (c\d+) on top(?: of my library| of my deck)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "${r.groupValues[2]} is on top of my library, my upkeep begins, ${r.groupValues[1]}" } ?: t0 }
+        // "They attack with Tarmogoyf 4/5": the size said after the name.
+        t2 = t2.replace(Regex("""\b(with|block|blocks|blocking|cast|casts|at|on|targeting) (?:my |their |the |a |an )?(c\d+) (\d+/\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1 a $3 $2")
+        // "Can I double block and kill it?": the block, then the question.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:double |gang |team )?block(?: it| with both| with everything)? and (?:kill|trade with|take down) (?:it|that|(?:the |their )?c\d+)\??$""", RegexOption.IGNORE_CASE), "can i block with both, does the attacker die")
+        // "They Hymn me with only one card in my hand": the hand size.
+        t2 = t2.replace(Regex("""\bwith (?:only |just )?(one|two|three|four|five|\d+) cards? in my hand\b""", RegexOption.IGNORE_CASE), ", i have $1 cards in hand")
+        // "My opponent Thoughtseizes me and sees Force of Will and Brainstorm": what they see is my hand.
+        t2 = t2.replace(Regex("""\b(?:and )?(?:sees|saw|looks at) ((?:an? |the )?c\d+(?:,? (?:and )?(?:an? |the )?c\d+)*)(?= in my hand|$|[,.?])""", RegexOption.IGNORE_CASE), ", my hand is $1")
+        // "... after they see my hand": a timing tail that changes nothing.
+        t2 = t2.replace(Regex("""\s+after (?:they|he|she) (?:see|sees|look at|have seen|looked at) (?:my|the) hand$""", RegexOption.IGNORE_CASE), "")
+        // "Can I Force the Thoughtseize pitching Brainstorm?": the counter at the spell named, with its pitch.
+        t2 = t2.let { t0 -> Regex("""^(can |could )?(i|we|they|he|she) (c\d+) (?:the |their |my )?(c\d+) (pitching|exiling) (?:the |an? |my )?(c\d+)\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[3]]?.isSpellOnly == true) "${r.groupValues[1]}${r.groupValues[2]} cast ${r.groupValues[3]} targeting ${r.groupValues[4]} ${r.groupValues[5]} ${r.groupValues[6]}" + t0.substring(r.range.last + 1) else t0 } ?: t0 }
+        // "Can I redirect the Dismember to itself?" / "can they redirect to Spellskite and survive?"
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:redirect|deflect) (?:the |their )?(?:c\d+|it) to (?:itself|spellskite itself|the same spellskite|the same c\d+)\??$""", RegexOption.IGNORE_CASE), "can i deflect it")
+        t2 = t2.replace(Regex("""^can (they|he|she) (?:redirect|deflect) (?:it |that )?(?:to (?:their |the )?(?:spellskite|c\d+) )?and (?:survive|live|stay alive)\??$""", RegexOption.IGNORE_CASE), "can $1 deflect it, do $1 survive")
+        // "Does the Bolt in the graveyard save it?": whether the creature survives once the spell is in the graveyard.
+        t2 = t2.replace(Regex("""^does the (?:c\d+|bolt|spell|instant) in the graveyard save (?:it|that|(?:my |the )?c\d+)\??$""", RegexOption.IGNORE_CASE), "does it survive")
         // "Can I Force pitching the Brainstorm?": the counter's name as the verb, with its alternative cost said next.
         t2 = t2.let { t0 -> Regex("""^(can |could )?(i|we|they|he|she) (c\d+) (pitching|exiling) (?:the |an? |my )?(c\d+)\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[3]]?.isSpellOnly == true) "${r.groupValues[1]}${r.groupValues[2]} cast ${r.groupValues[3]} ${r.groupValues[4]} ${r.groupValues[5]}" + t0.substring(r.range.last + 1) else t0 } ?: t0 }
         // "and what's left?" / "what is left in my hand?": the hand afterwards.
@@ -1327,7 +1346,9 @@ class SituationParser(private val names: NameIndex) {
                 if (q != null && inHand && vial && ctx.events.any { it.verb == "cast" && it.player != "me" }) "i vial in $q in response, vialcounter-question $q" else t0 } ?: t0 }
         // "They Bolt it in response to the trigger": the creature spell has resolved and its enters trigger waits on the
         // stack, so the response is aimed at the permanent; the phrase is dropped once that is set up.
-        t2 = t2.let { t0 -> Regex("""^((?:they|he|she|my opponent|the opponent|i|we) (?:casts? |plays? )?(?:c\d+|bolt|kill|shock|path|counter|respond with c\d+)\b.*?)\s+in response to (?:the|its|that) (?:etb |enters )?trigger\s*$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+        t2 = t2.let { t0 -> Regex("""^((?:they|he|she|my opponent|the opponent|i|we) (?:casts? |plays? )?(?:c\d+|bolt|kill|shock|path|counter|respond with c\d+)\b.*?)\s+in response(?: to (?:the|its|that) (?:etb |enters )?trigger)?\s*$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                // A plain "in response" counts only when the thing answered is a creature spell of the other player's, which a Bolt could never target on the stack.
+                if (!r.value.contains("trigger", true) && !Regex("""\b(?:bolts?|shocks?|kills?|c\d+) (?:it|that)\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.groupValues[1])) return@let t0
                 val last = ctx.events.lastOrNull(); val lastName = last?.card?.name
                 if (last == null || last.verb != "cast" || lastName == null || names.lookup(Names.normalize(lastName))?.isSpellOnly != false) return@let t0
                 val src = triggerSourceFromCast(ctx, null) ?: return@let t0

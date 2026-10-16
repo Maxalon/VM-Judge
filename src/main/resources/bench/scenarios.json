@@ -36159,5 +36159,103 @@
       "Delver of Secrets: the battlefield → your graveyard",
       "a 3/3 creature with reach: the battlefield → opponent's graveyard"
     ]
+  },
+  {
+    "id": "tt250-hymn-into-my-leyline-target",
+    "text": "They cast Hymn to Tourach targeting me. I have Leyline of Sanctity. Can they target me?",
+    "expect": [
+      "Hymn to Tourach can't target you",
+      "you have hexproof (Leyline of Sanctity)"
+    ]
+  },
+  {
+    "id": "tt250-two-guides-bridge-two-cards",
+    "text": "I have two Goblin Guides. I attack with both into their Ensnaring Bridge with 2 cards in hand. Which can attack?",
+    "expect": [
+      "Yes: Goblin Guide can attack. (×2)"
+    ]
+  },
+  {
+    "id": "tt250-force-after-they-see-hand",
+    "text": "My opponent Thoughtseizes me and sees Force of Will and Brainstorm. Can I Force the Thoughtseize pitching Brainstorm after they see my hand?",
+    "expect": [
+      "Thoughtseize is countered",
+      "You exile a blue card from your hand (Force of Will's alternative cost)"
+    ],
+    "notExpect": [
+      "opponent casts Brainstorm"
+    ]
+  },
+  {
+    "id": "tt250-angel-pathed-in-upkeep-emrakul",
+    "text": "I have Dark Confidant and Platinum Angel. They Path the Angel in my upkeep with Emrakul on top. Do I lose?",
+    "expect": [
+      "Platinum Angel: the battlefield → exile",
+      "You lose 15 life (Emrakul, the Aeons Torn's mana value)"
+    ]
+  },
+  {
+    "id": "tt250-double-block-goyf-4-5",
+    "text": "They attack with Tarmogoyf 4/5 and I have Spellskite and a 2/2. Can I double block and kill it?",
+    "expect": [
+      "No: Tarmogoyf is still on the battlefield",
+      "Tarmogoyf has 2 damage marked"
+    ]
+  },
+  {
+    "id": "tt250-goyf-saved-by-bolt-in-yard",
+    "text": "My Tarmogoyf is 2/3 with land and creature in graveyards. They Bolt it. Does the Bolt in the graveyard save it?",
+    "expect": [
+      "Tarmogoyf is 3/4",
+      "Yes: Tarmogoyf is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt250-snapcaster-bolted-in-response-plain",
+    "text": "I cast Snapcaster Mage. They Bolt it in response. Do I still get the flashback?",
+    "expect": [
+      "Snapcaster Mage enters the battlefield",
+      "Snapcaster Mage: the battlefield → your graveyard"
+    ],
+    "notExpect": [
+      "can't target Snapcaster Mage while it's still a spell"
+    ]
+  },
+  {
+    "id": "tt250-chalice-zero-two-moxen",
+    "text": "They have Chalice on 0 and I cast Mox Opal. Then I cast a second Mox Opal. What happens?",
+    "expect": [
+      "Mox Opal is countered. (×2)"
+    ]
+  },
+  {
+    "id": "tt250-aberration-no-fliers",
+    "text": "I attack with Insectile Aberration and they have no fliers. How much damage?",
+    "expect": [
+      "Yes: opponent takes 3 damage in all"
+    ]
+  },
+  {
+    "id": "tt250-hymn-one-card-in-hand",
+    "text": "They Hymn me with only one card in my hand. What happens?",
+    "expect": [
+      "You discard 1 card (1 → 0 in hand)"
+    ]
+  },
+  {
+    "id": "tt250-skite-redirect-dismember-to-itself",
+    "text": "I have Spellskite and they Dismember it. Can I redirect the Dismember to itself?",
+    "expect": [
+      "Dismember already targets Spellskite; nothing changes",
+      "Spellskite: the battlefield → your graveyard"
+    ]
+  },
+  {
+    "id": "tt250-their-skite-saves-them-at-3",
+    "text": "My opponent is at 3 with Spellskite. I Bolt them. Can they redirect to Spellskite and survive?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of opponent",
+      "Yes: opponent is still in the game at 3 life"
+    ]
   }
 ]
