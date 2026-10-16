@@ -35425,5 +35425,107 @@
     "expect": [
       "No: Blood Moon makes Mishra's Factory a Mountain with none of its own abilities"
     ]
+  },
+  {
+    "id": "tt242-skite-redirect-thoughtseize-purpose",
+    "text": "They cast Thoughtseize on me. I have Spellskite in play and a Thalia in hand. Can I redirect it to Spellskite so they can't take Thalia?",
+    "expect": [
+      "Thoughtseize's target isn't changed (Spellskite isn't a legal target for it)",
+      "Thalia, Guardian of Thraben: your hand → your graveyard"
+    ]
+  },
+  {
+    "id": "tt242-goyf-3-4-blocked-finks-bolted",
+    "text": "I attack with Tarmogoyf which is 3/4. They block with Kitchen Finks and Bolt my Goyf. What happens?",
+    "expect": [
+      "Tarmogoyf: the battlefield → your graveyard",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ]
+  },
+  {
+    "id": "tt242-bolt-under-their-rip",
+    "text": "My opponent has Rest in Peace. I cast Lightning Bolt. Where does the Bolt go?",
+    "expect": [
+      "Lightning Bolt: the stack → exile instead of the graveyard (Rest in Peace, 614.1a)",
+      "Lightning Bolt is in exile"
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "tt242-ponder-then-brainstorm-thalia-three-lands",
+    "text": "They have Thalia. I have 3 lands. Can I cast Ponder and then Brainstorm?",
+    "expect": [
+      "Yes: Ponder can be cast",
+      "Brainstorm can't be cast (costs 2, only 1 mana available)"
+    ]
+  },
+  {
+    "id": "tt242-vialed-snapcaster-triggers",
+    "text": "I cast Snapcaster Mage with Vial on 2. Does it still trigger?",
+    "expect": [
+      "Yes: Snapcaster Mage's ability triggered"
+    ]
+  },
+  {
+    "id": "tt242-wasteland-their-wasteland-back",
+    "text": "They Wasteland my Wasteland. Can I respond by Wastelanding their Wasteland?",
+    "expect": [
+      "No, not that one: sacrificing Wasteland is part of its activation cost"
+    ]
+  },
+  {
+    "id": "tt242-wasteland-their-port-in-response",
+    "text": "They Wasteland my Karakas. Can I respond by Wastelanding their Rishadan Port?",
+    "expect": [
+      "Yes. You have priority with their ability on the stack"
+    ]
+  },
+  {
+    "id": "tt242-two-delvers-one-ponder",
+    "text": "I have two Delvers. At upkeep I reveal Ponder. Do both flip?",
+    "expect": [
+      "Yes, both. Delver of Secrets' upkeep trigger"
+    ],
+    "cite": [
+      "701.27a"
+    ]
+  },
+  {
+    "id": "tt242-lifelink-attacker-blocked",
+    "text": "They attack with a 2/2 with lifelink. I block with a 2/2. Do they gain life?",
+    "expect": [
+      "opponent gains 2 life in all"
+    ]
+  },
+  {
+    "id": "tt242-dismember-their-shadow-at-3",
+    "text": "I cast Dismember on Death's Shadow, their Death's Shadow, when they're at 3 life. Does it die?",
+    "expect": [
+      "Death's Shadow is 5/5 until end of turn",
+      "No: Death's Shadow is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt242-exactly-two-cards-force-pitch",
+    "text": "They cast Hymn. I have exactly two cards: Force of Will and a Brainstorm. Can I Force the Hymn pitching Brainstorm?",
+    "expect": [
+      "You exile a blue card from your hand (Force of Will's alternative cost)",
+      "Hymn to Tourach is countered"
+    ],
+    "notExpect": [
+      "Brainstorm [brainstorm] (opponent's)"
+    ]
+  },
+  {
+    "id": "tt242-my-bridge-two-cards-three-power",
+    "text": "I control Ensnaring Bridge with 2 cards in hand. Can my 3/3 attack?",
+    "expect": [
+      "No: a 3/3 creature can't attack (Ensnaring Bridge: You have 2 cards in hand and a 3/3 creature's power is 3, 508.1c)"
+    ],
+    "cite": [
+      "508.1c"
+    ]
   }
 ]

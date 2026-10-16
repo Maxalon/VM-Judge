@@ -1184,6 +1184,10 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^(?:do|will|must) (?:i|we) (?:have to|need to|still have to|still) (?:discard|lose life|sacrifice|reveal|mill|draw)(?: cards?| three| \d+| anything| too)?\??$|^(?:does|will) (?:it|that|(?:the |their )?c\d+) still (?:make|force) me (?:to )?(?:discard|lose life|sacrifice|reveal|mill)(?: cards?| anything)?\??$|^(?:does|will|can) (?:it|that|(?:the |their )?c\d+) still (?:hit|affect|get) me\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Leyline of Sanctity", "Aegis of the Gods", "Witchbane Orb", "Shalai, Voice of Plenty", "True Believer", "Sigarda, Heron's Grace", "Teyo, the Shieldmage") } && ctx.events.any { it.verb == "cast" && it.player != "me" }) t2 = "hexproofme-question"
         // "I have one extra mana": mana still open after the casts described.
         t2 = t2.replace(Regex("""^(?:i|we) (?:have|'ve got|still have) (\d+|one|two|three|four|five) (?:extra|spare|more|additional|other) (?:mana|lands?)(?: open| up| floating| left| untapped| available)?$""", RegexOption.IGNORE_CASE), "i have $1 mana open")
+        // "Can I redirect it to Spellskite so they can't take Thalia?": the purpose tail says why, not what.
+        t2 = t2.replace(Regex("""^(can (?:i|we) (?:redirect|deflect|spellskite) (?:it|that|(?:the |their )?c\d+)(?: (?:to|onto) (?:my )?(?:spellskite|c\d+))?) so (?:that )?(?:they|he|she|i|we) (?:can't|cannot|don't|won't|do not|can not) .+$""", RegexOption.IGNORE_CASE), "$1")
+        // "Can I respond by Wastelanding their Wasteland?": the land they sacrificed as a cost is already gone.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:respond|answer) (?:by|with) (?:wastelanding|strip mining|ghost quartering|destroying|killing|using (?:my )?(?:wasteland|c\d+) on) (?:their|his|her|the) (c\d+)(?: in response| back| too)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "respondland-question ${r.groupValues[1]}" } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1214,7 +1218,7 @@ class SituationParser(private val names: NameIndex) {
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
         // "I have two cards: Lightning Bolt and a Mountain" / "three cards in hand: two lands and a Bolt": the hand, listed after a colon.
-        t2 = t2.replace(Regex("""(^|, |\s+and\s+)(?:i|we) (?:have|hold|'ve got) (?:two|three|four|five|\d+) cards?(?: in (?:my )?hand)?:? (?=(?:an? |the |two |three |\d+ )?(?:c\d+|lands?|basics?))""", RegexOption.IGNORE_CASE), "$1my hand is ")
+        t2 = t2.replace(Regex("""(^|, |\s+and\s+)(?:i|we) (?:have|hold|'ve got) (?:exactly |just |only )?(?:two|three|four|five|\d+) cards?(?: in (?:my )?hand| left)?:? (?=(?:an? |the |two |three |\d+ )?(?:c\d+|lands?|basics?))""", RegexOption.IGNORE_CASE), "$1my hand is ")
         // "into their Ensnaring Bridge with one card in hand": the hand is the Bridge's controller's, not the attacker's.
         t2 = t2.replace(Regex("""\binto (their|his|her|my opponent's|the opponent's) (c\d+) with (\d+|one|two|three|four|no|zero) cards? in hand\b""", RegexOption.IGNORE_CASE), "into $1 $2, they have $3 cards in hand")
         // "They have Aether Vial on 3 and Spell Queller in hand": the hand belongs to the same player as the first half.
@@ -3796,7 +3800,9 @@ class SituationParser(private val names: NameIndex) {
             val flips = card.second.contains("Instant") || card.second.contains("Sorcery")
             if (flips) ctx.notes += "Delver of Secrets transforms: ${card.first} is an instant or sorcery card."
             else ctx.notes += "Delver of Secrets stays a 1/1: ${card.first} isn't an instant or sorcery card."
-            ctx.asks += EventSpec("ask", to = if (flips) "text:Yes. Delver of Secrets' upkeep trigger looks at the top card of your library and lets you reveal it; ${card.first} is an instant or sorcery card, so Delver transforms into Insectile Aberration, a 3/2 with flying (701.27a). It's the same permanent: it keeps any counters, damage and its tapped or untapped state, and it isn't summoning sick again. Revealing is optional (\"you may\")."
+            val delvers = ctx.objects.values.count { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.startsWith("Delver of Secrets") == true }
+            if (delvers >= 2 && flips) ctx.notes += "With $delvers Delvers, each has its own upkeep trigger; they resolve one at a time, and each looks at the card then on top. ${card.first} stays on top after the first reveal (nothing moves it), so the second trigger reveals it too and both transform (603.2, 603.3b)."
+            ctx.asks += EventSpec("ask", to = if (flips) "text:Yes${if (delvers >= 2) ", both" else ""}. Delver of Secrets' upkeep trigger looks at the top card of your library and lets you reveal it; ${card.first} is an instant or sorcery card, so Delver transforms into Insectile Aberration, a 3/2 with flying (701.27a).${if (delvers >= 2) " Each Delver's trigger resolves separately and sees the same card still on top, so each transforms." else ""} It's the same permanent: it keeps any counters, damage and its tapped or untapped state, and it isn't summoning sick again. Revealing is optional (\"you may\")."
                 else "text:No. Delver of Secrets transforms only if the card revealed is an instant or sorcery card; ${card.first} isn't one, so Delver stays a 1/1 Human Wizard this upkeep. The card stays on top of your library (you looked at it, nothing moves it).")
             return true
         }
@@ -4305,6 +4311,20 @@ class SituationParser(private val names: NameIndex) {
             val cast = ctx.events.last { it.verb == "cast" && it.player != "me" }
             val ref = cast.card ?: cast.obj?.let { o -> ctx.objects[o]?.card } ?: return false
             ctx.asks += EventSpec("ask", card = ref, to = "hexproofPlayer")
+            return true
+        }
+        Regex("""^respondland-question (c\d+)$""").find(clause0)?.let { r ->
+            val theirsCard = m.cards[r.groupValues[1]] ?: return@let
+            val act = ctx.events.lastOrNull { e -> e.verb == "activate" && e.player != "me" } ?: return@let
+            val src = ctx.objects[act.obj] ?: return@let
+            val mine = ctx.objects.values.firstOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Wasteland", "Strip Mine", "Ghost Quarter", "Field of Ruin", "Tectonic Edge", "Dust Bowl", "Encroaching Wastes") }
+            val sacCost = src.card.name in setOf("Wasteland", "Strip Mine", "Ghost Quarter", "Field of Ruin", "Tectonic Edge", "Encroaching Wastes")
+            if (src.card.name == theirsCard.display && sacCost) {
+                ctx.asks += EventSpec("ask", to = "text:No, not that one: sacrificing ${src.card.name} is part of its activation cost (\"{T}, Sacrifice ${src.card.name}: Destroy target nonbasic land\"), and costs are paid as the ability is activated (602.2b, 601.2h), so their ${src.card.name} was already in the graveyard before you ever got priority. Its ability is on the stack and resolves regardless of its source being gone (113.7a), destroying your land. You can respond (602.1), but only by aiming your own ${mine?.card?.name ?: "Wasteland"} at some other nonbasic land they control.")
+            } else {
+                ctx.asks += EventSpec("ask", to = "text:Yes. You have priority with their ability on the stack (117.1b, 602.1), so you can activate your own ${mine?.card?.name ?: "land"} targeting their ${theirsCard.display}; yours resolves first (608.1) and destroys it. Theirs still resolves too, since an ability on the stack doesn't care that its source is gone (113.7a).")
+                if (mine != null) { val tid = objectIdFor(theirsCard, ctx) ?: addObject(theirsCard, pronounPlayer(ctx, "their"), false, ctx); ctx.events += EventSpec("activate", player = "me", obj = mine.id, targets = listOf(tid)) }
+            }
             return true
         }
         if (clause0 == "chalicelife-question") {
