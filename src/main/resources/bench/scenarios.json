@@ -37545,5 +37545,108 @@
       "Spell Queller enters the battlefield",
       "Hymn to Tourach: the stack → exile (Spell Queller); it doesn't resolve"
     ]
+  },
+  {
+    "id": "tt263-double-block-who-dies",
+    "text": "They attack with a 3/3 and I have a 2/2 and a 2/2. If I double block, who dies?",
+    "expect": [
+      "a 3/3 creature: the battlefield → opponent's graveyard",
+      "Yes: a 3/3 creature died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt263-thoughtseize-self-under-their-leyline",
+    "text": "I cast Thoughtseize and they have Leyline of Sanctity. Can I target myself instead?",
+    "expect": [
+      "Yes. Thoughtseize says \"target player\", and that can be its own caster (115.1)"
+    ]
+  },
+  {
+    "id": "tt263-goyf-four-five-bolted-twice",
+    "text": "My Tarmogoyf is 4/5. They Bolt it twice. Does it die?",
+    "expect": [
+      "Tarmogoyf has 6 damage marked",
+      "Yes: Tarmogoyf died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt263-which-can-i-redirect",
+    "text": "I have Spellskite. They cast Hymn to Tourach targeting me and Lightning Bolt targeting my Thalia. Which can I redirect?",
+    "expect": [
+      "Hymn to Tourach: no: Hymn to Tourach targets a player",
+      "Lightning Bolt: yes: Spellskite is a creature (and an artifact), so it's a legal new target for Lightning Bolt"
+    ],
+    "cite": [
+      "115.7"
+    ]
+  },
+  {
+    "id": "tt263-which-spells-vs-two-chalices",
+    "text": "They have Chalice on 1 and Chalice on 2. Which of my spells can I cast: Bolt, Counterspell or Thalia?",
+    "expect": [
+      "Lightning Bolt (mana value 1): can be cast, but Chalice of the Void on 1 triggers as it's cast and counters it (603.2)",
+      "Thalia, Guardian of Thraben (mana value 2): can be cast, but Chalice of the Void on 2 triggers"
+    ]
+  },
+  {
+    "id": "tt263-guide-into-empty-board-at-two",
+    "text": "I attack with Goblin Guide. They have no creatures and 2 life. Do they die?",
+    "expect": [
+      "opponent takes 2 damage",
+      "Yes: opponent has lost the game"
+    ]
+  },
+  {
+    "id": "tt263-shadow-at-twenty-dead",
+    "text": "I have Death's Shadow at 20 life. Is it dead?",
+    "expect": [
+      "Death's Shadow: the battlefield → your graveyard",
+      "Yes: Death's Shadow died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt263-thalia-and-spirit-survive-question",
+    "text": "They cast Wrath. I have Thalia and Selfless Spirit and sacrifice Spirit in response. Does Thalia survive and does Spirit?",
+    "expect": [
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield",
+      "No: Selfless Spirit is in the graveyard"
+    ]
+  },
+  {
+    "id": "tt263-hand-being-two-mountains-and-bolt",
+    "text": "They Thoughtseize me with my hand being two Mountains and a Bolt. Do they take the Bolt?",
+    "expect": [
+      "Lightning Bolt: your hand → your graveyard",
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain, Mountain can't be chosen (not nonland card)"
+    ]
+  },
+  {
+    "id": "tt263-block-one-of-two-damage",
+    "text": "They attack with two 2/2s and I have a 3/3. I block one. How much damage do I take?",
+    "expect": [
+      "You take 2 damage",
+      "Yes: you take 2 damage in all"
+    ]
+  },
+  {
+    "id": "tt263-flashback-counterspell-their-turn",
+    "text": "I cast Snapcaster Mage at end of their turn targeting Counterspell. Can I flashback Counterspell on their turn?",
+    "expect": [
+      "Counterspell has flashback until end of turn",
+      "Only during the turn Snapcaster Mage's trigger resolved"
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "tt263-vial-thalia-make-path-cost-more",
+    "text": "They cast Path on my Goyf. I have Vial on 2 and Thalia in hand. Can I Vial in Thalia to make Path cost more?",
+    "expect": [
+      "No. You can put Thalia, Guardian of Thraben in with Aether Vial in response, but it won't change what Path to Exile costs"
+    ],
+    "cite": [
+      "601.2f"
+    ]
   }
 ]

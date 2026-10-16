@@ -761,7 +761,7 @@ class SituationParser(private val names: NameIndex) {
             if (lc != null && lc.modes.size >= 2 && nm in setOf("Collective Brutality", "Collective Defiance", "Collective Effort", "Blessed Alliance", "Borrowed Grace", "Borrowed Hostility", "Borrowed Malevolence", "Savage Alliance")) "escalate-cost-question ${r.groupValues[1]} ${lc.modes.size}" else t0 } ?: t0 }
         // "My Snapcaster Mage gives Bolt flashback until end of turn": the Mage cast at the Bolt in the graveyard.
         t2 = t2.let { t0 -> Regex("""^my (c\d+) (?:flashback |trigger |ability )?(?:gives|gave|granted|grants) (?:my )?(c\d+) flashback(?: until end of turn)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display in setOf("Snapcaster Mage", "Torrential Gearhulk")) "i cast ${r.groupValues[1]} targeting ${r.groupValues[2]} in my graveyard" else t0 } ?: t0 }
-        if (Regex("""^can (?:i|we) (?:still )?(?:flash (?:it|that) back|flashback (?:it|that)|flash back (?:it|that|c\d+)|cast (?:it|that) from (?:my |the )?graveyard) (?:on|during|in) (?:their|my opponent's|the opponent's) (?:next )?turn\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.objects.values.any { it.card.name == "Snapcaster Mage" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Snapcaster Mage" })) t2 = "snapflashturn-question"
+        if (Regex("""^can (?:i|we) (?:still )?(?:flash (?:it|that) back|flashback (?:it|that|c\d+)|flash back (?:it|that|c\d+)|cast (?:it|that) from (?:my |the )?graveyard) (?:on|during|in) (?:their|my opponent's|the opponent's) (?:next )?turn\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.objects.values.any { it.card.name == "Snapcaster Mage" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Snapcaster Mage" })) t2 = "snapflashturn-question"
         // "Does Lightning Bolt cost 3 for them?": the spell's cost, with whatever taxes apply.
         t2 = t2.replace(Regex("""^(?:does|will|would) (?:my |the |their |an? )?(c\d+|it|that)(?: in (?:my |their )?hand)? (?:still |even |now )?cost (?:(?:them|me|us|my opponent) )?(?:\d+|more|less|extra|the same|double|one more|two more)(?: mana)?(?: for (?:them|me|my opponent|the opponent|us))?(?: now| then| anyway| too| as well)?\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
         // "Who survives?" after a sweeper with no combat: the creatures, not the players.
@@ -1331,7 +1331,7 @@ class SituationParser(private val names: NameIndex) {
         // "I have Spellskite and a 1/1 creature untapped": a creature said by size with its untapped state after the noun.
         t2 = t2.replace(Regex("""\b(an? \d+/\d+ (?:creature|token|[a-z]+ token)) untapped(?=[,.?]|$| and\b| that\b)""", RegexOption.IGNORE_CASE), "$1")
         // "They have a Chalice on 1 and a Chalice on 2": two of the same permanent, each with its own number.
-        t2 = t2.let { t0 -> Regex("""\ban? (c\d+) (?:on|at|with) (\d+)(?: counters?)? and an? (c\d+) (?:on|at|with) (\d+)(?: counters?)?(?=[,.?]|$)""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+        t2 = t2.let { t0 -> Regex("""\b(?:an? )?(c\d+) (?:on|at|with) (\d+)(?: counters?)? and (?:an? )?(c\d+) (?:on|at|with) (\d+)(?: counters?)?(?=[,.?]|$)""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             if (m.cards[r.groupValues[1]]?.display != null && m.cards[r.groupValues[1]]?.display == m.cards[r.groupValues[3]]?.display) t0.replaceRange(r.range, "two ${r.groupValues[1]}, one on ${r.groupValues[2]} and one on ${r.groupValues[4]}") else t0 } ?: t0 }
         // "My Snapcaster Mage flashes back Lightning Bolt": the Mage's controller casts the Bolt with flashback.
         t2 = t2.replace(Regex("""^(my|their|his|her) (c\d+) (?:flashes back|flashbacks|flash backs) (?:my |their |the |a )?(c\d+)$""", RegexOption.IGNORE_CASE)) { r -> "${if (r.groupValues[1].lowercase() == "my") "i" else "they"} flashback ${r.groupValues[3]} with ${r.groupValues[2]}" }
@@ -1396,6 +1396,14 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(c\d+) (?:that|which|who) (?:has )?(?:already )?(?:persisted|returned|came back(?: once| already)?|already came back|returned once|has persisted)(?: once| already| before)?\b""", RegexOption.IGNORE_CASE), "$1 with a -1/-1 counter")
         // "Can I Queller it and what happens to Hymn?": the second half is what the outcome shows anyway.
         t2 = t2.replace(Regex("""^(can (?:i|we) .+?) and what happens(?: to (?:it|that|the c\d+|c\d+|the spell))?\??$""", RegexOption.IGNORE_CASE), "$1")
+        // "They Thoughtseize me with my hand being two Mountains and a Bolt": the hand, said as a clause of its own.
+        t2 = t2.replace(Regex("""\b,? ?with my hand being (.+)$""", RegexOption.IGNORE_CASE), ", my hand is $1")
+        // "Does Thalia survive and does Spirit?": the second creature asked the same thing.
+        t2 = t2.replace(Regex("""^(does|will) (?:my |the )?(c\d+) (survive|die|live) and (?:does|will) (?:my |the )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "$1 $2 $3, $1 $4 $3")
+        // "Which of my spells can I cast: Bolt, Counterspell or Thalia?": each card against the Chalices and taxes described.
+        t2 = t2.let { t0 -> Regex("""^(?:which|what) (?:of (?:my|these) (?:spells|cards)|spells?|cards?) can (?:i|we) (?:still )?cast:? ((?:c\d+)(?:,? (?:or |and )?c\d+)*)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "whichcast-question " + Regex("""c\d+""").findAll(r.groupValues[1]).joinToString("+") { it.value } } ?: t0 }
+        // "Which can I redirect?" with Spellskite and several of their spells on the stack.
+        t2 = t2.replace(Regex("""^(?:which|which ones?|which of them|which spell) can (?:i|we) (?:redirect|deflect|spellskite)(?: it| that| them)?(?: to spellskite| to it)?\??$""", RegexOption.IGNORE_CASE), "whichredirect-question")
         // "Which Chalice counters it?": whether it is countered, and by which.
         t2 = t2.replace(Regex("""^which (?:chalice|c\d+|one) counters? (?:it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "is it countered")
         // "I block the 3/3 with Spellskite and take the 2/2": the unblocked one is simply unblocked.
@@ -2443,7 +2451,7 @@ class SituationParser(private val names: NameIndex) {
             val kinds = listOf("a creature", "an instant", "a land", "a sorcery", "an artifact", "an enchantment").take(n.coerceIn(1, 6))
             "there is ${kinds.joinToString(" and ")} in the graveyards, ${r.groupValues[1]}" } ?: t0 }
         // "Can I put Thalia in to make it cost more?" with their spell already on the stack: a tax applies only as a spell is cast.
-        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:in )?(?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)? (?:to make it cost more|to tax it|to make (?:it|their spell|that|the c\d+|the spell|the bolt) cost (?:1 )?more|so it costs more|in response to make it cost more)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialtax-question " + Regex("""(c\d+)""").find(t2)!!.value
+        if (ctx.objects.values.any { it.card.name == "Aether Vial" && it.controller == "me" } && ctx.events.any { it.verb == "cast" && it.player != "me" } && Regex("""^can (?:i|we) (?:put|vial|drop|flash) (?:in )?(?:my |the )?(c\d+)(?: in)?(?: with (?:my |the )?c\d+)? (?:to make it cost more|to tax it|to make (?:it|their spell|that|(?:the )?c\d+|the spell|the bolt) cost (?:1 )?more|so it costs more|in response to make it cost more)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "vialtax-question " + Regex("""(c\d+)""").find(t2)!!.value
         // "How much damage total if I attack?" after a burn spell: the attack is made, then the total asked.
         t2 = t2.replace(Regex("""^how much (?:damage )?(?:total|in all|altogether|overall)?(?: damage)? if (?:i|we) (?:attack|swing)(?: with (?:everything|everyone|it|all my creatures|my team))?\??$""", RegexOption.IGNORE_CASE), "i attack with everything, how much damage does my opponent take")
         // "Does Cage still work?" under Stony Silence / Null Rod / Karn: only activated abilities are stopped.
@@ -4786,6 +4794,29 @@ class SituationParser(private val names: NameIndex) {
             val removed = ctx.events.any { e -> e.verb == "cast" && e.player != "me" && snap.id in e.targets }
             ctx.asks += EventSpec("ask", to = "text:" + (if (removed) "Yes. ${snap.card.name}'s enters-the-battlefield trigger is already on the stack, and a triggered ability resolves even if its source has left the battlefield (113.7a); it uses the last known information about the Mage. ${card.display} gains flashback until end of turn as the trigger resolves, and you can cast it for its mana cost." else "Yes. ${snap.card.name}'s trigger gives ${card.display} flashback until end of turn as it resolves; nothing described stops the trigger."))
             return true
+        }
+        Regex("""^whichcast-question (.+)$""").find(clause0)?.let { r ->
+            val cards = Regex("""c\d+""").findAll(r.groupValues[1]).mapNotNull { m.cards[it.value] }.toList()
+            if (cards.isEmpty()) return@let
+            val chalices = ctx.objects.values.filter { it.card.name == "Chalice of the Void" && it.zone == "battlefield" }.mapNotNull { it.counters["charge"] }.distinct().sorted()
+            val taxes = ctx.objects.values.filter { it.zone == "battlefield" && it.card.name in setOf("Thalia, Guardian of Thraben", "Sphere of Resistance", "Thorn of Amethyst") }.map { it.card.name!! }.distinct()
+            val lines = cards.map { c ->
+                val mv = c.manaValue
+                val chaliced = mv in chalices
+                "${c.display} (mana value $mv): " + when {
+                    chaliced -> "can be cast, but Chalice of the Void on $mv triggers as it's cast and counters it (603.2); only its cast-triggered abilities or a \"can't be countered\" clause would get around that."
+                    taxes.isNotEmpty() && !c.typeLine.contains("Creature") && "Thalia, Guardian of Thraben" in taxes -> "can be cast and resolves; it costs {1} more under Thalia, Guardian of Thraben (no Chalice on $mv)."
+                    else -> "can be cast and resolves (no Chalice on $mv)."
+                }
+            }
+            ctx.asks += EventSpec("ask", to = "text:" + lines.joinToString(" ") + (if (chalices.isEmpty()) " No Chalice of the Void with counters was described." else ""))
+            return true
+        }
+        if (clause0 == "whichredirect-question") {
+            val skite = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Spellskite" } ?: return false
+            val theirs = ctx.events.filter { it.verb == "cast" && (it.player ?: "me") != "me" && it.card?.name != null }
+            if (theirs.isEmpty()) return false
+            ctx.asks += EventSpec("ask", obj = skite.id, to = "whichRedirect:" + theirs.map { it.card!!.name!! }.distinct().joinToString("|")); return true
         }
         if (clause0 == "cardinhand-question") {
             val o = ctx.lastMentioned?.let { ctx.objects[it] } ?: return false
