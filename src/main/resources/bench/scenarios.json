@@ -36923,5 +36923,121 @@
       "Thoughtseize lets opponent choose a nonland card from your hand: Loxodon Smiter, Thalia, Guardian of Thraben",
       "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)"
     ]
+  },
+  {
+    "id": "tt257-bolt-with-one-mountain-under-thalia",
+    "text": "I have Thalia and they cast Lightning Bolt with one Mountain untapped. Can they?",
+    "expect": [
+      "No: Lightning Bolt can't be cast (costs 2, only 1 mana available)"
+    ]
+  },
+  {
+    "id": "tt257-bolt-one-blocker-then-assign",
+    "text": "They block my 4/4 with two 2/2s. I Bolt one of the blockers before damage. How do I assign damage?",
+    "expect": [
+      "a 4/4 creature is blocked by one creature still in combat (the other left before damage; the attacker stays blocked, 509.1h), so all its damage goes to that blocker (510.1c)"
+    ],
+    "notExpect": [
+      "kills every blocker"
+    ]
+  },
+  {
+    "id": "tt257-shadow-attack-bolted-in-response",
+    "text": "I attack with Death's Shadow at 5 life and they Bolt me in response to the attack. How big is it?",
+    "expect": [
+      "Death's Shadow is 11/11",
+      "You go from 5 to 2 life"
+    ]
+  },
+  {
+    "id": "tt257-skite-redirect-paying-life-at-two",
+    "text": "They have Spellskite. I cast Dismember on their Goyf and they redirect to Spellskite paying 2 life at 2 life. What happens?",
+    "expect": [
+      "opponent pays 2 life for Spellskite's Phyrexian mana symbol",
+      "Dismember now targets Spellskite instead of Tarmogoyf",
+      "opponent loses the game"
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "tt257-skite-at-two-redirect-paying-life",
+    "text": "They have Spellskite at 2 life. I cast Dismember on their Goyf and they redirect it paying 2 life. What happens?",
+    "expect": [
+      "Dismember now targets Spellskite instead of Tarmogoyf",
+      "opponent goes from 2 to 0 life"
+    ]
+  },
+  {
+    "id": "tt257-hymn-me-with-four-cards",
+    "text": "They Hymn me with 4 cards in hand. How many do I keep?",
+    "expect": [
+      "You discard 2 cards (4 → 2 in hand)",
+      "You have 2 cards in hand"
+    ],
+    "notExpect": [
+      "You have 0 cards in hand"
+    ]
+  },
+  {
+    "id": "tt257-stifle-the-trigger-no-flashback",
+    "text": "I cast Snapcaster Mage and they Stifle the trigger. Can I still flashback Bolt?",
+    "expect": [
+      "Snapcaster Mage's triggered ability is countered",
+      "No: Lightning Bolt can't be cast from your graveyard. Snapcaster Mage's trigger was countered, so it never gained flashback"
+    ],
+    "cite": [
+      "702.34a",
+      "601.3"
+    ]
+  },
+  {
+    "id": "tt257-snapcaster-flashback-bolt-unsaid",
+    "text": "I cast Snapcaster Mage. Can I flashback Bolt?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn",
+      "Lightning Bolt is exiled (flashback)"
+    ]
+  },
+  {
+    "id": "tt257-mother-save-her",
+    "text": "I have Mother of Runes. They cast Dismember on my Thalia. Can Mother save her?",
+    "expect": [
+      "Thalia, Guardian of Thraben has protection from black until end of turn",
+      "Dismember doesn't resolve (all targets illegal)",
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt257-skite-blocks-three-three",
+    "text": "They attack with a 3/3 and I have Spellskite and a 2/2. I block with Spellskite. Does Spellskite die?",
+    "expect": [
+      "Spellskite has 3 damage marked",
+      "No: Spellskite is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt257-two-thalias-legend-rule-cost",
+    "text": "I have two Thalias. They cast Brainstorm. How much does it cost?",
+    "expect": [
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard",
+      "Brainstorm costs {U} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all"
+    ]
+  },
+  {
+    "id": "tt257-finks-counter-wrath-no-return",
+    "text": "I have Kitchen Finks with a -1/-1 counter and they Wrath. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it",
+      "No: Kitchen Finks is in your graveyard"
+    ]
+  },
+  {
+    "id": "tt257-chalice-two-snapcaster",
+    "text": "They have Chalice on 2. I cast Snapcaster Mage. Is it countered?",
+    "expect": [
+      "Yes: Snapcaster Mage is countered (by Chalice of the Void)"
+    ]
   }
 ]

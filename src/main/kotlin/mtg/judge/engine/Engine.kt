@@ -387,6 +387,13 @@ class Engine(val state: GameState) {
             trace.step("$mage was countered, so it never entered the battlefield and its enters-the-battlefield trigger never happened; ${card.name} has no flashback of its own and can't be cast from the graveyard.", "702.34a", "601.3")
             state.outcomes += "No: ${card.name} can't be cast from ${player.possessive} graveyard. $mage was countered, so the trigger that would have given it flashback never happened, and it has no flashback itself (702.34a, 601.3)."; return null
         }
+        // "They Stifle Snapcaster's trigger. Can I still flashback Bolt?": the countered trigger never granted flashback.
+        if (flashback && !obj.has("flashback") && state.outcomes.any { it == "Snapcaster Mage's triggered ability is countered." || it == "Torrential Gearhulk's triggered ability is countered." }) {
+            val mage = if (state.outcomes.any { it.startsWith("Snapcaster Mage's") }) "Snapcaster Mage" else "Torrential Gearhulk"
+            state.stack.remove(item)
+            trace.step("$mage's enters-the-battlefield trigger was countered, so it never gave ${card.name} flashback; ${card.name} has no flashback of its own and can't be cast from the graveyard.", "702.34a", "601.3")
+            state.outcomes += "No: ${card.name} can't be cast from ${player.possessive} graveyard. $mage's trigger was countered, so it never gained flashback, and it has none itself (702.34a, 601.3)."; return null
+        }
         if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
         if (item.flashback) { obj.zone = Zone.STACK; trace.step("${card.name} is cast from ${player.possessive} graveyard for its flashback cost, an alternative cost paid instead of its mana cost.", "702.34a", "601.2b") }
         if (evoked && !card.has("evoke")) { state.clarifications += Clarification("${card.name}'s evoke", "${card.name} doesn't have evoke, so it can't be cast for an evoke cost; treating it as cast normally.") }
