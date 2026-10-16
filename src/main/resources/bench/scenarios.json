@@ -37134,5 +37134,105 @@
       "Snapcaster Mage enters the battlefield",
       "Lightning Bolt has flashback until end of turn"
     ]
+  },
+  {
+    "id": "tt259-bridge-empty-hand-one-one",
+    "text": "They have Ensnaring Bridge with no cards in hand. Can I attack with my 1/1?",
+    "expect": [
+      "No: a 1/1 creature can't attack (Ensnaring Bridge: opponent has 0 cards in hand and a 1/1 creature's power is 1, 508.1c)"
+    ]
+  },
+  {
+    "id": "tt259-rip-finks-no-persist",
+    "text": "I control Rest in Peace. My Kitchen Finks dies. Does it persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Rest in Peace)",
+      "No: Kitchen Finks is in exile"
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "tt259-flashback-in-response-with-snapcaster-in-hand",
+    "text": "They cast Surgical Extraction on the Bolt in my graveyard. I have Snapcaster in hand with 3 lands. Can I flashback Bolt in response?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn",
+      "Lightning Bolt is exiled (flashback)",
+      "Surgical Extraction doesn't resolve (all targets illegal)"
+    ]
+  },
+  {
+    "id": "tt259-lifelink-blocked-trade",
+    "text": "I attack with a 2/2 with lifelink and they block with a 3/3. Do I gain life?",
+    "expect": [
+      "You gain 2 life in all"
+    ]
+  },
+  {
+    "id": "tt259-thoughtseize-into-counterspell",
+    "text": "I cast Thoughtseize on them. They have 2 Islands and a Counterspell in hand. Can they counter it?",
+    "expect": [
+      "Yes, with a counterspell in hand and the mana for it"
+    ]
+  },
+  {
+    "id": "tt259-fog-at-four",
+    "text": "They attack me with a 4/4 and I'm at 4 with a Fog in hand and 1 Forest untapped. Do I survive?",
+    "expect": [
+      "Damage to you from a 4/4 creature is prevented",
+      "Yes: You are still in the game at 4 life"
+    ]
+  },
+  {
+    "id": "tt259-delver-flips-on-brainstorm",
+    "text": "My Delver is a 1/1. I reveal Brainstorm at upkeep. Does it flip and how big is it?",
+    "expect": [
+      "Delver transforms into Insectile Aberration, a 3/2 with flying (701.27a)"
+    ]
+  },
+  {
+    "id": "tt259-snapcaster-pathed-trigger-still-grants",
+    "text": "They Path my Snapcaster in response to its trigger. Does Bolt still get flashback?",
+    "expect": [
+      "Snapcaster Mage: the battlefield → exile",
+      "Yes. Snapcaster Mage's enters-the-battlefield trigger is already on the stack, and a triggered ability resolves even if its source has left the battlefield (113.7a)"
+    ]
+  },
+  {
+    "id": "tt259-cage-stops-their-flashback",
+    "text": "I have Grafdigger's Cage. They cast Snapcaster Mage targeting Bolt. Can they flashback it?",
+    "expect": [
+      "Lightning Bolt can't be cast from opponent's graveyard (Grafdigger's Cage)"
+    ]
+  },
+  {
+    "id": "tt259-wasteland-cavern-in-response",
+    "text": "They Wasteland my Cavern of Souls in response to me casting Thalia with it. Is Thalia still uncounterable?",
+    "expect": [
+      "Thalia, Guardian of Thraben can't be countered (cast with Cavern of Souls)",
+      "Cavern of Souls: the battlefield → your graveyard",
+      "Yes. Cavern of Souls' mana carries the effect \"that spell can't be countered\" with it"
+    ]
+  },
+  {
+    "id": "tt259-shadow-at-one-bolted",
+    "text": "I'm at 1 life with Death's Shadow. They Bolt me. What happens?",
+    "expect": [
+      "You take 3 damage",
+      "You lose the game",
+      "You go from 1 to -2 life"
+    ]
+  },
+  {
+    "id": "tt259-skite-no-blue-at-one-life",
+    "text": "I have Spellskite and Thalia. They Bolt Thalia and I redirect it with no blue mana at 1 life. Can I?",
+    "expect": [
+      "No: Spellskite's ability can't be activated. Its {U/P} would have to be paid with 2 life, and at 1 life you can't pay it (119.4)",
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "119.4"
+    ]
   }
 ]

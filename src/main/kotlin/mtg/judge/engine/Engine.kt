@@ -840,6 +840,13 @@ class Engine(val state: GameState) {
             if (phyrexian == 0) return@run
             val p = state.player(playerId)
             // "I have Spellskite and 2 life": paying the life is allowed at exactly 2 (119.4), but it puts the player at 0 and they lose when state-based actions are checked.
+            // "I redirect it with no blue at 1 life": life can't be paid beyond the life total (119.4), so the ability can't be activated at all.
+            if ((p.mana == 0 || payLife != null) && p.life != null && p.life!! < 2 * phyrexian) {
+                trace.step("${obj.name}'s cost has ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value}, payable with that colour of mana or 2 life; ${p.subject.lowercase()} ${p.v("has", "have")} no mana of that colour and only ${p.life} life, and a player can't pay more life than they have, so the cost can't be paid and the ability can't be activated.", "107.4f", "119.4", "602.2b")
+                state.outcomes += "No: ${obj.name}'s ability can't be activated. Its ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} would have to be paid with 2 life, and at ${p.life} life ${p.subject.lowercase()} can't pay it (119.4)."
+                if (ability.cost.contains("{T}")) obj.tapped = false
+                return null
+            }
             if (p.life != null && p.life!! <= 2 * phyrexian) state.outcomes += "Careful: ${obj.name}'s ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} can be paid with ${2 * phyrexian} life, and at ${p.life} life ${p.subject.lowercase()} may pay it (119.4), but that leaves ${p.subject.lowercase()} at ${p.life!! - 2 * phyrexian} and ${p.subject.lowercase()} ${p.v("loses", "lose")} the game the next time state-based actions are checked (704.5a). Pay it with mana instead, or don't activate."
             if (p.mana == 0 || payLife != null) { p.life = p.life?.minus(2 * phyrexian); trace.step("${p.subject} ${p.v("has", "have")} no ${if (payLife != null && p.mana != 0) "mana of that colour to spend" else "mana"}, so the ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} in ${obj.name}'s cost is paid with 2 life${if (phyrexian > 1) " each" else ""} (a Phyrexian mana symbol can be paid with either its colour of mana or 2 life).", "107.4f"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} ${2 * phyrexian} life for ${obj.name}'s ${if (phyrexian == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"}." }
             else trace.step("${obj.name}'s cost includes Phyrexian mana, payable with that colour of mana or 2 life.", "107.4f")

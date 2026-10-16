@@ -1351,7 +1351,7 @@ class SituationParser(private val names: NameIndex) {
         // "Can Mother save her?": the creature their spell is aimed at.
         t2 = t2.replace(Regex("""\bcan (?:my |the )?(?:c\d+|mother|mom|it|that|she|he) save (her|him)\b""", RegexOption.IGNORE_CASE), "can i save $1")
         // "they redirect it paying 2 life": the Spellskite activation paid with life.
-        t2 = t2.let { t0 -> Regex("""(^|, | and )((i|we|they|he|she) (?:redirect|deflect|spellskite)(?: it| that| the spell)?(?: (?:to|onto) (?:my |their |the )?(?:spellskite|c\d+))?) (?:paying|with|for) (?:2|two) life(?: at (\d+) life)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+        t2 = t2.let { t0 -> Regex("""(^|, | and )((i|we|they|he|she) (?:redirect|deflect|spellskite)(?: it| that| the spell)?(?: (?:to|onto) (?:my |their |the )?(?:spellskite|c\d+))?) (?:(?:paying|with|for) (?:2|two) life|with no blue(?: mana)?|without blue(?: mana)?|with no mana|paying life)(?: at (\d+)(?: life)?)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             val who = if (r.groupValues[3].lowercase() in setOf("i", "we")) "me" else "opp"
             ctx.skitePayLife = who
             val lifeSaid = if (r.groupValues[4].isNotEmpty()) "${if (who == "me") "i am" else "they are"} at ${r.groupValues[4]} life, " else ""
@@ -1360,6 +1360,15 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(?:on|during|in|at) (?:my|the) (?:next )?upkeep,? ((?:i|we|my c\d+) reveals? .+)$""", RegexOption.IGNORE_CASE), "$1")
         // "I have one 2/2 untapped at 3 life" / "I reveal Griselbrand at 7 life": the life total said as a tail.
         t2 = t2.replace(Regex("""(^|, |\s+and\s+)((?:i|we) (?:have|control) (?:one|two|three|an?|\d+) (?:untapped )?\d+/\d+\b.*?|(?:i|we) reveals? .+?) at (\d+)(?: life)?$""", RegexOption.IGNORE_CASE), "$1i am at $3 life, $2")
+        // "Can I flashback Bolt in response?" with Snapcaster Mage in hand: the Mage is the way to it.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:flashback|flash back) (?:the |my )?(c\d+) in response\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "hand" && o.card.name == "Snapcaster Mage" } && m.cards[r.groupValues[1]]?.isSpellOnly == true) "snapit-question hand" else t0 } ?: t0 }
+        // "They Wasteland my Cavern in response to me casting Thalia with it": the cast first, with the Cavern's mana.
+        t2 = t2.replace(Regex("""^(.+?) my (c\d+) in response to (?:me|my) casting (?:my )?(c\d+) (?:with|off|using) it$""", RegexOption.IGNORE_CASE), "i cast $3 with $2, $1 my $2")
+        // "Is Thalia still uncounterable?": whether the Cavern's gift survives the Cavern.
+        t2 = t2.replace(Regex("""^(?:is|does) (?:my |the )?(c\d+) (?:still )?(?:uncounterable|unable to be countered|still can't be countered|counterable now)\??$""", RegexOption.IGNORE_CASE), "uncounterablestill-question $1")
+        // "Does Bolt still get flashback?" after the Snapcaster was removed in response to its trigger.
+        t2 = t2.replace(Regex("""^(?:does|will|would) (?:the |my )?(c\d+) still (?:get|gain|have) flashback\??$""", RegexOption.IGNORE_CASE), "flashbackstill-question $1")
         // "Which Chalice counters it?": whether it is countered, and by which.
         t2 = t2.replace(Regex("""^which (?:chalice|c\d+|one) counters? (?:it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "is it countered")
         // "I block the 3/3 with Spellskite and take the 2/2": the unblocked one is simply unblocked.
@@ -2241,7 +2250,7 @@ class SituationParser(private val names: NameIndex) {
             // "Can I flash it in?": a response with the creature in hand.
         t2 = t2.replace(Regex("""^can (?:i|we) flash (it|that|(?:my |the )?c\d+) in(?: in response| now| right now)?( (?:during|on|in) (?:my|their|the opponent's|my opponent's|@\w+'s) (?:turn|upkeep|end step|main phase|combat|draw step|beginning of combat))?\??\s*$""", RegexOption.IGNORE_CASE), "flashin-question $1$2")
             // "I have Scapeshift with 7 lands": the hand card, then the lands as their own fragment.
-        t2 = t2.replace(Regex("""^(i|we|they|he|she|my opponent|the opponent) (?:have|has) ((?:an? |the )?c\d+)(?: in hand)? with (\d+|two|three|four|five|six|seven|eight|nine|ten) (?:untapped |open )?lands?\b""", RegexOption.IGNORE_CASE), "$1 have $2 and $3 lands")
+        t2 = t2.replace(Regex("""^(i|we|they|he|she|my opponent|the opponent) (?:have|has) ((?:an? |the )?c\d+)( in hand)? with (\d+|two|three|four|five|six|seven|eight|nine|ten) (?:untapped |open )?lands?\b""", RegexOption.IGNORE_CASE)) { r -> "${r.groupValues[1]} have ${r.groupValues[4]} lands, ${r.groupValues[1]} have ${r.groupValues[2]}${r.groupValues[3]}" }
             // "with 7 lands including Valakut": the count is the mana base; Valakut is remembered by name.
         t2 = t2.let { t0 -> Regex("""\b(\d+|seven|eight|nine|ten) lands?,? (?:including|one of which is|one of them being|with) (?:a |the )?valakut(?:, the molten pinnacle)?\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> ctx.sawValakut = true; "${r.groupValues[1]} lands" } }
             // "How big can it get?" with Scavenging Ooze: every creature card in a graveyard it can eat, mana allowing.
@@ -4733,6 +4742,20 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.any { e -> e.verb == "cast" && e.player != "me" }) return readEarlyQuestionsD("discardodds-question ${r.groupValues[1]} lose", m, ctx)
             return@let
         }
+        Regex("""^uncounterablestill-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val cast = ctx.events.lastOrNull { e -> e.verb == "cast" && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) == card.display } ?: return@let
+            val cavern = cast.to?.startsWith("cavern:") == true || card.display in ctx.cavernCast || ctx.objects.values.any { o -> o.card.name == "Cavern of Souls" && o.controller == (cast.player ?: "me") }
+            ctx.asks += EventSpec("ask", to = "text:" + (if (cavern) "Yes. Cavern of Souls' mana carries the effect \"that spell can't be countered\" with it: the effect applies to the spell the mana was spent on, locked in as it was cast (106.6, 601.2g), so what happens to the Cavern afterwards changes nothing. ${card.display} can't be countered." else "${card.display} wasn't said to be cast with Cavern of Souls' mana, so nothing here makes it uncounterable; say what mana paid for it."))
+            return true
+        }
+        Regex("""^flashbackstill-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val snap = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.card.name in setOf("Snapcaster Mage", "Torrential Gearhulk") } ?: return@let
+            val removed = ctx.events.any { e -> e.verb == "cast" && e.player != "me" && snap.id in e.targets }
+            ctx.asks += EventSpec("ask", to = "text:" + (if (removed) "Yes. ${snap.card.name}'s enters-the-battlefield trigger is already on the stack, and a triggered ability resolves even if its source has left the battlefield (113.7a); it uses the last known information about the Mage. ${card.display} gains flashback until end of turn as the trigger resolves, and you can cast it for its mana cost." else "Yes. ${snap.card.name}'s trigger gives ${card.display} flashback until end of turn as it resolves; nothing described stops the trigger."))
+            return true
+        }
         if (clause0 == "cardinhand-question") {
             val o = ctx.lastMentioned?.let { ctx.objects[it] } ?: return false
             val name = o.card.name ?: "the card"
@@ -5208,8 +5231,9 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:No. Loyalty abilities can be activated only at sorcery speed and only once per turn for each planeswalker: as soon as you've activated one of $name's loyalty abilities this turn, none of them can be activated again until your next turn (606.3). Pick one${loy?.let { l -> ": the plus takes $name to ${l + 1}, the minus costs loyalty from $l" } ?: ""}; the other waits for a later turn (or a second $name, which counts separately).")
             return true
         }
-        Regex("""^snapit-question (c\d+)$""").find(clause0)?.let { r ->
-            val snap = m.cards.getValue(r.groupValues[1])
+        Regex("""^snapit-question (c\d+|hand)$""").find(clause0)?.let { r ->
+            // "snapit-question hand": the Snapcaster Mage said to be in hand in an earlier sentence.
+            val snap = if (r.groupValues[1] == "hand") names.lookup(Names.normalize("Snapcaster Mage")) ?: return@let else m.cards.getValue(r.groupValues[1])
             val lc = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" } ?: return@let
             val food = lc.targets.mapNotNull { ctx.objects[it] }.firstOrNull { it.zone == "graveyard" } ?: return@let
             val spell = lc.card?.name ?: lc.obj?.let { ctx.objects[it]?.card?.name } ?: "their spell"
