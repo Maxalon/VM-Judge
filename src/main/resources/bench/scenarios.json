@@ -31715,5 +31715,108 @@
       "Yes: Vendilion Clique has flash, so it can be cast any time you could cast an instant (702.8a)"
     ],
     "cite": []
+  },
+  {
+    "id": "deaths-shadow-at-13-life",
+    "text": "I have Death's Shadow at 13 life. What size is it?",
+    "expect": [
+      "Death's Shadow's size is its printed 13/13 minus your life total; at 13 life that's 0/0 or worse"
+    ],
+    "cite": [
+      "704.5f"
+    ]
+  },
+  {
+    "id": "deaths-shadow-at-5-life",
+    "text": "I'm at 5 life with Death's Shadow. What size is it?",
+    "expect": [
+      "Death's Shadow is 8/8."
+    ],
+    "cite": []
+  },
+  {
+    "id": "fatal-push-goyf-empty-yards",
+    "text": "They cast Fatal Push on my Tarmogoyf. Does it die?",
+    "expect": [
+      "Yes: Tarmogoyf died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "force-of-will-pitch-under-thalia",
+    "text": "I have Thalia and they cast Force of Will pitching a blue card. How much does it cost?",
+    "expect": [
+      "Force of Will still costs {1} more (Thalia, Guardian of Thraben): a cost increase applies to an alternative cost too (601.2f)."
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "chalice-one-vs-probe-for-life",
+    "text": "They have Chalice on 1. Can I cast Gitaxian Probe for 2 life?",
+    "expect": [
+      "You pay 2 life.",
+      "Gitaxian Probe is countered."
+    ],
+    "cite": []
+  },
+  {
+    "id": "eidolon-hits-own-bolt",
+    "text": "I have Eidolon of the Great Revel. I cast Lightning Bolt. Do I take 2?",
+    "expect": [
+      "Yes: you take 2 damage in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "phyrexian-crusader-vs-thalia-block",
+    "text": "They attack me with Phyrexian Crusader. I block with my Thalia. What happens?",
+    "expect": [
+      "Thalia, Guardian of Thraben can't block Phyrexian Crusader (protection).",
+      "You have 2 poison counters."
+    ],
+    "cite": []
+  },
+  {
+    "id": "containment-priest-vs-vial-spirit",
+    "text": "I have Containment Priest. They have Aether Vial on 1 and vial in a Spirit token. What happens?",
+    "expect": [
+      "a 1 mana creature: opponent's hand → exile (replaced by Containment Priest)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "containment-priest-vs-vial-spirit-no-vial-said",
+    "text": "I have Containment Priest. They vial in a Spirit. What happens?",
+    "expect": [
+      "a 1 mana creature: opponent's hand → exile (replaced by Containment Priest)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-zero-cards-vs-inspector",
+    "text": "I have Ensnaring Bridge with 0 cards in hand. Can my 0/1 Thraben Inspector attack?",
+    "expect": [
+      "Thraben Inspector can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-only-lands-and-smiter",
+    "text": "They Thoughtseize me and I have only lands and a Loxodon Smiter. Do they take the Smiter?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Loxodon Smiter.",
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-smiter-and-two-lands",
+    "text": "They Thoughtseize me. I have Loxodon Smiter and two lands in hand. Do they take the Smiter?",
+    "expect": [
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)."
+    ],
+    "cite": []
   }
 ]
