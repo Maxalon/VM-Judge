@@ -34844,5 +34844,99 @@
     "cite": [
       "601.2c"
     ]
+  },
+  {
+    "id": "tt236-guide-into-untapped-skite-no-block",
+    "text": "I attack with Goblin Guide into their untapped Spellskite. They don't block. How much damage?",
+    "expect": [
+      "opponent takes 2 damage in all"
+    ]
+  },
+  {
+    "id": "tt236-their-thoughtseize-into-own-chalice",
+    "text": "They Thoughtseize me with Chalice on 1 on their side. Is their Thoughtseize countered?",
+    "expect": [
+      "Yes: Thoughtseize is countered (by Chalice of the Void)"
+    ]
+  },
+  {
+    "id": "tt236-tax-applies-to-decay",
+    "text": "I have Thalia and they cast Abrupt Decay on it. Does the tax apply to Decay?",
+    "expect": [
+      "Abrupt Decay costs {B}{G} plus {1}",
+      "3 mana in all"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "tt236-bolt-queller-holding-thoughtseize",
+    "text": "I Lightning Bolt their Spell Queller that exiled my Thoughtseize. Do I get Thoughtseize back and do I have to cast it?",
+    "expect": [
+      "Thoughtseize comes back: You may cast it from exile without paying its mana cost",
+      "Yes, you get the chance, and no, you don't have to"
+    ]
+  },
+  {
+    "id": "tt236-goyf-grows-mid-bolt-exchange",
+    "text": "My Tarmogoyf is 2/3. They Bolt it, then I Bolt their Delver in response. Does Goyf live?",
+    "expect": [
+      "Tarmogoyf is 3/4",
+      "Yes: Tarmogoyf is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt236-teferi-bolt-their-turn",
+    "text": "They have Teferi, Time Raveler. Can I cast Lightning Bolt on their turn?",
+    "expect": [
+      "No: Lightning Bolt can't be cast (Teferi, Time Raveler: sorcery speed only)"
+    ]
+  },
+  {
+    "id": "tt236-mother-protects-goyf-from-path",
+    "text": "I have Mother of Runes untapped. They Path my Goyf. Can I protect it?",
+    "expect": [
+      "Tarmogoyf has protection from white until end of turn",
+      "Path to Exile doesn't resolve (all targets illegal)",
+      "Yes: Tarmogoyf is still on the battlefield"
+    ],
+    "cite": [
+      "702.16a"
+    ]
+  },
+  {
+    "id": "tt236-shadow-attacker-at-2-bolted",
+    "text": "They attack me with Death's Shadow at 2 life for them. I Bolt their face in response to the attack. What happens?",
+    "expect": [
+      "opponent loses the game",
+      "opponent goes from 2 to -1 life"
+    ]
+  },
+  {
+    "id": "tt236-two-thalias-bolt-cost",
+    "text": "I have two Thalias. They cast Lightning Bolt. How much more does it cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1}",
+      "2 mana in all"
+    ],
+    "cite": [
+      "704.5j"
+    ]
+  },
+  {
+    "id": "tt236-skite-in-hand-vs-hymn",
+    "text": "They cast Hymn to Tourach. I have Spellskite and Force in hand. Can Spellskite redirect it?",
+    "expect": [
+      "No. Spellskite is in your hand",
+      "You discard Spellskite and Force of Will"
+    ]
+  },
+  {
+    "id": "tt236-surgical-see-hand",
+    "text": "I Surgical Extraction their Snapcaster in the graveyard. Do I see their hand?",
+    "expect": [
+      "Yes. Surgical Extraction has you search that player's graveyard, hand and library"
+    ]
   }
 ]

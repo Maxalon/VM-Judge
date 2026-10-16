@@ -650,6 +650,17 @@ class Engine(val state: GameState) {
      */
     private var triggerHold: MutableList<() -> Unit>? = null
 
+    /** No colour said for "protection from the color of your choice": the colour of the opponent's spell aimed at the creature (Path at a Goyf: white). */
+    private fun protectionColourChoice(item: StackItem): String? {
+        val tgtId = (item.targets.firstOrNull() as? Ref.Obj)?.id ?: return null
+        val c = state.stack.filter { it !== item && it.controller != item.controller && it.targets.any { t -> (t as? Ref.Obj)?.id == tgtId } }
+            .mapNotNull { sp -> sp.source.def.colors.takeIf { it.size == 1 }?.first() }.firstOrNull() ?: return null
+        val colour = mapOf('W' to "white", 'U' to "blue", 'B' to "black", 'R' to "red", 'G' to "green")[c] ?: return null
+        trace.step("No colour was named for ${item.describe}; the spell aimed at ${state.nameOf(item.targets.first())} is $colour, so protection from $colour is the choice taken (it's chosen as the ability resolves).", "702.16a", "608.2d")
+        state.assumptions += "${item.describe} is taken to grant protection from $colour, the colour of the spell aimed at its target; say the colour if it was another."
+        return colour
+    }
+
     fun activate(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
         val hold = mutableListOf<() -> Unit>()
         val outer = triggerHold
@@ -3071,7 +3082,8 @@ class Engine(val state: GameState) {
                 for (o in all) state.outcomes += "${o.name} is ${o.power}/${o.toughness} until end of turn."
             } }
             is Effect.GainKeywords -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let {
-                val kws = effect.keywords.map { k -> if (k == "protection from the color of your choice") "protection from ${item.choice ?: run { state.clarifications += Clarification("${item.describe}'s colour", "${item.describe} grants protection from a colour of your choice; which colour? (assuming none)"); "nothing" }}" else k }
+                val threat = item.choice ?: protectionColourChoice(item)
+                val kws = effect.keywords.map { k -> if (k == "protection from the color of your choice") "protection from ${threat ?: run { state.clarifications += Clarification("${item.describe}'s colour", "${item.describe} grants protection from a colour of your choice; which colour? (assuming none)"); "nothing" }}" else k }
                 if (kws.toSet() != effect.keywords.toSet()) { trace.step("${state.player(item.controller).subject} ${state.player(item.controller).v("chooses", "choose")} ${item.choice ?: "no colour"}.", "608.2c"); it.tempKeywords += kws; trace.step("${it.name} gains ${kws.joinToString(" and ")} until end of turn.", "611.2a"); state.outcomes += "${it.name} has ${kws.joinToString(" and ")} until end of turn."; return@let }
                 // "until your next turn" keywords are tagged with the caster, and cleanup keeps them until that turn begins.
                 val untilNext = effect.keywords.any { k -> k.endsWith("@until-your-next-turn") }

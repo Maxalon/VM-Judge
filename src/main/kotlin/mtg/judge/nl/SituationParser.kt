@@ -58,6 +58,8 @@ class SituationParser(private val names: NameIndex) {
         val spellsThisTurn = LinkedHashMap<String, Int>()
         /** Life stated as paid while casting the next spell, carried to the cast event. */
         var payLife: Int? = null
+        /** The card a Spell Queller was said to be holding, for "do I have to cast it?" when the Queller leaves. */
+        var quelledCard: String? = null
         val commanderDamage = LinkedHashMap<String, MutableMap<String, Int>>()
         /** Named players in order of first mention: id -> display name. "me"/"opp" are added when the text uses them. */
         val players = LinkedHashMap<String, String>()
@@ -696,7 +698,7 @@ class SituationParser(private val names: NameIndex) {
         // "and Vial in a Spirit token": the Vial's name used as the verb after "and" or a subject.
         t2 = t2.let { t0 -> Regex("""(^|\band |\b(?:they|i|we|he|she) )(c\d+) in (?=(?:an? |my |the |their )?(?:c\d+|[a-z]))""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2].lowercase()]?.display == "Aether Vial") "${r.groupValues[1]}vial in " else r.value } }
         // "Does Thalia tax it?": the spell's cost with the tax.
-        t2 = t2.replace(Regex("""^(?:does|will|would) (?:my |the )?(?:c\d+|thalia|it) (?:tax|hit|apply to|make it cost more for|add to) (?:the |their |my )?(it|that|c\d+)(?: too| as well)?\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
+        t2 = t2.replace(Regex("""^(?:does|will|would) (?:my |the |her |thalia's |c\d+'s )?(?:c\d+|thalia|it|tax|extra cost|extra 1|cost increase) (?:still )?(?:tax|hit|apply to|make it cost more for|add to|count for|count against) (?:the |their |my )?(it|that|c\d+)(?: too| as well)?\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
         // "I cast Collective Brutality escalated choosing all three modes. How much does it cost?": the escalate total.
         t2 = t2.let { t0 -> Regex("""^how much (?:does|did|would|will) (it|that|c\d+) cost\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             val lc = ctx.events.lastOrNull { it.verb == "cast" && it.player == "me" }
@@ -1092,6 +1094,27 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""(^|,\s*|\s+and\s+|\s+but\s+)(?:they|he|she|my opponent|the opponent) (?:have|has|have got|'ve got) (?:only |just )?(?:one|a single|1) (?:basic|basic land|basic land card)(?: left)?(?: in (?:their |the )?(?:library|deck))?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> t0.substring(0, r.range.first).let { if (it.isBlank()) "onebasic-note" else "$it, onebasic-note" } } ?: t0 }
         // "Did they need revolt?": whether Fatal Push's rider mattered for that target.
         if (Regex("""^(?:did|do|does|would|will) (?:they|he|she|my opponent|the opponent|i|we) (?:even )?need (?:to have )?revolt(?: for (?:it|that|this))?\??$|^(?:was|is) revolt (?:needed|necessary|required|on|relevant)(?: for (?:it|that|this))?\??$|^(?:does|did) revolt matter\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = "revoltneeded-question"
+        // "I Bolt their Spell Queller that exiled my Thoughtseize": the holding is said first, then the sentence with the Queller alone.
+        t2 = t2.let { t0 -> Regex("""^(.*?)\b(their|my) (c\d+) (?:that|which) (?:exiled|has exiled|is holding|holding|has) (?:my |their |the )?(c\d+)(?: under it| in exile| exiled)?\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[3]]?.display != "Spell Queller") t0 else "${if (r.groupValues[2].lowercase() == "their") "they have" else "i have"} ${r.groupValues[3]} exiled ${if (r.groupValues[2].lowercase() == "their") "my" else "their"} ${r.groupValues[4]}, ${r.groupValues[1]}${r.groupValues[2]} ${r.groupValues[3]}${r.groupValues[5]}" } ?: t0 }
+        // "Do I have to cast it?" after a Spell Queller left: the exiled card's owner may cast it, free, or leave it.
+        if (Regex("""^(?:do|must|will) (?:i|we) (?:have to|need to|get to) cast (?:it|that|the c\d+|c\d+)(?: right away| now| for free)?\??$|^(?:do|will) (?:i|we) get (?:it|that|(?:my |the )?c\d+) back(?: and (?:do|must) (?:i|we) (?:have to |need to )?cast it)?\??$|^(?:do|will) (?:i|we) get (?:it|that|(?:my |the )?c\d+) back\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "quelled" }) t2 = "quellerback-question"
+        // "Can I protect it?" with Mother of Runes untapped: her ability at the creature the spell is aimed at.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (protect|save|mom|mother|c\d+) (it|that|him|her|(?:my |the )?c\d+)(?: with (?:my |the )?(?:mother|mom|c\d+|her))?(?: in response)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r0 ->
+                // "protect" is also a card (Protect // Serve); here it's the verb.
+                if (r0.groupValues[1].startsWith("c") && m.cards[r0.groupValues[1]]?.display?.startsWith("Protect") != true) return@let t0
+                val r = object { val value = r0.value; val groupValues = listOf(r0.groupValues[0], r0.groupValues[2]) }
+                val mother = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.tapped != true && o.card.name in setOf("Mother of Runes", "Giver of Runes") } ?: return@let t0
+                val threat = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" && it.targets.any { t -> ctx.objects[t]?.controller == "me" } } ?: return@let t0
+                val tgt = r.groupValues[1].lowercase().removePrefix("my ").removePrefix("the ")
+                val tid = if (tgt.startsWith("c")) m.cards[tgt]?.let { objectIdFor(it, ctx) } ?: return@let t0 else threat.targets.first { t -> ctx.objects[t]?.controller == "me" }
+                if (mother.card.name == "Giver of Runes" && tid == mother.id) return@let t0
+                ctx.notes += "\"${r.value}?\" is read as ${mother.card.name}'s ability ({T}: Target creature you control gains protection from the colour of your choice until end of turn) at ${ctx.objects[tid]?.card?.name ?: "the creature"} in response; it's an activated ability, so it can be used with ${threat.card?.name ?: "the spell"} on the stack (602.1, 117.1b), and the colour chosen is that spell's."
+                "motherprotect-question ${mother.id} $tid" } ?: t0 }
+        // "Can Spellskite redirect it?" with Spellskite in hand: a permanent's ability works only on the battlefield.
+        if (Regex("""^can (?:my )?(?:spellskite|c\d+) (?:redirect|stop|take|deflect|eat|change|protect me from) (?:it|that|(?:the |their )?c\d+)\??$|^can (?:i|we) (?:redirect|spellskite|deflect) (?:it|that|(?:the |their )?c\d+)(?: (?:with|to|onto) (?:my )?(?:spellskite|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "hand" && o.card.name == "Spellskite" } && ctx.objects.values.none { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Spellskite" }) t2 = "skitehand-question"
+        // "Do I see their hand?" after Surgical Extraction: a search looks at every card in the zone, hidden or not.
+        if (Regex("""^(?:do|can|will) (?:i|we) (?:get to |have to )?(?:see|look at|view) (?:their|his|her|my opponent's|the opponent's) (?:whole |entire )?(?:hand|library|deck|hand and library)(?: too| as well)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "cast" && it.player == "me" && it.card?.name in setOf("Surgical Extraction", "Extirpate", "Lost Legacy", "Memoricide", "Cranial Extraction", "Unmoored Ego", "Infinite Obliteration", "Slaughter Games", "Sadistic Sacrament", "Thought Hemorrhage") }) t2 = "searchsees-question"
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1100,6 +1123,9 @@ class SituationParser(private val names: NameIndex) {
     private fun readSentence(m0: Marked, ctx: Ctx): Boolean {
         // "I block their Death's Shadow with my 2/2 while they're at 5 life": the life total said mid-sentence goes first,
         // where the ordinary life rewrites read it, and the rest of the sentence keeps its shape.
+        // "They attack me with Death's Shadow at 2 life for them": whose life total it is, said after the number.
+        val m0t = m0.text.replace(Regex("""\s+(?:at|on|sitting at) (\d+) life for (them|him|her)\b""", RegexOption.IGNORE_CASE), ", while they're at $1 life").replace(Regex("""\s+(?:at|on|sitting at) (\d+) life for (me|us)\b""", RegexOption.IGNORE_CASE), ", while i'm at $1 life")
+        val m0 = if (m0t == m0.text) m0 else Marked(m0t, m0.cards, m0.players)
         val m = Regex("""^(.*?),?\s+(?:while|when|with|and) (they're|they are|he's|she's|my opponent is|the opponent is|i'm|i am|we're) (?:at|on|sitting at|down to) (\d+)(?: life)?(?!\s*(?:poison|cards?|counters?|mana|lands?|damage|loyalty|creatures?))(,.*)?$""", RegexOption.IGNORE_CASE).find(m0.text)?.let { r ->
             if (Regex("""\b(?:at|on) \d+ life\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.groupValues[1])) null
             else Marked("${if (r.groupValues[2].lowercase() in setOf("i'm", "i am", "we're")) "i'm" else "my opponent is"} at ${r.groupValues[3]} life, ${r.groupValues[1]}${r.groupValues[4]}", m0.cards, m0.players) } ?: m0
@@ -4259,14 +4285,16 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"${restore(clause0, m)}?\" is read as casting the same ${card.display} a second time; the outcome says where that card is now and whether it can be cast from there."; ctx.lastActor = "me"; return true
         }
         // "I have Spell Queller exiled their Thoughtseize": the Queller on the battlefield holding that card in exile.
-        Regex("""^(?:(?:i|we) have |my )?(c\d+) (?:that |which |is |has )?(?:exiled|exiling|holding|with|that exiled|which exiled) (?:their |my opponent's |the opponent's |his |her )?(c\d+)(?: under it| exiled| in exile)?$""").find(clause0)?.let { r ->
+        Regex("""^(?:(?:i|we) have |my |(they|he|she|my opponent|the opponent) (?:have|has) |their )?(c\d+) (?:that |which |is |has )?(?:exiled|exiling|holding|with|that exiled|which exiled) (?:their |my opponent's |the opponent's |his |her |my )?(c\d+)(?: under it| exiled| in exile)?$""").find(clause0)?.let { r0 ->
+            val theirs = r0.groupValues[1].isNotEmpty() || clause0.startsWith("their ")
+            val r = object { val groupValues = listOf(r0.groupValues[0], r0.groupValues[2], r0.groupValues[3]) }
             val q = m.cards[r.groupValues[1]] ?: return@let; val sp = m.cards[r.groupValues[2]] ?: return@let
             if (q.display !in setOf("Spell Queller") || !sp.isSpellOnly && !sp.typeLine.contains("Creature")) return@let
-            val qid = objectIdFor(q, ctx) ?: addObject(q, "me", false, ctx)
-            val their = pronounPlayer(ctx, "their")
+            val qid = objectIdFor(q, ctx) ?: addObject(q, if (theirs) pronounPlayer(ctx, "their") else "me", false, ctx)
+            val their = if (theirs) "me" else pronounPlayer(ctx, "their")
             val spid = addObject(sp, their, false, ctx, zone = "exile", allowDuplicate = true)
             ctx.events += EventSpec("quelled", obj = qid, targets = listOf(spid)); ctx.note(their)
-            ctx.notes += "${q.display} is read as on the battlefield with ${sp.display} exiled by its enters trigger; if ${q.display} leaves, ${sp.display}'s owner may cast it free."; ctx.lastMentioned = qid; return true
+            ctx.notes += "${q.display} is read as on the battlefield with ${sp.display} exiled by its enters trigger; if ${q.display} leaves, ${sp.display}'s owner may cast it free."; ctx.lastMentioned = qid; ctx.quelledCard = sp.display; return true
         }
         // "They plus her", "I minus Liliana targeting their Bears": a planeswalker's loyalty ability of that sign.
         Regex("""^(they|he|she|i|we|my opponent|the opponent|@\w+) (?:then |just |go ahead and )?(plus|pluses|plusses|minus|minuses|ticks? up|ticks? down|ups|downs)(?: (\d+))? (?:her|him|it|that|(?:the |my |their )?(c\d+))(?: (?:on|targeting|at) (?:my |the |their |his |her )?(c\d+))?$""").find(clause0)?.let { r ->
@@ -4431,6 +4459,30 @@ class SituationParser(private val names: NameIndex) {
             val n = when (r.groupValues[1]) { "one", "1", "i" -> 1; "two", "2", "ii" -> 2; else -> 3 }
             val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: return@let
             ctx.notes += "$name is at chapter ${when (n) { 1 -> "I"; 2 -> "II"; else -> "III" }} ($n lore counter${if (n == 1) "" else "s"}): a lore counter is added as it enters and after each of its controller's draw steps, and each chapter ability triggers as the count reaches its number (714.2b)."
+            return true
+        }
+        Regex("""^motherprotect-question (\S+) (\S+)$""").find(clause0)?.let { r ->
+            if (r.groupValues[1] !in ctx.objects || r.groupValues[2] !in ctx.objects) return@let
+            ctx.events += EventSpec("activate", player = "me", obj = r.groupValues[1], targets = listOf(r.groupValues[2]))
+            ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = r.groupValues[2]
+            ctx.asks += EventSpec("ask", obj = r.groupValues[2], to = "survive")
+            return true
+        }
+        if (clause0 == "quellerback-question") {
+            val card = ctx.quelledCard ?: "the exiled card"
+            val entry = names.lookup(Names.normalize(card))
+            val sorcery = entry?.typeLine?.contains("Sorcery") == true
+            ctx.asks += EventSpec("ask", to = "text:Yes, you get the chance, and no, you don't have to. When Spell Queller leaves the battlefield its trigger lets $card's owner cast it without paying its mana cost; \"may\" means you can decline, and a card you don't cast then stays in exile for good (there is no later chance). If you do cast it, that happens as the trigger resolves, ignoring the usual timing${if (sorcery) " (a sorcery cast this way is fine on their turn or during combat)" else ""} (608.2g), you choose its targets then, and it goes on the stack to resolve as normal; any additional cost (life, discarding) still has to be paid, only the mana cost is waived (118.9).")
+            return true
+        }
+        if (clause0 == "skitehand-question") {
+            val threat = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:No. Spellskite is in your hand, and a permanent's abilities work only while it's on the battlefield (113.6): nothing in hand can redirect anything. It would have to be on the battlefield already (cast earlier, or put in with Aether Vial on 2) and even then it could only take a target it is legal for; ${threat} ${if (threat in setOf("Hymn to Tourach", "Thoughtseize", "Duress", "Inquisition of Kozilek", "Mind Rot") || threat == "the spell") "targets a player, which Spellskite can't become (115.7)" else "would need a target Spellskite can legally replace (115.7)"}.")
+            return true
+        }
+        if (clause0 == "searchsees-question") {
+            val spell = ctx.events.last { it.verb == "cast" && it.player == "me" && it.card != null }.card!!.name ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $spell has you search that player's graveyard, hand and library, and searching a zone means looking at every card in it, hidden or not (701.23a): you see their whole hand and their whole library while you look for the named card, and you may take every copy you find. The library is shuffled afterwards (the hand isn't hidden again by the spell, but they keep it).")
             return true
         }
         if (clause0 == "delverflip-note") {
