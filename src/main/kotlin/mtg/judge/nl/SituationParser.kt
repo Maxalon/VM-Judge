@@ -1053,8 +1053,9 @@ class SituationParser(private val names: NameIndex) {
         // "Can Spellskite block one?": one of the attackers, blocked by it.
         t2 = t2.replace(Regex("""^can (?:my |the )?(c\d+) block (?:one|one of them|either|either one|just one)\??$""", RegexOption.IGNORE_CASE), "i block one of them with $1")
         // "they respond with Aether Vial putting in Spell Queller": their Vial, their creature, in response.
-        t2 = t2.let { t0 -> Regex("""\b(they|he|she|my opponent|the opponent) (?:respond|answer) with (?:their |an? |the )?(c\d+)(?:,)? (?:putting in|to put in|and put in|putting|dropping in) (?:an? |their |the )?(c\d+)(?: into play| onto the battlefield)?\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-                if (m.cards[r.groupValues[2]]?.display == "Aether Vial") t0.substring(0, r.range.first) + "they have ${r.groupValues[2]}, in response they vial in ${r.groupValues[3]}" + t0.substring(r.range.last + 1) else t0 } ?: t0 }
+        t2 = t2.let { t0 -> Regex("""\b(they|he|she|my opponent|the opponent|i|we) (?:respond|answer) with (?:their |my |an? |the )?(c\d+)(?:,)? (?:putting in|to put in|and put in|putting|dropping in) (?:an? |their |my |the )?(c\d+)(?: into play| onto the battlefield)?\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val mine = r.groupValues[1].lowercase() in setOf("i", "we")
+                if (m.cards[r.groupValues[2]]?.display == "Aether Vial") t0.substring(0, r.range.first) + "${if (mine) "i have" else "they have"} ${r.groupValues[2]}, in response ${if (mine) "i" else "they"} vial in ${r.groupValues[3]}" + t0.substring(r.range.last + 1) else t0 } ?: t0 }
         // "How much mana total?": the sum of what was spent.
         t2 = t2.replace(Regex("""^how much mana (?:total|in total|altogether|overall|all in all|did (?:i|we|that) (?:spend|cost|use) (?:in total|total|altogether))\??$""", RegexOption.IGNORE_CASE), "how much total mana")
         // "They Surgical my Bolt in response to Snapcaster's trigger": the Mage cast at the Bolt first.
@@ -1188,6 +1189,14 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(can (?:i|we) (?:redirect|deflect|spellskite) (?:it|that|(?:the |their )?c\d+)(?: (?:to|onto) (?:my )?(?:spellskite|c\d+))?) so (?:that )?(?:they|he|she|i|we) (?:can't|cannot|don't|won't|do not|can not) .+$""", RegexOption.IGNORE_CASE), "$1")
         // "Can I respond by Wastelanding their Wasteland?": the land they sacrificed as a cost is already gone.
         t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:respond|answer) (?:by|with) (?:wastelanding|strip mining|ghost quartering|destroying|killing|using (?:my )?(?:wasteland|c\d+) on) (?:their|his|her|the) (c\d+)(?: in response| back| too)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "respondland-question ${r.groupValues[1]}" } ?: t0 }
+        // "Can I block and survive?": the block, then whether you live.
+        t2 = t2.replace(Regex("""^can (?:i|we) block (?:it |that |with (?:it|(?:my )?c\d+) )?and (?:survive|live|not die|stay alive)\??$""", RegexOption.IGNORE_CASE), "can i block it, do i survive")
+        // "Can they redirect my pump to Spellskite?": their Spellskite against the spell just cast.
+        t2 = t2.replace(Regex("""^can (?:they|he|she|my opponent|the opponent) (?:redirect|deflect|spellskite) (?:my |the )?(?:pump|spell|growth|bolt|c\d+)(?: (?:to|onto) (?:their |the )?(?:spellskite|c\d+))?\??$""", RegexOption.IGNORE_CASE), "can they deflect it")
+        // "Is my Bolt countered and does it cost 2?": the second question is its cost.
+        t2 = t2.replace(Regex("""^(.+?) and does (?:it|that|(?:my |the )?c\d+) cost (?:\d+|more|extra|the tax|\d+ more)\??$""", RegexOption.IGNORE_CASE), "$1, how much does it cost")
+        // "I have Leyline of Sanctity in hand, not in play. Does it help?": a card in hand does nothing.
+        if (Regex("""^(?:does|will|can) (?:it|that|(?:my |the )?c\d+) (?:help|do anything|matter|save me|protect me|stop (?:it|that|the hymn|c\d+)|work)(?: here| now| at all| from (?:my )?hand)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.lastMentioned?.let { ctx.objects[it] }?.let { o -> o.zone == "hand" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == false } == true)) t2 = "cardinhand-question"
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -4325,6 +4334,15 @@ class SituationParser(private val names: NameIndex) {
                 ctx.asks += EventSpec("ask", to = "text:Yes. You have priority with their ability on the stack (117.1b, 602.1), so you can activate your own ${mine?.card?.name ?: "land"} targeting their ${theirsCard.display}; yours resolves first (608.1) and destroys it. Theirs still resolves too, since an ability on the stack doesn't care that its source is gone (113.7a).")
                 if (mine != null) { val tid = objectIdFor(theirsCard, ctx) ?: addObject(theirsCard, pronounPlayer(ctx, "their"), false, ctx); ctx.events += EventSpec("activate", player = "me", obj = mine.id, targets = listOf(tid)) }
             }
+            return true
+        }
+        // "I have Leyline of Sanctity in hand, not in play": the second half repeats where it is.
+        if (Regex("""^(?:and |but )?not (?:in play|on the battlefield|out|on board|cast yet)$""").matches(clause0)) return true
+        if (clause0 == "cardinhand-question") {
+            val o = ctx.lastMentioned?.let { ctx.objects[it] } ?: return false
+            val name = o.card.name ?: "the card"
+            val leyline = name.startsWith("Leyline of")
+            ctx.asks += EventSpec("ask", to = "text:No. $name is in your hand, and a permanent card's abilities work only while it's on the battlefield (113.6): in hand it does nothing against ${ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "their spell"}${if (leyline) ", and its own \"may begin the game with it on the battlefield\" clause applies only to the opening hand (103.6a); now it's just a four-mana enchantment to cast on your turn" else ""}. It's also a card that can be discarded like any other.")
             return true
         }
         if (clause0 == "chalicelife-question") {

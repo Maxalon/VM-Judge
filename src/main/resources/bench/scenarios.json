@@ -35527,5 +35527,91 @@
     "cite": [
       "508.1c"
     ]
+  },
+  {
+    "id": "tt243-their-probe-no-mana-my-thalia",
+    "text": "I have Thalia out. They cast Gitaxian Probe paying 2 life with no mana. Can they?",
+    "expect": [
+      "No: Gitaxian Probe can't be cast: the Phyrexian mana can be paid with life, but the other {1} needs mana"
+    ]
+  },
+  {
+    "id": "tt243-block-and-survive-skite",
+    "text": "They attack me with a 3/3 and I'm at 3. I have Spellskite untapped. Can I block and survive?",
+    "expect": [
+      "Yes: Spellskite can block a 3/3 creature",
+      "Yes: You are still in the game at 3 life"
+    ]
+  },
+  {
+    "id": "tt243-redirect-bolt-to-skite-survives",
+    "text": "They cast Lightning Bolt targeting me. I have Spellskite. Can I redirect it to Spellskite and does Spellskite survive?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of you",
+      "Yes: Spellskite is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt243-guide-blocked-by-skite",
+    "text": "I attack with Goblin Guide. They block with Spellskite. Does Guide die?",
+    "expect": [
+      "No: Goblin Guide is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt243-bob-reveals-shadow",
+    "text": "My Dark Confidant reveals Death's Shadow. How much life do I lose?",
+    "expect": [
+      "You lose 1 life (Death's Shadow's mana value)"
+    ]
+  },
+  {
+    "id": "tt243-i-respond-with-vial-putting-in-thalia",
+    "text": "They cast Thoughtseize and I respond with Aether Vial putting in Thalia. Does the Thoughtseize still resolve?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield",
+      "opponent loses 2 life"
+    ],
+    "notExpect": [
+      "Aether Vial enters the battlefield"
+    ]
+  },
+  {
+    "id": "tt243-finks-with-counter-dismembered",
+    "text": "I have Kitchen Finks with a -1/-1 counter and they Dismember it. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died"
+    ]
+  },
+  {
+    "id": "tt243-they-redirect-my-pump",
+    "text": "They have Spellskite. I cast Giant Growth on my Tarmogoyf. Can they redirect my pump to Spellskite?",
+    "expect": [
+      "Giant Growth now targets Spellskite instead of Tarmogoyf",
+      "Spellskite is 3/7 until end of turn"
+    ]
+  },
+  {
+    "id": "tt243-angel-at-2-bolted",
+    "text": "My opponent is at 2 life with a Platinum Angel. I Bolt them. Do they lose?",
+    "expect": [
+      "No: opponent is still in the game at -1 life"
+    ]
+  },
+  {
+    "id": "tt243-bolt-countered-and-cost",
+    "text": "I cast Lightning Bolt. They have Chalice on 1 and a Thalia. Is my Bolt countered and does it cost 2?",
+    "expect": [
+      "Yes: Lightning Bolt is countered (by Chalice of the Void)",
+      "Lightning Bolt costs {R} plus {1}"
+    ]
+  },
+  {
+    "id": "tt243-leyline-in-hand-vs-hymn",
+    "text": "They Hymn me. I have Leyline of Sanctity in hand, not in play. Does it help?",
+    "expect": [
+      "No. Leyline of Sanctity is in your hand",
+      "You discard Leyline of Sanctity"
+    ]
   }
 ]
