@@ -35973,5 +35973,94 @@
       "Stifle can't target Path to Exile: it's a spell, not an activated or triggered ability",
       "Tarmogoyf: the battlefield → exile"
     ]
+  },
+  {
+    "id": "tt248-finks-block-gain-life",
+    "text": "They attack with a 2/2 and I have Kitchen Finks. If I block, do I gain life when it dies?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "You gain 2 life"
+    ]
+  },
+  {
+    "id": "tt248-redirect-decay-uncounterable",
+    "text": "I have Spellskite and they cast Abrupt Decay on my Thalia. Can I redirect it even though Decay can't be countered?",
+    "expect": [
+      "Abrupt Decay now targets Spellskite instead of Thalia, Guardian of Thraben",
+      "\"Can't be countered\" doesn't matter here"
+    ]
+  },
+  {
+    "id": "tt248-probe-into-thalia-and-chalice",
+    "text": "My opponent has Thalia and Chalice on 1. I cast Gitaxian Probe for 2 life and 1 mana. What happens?",
+    "expect": [
+      "Gitaxian Probe is countered"
+    ]
+  },
+  {
+    "id": "tt248-guide-into-finks-should-attack",
+    "text": "I attack with Goblin Guide and they have Kitchen Finks untapped. Should I attack?",
+    "expect": [
+      "If Kitchen Finks blocks: Goblin Guide dies and Kitchen Finks dies"
+    ]
+  },
+  {
+    "id": "tt248-brainstorm-in-response-to-hymn",
+    "text": "They cast Hymn. I have Brainstorm and 3 lands. Should I Brainstorm in response?",
+    "expect": [
+      "You draw 3 cards",
+      "Yes, it's the classic answer: Brainstorm resolves first (608.1)"
+    ],
+    "notExpect": [
+      "You discard Brainstorm"
+    ]
+  },
+  {
+    "id": "tt248-bob-bolted-before-trigger",
+    "text": "I have Dark Confidant and they Bolt it in my upkeep before the trigger. Do I still lose life?",
+    "expect": [
+      "Dark Confidant's trigger still resolves even though Dark Confidant is gone (113.7a)"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "tt248-dismember-4-5-goyf",
+    "text": "They Dismember my Tarmogoyf which is 4/5. Does it survive?",
+    "expect": [
+      "No: Tarmogoyf is in the graveyard"
+    ]
+  },
+  {
+    "id": "tt248-path-skite-redirect-to-self",
+    "text": "I Path their Spellskite. They redirect Path to Spellskite with its own ability. What happens?",
+    "expect": [
+      "Path to Exile already targets Spellskite; nothing changes",
+      "Spellskite: the battlefield → exile"
+    ]
+  },
+  {
+    "id": "tt248-goyf-4-5-vs-bridge-three",
+    "text": "They have Ensnaring Bridge with 3 cards. I attack with Tarmogoyf which is 4/5. Can it attack?",
+    "expect": [
+      "No: Tarmogoyf can't attack (Ensnaring Bridge: opponent has 3 cards in hand and Tarmogoyf's power is 4, 508.1c)"
+    ]
+  },
+  {
+    "id": "tt248-two-bolts-two-mountains-thalia",
+    "text": "I have 2 Mountains and they have Thalia. Can I cast two Lightning Bolts?",
+    "expect": [
+      "Lightning Bolt can't be cast (costs 2, only 0 mana available)",
+      "opponent takes 3 damage"
+    ]
+  },
+  {
+    "id": "tt248-brainstorm-into-force",
+    "text": "They cast Thoughtseize and I respond by casting Brainstorm, drawing Force of Will. Can I Force the Thoughtseize?",
+    "expect": [
+      "You draw 3 cards",
+      "Thoughtseize is countered"
+    ]
   }
 ]

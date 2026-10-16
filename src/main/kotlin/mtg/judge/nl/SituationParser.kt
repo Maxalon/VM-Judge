@@ -1262,6 +1262,20 @@ class SituationParser(private val names: NameIndex) {
         // "I alpha strike", "I go wide with three 1/1s": table talk for attacking with everything and for having
         // a wide board. Said this way the whole clause went unread, so it is turned into plain words first.
         var t2 = t0.replace(Regex("""\balpha[- ]?strikes\b"""), "attacks").replace(Regex("""\balpha[- ]?strike\b"""), "attack")
+        // "I cast Gitaxian Probe for 2 life and 1 mana": the life pays the Phyrexian symbol; the mana is the rest of the cost.
+        t2 = t2.replace(Regex("""\b(?:for|paying) (\d+) life (?:and|plus) (?:\d+|one|two) (?:mana|blue|red|black|green|white)\b""", RegexOption.IGNORE_CASE), "paying $1 life")
+        // "do I gain life when it dies?": the condition is the described death; the question is the life.
+        t2 = t2.replace(Regex("""\bgain (?:any |the )?life (?:when|if|as|after) (?:it|that|(?:my |the )?c\d+) (?:dies|persists|comes back|returns|enters|is destroyed)\b""", RegexOption.IGNORE_CASE), "gain life")
+        // "I respond by casting Brainstorm, drawing Force of Will": Brainstorm resolves and the card drawn is in hand before the next move.
+        t2 = t2.replace(Regex("""(,| and) (?:drawing|and draw|which draws me|finding|hitting) (?:an? |the |my )?(c\d+)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), ", resolvetop-marker, i have $2 in hand")
+        // "Should I Brainstorm in response?": the response is made, and the reason given.
+        t2 = t2.let { t0 -> Regex("""^should (?:i|we) (?:cast |play |fire off )?(?:my |the )?(c\d+) (?:in response|now|first|before it resolves)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.isSpellOnly == true) "i cast ${r.groupValues[1]} in response, respondwhy-note ${r.groupValues[1]}" else t0 } ?: t0 }
+        // "Can I cast two Lightning Bolts?": both casts, the second checked against the mana left.
+        t2 = t2.replace(Regex("""^can (?:i|we) cast (?:two|2|both) (c\d+)s?(?: this turn| with that| with this)?\??$""", RegexOption.IGNORE_CASE), "i cast $1, i cast $1, can i")
+        // "Can I redirect it even though Decay can't be countered?": redirecting isn't countering; the tail is dropped.
+        t2 = t2.replace(Regex("""^(can (?:i|we) (?:redirect|deflect|spellskite) (?:it|that|(?:the |their )?c\d+)(?: (?:to|onto) (?:my )?(?:spellskite|c\d+))?) even though (?:it|that|(?:the )?c\d+|decay) can't be countered\??$""", RegexOption.IGNORE_CASE), "$1, uncounterableredirect-note")
+        // "Do I gain life when it dies?" (Kitchen Finks): how much life is gained.
+        t2 = t2.replace(Regex("""^(?:do|will|would) (i|we|they|he|she) (?:still )?gain (?:the )?life(?: (?:when|if|as) (?:it|that|c\d+) (?:dies|persists|comes back|returns|enters))?\??$""", RegexOption.IGNORE_CASE), "how much life do $1 gain")
         // "My Kitchen Finks dies twice": the first death, then the returned creature's.
         t2 = t2.replace(Regex("""^((?:my |the )?c\d+) dies twice$""", RegexOption.IGNORE_CASE), "$1 dies, resolveall-marker, then it is destroyed")
         t2 = t2.replace(Regex("""^(?:then |and then |and )?(it|that|(?:my |the )?c\d+) dies (?:again|a second time|once more)$""", RegexOption.IGNORE_CASE), "resolveall-marker, then $1 is destroyed")
@@ -4449,6 +4463,18 @@ class SituationParser(private val names: NameIndex) {
             val ids = ctx.events.filter { it.verb == "attack" && it.player != "me" }.mapNotNull { it.obj }.distinct()
             for (id in ids) ctx.asks += EventSpec("ask", obj = id, to = "attack")
             ctx.notes += "\"Can they attack?\" is asked of each creature declared as an attacker."
+            return true
+        }
+        Regex("""^respondwhy-note (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val theirs = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "their spell"
+            val discard = theirs in setOf("Hymn to Tourach", "Thoughtseize", "Inquisition of Kozilek", "Duress", "Mind Rot", "Blightning", "Burning Inquiry", "Wrench Mind", "Liliana of the Veil")
+            ctx.asks += EventSpec("ask", to = "text:${if (card.display == "Brainstorm" && discard) "Yes, it's the classic answer: Brainstorm resolves first (608.1), you draw three and put two back, so the cards you most want to keep go on top of your library, out of $theirs's reach, and $theirs then ${if (theirs == "Hymn to Tourach") "takes two at random from what is left" else "chooses from what is left"} (608.2). The downside is that the two you put back are drawn over your next two turns; the outcome below shows the response played out." else "Yes, it can be cast now: ${card.display} is an instant, and you have priority with $theirs on the stack (117.1b); it resolves first (608.1). Whether it's right is yours to weigh; the outcome below shows it played out."}")
+            return true
+        }
+        if (clause0 == "uncounterableredirect-note") {
+            val theirs = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name ?: "the spell"
+            ctx.asks += EventSpec("ask", to = "text:\"Can't be countered\" doesn't matter here: Spellskite's ability changes a target (115.7), it doesn't counter anything, so $theirs's clause isn't engaged. The redirect works if Spellskite is a legal target for $theirs; the outcome shows it.")
             return true
         }
         if (clause0 == "cardinhand-question") {
@@ -11125,7 +11151,7 @@ class SituationParser(private val names: NameIndex) {
                 }
             } else null
             // "I have Spell Queller in hand. Can I Queller it?": the copy already said to be in hand is the one cast, not a second.
-            ?: ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "hand" && it.controller == who && card.typeLine.contains("Creature") }?.id
+            ?: ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "hand" && it.controller == who && (card.typeLine.contains("Creature") || card.isSpellOnly) }?.id
         repeat(n) { i -> ctx.events += EventSpec("cast", player = who, obj = gyObj, card = if (gyObj != null) null else CardRef(name = card.display, oracleId = card.oracleId), targets = targets, modes = modes, to = if (copyOf != null) "copy:$copyOf" else if (flashedBack) "flashback" else if (overload) "overload" else if (kicked) "kicked" else if (evoked) "evoke" else if (revolt != null) "revolt" else if (mastery != null) "spellmastery" else namedCard?.let { "name:$it" } ?: modeWord?.let { "mode:" + List(modeRepeat) { _ -> it }.joinToString("|") } ?: if (altCost) "altcost" else null, amount = xValue, payLife = ctx.payLife); if (secondTime != null && i == 0) ctx.events += EventSpec("resolveAll") }
         ctx.payLife = null
         if (n > 1) ctx.notes += "${card.display} is cast $n times, one copy after another (each is its own spell)." 
