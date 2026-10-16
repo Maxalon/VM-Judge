@@ -36029,6 +36029,10 @@
     "id": "tt248-dismember-4-5-goyf",
     "text": "They Dismember my Tarmogoyf which is 4/5. Does it survive?",
     "expect": [
+      "Tarmogoyf gets -5/-5 until end of turn",
+      "Yes: Tarmogoyf is still on the battlefield"
+    ],
+    "notExpect": [
       "No: Tarmogoyf is in the graveyard"
     ]
   },
@@ -36558,6 +36562,119 @@
     "expect": [
       "67% to lose it",
       "is discarded with probability 2/3 = 67%"
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "tt254-how-should-i-block-lethal",
+    "text": "They attack me with a 5/5 and a 2/2. I have a 3/3 and a 1/1 untapped. I am at 4. How should I block?",
+    "expect": [
+      "At 4 life the attack (7 in all) is lethal unblocked. Block a 5/5 creature with a 3/3 creature and block a 2/2 creature with a 1/1 creature: 0 gets through, you go to 4 and live."
+    ],
+    "cite": [
+      "509.1a",
+      "104.3b"
+    ]
+  },
+  {
+    "id": "tt254-which-block-one-blocker-lethal",
+    "text": "They attack me with a 5/5 and a 2/2. I have a 3/3 untapped. I am at 3. Which should I block?",
+    "expect": [
+      "Block a 5/5 creature with a 3/3 creature: 2 gets through, you go to 1 and live."
+    ]
+  },
+  {
+    "id": "tt254-no-block-saves",
+    "text": "They attack with two 2/2s. I have a 4/4 untapped and I am at 2. How should I block?",
+    "expect": [
+      "2 gets through, which is still lethal; no block saves you."
+    ]
+  },
+  {
+    "id": "tt254-flyer-cant-be-blocked-plan",
+    "text": "I am at 3. They attack with a 2/2 flyer and a 3/3. I have a 2/2 untapped without reach. Which should I block?",
+    "expect": [
+      "Block a 3/3 creature with a 2/2 creature: 2 gets through, you go to 1 and live."
+    ]
+  },
+  {
+    "id": "tt254-goyf-stated-two-three-bolt",
+    "text": "They Bolt my 2/3 Tarmogoyf. Does it die?",
+    "expect": [
+      "Tarmogoyf has 3 damage marked",
+      "No: Tarmogoyf is still on the battlefield"
+    ],
+    "notExpect": [
+      "Yes: Tarmogoyf died"
+    ]
+  },
+  {
+    "id": "tt254-goyf-stated-three-four-bolt-response",
+    "text": "They Bolt my 3/4 Tarmogoyf in response to my Thoughtseize. Does it die?",
+    "expect": [
+      "No: Tarmogoyf is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt254-thoughtseize-see-list",
+    "text": "They Thoughtseize me and see Force of Will, Brainstorm and an Island. What do they take?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Force of Will, Brainstorm; Island can't be chosen (not nonland card)."
+    ],
+    "notExpect": [
+      "opponent draws 3 cards"
+    ]
+  },
+  {
+    "id": "tt254-snapcaster-flashes-back-chalice",
+    "text": "My Snapcaster Mage flashes back Lightning Bolt. They have Chalice on 1. Is the flashback countered?",
+    "expect": [
+      "Lightning Bolt is countered",
+      "Yes: the flashback cast of Lightning Bolt is countered too"
+    ],
+    "cite": [
+      "702.34a"
+    ]
+  },
+  {
+    "id": "tt254-vial-in-with-counters-yes",
+    "text": "Can I Vial in a Thalia with 2 counters?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield",
+      "Yes. Aether Vial has 2 charge counters and Thalia, Guardian of Thraben's mana value is 2 (202.3)"
+    ]
+  },
+  {
+    "id": "tt254-vial-three-counters-no",
+    "text": "I have Aether Vial with 3 counters. Can I Vial in Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 3 counters)",
+      "No. Aether Vial has 3 charge counters but Thalia, Guardian of Thraben's mana value is 2 (202.3)"
+    ]
+  },
+  {
+    "id": "tt254-redirect-twice",
+    "text": "I have Spellskite out. They Bolt my Thalia. I redirect to Spellskite twice. Does Thalia live?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of Thalia, Guardian of Thraben",
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt254-redirect-it-twice",
+    "text": "I have Spellskite out. They Bolt my Thalia. I redirect it twice. Does Thalia live?",
+    "expect": [
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt254-hymn-odds-keep-brainstorm",
+    "text": "They cast Hymn to Tourach. My hand is Thalia, Brainstorm and an Island. What are the odds I keep Brainstorm?",
+    "expect": [
+      "33% to keep it",
+      "Brainstorm survives with probability 1/3 = 33%"
     ],
     "cite": [
       "701.9a"

@@ -1023,6 +1023,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val casts = state.trace.steps.count { Regex("""^\S.* casts? $name\b""").containsMatchIn(it.text) || it.text.contains("cast $name ") || it.text.contains("casts $name ") }
                     val counters = state.trace.steps.count { it.text.contains("$name is countered") }
                     val by = state.trace.steps.lastOrNull { it.text.contains("$name is countered") }?.text
+                    state.trace.step("Flashback lets $name be cast from the graveyard for its flashback cost; it is a cast like any other, so whatever applies to casting a spell applies to it, and the card is exiled if it would leave the stack.", "702.34a", "601.2")
                     state.outcomes += if (counters >= 2 || (counters >= 1 && casts <= 1)) "Yes: the flashback cast of $name is countered too${by?.let { b -> Regex("""\(([^)]+)\)""").find(b)?.groupValues?.get(1)?.let { " ($it)" } } ?: ""}. Flashback casts the spell again (702.34a), and anything that triggers on or applies to casting a spell with that mana value sees a second cast (601.2, 702.34a); the card is then exiled."
                         else "No: the flashback cast of $name isn't countered; it resolves, and the card is exiled (702.34a)."
                     return true
@@ -1756,6 +1757,19 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         Triple(a to b, kills to dies, if (!canBlock(a, b)) "${b.name} can't block ${a.name} (${a.name} has flying and ${b.name} has neither flying nor reach)." else "Blocking ${a.name} with ${b.name}: $saved; ${b.name} ${if (dies) "dies" else "survives"} and ${a.name} ${if (kills) "dies" else "survives"}${if (bFirst && kills) " (first strike kills it before it deals damage)" else if (aFirst && dies) " (its first strike kills ${b.name} before it deals damage)" else ""}.")
                     }
                     state.outcomes += results.map { it.third }
+                    // At a low life total the question is survival: the biggest attackers blocked first, one blocker each.
+                    // The life total before this combat: the attack was read as unblocked first, so what it took is added back.
+                    val life = p.statedLife ?: p.life
+                    val total0 = attackers.sumOf { it.power ?: 0 }
+                    if (life != null && total0 >= life) {
+                        val sorted = attackers.sortedByDescending { it.power ?: 0 }
+                        val free = blockers.toMutableList(); val plan = mutableListOf<Pair<mtg.judge.engine.GameObject, mtg.judge.engine.GameObject>>()
+                        for (a in sorted) { val b = free.filter { canBlock(a, it) }.maxByOrNull { it.toughness ?: 0 } ?: continue; free -= b; plan += a to b }
+                        val through = attackers.sumOf { a -> val b = plan.firstOrNull { it.first == a }?.second; if (b == null) a.power ?: 0 else if (state.hasKeyword(a, "trample")) maxOf(0, (a.power ?: 0) - (b.toughness ?: 0)) else 0 }
+                        state.trace.step("${p.subject} ${p.v("is", "are")} at $life and the attack is $total0 in all, so unblocked it is lethal (104.3b); each blocker stops one attacker's damage, so the biggest attackers are the ones to block (509.1a, 510.1c).", "104.3b", "509.1a", "510.1c")
+                        state.outcomes += if (plan.isEmpty()) "At $life life the attack ($total0 in all) is lethal and nothing of ${p.possessive} can block it."
+                            else "At $life life the attack ($total0 in all) is lethal unblocked. ${plan.withIndex().joinToString(" and ") { (i, ab) -> "${if (i == 0) "Block" else "block"} ${ab.first.name} with ${ab.second.name}" }}: $through gets through, " + (if (through < life) "${p.subject.lowercase()} ${p.v("goes", "go")} to ${life - through} and ${p.v("lives", "live")}." else "which is still lethal; no block saves ${if (p.you) "you" else p.name}.")
+                    }
                     if (attackers.size == 1) results.filter { (ab, kd, _) -> canBlock(ab.first, ab.second) && kd.first && !kd.second }.map { it.first.second.name }.takeIf { it.isNotEmpty() }?.let { names ->
                         state.outcomes += "${names.joinToString(" or ")} ${if (names.size == 1) "is" else "are"} the block${if (names.size == 1) "" else "s"} that kill${if (names.size == 1) "s" else ""} ${attackers[0].name} and survive${if (names.size == 1) "s" else ""}."
                     }

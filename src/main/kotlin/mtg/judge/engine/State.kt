@@ -3,6 +3,8 @@ package mtg.judge.engine
 enum class Zone { BATTLEFIELD, HAND, GRAVEYARD, LIBRARY, EXILE, STACK, COMMAND }
 
 class Player(val id: String, val name: String, var life: Int?) {
+    /** The life total the situation stated, before anything in it happened. */
+    val statedLife: Int? = life
     /** "Your life total can't change" until this player's next turn (Teferi's Protection). */
     var lifeLocked = false
     /** "You gain protection from everything" until this player's next turn: can't be targeted, damage to them is prevented. */
