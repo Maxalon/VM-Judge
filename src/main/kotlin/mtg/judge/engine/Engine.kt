@@ -4474,7 +4474,9 @@ class Engine(val state: GameState) {
             else if (ref is Ref.Stack && Kind.SPELL !in spec.filter.kinds && !filterMatches(spec.filter, ref, item.controller)) {
                 trace.step("${state.nameOf(ref)} is still a spell on the stack, and \"${spec.raw}\" names a permanent, so it isn't a legal target: a creature spell isn't a creature until it resolves. ${item.describe} will do nothing. If it was meant to answer the permanent, let the spell resolve first.", "109.2", "601.2c", "608.2b")
                 state.outcomes += "${item.describe} can't target ${state.nameOf(ref)} while it's still a spell on the stack."
-                state.outcomes += "Once ${state.nameOf(ref)} resolves and is a permanent, ${item.describe} could be cast at it; say it was cast after that for what happens then."
+                val spellCard = state.stackItem(ref.id)?.source?.def
+                state.outcomes += if (spellCard?.isInstantOrSorcery == true) "Once ${state.nameOf(ref)} resolves and is in its owner's graveyard, ${item.describe} could be cast at it there; say it was cast after that for what happens then."
+                    else "Once ${state.nameOf(ref)} resolves and is a permanent, ${item.describe} could be cast at it; say it was cast after that for what happens then."
             }
             // A spell on the stack that isn't the kind the words name ("creature spell" aimed at a Lightning
             // Bolt): an illegal target, said at the point the spell is cast rather than only when it fizzles.

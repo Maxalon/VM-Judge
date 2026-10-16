@@ -31818,5 +31818,105 @@
       "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)."
     ],
     "cite": []
+  },
+  {
+    "id": "ooze-eats-three-with-three-green",
+    "text": "I have Scavenging Ooze and there are 3 creatures in their graveyard. I have 3 green mana. How big does it get?",
+    "expect": [
+      "Scavenging Ooze is 5/5 (2/2 base, 3 +1/+1 counters)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "kor-firewalker-bolt-my-face",
+    "text": "They cast Lightning Bolt at my face while I have Kor Firewalker. Do I gain life?",
+    "expect": [
+      "You gain 1 life in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-taxes-probe-for-life",
+    "text": "I have Thalia and they cast Gitaxian Probe for 2 life. Does Thalia tax it?",
+    "expect": [
+      "Gitaxian Probe costs {U/P} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "delver-unflipped-vs-11-block",
+    "text": "I attack with Delver of Secrets unflipped and they block with a 1/1. Who dies?",
+    "expect": [
+      "Yes: a 1/1 creature died (it's in the graveyard).",
+      "Yes: Delver of Secrets died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "canonist-bolt-then-snapcaster",
+    "text": "They have Ethersworn Canonist. I cast Lightning Bolt then Snapcaster Mage. Does Snapcaster resolve?",
+    "expect": [
+      "Snapcaster Mage can't be cast (Ethersworn Canonist)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "brutality-escalated-all-three-cost",
+    "text": "I cast Collective Brutality escalated choosing all three modes. How much does it cost?",
+    "expect": [
+      "Collective Brutality with 3 modes costs {1}{B} plus \"discard a card\" twice: discard 2 cards"
+    ],
+    "cite": [
+      "702.120a"
+    ]
+  },
+  {
+    "id": "vexing-devil-take-4-at-4",
+    "text": "They have a Vexing Devil trigger on the stack. Can I take the 4 if I'm at 4 life?",
+    "expect": [
+      "at 4 life taking 4 puts you at 0, so you lose the game the next time state-based actions are checked (704.5a)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dryad-arbor-vs-push",
+    "text": "I have Dryad Arbor. Can they Fatal Push it?",
+    "expect": [
+      "Dryad Arbor: the battlefield → your graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-bolts-their-goyf-is-mine-bigger",
+    "text": "I have Tarmogoyf and cast Lightning Bolt at their Tarmogoyf. Is mine bigger after?",
+    "expect": [
+      "Tarmogoyf: the battlefield → opponent's graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-in-response-to-thoughtseize-on-stack",
+    "text": "They cast Thoughtseize targeting me. I cast Surgical Extraction on their Thoughtseize in response. What happens?",
+    "expect": [
+      "Surgical Extraction can't target Thoughtseize while it's still a spell on the stack.",
+      "Once Thoughtseize resolves and is in its owner's graveyard, Surgical Extraction could be cast at it there"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-one-card-vs-shadow-at-10",
+    "text": "I have Ensnaring Bridge and 1 card in hand. They have Death's Shadow at 10 life. Can it attack me?",
+    "expect": [
+      "Death's Shadow can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-flashback-on-their-turn",
+    "text": "My Snapcaster Mage flashback gives Bolt flashback until end of turn. Can I flash it back on their turn?",
+    "expect": [
+      "Only during the turn Snapcaster Mage's trigger resolved. The flashback it grants lasts \"until end of turn\" (611.2a)"
+    ],
+    "cite": []
   }
 ]

@@ -1102,10 +1102,12 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     return true
                 }
                 if (e.to?.startsWith("escalateCost:") == true) {
-                    val n = e.to.removePrefix("escalateCost:").toIntOrNull() ?: 2
+                    val n0 = e.to.removePrefix("escalateCost:").toIntOrNull() ?: 2
                     val def = e.card?.let { cardDef(it, state) } ?: throw JudgeException("ask needs a card")
                     val esc = Regex("""(?i)\bEscalate(?:\s*[—–-]\s*|\s+)([^.(\n]+?)\s*(?=[.(\n]|$)""").find(def.oracleText)?.groupValues?.get(1)?.trim()?.removeSuffix(".")
                     val modeCount = def.oracleText.count { it == '•' }
+                    // "choosing all the modes" arrives as more modes than the card has: all of them is what was meant.
+                    val n = if (modeCount in 1 until n0) modeCount else n0
                     val base = def.manaCost ?: "{0}"
                     if (esc == null) { state.outcomes += "${def.name} has no escalate cost: it costs $base however many modes it has${if (modeCount > 0) " (it says \"${Regex("""(?i)choose [a-z ]+""").find(def.oracleText)?.value ?: "choose"}\", so the number of modes is fixed by its text, not paid for)" else ""}."; return true }
                     if (modeCount in 1 until n) { state.outcomes += "${def.name} has only $modeCount modes, so it can't be cast with $n."; return true }
