@@ -3276,6 +3276,11 @@ class Engine(val state: GameState) {
             is Effect.CounterThatSpell -> {
                 val spell = item.causedObject?.let { id -> state.stack.firstOrNull { it.id == id } }
                 if (spell == null) trace.step("The spell that made ${item.source.name} trigger is no longer on the stack, so nothing is countered.", "701.6a", "608.2b")
+                // "I cast Thalia into their Chalice on 2 with Cavern of Souls": a spell that can't be countered shrugs the trigger off.
+                else if (cant(spell.source, "be countered") || spell.cantBeCountered) {
+                    trace.step("${spell.describe} can't be countered, so ${item.source.name}'s trigger resolves and does nothing to it.", "701.6a", "113.6g")
+                    state.outcomes += "${spell.source.name} isn't countered (it can't be)."
+                }
                 else {
                     trace.step("${spell.describe} is countered: it never resolves and goes to its owner's graveyard. Countering isn't damage or destruction, so nothing about the spell can stop it.", "701.6a", "701.6b")
                     state.stack.remove(spell); state.lastCountered = spell.source

@@ -1043,6 +1043,21 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^can (?:i|we) still (?:flash back|flashback) (it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "can i flashback $1")
         // "Does it stay a creature?" after Blood Moon on an animated manland: what it is now.
         t2 = t2.replace(Regex("""^(?:does|will) (?:it|that|(?:my |the )?c\d+) (?:stay|remain|still be|still count as) (?:a |an )?(?:creature|animated|4/4|attacker)\??$""", RegexOption.IGNORE_CASE), "manlandnow-question")
+        // "I have Dark Confidant at 2 life and Thalia on top": the top card of the library, said as a phrase.
+        t2 = t2.let { t0 -> Regex("""(,? and |, )(?:an? |the )?(c\d+) (?:on top|on top of my library|on top of the library|as my top card|on the top)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> t0.substring(0, r.range.first) + ", my top card is ${r.groupValues[2]}" } ?: t0 }
+        // "Can I Vial in response to the trigger to do anything?": the Vial can't change the card on top.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:vial|c\d+|activate (?:my )?(?:vial|c\d+)) in response to the (?:trigger|reveal|upkeep trigger)(?: to (?:do anything|save myself|stop it|help))?\??$""", RegexOption.IGNORE_CASE), "vialvstrigger-question")
+        // "Thoughtseize targeting me with Spellskite and Thalia in my hand": the hand, said after the target.
+        t2 = t2.let { t0 -> Regex("""\bwith ((?:an? |the )?c\d+(?:,? (?:and )?(?:an? |the )?c\d+)*) in my hand$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> t0.substring(0, r.range.first) + ", my hand is ${r.groupValues[1]}" } ?: t0 }
+        // "Can they take Spellskite?": what the discard spell can take.
+        t2 = t2.replace(Regex("""^can (?:they|he|she|my opponent|the opponent) (?:take|choose|pick|snag|grab) (?:my |the )?(c\d+)(?: with (?:it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE), "what can they take")
+        // "They Pyroclasm." / "they Wrath": a spell's name alone as the verb is the cast.
+        t2 = t2.let { t0 -> Regex("""(^|, )(they|i|we|he|she|my opponent|the opponent) (c\d+)( with (?:my |their |the )?c\d+)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[3]]?.isSpellOnly == true && !needsSpellTarget(m.cards.getValue(r.groupValues[3]))) t0.substring(0, r.range.first) + "${r.groupValues[1]}${r.groupValues[2]} cast ${r.groupValues[3]}" else t0 } ?: t0 }
+        // "I cast Thalia into their Chalice on 2 with Cavern of Souls naming Human": the Chalice first, the Cavern's mana for the cast.
+        t2 = t2.let { t0 -> Regex("""^(i|we) (casts?|plays?) (c\d+) into (?:their |an? |the )?(c\d+) on (\d+) with (?:my |an? )?(c\d+)(?: naming \w+)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "they have ${r.groupValues[4]} on ${r.groupValues[5]}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} with ${r.groupValues[6]}" } ?: t0 }
+        // The same after an earlier rewrite has already split the Chalice off: "i cast c1 , they have c2 on 2 with c3 naming human".
+        t2 = t2.let { t0 -> Regex("""^(i|we) (casts?|plays?) (c\d+) ?, (they have c\d+ on \d+) with (?:my |an? )?(c\d+)(?: naming \w+)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[5]]?.typeLine?.contains("Land") == true) "${r.groupValues[4]}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} with ${r.groupValues[5]}" else t0 } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1986,9 +2001,12 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b((?:my |the |their )?c\d+) (?:that|which) (?:already |has |had |has already )?(?:flipped|transformed)\b""", RegexOption.IGNORE_CASE), "$1 flipped")
         // "I attack with Delver of Secrets flipped": the transform said after the name; "unflipped" is just the front face.
         t2 = t2.replace(Regex("""\b((?:my |the )?c\d+) (?:unflipped|untransformed|not flipped|unflipped yet)\b""", RegexOption.IGNORE_CASE), "$1")
-        t2 = t2.let { t0 -> Regex("""^(.*?)\b(?:my |the )?(c\d+) (?:flipped|transformed|already flipped)\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+        t2 = t2.let { t0 -> Regex("""^(.*?)\b(my |the |their )?(c\d+) (?:flipped|transformed|already flipped)\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             if (Regex("""^(?:it|that|my c\d+|the c\d+|c\d+) $""").matches(r.groupValues[1]) || r.groupValues[1].trim().isEmpty()) t0
-            else "${if (Regex("""\b(?:my opponent|the opponent|they|he|she|their|his|her)\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.groupValues[1])) "their" else "my"} ${r.groupValues[2]} transforms, ${r.groupValues[1]}${r.groupValues[2]}${r.groupValues[3]}" } ?: t0 }
+            else {
+                // "They Pyroclasm with my Delver flipped": the word before the card says whose it is; failing that, the clause's actor.
+                val whose = when (r.groupValues[2].trim().lowercase()) { "my" -> "my"; "their" -> "their"; else -> if (Regex("""\b(?:my opponent|the opponent|they|he|she|their|his|her)\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.groupValues[1])) "their" else "my" }
+                "$whose ${r.groupValues[3]} transforms, ${r.groupValues[1]}${r.groupValues[2]}${r.groupValues[3]}${r.groupValues[4]}" } } ?: t0 }
         t2 = rewriteHeadB(t2, m, ctx)
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
         t2 = t2.replace(Regex("""\b(an? |my |their |his |her |the )([a-z]+(?: [a-z]+)?) tokens? (?:that's|that is|which is|which are|that are|at) (?:an? |currently |now )?(\d+/\d+)((?: (?:flying|flyer|flier|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|reach|indestructible|hexproof|haste)(?: and| with|,)?)*)(?= |,|\.|\?|$)""", RegexOption.IGNORE_CASE), "$1$3$4 $2 token")
@@ -4331,6 +4349,15 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "manlandnow-question") {
             val land = ctx.objects.values.lastOrNull { o -> o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.let { it.contains("Land") && !it.contains("Creature") } } == true && ctx.events.any { e -> (e.verb == "attack" || e.verb == "activate") && e.obj == o.id } }?.id ?: return false
             ctx.asks += EventSpec("ask", obj = land, to = "identity"); return true
+        }
+        // "Can I Vial in response to the trigger to do anything?": a creature coming in doesn't change the card on top.
+        if (clause0 == "vialvstrigger-question") {
+            val bob = ctx.objects.values.lastOrNull { it.controller == "me" && it.card.name in setOf("Dark Confidant", "Dark Tutelage") } ?: return false
+            val top = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "library" }?.card?.name
+            val mv = top?.let { names.lookup(Names.normalize(it))?.manaValue }
+            val life = ctx.life["me"]
+            ctx.asks += EventSpec("ask", to = "text:You can respond (Aether Vial's ability can be activated any time you have priority, 602.1), but it won't help: putting a creature onto the battlefield changes nothing about the card on top of your library, and ${bob.card.name}'s trigger still reveals it and takes its mana value in life when it resolves (113.7a)${if (top != null && mv != null) ". $top has mana value $mv${if (life != null) ", so you go from $life to ${life - mv}${if (life - mv <= 0) " and lose (704.5a)" else ""}" else ""}" else ""}. Only something that changes the top card (a shuffle, a draw, a Brainstorm) or removes the trigger (Stifle) would.")
+            return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")

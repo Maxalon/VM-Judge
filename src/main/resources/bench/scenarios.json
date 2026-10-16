@@ -34383,5 +34383,104 @@
     "cite": [
       "611.2a"
     ]
+  },
+  {
+    "id": "dismember-blocking-finks-before-damage",
+    "text": "They attack with a 2/2 and I block with Kitchen Finks. Before damage they Dismember my Finks. What happens?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "a 2/2 creature deals no combat damage: its blocker left combat and it stays blocked"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-at-2-thalia-on-top-vial-response",
+    "text": "I have Dark Confidant at 2 life and Thalia on top. Can I Vial in response to the trigger to do anything?",
+    "expect": [
+      "but it won't help: putting a creature onto the battlefield changes nothing about the card on top of your library",
+      "so you go from 2 to 0 and lose (704.5a)"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "thoughtseize-take-spellskite-from-hand",
+    "text": "They cast Thoughtseize targeting me with Spellskite and Thalia in my hand. Can they take Spellskite?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Spellskite, Thalia, Guardian of Thraben"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-and-bolt-with-3-lands",
+    "text": "I cast Snapcaster Mage with 3 lands. Can I also flashback Lightning Bolt this turn?",
+    "expect": [
+      "Lightning Bolt has flashback until end of turn",
+      "opponent takes 3 damage"
+    ],
+    "cite": []
+  },
+  {
+    "id": "pyroclasm-vs-flipped-delver",
+    "text": "They Pyroclasm with my Delver flipped. Does it die?",
+    "expect": [
+      "Delver of Secrets: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-into-leyline-no-draw",
+    "text": "I have Leyline of Sanctity and they cast Gitaxian Probe on me. Do they draw?",
+    "expect": [
+      "Gitaxian Probe can't target you",
+      "No: opponent doesn't draw"
+    ],
+    "cite": []
+  },
+  {
+    "id": "redirect-bolt-already-on-spellskite",
+    "text": "They cast Lightning Bolt at my Spellskite and I redirect it to Spellskite. Is that legal?",
+    "expect": [
+      "Lightning Bolt already targets Spellskite; nothing changes"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-at-2-life-kills-caster",
+    "text": "My opponent Thoughtseizes me at 2 life. Do they die?",
+    "expect": [
+      "Yes: opponent has lost the game",
+      "opponent goes from 2 to 0 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "shadow-at-13-bolted",
+    "text": "I have Death's Shadow at 13 life. They Bolt me. Does Shadow live?",
+    "expect": [
+      "No: Death's Shadow is in the graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-no-basics-still-exiles",
+    "text": "They Path my Goyf and I have no basics. Does Path still exile it?",
+    "expect": [
+      "Tarmogoyf: the battlefield → exile",
+      "find nothing"
+    ],
+    "cite": []
+  },
+  {
+    "id": "cavern-thalia-into-chalice-2",
+    "text": "I cast Thalia into their Chalice on 2 with Cavern of Souls naming Human. Is she countered?",
+    "expect": [
+      "Thalia, Guardian of Thraben isn't countered"
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben is countered."
+    ],
+    "cite": []
   }
 ]
