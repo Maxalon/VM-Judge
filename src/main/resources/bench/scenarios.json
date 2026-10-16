@@ -29316,6 +29316,9 @@
     "id": "probe-for-life-kor-firewalker",
     "text": "My opponent casts Gitaxian Probe paying 2 life. I have Kor Firewalker. Do I gain life?",
     "expect": [
+      "No: you gain no life here."
+    ],
+    "notExpect": [
       "You gain 1 life in all."
     ]
   },
@@ -32286,5 +32289,90 @@
     "cite": [
       "305.7"
     ]
+  },
+  {
+    "id": "ooze-eats-snapcaster-target",
+    "text": "I have Scavenging Ooze. They cast Snapcaster Mage targeting Bolt in their graveyard. Can I eat the Bolt in response?",
+    "expect": [
+      "Lightning Bolt: opponent's graveyard → exile.",
+      "Snapcaster Mage's triggered ability doesn't resolve (all targets illegal)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-takes-bolt-then-snapcaster",
+    "text": "They Thoughtseize me and take my Lightning Bolt. Then I cast Snapcaster Mage. Can I flash back the Bolt?",
+    "expect": [
+      "Lightning Bolt: your hand → your graveyard.",
+      "Lightning Bolt has flashback until end of turn.",
+      "Lightning Bolt is exiled (flashback)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-vs-fatal-push",
+    "text": "I have Kor Firewalker. They cast Fatal Push on it. Does it die?",
+    "expect": [
+      "Yes: Kor Firewalker died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-no-life-off-black-spell",
+    "text": "They cast Fatal Push on my Grizzly Bears while I have Kor Firewalker. Do I gain life?",
+    "expect": [
+      "No: you gain no life here."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-one-vial-one-thalia",
+    "text": "They have Chalice on 1 and I have Aether Vial on 1. Can I vial in a Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "insectile-aberration-named-attacks-under-bridge",
+    "text": "They control Ensnaring Bridge with 3 cards. Can my Insectile Aberration attack?",
+    "expect": [
+      "Delver of Secrets is transformed into Insectile Aberration.",
+      "opponent takes 3 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "push-kills-deaths-shadow",
+    "text": "They cast Fatal Push targeting my Death's Shadow. I'm at 5. Does it die?",
+    "expect": [
+      "Yes: Death's Shadow died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-does-not-tax-snapcaster",
+    "text": "I have Thalia. They cast Snapcaster Mage. Does Thalia tax it?",
+    "expect": [
+      "Thalia, Guardian of Thraben taxes only noncreature spells, and Snapcaster Mage isn't one."
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-finks-no-persist-life",
+    "text": "I cast Path to Exile on their Kitchen Finks. Do they gain life from persist?",
+    "expect": [
+      "Kitchen Finks's persist doesn't return it: it was exiled instead of going to the graveyard",
+      "No: Kitchen Finks is in exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "liliana-minus-two-choose-token",
+    "text": "They activate Liliana of the Veil's -2 targeting me. I have Tarmogoyf and a Spirit token. Which do I sacrifice?",
+    "expect": [
+      "You choose which creature to sacrifice: Tarmogoyf or Spirit token; Spirit token is assumed (a token is the usual pick)."
+    ],
+    "cite": []
   }
 ]

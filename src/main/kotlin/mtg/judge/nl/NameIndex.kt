@@ -23,6 +23,10 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
     }
 
     fun lookup(norm: String): Entry? = byNorm[norm]
+    /** The full "Front // Back" name of a double-faced card, by oracle id. */
+    fun fullNameOf(oracleId: String): String? = byNorm.values.firstOrNull { it.oracleId == oracleId && it.kind == "full" && it.display.contains(" // ") }?.display
+    /** "Insectile Aberration": the back face of a transforming card, named on its own. */
+    fun isBackFace(e: Entry): Boolean = e.kind == "face" && fullNameOf(e.oracleId)?.split(" // ")?.getOrNull(1)?.equals(e.display, true) == true
     val size: Int get() = byNorm.size
 
     /** Every card-name occurrence in [words] (already normalized tokens), longest match first, non-overlapping. */

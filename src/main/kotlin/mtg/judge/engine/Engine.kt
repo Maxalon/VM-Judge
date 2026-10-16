@@ -2946,7 +2946,7 @@ class Engine(val state: GameState) {
                         if (best.size > 1) state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}: ${best.joinToString(" and ") { it.name }} are tied for greatest power ($top), and ${p.subject.lowercase()} ${p.v("chooses", "choose")} among them."
                         move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} creature with the greatest power ($top)${if (mine.size > 1) " (not ${mine.filter { it !== pick }.joinToString(", ") { "${it.name}, power ${it.power ?: 0}" }})" else ""}.", "701.21a")
                     }
-                    else -> { val pick = mine.minWith(compareBy({ it.power ?: 0 }, { it.toughness ?: 0 })); state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} (${p.subject.lowercase()} ${p.v("chooses", "choose")} which ${effect.filter.raw}; assuming the smallest)."; move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} choice among ${mine.joinToString(", ") { it.name }}.", "701.21a") }
+                    else -> { val pick = mine.minWith(compareBy<GameObject>({ if (it.token) 0 else 1 }, { it.power ?: 0 }, { it.toughness ?: 0 })); state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} (${p.subject.lowercase()} ${p.v("chooses", "choose")} which ${effect.filter.raw}; assuming a token before a card, then the smallest)."; state.outcomes += "${p.subject} ${p.v("chooses", "choose")} which ${effect.filter.raw} to sacrifice: ${mine.joinToString(" or ") { it.name }}; ${pick.name} is assumed${if (pick.token) " (a token is the usual pick)" else " (the smallest)"}."; move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} choice among ${mine.joinToString(", ") { it.name }}.", "701.21a") }
                 } }
             }
             is Effect.GainLifeEqualToPower -> {
@@ -4593,7 +4593,9 @@ class Engine(val state: GameState) {
         val subOk = subs.isEmpty() || (if (f.subtypesAny) subs.any { hasSub(it) } else subs.all { hasSub(it) })
         val notSubOk = f.notSubtypes.none { hasSub(it) }
         val ctrlOk = when (f.controller) { Who.YOU -> s.controller == controller; Who.OPPONENT -> s.controller != controller; else -> true }
-        return notOk && kindOk && spellTypeOk && subOk && notSubOk && ctrlOk
+        // "Whenever a player casts a red spell" (Kor Firewalker): the spell's colours were never checked, so a Fatal Push gained the life.
+        val colorOk = f.colors.all { it in d.colors } && f.notColors.none { it in d.colors }
+        return notOk && kindOk && spellTypeOk && subOk && notSubOk && ctrlOk && colorOk
     }
 
     // ---- helpers ---------------------------------------------------------------------------

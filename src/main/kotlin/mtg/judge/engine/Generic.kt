@@ -20,15 +20,35 @@ object Generic {
         val subWords = m.groupValues[4].trim().split(' ').filter { it.isNotEmpty() }
         val kwWords = subWords.filter { it in tokenKeywordWords }
         val subs = (subWords - kwWords.toSet()).joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
-        val creature = m.groupValues[1].isNotEmpty() || m.groupValues[5].contains("creature")
+        // "a Spirit token" with no size: the token that type usually is (Lingering Souls' 1/1 flier, a 2/2 Zombie), so it counts as a creature.
+        val typical = tokenDefaults[subs]?.takeIf { m.groupValues[1].isEmpty() && !m.groupValues[5].contains("artifact") && m.groupValues[5] != "enchantment" }
+        val pw = m.groupValues[1].ifEmpty { typical?.first ?: "" }; val tn = m.groupValues[2].ifEmpty { typical?.second ?: "" }
+        val creature = m.groupValues[1].isNotEmpty() || m.groupValues[5].contains("creature") || typical != null
         val artifact = m.groupValues[5].contains("artifact") || subs in setOf("Treasure", "Food", "Clue", "Blood", "Powerstone", "Map")
         val typeLine = "Token " + (if (legendary) "Legendary " else "") + listOfNotNull(if (artifact) "Artifact" else null, if (creature) "Creature" else null, if (m.groupValues[5] == "enchantment") "Enchantment" else null).joinToString(" ").ifEmpty { "Permanent" } + (if (subs.isEmpty()) "" else " — $subs")
-        val keywords = kwWords + m.groupValues[6].split(Regex("""\s*,\s*|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() }
+        val keywords = kwWords + m.groupValues[6].split(Regex("""\s*,\s*|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() } + (typical?.third ?: emptyList()).filter { k -> k !in kwWords }
         val text = when (subs) { "Treasure" -> "{T}, Sacrifice this token: Add one mana of any color."; "Food" -> "{2}, {T}, Sacrifice this token: You gain 3 life."; "Clue" -> "{2}, Sacrifice this token: Draw a card."; else -> "" }
         val kwLine = keywords.joinToString(", ") { it.replaceFirstChar { c -> c.uppercase() } }
         return OracleParser.parse("generic-token-$n", named?.let { it.split(' ').joinToString(" ") { w -> w.replaceFirstChar { c -> c.uppercase() } } } ?: if (subs.isNotEmpty()) "$subs token" else if (m.groupValues[1].isNotEmpty()) "a ${m.groupValues[1]}/${m.groupValues[2]} token" else "a token", typeLine, null, 0.0, colors,
-            m.groupValues[1].ifEmpty { null }, m.groupValues[2].ifEmpty { null }, keywords, listOf(kwLine, text).filter { it.isNotEmpty() }.joinToString("\n"))
+            pw.ifEmpty { null }, tn.ifEmpty { null }, keywords, listOf(kwLine, text).filter { it.isNotEmpty() }.joinToString("\n"))
     }
+
+    /** The size (and keywords) a token of a given type usually has, for a token named only by its type. */
+    private val tokenDefaults: Map<String, Triple<String, String, List<String>>> = mapOf(
+        "Spirit" to Triple("1", "1", listOf("flying")), "Zombie" to Triple("2", "2", emptyList()), "Soldier" to Triple("1", "1", emptyList()),
+        "Goblin" to Triple("1", "1", emptyList()), "Thopter" to Triple("1", "1", listOf("flying")), "Servo" to Triple("1", "1", emptyList()),
+        "Beast" to Triple("3", "3", emptyList()), "Angel" to Triple("4", "4", listOf("flying")), "Bird" to Triple("1", "1", listOf("flying")),
+        "Insect" to Triple("1", "1", emptyList()), "Saproling" to Triple("1", "1", emptyList()), "Elf Warrior" to Triple("1", "1", emptyList()),
+        "Knight" to Triple("2", "2", emptyList()), "Wolf" to Triple("2", "2", emptyList()), "Cat" to Triple("1", "1", emptyList()),
+        "Human" to Triple("1", "1", emptyList()), "Faerie Rogue" to Triple("1", "1", listOf("flying")), "Drake" to Triple("2", "2", listOf("flying")),
+        "Elemental" to Triple("1", "1", emptyList()), "Squirrel" to Triple("1", "1", emptyList()), "Myr" to Triple("1", "1", emptyList()),
+        "Golem" to Triple("3", "3", emptyList()), "Germ" to Triple("0", "0", emptyList()), "Illusion" to Triple("1", "1", emptyList()),
+        "Plant" to Triple("0", "1", emptyList()), "Eldrazi Spawn" to Triple("0", "1", emptyList()), "Eldrazi Scion" to Triple("1", "1", emptyList()),
+        "Rat" to Triple("1", "1", emptyList()), "Wizard" to Triple("1", "1", emptyList()), "Warrior" to Triple("1", "1", emptyList()),
+        "Vampire" to Triple("1", "1", listOf("lifelink")), "Construct" to Triple("0", "0", emptyList()), "Pegasus" to Triple("1", "1", listOf("flying")),
+        "Snake" to Triple("1", "1", emptyList()), "Dinosaur" to Triple("3", "3", emptyList()), "Devil" to Triple("1", "1", emptyList()), "Kor Ally" to Triple("1", "1", emptyList()),
+        "Elephant" to Triple("3", "3", emptyList()), "Wurm" to Triple("6", "6", emptyList()), "Dragon" to Triple("5", "5", listOf("flying")), "Bear" to Triple("2", "2", emptyList()),
+        "Ooze" to Triple("1", "1", emptyList()), "Horror" to Triple("1", "1", emptyList()), "Hydra" to Triple("1", "1", emptyList()), "Griffin" to Triple("2", "2", listOf("flying")))
 
     /** "a spell", "an instant", "a creature spell", "a creature" (an unnamed 1/1 whose stats are assumed). */
     fun spell(name: String): CardDef? {
