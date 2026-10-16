@@ -36086,6 +36086,9 @@
     "text": "They Thoughtseize me. I have Force of Will and a Brainstorm in hand. Can I Force pitching the Brainstorm, and what's left?",
     "expect": [
       "Thoughtseize is countered",
+      "Your hand now: nothing described is left in it"
+    ],
+    "notExpect": [
       "Your hand now: Brainstorm"
     ]
   },
@@ -37647,6 +37650,106 @@
     ],
     "cite": [
       "601.2f"
+    ]
+  },
+  {
+    "id": "tt264-probe-pay-life-and-cast-under-thalia",
+    "text": "I have Thalia. They cast Gitaxian Probe with no lands untapped. Can they pay 2 life and cast it?",
+    "expect": [
+      "Gitaxian Probe can't be cast: the Phyrexian mana can be paid with life, but the other {1} needs mana and only 0 is available"
+    ]
+  },
+  {
+    "id": "tt264-leyline-void-snapcaster-no-flashback",
+    "text": "They have Leyline of the Void. I cast Snapcaster Mage targeting my Bolt. Does Bolt get flashback?",
+    "expect": [
+      "Snapcaster Mage's triggered ability doesn't resolve (all targets illegal)",
+      "No. Under Leyline of the Void Lightning Bolt never reached your graveyard (it was exiled instead, 614.1a)"
+    ]
+  },
+  {
+    "id": "tt264-shadow-attack-blocked-then-bolted",
+    "text": "I attack with Death's Shadow at 7 life and they block with a 2/2. Then they Bolt me. What happens to Shadow?",
+    "expect": [
+      "a 2/2 creature has 9 damage marked",
+      "Death's Shadow has 2 damage marked",
+      "You go from 7 to 4 life"
+    ]
+  },
+  {
+    "id": "tt264-dismember-finks-with-counter-already",
+    "text": "They cast Dismember on my Kitchen Finks with a -1/-1 counter already. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it",
+      "No: Kitchen Finks is in your graveyard"
+    ]
+  },
+  {
+    "id": "tt264-teferi-vial-on-their-turn",
+    "text": "My opponent has Teferi, Time Raveler. Can I Vial in Thalia on their turn?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield",
+      "Yes, on their turn too. Teferi, Time Raveler restricts when you can cast spells, and Aether Vial's ability isn't a spell"
+    ]
+  },
+  {
+    "id": "tt264-force-pitch-brainstorm-hand-left",
+    "text": "They Hymn me. My hand is Force of Will and Brainstorm. Can I Force the Hymn pitching Brainstorm, and what do I have left?",
+    "expect": [
+      "Hymn to Tourach is countered",
+      "Your hand now: nothing described is left in it"
+    ],
+    "notExpect": [
+      "Your hand now: Brainstorm"
+    ]
+  },
+  {
+    "id": "tt264-if-i-redirect-path-who-gets-land",
+    "text": "I have Spellskite. They cast Path to Exile on my Tarmogoyf. If I redirect, who gets the land?",
+    "expect": [
+      "Path to Exile now targets Spellskite instead of Tarmogoyf",
+      "Spellskite: the battlefield → exile"
+    ]
+  },
+  {
+    "id": "tt264-guide-trample-over-question",
+    "text": "I block their Goblin Guide with my 1/1 and they Bolt my blocker after blocks. Does Guide trample over?",
+    "expect": [
+      "Goblin Guide deals no combat damage: its blocker left combat and it stays blocked",
+      "No: Goblin Guide dealt no damage to you"
+    ]
+  },
+  {
+    "id": "tt264-menace-one-blocker",
+    "text": "They attack with a 2/2 menace. I have one 3/3. Can I block?",
+    "expect": [
+      "No: a 2/2 creature with menace has menace and can't be blocked except by two or more creatures"
+    ],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "tt264-chalice-zero-probe-life",
+    "text": "They have Chalice on 0. I cast Gitaxian Probe for 2 life. Is it countered?",
+    "expect": [
+      "No: Gitaxian Probe isn't countered; it resolves. Chalice of the Void on 0 only counters a spell whose mana value is 0"
+    ]
+  },
+  {
+    "id": "tt264-bob-at-one-must-reveal",
+    "text": "I have Dark Confidant and 1 life. My upkeep: do I have to reveal?",
+    "expect": [
+      "Yes. Dark Confidant's upkeep trigger is mandatory",
+      "at 1 life a card with mana value 1 or more kills you (104.3b)"
+    ]
+  },
+  {
+    "id": "tt264-only-shadow-in-hand-at-three",
+    "text": "They cast Thoughtseize at me and I have only Death's Shadow in hand at 3 life. What happens?",
+    "expect": [
+      "Death's Shadow: your hand → your graveyard",
+      "opponent loses 2 life"
     ]
   }
 ]

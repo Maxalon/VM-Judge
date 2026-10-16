@@ -200,6 +200,11 @@ class SituationParser(private val names: NameIndex) {
             val snapIdx = ctx.events.indexOfFirst { c -> c.verb == "cast" && (c.player ?: "me") == who && c.targets.isEmpty() && (c.card?.name ?: c.obj?.let { ctx.objects[it]?.card?.name }) in setOf("Snapcaster Mage", "Torrential Gearhulk") }
             if (snapIdx >= 0 && snapIdx < i) ctx.events[snapIdx] = ctx.events[snapIdx].copy(targets = listOf(gid))
         }
+        // "My opponent has Teferi. Can I Vial in Thalia on their turn?": the lock is on spells, and the Vial's ability isn't one.
+        if (Regex("""\bcan (?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(text) && ctx.events.any { e -> e.verb == "activate" && (e.player ?: "me") == "me" && ctx.objects[e.obj]?.card?.name == "Aether Vial" })
+            ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.controller != "me" && o.card.name in setOf("Teferi, Time Raveler", "Grand Abolisher", "Dosan the Falling Leaf", "City of Solitude") }?.let { lock ->
+                if (ctx.asks.none { it.to?.contains("isn't a spell: it's an activated ability") == true }) ctx.asks += EventSpec("ask", to = "text:Yes, on their turn too. ${lock.card.name} restricts when you can cast spells, and Aether Vial's ability isn't a spell: it's an activated ability, which you can activate whenever you have priority (602.5, 117.1b), and the creature it puts in is never cast.")
+            }
         // "I have Cavern of Souls naming Human" with a Thalia cast: the Cavern's mana is read as having paid for her.
         for (i in ctx.events.indices) { val e = ctx.events[i]
             if (e.verb != "cast" || e.to != null) continue
@@ -1366,7 +1371,7 @@ class SituationParser(private val names: NameIndex) {
         // "On my upkeep I reveal Griselbrand": the reveal is the upkeep trigger's; the time words add nothing.
         t2 = t2.replace(Regex("""^(?:on|during|in|at) (?:my|the) (?:next )?upkeep,? ((?:i|we|my c\d+) reveals? .+)$""", RegexOption.IGNORE_CASE), "$1")
         // "I have one 2/2 untapped at 3 life" / "I reveal Griselbrand at 7 life": the life total said as a tail.
-        t2 = t2.replace(Regex("""(^|, |\s+and\s+)((?:i|we) (?:have|control) (?:one|two|three|an?|\d+) (?:untapped )?\d+/\d+\b.*?|(?:i|we) reveals? .+?|(?:i|we) blocks? (?:(?:it|that|them|(?:the |their )?c\d+|(?:the |their )?\d+/\d+\S*) )?with (?:my |an? )?.+?) at (\d+)(?: life)?$""", RegexOption.IGNORE_CASE), "$1i am at $3 life, $2")
+        t2 = t2.replace(Regex("""(^|, |\s+and\s+)((?:i|we) (?:have|control) (?:one|two|three|an?|\d+) (?:untapped )?\d+/\d+\b.*?|(?:i|we) reveals? .+?|(?:i|we) have (?:only |just )?(?:an? |the |two |three |\d+ )?c\d+(?: and (?:an? |the |two |three |\d+ )?c\d+)* in (?:my |our )?hand|(?:i|we) blocks? (?:(?:it|that|them|(?:the |their )?c\d+|(?:the |their )?\d+/\d+\S*) )?with (?:my |an? )?.+?) at (\d+)(?: life)?$""", RegexOption.IGNORE_CASE), "$1i am at $3 life, $2")
         // "Can I flashback Bolt in response?" with Snapcaster Mage in hand: the Mage is the way to it.
         t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:flashback|flash back) (?:the |my )?(c\d+) in response\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "hand" && o.card.name == "Snapcaster Mage" } && m.cards[r.groupValues[1]]?.isSpellOnly == true) "snapit-question hand" else t0 } ?: t0 }
@@ -1404,6 +1409,24 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""^(?:which|what) (?:of (?:my|these) (?:spells|cards)|spells?|cards?) can (?:i|we) (?:still )?cast:? ((?:c\d+)(?:,? (?:or |and )?c\d+)*)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "whichcast-question " + Regex("""c\d+""").findAll(r.groupValues[1]).joinToString("+") { it.value } } ?: t0 }
         // "Which can I redirect?" with Spellskite and several of their spells on the stack.
         t2 = t2.replace(Regex("""^(?:which|which ones?|which of them|which spell) can (?:i|we) (?:redirect|deflect|spellskite)(?: it| that| them)?(?: to spellskite| to it)?\??$""", RegexOption.IGNORE_CASE), "whichredirect-question")
+        // "Can they pay 2 life and cast it?": the cast, paid that way.
+        t2 = t2.replace(Regex("""^can (i|we|they|he|she) pay (\d+) life and cast (it|that|(?:the |my |their )?c\d+)\??$""", RegexOption.IGNORE_CASE), "can $1 cast $3 paying $2 life")
+        // "Kitchen Finks with a -1/-1 counter already": the "already" adds nothing.
+        t2 = t2.replace(Regex("""\b(counters?) already\b""", RegexOption.IGNORE_CASE), "$1")
+        // "Can I Force the Hymn, and what do I have left?": the hand afterwards.
+        t2 = t2.replace(Regex("""^(.+?),? and what (?:do (?:i|we) have|is|'s) left(?: in (?:my |our )?hand)?\??$""", RegexOption.IGNORE_CASE), "$1, what is left in my hand")
+        // "If I redirect, who gets the land?": the redirect, then the question.
+        t2 = t2.replace(Regex("""^if (?:i|we) (?:redirect|deflect|spellskite)(?: it| that)?, (.+)$""", RegexOption.IGNORE_CASE), "skitedo-marker me, $1")
+        // "Who gets the land?" after Path to Exile: whether the search is mine.
+        t2 = t2.let { t0 -> if (Regex("""^who gets (?:the |a )?(?:land|basic)\??$""", RegexOption.IGNORE_CASE).matches(t0) && ctx.events.any { e -> e.verb == "cast" && e.card?.name in setOf("Path to Exile", "Swords to Plowshares", "Assassin's Trophy") }) "do i get the land" else t0 }
+        // "Does Guide trample over?": a creature without trample asked whether its damage gets through.
+        t2 = t2.replace(Regex("""^(?:does|will|can) (?:the |my |their )?(c\d+|it) (?:still )?trample (?:over|through|damage through)\??$""", RegexOption.IGNORE_CASE), "does $1 deal damage to me")
+        // "My upkeep: do I have to reveal?": the time words first.
+        t2 = t2.replace(Regex("""^(?:my|on my|during my|in my|at my) upkeep:?,? (do (?:i|we) (?:have to|need to|must) reveal.*|must (?:i|we) reveal.*)$""", RegexOption.IGNORE_CASE), "$1")
+        // "Does Bolt get flashback?": the same as "still get".
+        t2 = t2.replace(Regex("""^(?:does|will|would) (?:the |my )?(c\d+) (?:get|gain|have) flashback\??$""", RegexOption.IGNORE_CASE), "flashbackstill-question $1")
+        // "They cast Dismember on my Kitchen Finks with a -1/-1 counter": the counter is the creature's, said before the spell lands.
+        t2 = t2.replace(Regex("""^(i|we|they|he|she) (casts?|plays?|c\d+) (c\d+) (on|at|targeting) (my|their|his|her|the) (c\d+) with (an?|one|two|three|\d+) ([+-]\d+/[+-]\d+) counters?$""", RegexOption.IGNORE_CASE)) { r -> "${if (r.groupValues[5].lowercase() == "my") "i have" else "they have"} ${r.groupValues[6]} with ${r.groupValues[7]} ${r.groupValues[8]} counter, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} ${r.groupValues[4]} ${r.groupValues[5]} ${r.groupValues[6]}" }
         // "Which Chalice counters it?": whether it is countered, and by which.
         t2 = t2.replace(Regex("""^which (?:chalice|c\d+|one) counters? (?:it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "is it countered")
         // "I block the 3/3 with Spellskite and take the 2/2": the unblocked one is simply unblocked.
@@ -4100,6 +4123,9 @@ class SituationParser(private val names: NameIndex) {
                 ctx.asks += EventSpec("ask", to = "text:No. Aether Vial has $n charge counter${if (n == 1) "" else "s"} but ${e.display}'s mana value is ${e.manaValue} (202.3); the Vial puts in only a creature card whose mana value equals the number of its charge counters.") }
             m.cards[r.groupValues[1]]?.let { e -> if (ctx.objects.values.any { it.card.name == "Chalice of the Void" && (it.counters["charge"] ?: -1) == e.manaValue } || ctx.events.any { ev -> ev.verb == "cast" && ev.card?.name == "Chalice of the Void" && (ev.amount ?: -1) == e.manaValue })
                 ctx.asks += EventSpec("ask", to = "text:Yes. Aether Vial puts ${e.display} onto the battlefield; it is never cast, so Chalice of the Void's trigger (\"whenever a player casts a spell\") never triggers for it (608.3, 603.2), and nothing that counters spells can touch it.") }
+            ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.controller != "me" && o.card.name in setOf("Teferi, Time Raveler", "Grand Abolisher", "Dosan the Falling Leaf", "City of Solitude") }?.let { lock ->
+                ctx.asks += EventSpec("ask", to = "text:Yes, on their turn too. ${lock.card.name} restricts when you can cast spells, and Aether Vial's ability isn't a spell: it's an activated ability, which you can activate whenever you have priority (602.5, 117.1b), and the creature it puts in is never cast.")
+            }
             ctx.notes += "Aether Vial's ability is an activated ability with no timing restriction, so it can be activated on your opponent's turn (602.5); the creature's mana value must equal the number of charge counters. The outcome shows it being activated."
             return true
         }
@@ -4790,8 +4816,13 @@ class SituationParser(private val names: NameIndex) {
         }
         Regex("""^flashbackstill-question (c\d+)$""").find(clause0)?.let { r ->
             val card = m.cards[r.groupValues[1]] ?: return@let
-            val snap = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.card.name in setOf("Snapcaster Mage", "Torrential Gearhulk") } ?: return@let
-            val removed = ctx.events.any { e -> e.verb == "cast" && e.player != "me" && snap.id in e.targets }
+            val snapObj = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.card.name in setOf("Snapcaster Mage", "Torrential Gearhulk") }
+            val snapName = snapObj?.card?.name ?: ctx.events.lastOrNull { e -> e.verb == "cast" && (e.player ?: "me") == "me" && e.card?.name in setOf("Snapcaster Mage", "Torrential Gearhulk") }?.card?.name ?: return@let
+            val snap = snapObj ?: ObjectSpec("snapcaster_mage", CardRef(name = snapName), controller = "me")
+            val removed = snapObj != null && ctx.events.any { e -> e.verb == "cast" && e.player != "me" && snapObj.id in e.targets }
+            // "They have Leyline of the Void. I cast Snapcaster targeting my Bolt": the Bolt isn't in the graveyard to be targeted.
+            val gyGone = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.card.name in setOf("Leyline of the Void", "Rest in Peace", "Dauthi Voidwalker") }
+            if (gyGone != null) { ctx.asks += EventSpec("ask", to = "text:No. Under ${gyGone.card.name} ${card.display} never reached ${if (gyGone.card.name == "Rest in Peace") "the" else "your"} graveyard (it was exiled instead, 614.1a), so ${snap.card.name}'s trigger has no instant or sorcery card in your graveyard to target and is removed from the stack (603.3d); nothing gains flashback."); return true }
             ctx.asks += EventSpec("ask", to = "text:" + (if (removed) "Yes. ${snap.card.name}'s enters-the-battlefield trigger is already on the stack, and a triggered ability resolves even if its source has left the battlefield (113.7a); it uses the last known information about the Mage. ${card.display} gains flashback until end of turn as the trigger resolves, and you can cast it for its mana cost." else "Yes. ${snap.card.name}'s trigger gives ${card.display} flashback until end of turn as it resolves; nothing described stops the trigger."))
             return true
         }
@@ -5375,6 +5406,11 @@ class SituationParser(private val names: NameIndex) {
         }
         // "do I have to draw?" of a "you may" ability: it is a choice.
         Regex("""^do (?:i|we|they) have to (draw|discard|sacrifice|pay|gain|lose|exile|return|search|reveal)(?: (?:a|an|the|it|one|two|\d+) [a-z]+)?$""").find(clause0)?.let { r ->
+            // "I have Dark Confidant at 1 life. Do I have to reveal?": the trigger has no "may".
+            if (r.groupValues[1] == "reveal") ctx.objects.values.firstOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Dark Confidant", "Dark Tutelage") }?.let { bob ->
+                ctx.asks += EventSpec("ask", to = "text:Yes. ${bob.card.name}'s upkeep trigger is mandatory: \"reveal the top card of your library and put that card into your hand. You lose life equal to its mana value\" has no \"may\" (603.2), so once your upkeep begins it triggers and resolves whether you like it or not${ctx.life["me"]?.let { l -> if (l <= 3) "; at $l life a card with mana value $l or more kills you (104.3b), and the only way out is to remove ${bob.card.name} before your upkeep or counter the trigger" else "" } ?: ""}.")
+                return true
+            }
             val may = (ctx.events.mapNotNull { it.card?.name } + ctx.objects.values.mapNotNull { it.card.name }).any { it.contains("you may", ignoreCase = true) }
             if (!may) return@let
             ctx.asks += EventSpec("ask", to = "text:No. \"You may\" means the choice is made as the ability resolves: its controller can decline, and nothing happens if they do (603.5? no: see 608.2d for choices on resolution). The outcome below assumes the ${r.groupValues[1]} was chosen; say \"I decline\" for the other branch.".replace(" (603.5? no: see 608.2d for choices on resolution)", " (608.2d)"))
@@ -11437,6 +11473,7 @@ class SituationParser(private val names: NameIndex) {
         // "Vandalblast not overloaded on my Sol Ring": the negation is read, and the words dropped so they aren't a target.
         val pitchRx = Regex("""\s*\b(?:by )?(?:pitching|exiling|and exiles?|and pitch(?:es)?) (?:an? |the |my |their )?(c\d+)\b(?: to it| for it| from (?:my|their) hand)?""", RegexOption.IGNORE_CASE)
         val pitched = pitchRx.find(rest1)?.let { r -> m.cards[r.groupValues[1].lowercase()] }?.takeIf { card.display == "Force of Will" || card.display == "Force of Negation" || card.display == "Daze" || card.display == "Misdirection" || card.display == "Foil" || card.display == "Snuff Out" || card.display == "Commandeer" || card.display == "Solitude" || card.display == "Fury" || card.display == "Endurance" || card.display == "Subtlety" || card.display == "Grief" }
+        if (pitched != null) ctx.objects.values.firstOrNull { o -> o.controller == who && o.zone == "hand" && o.card.name == pitched.display }?.let { o -> ctx.objects[o.id] = o.copy(zone = "exile") }
         if (pitched != null) ctx.notes += "\"pitching ${pitched.display}\" is ${card.display}'s alternative cost: ${pitched.display} is exiled from ${if (who == "me") "your" else "their"} hand as the cost (118.9), not cast."
         val rest = (secondTime?.let { rest1.removeRange(it.range) } ?: rest1).let { if (pitched != null) pitchRx.replace(it, "") else it }.replace(Regex("""\s*\b(?:not overloaded|without overload|unoverloaded|not for (?:its|the) overload cost)\b"""), "")
         val n = times?.let { if (it.groupValues[2].isNotEmpty()) it.groupValues[2].toInt() else if (it.groupValues[1].startsWith("three")) 3 else 2 } ?: if (secondTime != null) 2 else 1
