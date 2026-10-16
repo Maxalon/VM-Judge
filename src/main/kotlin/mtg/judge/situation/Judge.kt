@@ -1145,7 +1145,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     }
                     val dc = find(def.spellEffect) ?: throw JudgeException("${def.name} doesn't have a card chosen from a hand")
                     val victim = state.opponentsOf(chooser.id).firstOrNull() ?: throw JudgeException("no other player")
-                    val handThen = curObjects.filter { it.zone == "hand" && it.controller == victim.id }.mapNotNull { state.objects[it.id] }
+                    // A card the Vial put onto the battlefield in response is no longer in the hand to be chosen.
+                    val handThen = curObjects.filter { it.zone == "hand" && it.controller == victim.id }.mapNotNull { state.objects[it.id] }.filter { o -> o.zone !in setOf(Zone.BATTLEFIELD, Zone.EXILE, Zone.STACK) || state.trace.steps.any { it.text.contains("discards ${o.name}") || it.text.contains("discard ${o.name}") } }
                     if (handThen.isEmpty()) { state.outcomes += "${def.name} lets ${chooser.subject.lowercase()} choose ${dc.what} from ${victim.possessive} hand; say what is in it for the choices."; return true }
                     val legal = handThen.filter { dc.filter == null || state.matches(dc.filter, it, victim.id, null, anyZone = true) }
                     val illegal = handThen.filter { it !in legal }
@@ -1617,7 +1618,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val nothingLeft = state.outcomes.any { it.contains("find nothing (none left in") } || state.trace.steps.any { it.text.contains("finds nothing") || it.text.contains("find nothing") }
                     state.outcomes += if (nothingLeft) "No land: the search is ${if (p.you) "yours" else p.name + "'s"}, but there is no basic land card left in ${p.possessive} library to find, so nothing enters; the library is still shuffled (701.23a, 701.23c)."
                         else if (searched) "Yes: the search is ${if (p.you) "yours" else p.name + "'s"}. The card gives it to the exiled creature's controller, which is ${p.subject.lowercase()}; ${p.subject.lowercase()} may search for a basic land card and put it onto the battlefield tapped."
-                        else "No: nothing here has ${p.subject.lowercase()} search for a land."
+                        else state.players.firstOrNull { q -> q.id != p.id && state.trace.steps.any { Regex("""(?i)^${Regex.escape(q.subject)} (?:may )?(?:choose(?:s)? to )?search(?:es)? (?:your|their|${Regex.escape(q.possessive)}) library for a (?:basic )?land""").containsMatchIn(it.text) } }?.let { q -> "No: the search is ${if (q.you) "yours" else q.name + "'s"}, not ${if (p.you) "yours" else p.name + "'s"}. Path to Exile says \"its controller may search\", the exiled creature's controller, so ${q.subject.lowercase()} ${q.v("gets", "get")} the basic land; the player who cast it gets nothing." }
+                            ?: "No: nothing here has ${p.subject.lowercase()} search for a land."
                     return true
                 }
                 if (e.to == "monarch") { state.outcomes += (state.monarch?.let { mid -> val p = state.player(mid); "${p.subject} ${p.v("is", "are")} the monarch." } ?: "Nobody is the monarch."); return true }

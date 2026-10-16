@@ -35613,5 +35613,100 @@
       "No. Leyline of Sanctity is in your hand",
       "You discard Leyline of Sanctity"
     ]
+  },
+  {
+    "id": "tt244-hymn-on-me-with-skite-out",
+    "text": "They cast Hymn to Tourach on me with Spellskite out. Can I redirect it?",
+    "expect": [
+      "Hymn to Tourach's target isn't changed (Spellskite isn't a legal target for it)",
+      "You discard 2 cards"
+    ],
+    "notExpect": [
+      "Spellskite [spellskite] (opponent's"
+    ]
+  },
+  {
+    "id": "tt244-teferi-vs-my-thoughtseize",
+    "text": "I cast Thoughtseize targeting them. They have Teferi, Time Raveler. Does Teferi stop my Thoughtseize?",
+    "expect": [
+      "Yes: Thoughtseize can be cast",
+      "You lose 2 life"
+    ],
+    "notExpect": [
+      "sorcery speed only"
+    ]
+  },
+  {
+    "id": "tt244-path-under-moon-whose-search",
+    "text": "I have Blood Moon out. They cast Path to Exile on my creature. Do they get a basic?",
+    "expect": [
+      "No: the search is yours, not opponent's"
+    ]
+  },
+  {
+    "id": "tt244-delver-bolted-no-response",
+    "text": "My Delver is 1/1. They Bolt it. I have no responses. Is it dead?",
+    "expect": [
+      "Yes: Delver of Secrets died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt244-queller-holding-bolt-bolted",
+    "text": "I have Spell Queller with their Lightning Bolt under it. They Bolt the Queller with a second Bolt. What happens to the first Bolt?",
+    "expect": [
+      "Spell Queller: the battlefield → your graveyard",
+      "Lightning Bolt comes back: opponent may cast it from exile without paying its mana cost"
+    ]
+  },
+  {
+    "id": "tt244-verdict-tax-cost-5",
+    "text": "They cast Supreme Verdict. I have Thalia and Spellskite. Does the tax make it cost 5?",
+    "expect": [
+      "Supreme Verdict costs {1}{W}{W}{U} plus {1}",
+      "5 mana in all"
+    ]
+  },
+  {
+    "id": "tt244-goyf-into-two-untapped-2-2s",
+    "text": "I attack with Tarmogoyf into their two untapped 2/2s. Do they double block?",
+    "expect": [
+      "They can. Any number of untapped creatures may block the same attacker (509.1a)",
+      "Tarmogoyf: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "509.1a"
+    ]
+  },
+  {
+    "id": "tt244-vialed-thalia-not-in-hand",
+    "text": "I have Aether Vial on 2. They cast Thoughtseize. I vial in Thalia in response. Can they take Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield",
+      "Thoughtseize lets opponent choose a nonland card from your hand; say what is in it for the choices"
+    ],
+    "notExpect": [
+      "from your hand: Thalia"
+    ]
+  },
+  {
+    "id": "tt244-skite-vs-chalice-trigger",
+    "text": "I cast Ponder. They have Chalice on 1. I have Spellskite. Can Spellskite redirect the Chalice trigger?",
+    "expect": [
+      "No. Spellskite's ability changes a target of a spell or ability, and Chalice of the Void's trigger has no target"
+    ]
+  },
+  {
+    "id": "tt244-moon-vs-skite-life",
+    "text": "They play Blood Moon with my Spellskite out. Can I still pay 2 life for Spellskite's ability?",
+    "expect": [
+      "Yes. Blood Moon says \"Nonbasic lands are Mountains\""
+    ]
+  },
+  {
+    "id": "tt244-persisted-finks-summoning-sick",
+    "text": "My Kitchen Finks persists. Does it get summoning sickness?",
+    "expect": [
+      "Yes. Kitchen Finks returned from the graveyard as a new object (400.7)"
+    ]
   }
 ]

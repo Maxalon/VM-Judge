@@ -1197,6 +1197,22 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(.+?) and does (?:it|that|(?:my |the )?c\d+) cost (?:\d+|more|extra|the tax|\d+ more)\??$""", RegexOption.IGNORE_CASE), "$1, how much does it cost")
         // "I have Leyline of Sanctity in hand, not in play. Does it help?": a card in hand does nothing.
         if (Regex("""^(?:does|will|can) (?:it|that|(?:my |the )?c\d+) (?:help|do anything|matter|save me|protect me|stop (?:it|that|the hymn|c\d+)|work)(?: here| now| at all| from (?:my )?hand)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.lastMentioned?.let { ctx.objects[it] }?.let { o -> o.zone == "hand" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == false } == true)) t2 = "cardinhand-question"
+        // "They cast Hymn on me with Spellskite out": the Spellskite is the one who was targeted, who then asks about redirecting.
+        t2 = t2.replace(Regex("""^((?:they|he|she|my opponent|the opponent)\b.*?) (on|at|targeting) me with (c\d+) (?:out|in play|on the battlefield|untapped)\b""", RegexOption.IGNORE_CASE), "$1 $2 me, i have $3")
+        // "Does Teferi stop my Thoughtseize?": whether the spell already cast was allowed.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|can) (?:their |the )?(c\d+) (?:stop|block|prevent|shut off|turn off|counter|forbid) my (c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val sp = m.cards[r.groupValues[2]] ?: return@let t0
+                if (ctx.events.any { it.verb == "cast" && it.player == "me" && it.card?.name == sp.display }) "castallowed-question ${r.groupValues[2]}" else t0 } ?: t0 }
+        // "Does the tax make it cost 5?": the cost with the tax.
+        t2 = t2.replace(Regex("""^(?:does|will|would) (?:the tax|thalia|my c\d+|c\d+|it|that|the extra cost|her tax) make (it|that|(?:the |their )?c\d+) cost (?:\d+|more|\d+ more|extra|one more)\??$""", RegexOption.IGNORE_CASE), "how much does $1 cost")
+        // "into their two untapped 2/2s": that many blockers, and "do they double block?" asks whether both can.
+        t2 = t2.replace(Regex("""\binto (?:their |his |her )?(two|three|four|\d+) (?:untapped )?(\d+/\d+)s?\b(?! (?:and|&))""", RegexOption.IGNORE_CASE), ", they block with $1 $2s")
+        t2 = t2.let { t0 -> Regex("""^(?:do|will|would) (they|he|she) (?:double|gang|team) block(?: it| that| my creature| my c\d+)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (ctx.events.count { it.verb == "block" } >= 2) "doubleblocked-note" else "can ${r.groupValues[1]} block with both" } ?: t0 }
+        // "Can I still pay 2 life for Spellskite's ability?" under Blood Moon: the Moon touches only nonbasic lands.
+        if (Regex("""^can (?:i|we) still (?:pay (?:2 |two )?life for|use|activate|pay for) (?:my |the )?(?:c\d+|spellskite)(?:'s)? ?(?:ability|redirect|activation)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") } && Regex("""^can (?:i|we) still (?:pay (?:2 |two )?life for|use|activate|pay for) """, RegexOption.IGNORE_CASE).containsMatchIn(t2)) t2 = "moonnonland-question"
+        // "Does it get summoning sickness?" after persist or undying: a new object that came in this turn.
+        if (Regex("""^(?:does|will|is) (?:it|that|(?:my |the )?c\d+) (?:get|have|has|be) summoning sick(?:ness)?(?: again| now| when it comes back)?\??$|^can (?:it|that|(?:my |the )?c\d+) (?:still )?(?:attack|block|tap) (?:this turn|right away|again this turn)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { e -> e.verb == "leave" && ctx.objects[e.obj]?.card?.name?.let { n -> names.lookup(Names.normalize(n))?.let { en -> Regex("""(?i)\b(?:persist|undying)\b""").containsMatchIn(en.keywords) } } == true }) t2 = "persistsick-question"
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -4338,6 +4354,32 @@ class SituationParser(private val names: NameIndex) {
         }
         // "I have Leyline of Sanctity in hand, not in play": the second half repeats where it is.
         if (Regex("""^(?:and |but )?not (?:in play|on the battlefield|out|on board|cast yet)$""").matches(clause0)) return true
+        Regex("""^castallowed-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "castAllowed")
+            ctx.notes += "\"Does it stop my ${card.display}?\" is read as whether that cast was allowed; a sorcery is cast in your own main phase with the stack empty, which is exactly what Teferi, Time Raveler's restriction permits."
+            return true
+        }
+        if (clause0 == "moonnonland-question") {
+            val skite = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Spellskite" }
+            val name = skite?.card?.name ?: ctx.lastMentioned?.let { ctx.objects[it]?.card?.name } ?: "it"
+            ctx.asks += EventSpec("ask", to = "text:Yes. Blood Moon says \"Nonbasic lands are Mountains\": it changes only nonbasic lands, taking their types and abilities away (305.7). $name is an artifact creature, not a land, so none of its abilities change; you can still activate it, paying {U/P} with blue mana or 2 life as before (107.4f). What Blood Moon does take away is the blue from any nonbasic land you were relying on, so the life payment may be the only way to pay.")
+            return true
+        }
+        if (clause0 == "persistsick-question") {
+            val back = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.let { e -> Regex("""(?i)\b(?:persist|undying)\b""").containsMatchIn(e.keywords) } } == true } ?: ctx.lastMentioned?.let { ctx.objects[it] }
+            val name = back?.card?.name ?: "the creature"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $name returned from the graveyard as a new object (400.7): it has been under your control only since it came back, so it is summoning sick: it can't attack, and can't pay a {T} cost, until your next turn begins (302.6), unless it has haste. It can still block, and its other abilities work as normal.")
+            return true
+        }
+        if (clause0 == "doubleblocked-note") {
+            val blockers = ctx.events.filter { it.verb == "block" }.mapNotNull { ctx.objects[it.obj]?.card?.name }
+            val attacker = ctx.events.lastOrNull { it.verb == "attack" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
+            ctx.asks += EventSpec("ask", to = "text:They can. Any number of untapped creatures may block the same attacker (509.1a), so both ${blockers.distinct().joinToString(" and ")} block $attacker; the outcome shows that double block, with $attacker's damage assigned among them in the order its controller chooses (510.1c).")
+            return true
+        }
+        // "I have no responses": nothing is cast in answer.
+        if (Regex("""^(?:(?:i|we) (?:have|'ve got|hold) )?no (?:responses?|answers?|plays?|interaction|tricks)(?: in hand| available)?$|^(?:i|we) (?:can't|cannot|don't) respond$""").matches(clause0)) { ctx.notes += "No response: the spell resolves as cast."; return true }
         if (clause0 == "cardinhand-question") {
             val o = ctx.lastMentioned?.let { ctx.objects[it] } ?: return false
             val name = o.card.name ?: "the card"
