@@ -1048,7 +1048,7 @@ object OracleParser {
                     val what = cm.groupValues[1].trim()
                     val mv = cm.groupValues[2].toIntOrNull()
                     val f = parseFilter("$what card", Kind.CARD).let { if (mv == null) it else it.copy(maxManaValue = mv) }
-                    out += Effect.DiscardChosen(who, f.takeIf { it.verifiable }, "a $what card" + (mv?.let { " with mana value $it or less" } ?: ""))
+                    out += Effect.DiscardChosen(who, f.takeIf { it.verifiable }, (if (what.firstOrNull()?.lowercaseChar() in setOf('a', 'e', 'i', 'o', 'u')) "an " else "a ") + "$what card" + (mv?.let { " with mana value $it or less" } ?: ""))
                     i += 3
                 } else if (Regex("""^flip a coin\.?$""", RegexOption.IGNORE_CASE).matches(cur) && next != null &&
                            Regex("""^if you (?:lose|win) the flip, .+$""", RegexOption.IGNORE_CASE).matches(next)) {

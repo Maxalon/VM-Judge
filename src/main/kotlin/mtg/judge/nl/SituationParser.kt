@@ -672,7 +672,7 @@ class SituationParser(private val names: NameIndex) {
         // "I have Stoneforge Mystic with Batterskull in hand": the first is on the battlefield, the second in hand.
         t2 = t2.replace(Regex("""^(i|we) have ((?:my |the )?c\d+) with ((?:an? |my |the )?c\d+) in (?:my |our )?hand\b""", RegexOption.IGNORE_CASE), "$1 have $2, $3 in hand")
         // "I have Loxodon Smiter and two lands in hand", "I have only lands and a Loxodon Smiter": all of it is the hand.
-        t2 = t2.replace(Regex("""^(?:i|we) have ((?:an? |my )?c\d+) and (an? |one |two |three |four |\d+ )?(?:lands?|basic lands?)(?: cards?)? in (?:my |our )?hand\b""", RegexOption.IGNORE_CASE), "i have $1 in hand, i have $2lands in hand")
+        t2 = t2.replace(Regex("""\b(?:i|we) have (?:only |just )?((?:an? |my )?c\d+) and (an? |one |two |three |four |\d+ )?(?:lands?|basic lands?)(?: cards?)? in (?:my |our )?hand\b""", RegexOption.IGNORE_CASE), "i have $1 in hand, i have $2lands in hand")
         t2 = t2.replace(Regex("""\b(?:i|we) have (?:only|just|nothing but) (?:lands?|basic lands?)(?: cards?)? and (?:an? |one |my )?(c\d+)(?: in (?:my |our )?hand)?\b""", RegexOption.IGNORE_CASE), "i have $1 in hand, i have a land in hand")
         // "Do they take the Smiter?" after Thoughtseize: what the spell may choose from the hand.
         t2 = t2.replace(Regex("""^(?:do|does|will|would|can) (they|he|she|my opponent|the opponent) (?:have to |get to |need to )?(?:take|pick|choose|grab|snag|hit|discard) (?:the |my )?(?:c\d+|it|that)\??$""", RegexOption.IGNORE_CASE), "what can $1 take")
@@ -805,6 +805,19 @@ class SituationParser(private val names: NameIndex) {
             val owner = obj?.controller ?: "me"
             if (bob != null) ctx.lastMentioned = bob.id
             "${if (owner == "me") "my" else "their"} upkeep begins, does ${if (bob != null) "it" else r.groupValues[1]} trigger" } ?: t0 }
+        // "I vial in Thalia with Vial on 2": the Vial's counters first, then the activation.
+        t2 = t2.let { t0 -> Regex("""^(.*?)\bvial in ((?:my |the |an? )?c\d+)(?: with (?:my |the )?c\d+)? with (?:my |the )?(c\d+) on (\d+)\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[3]]?.display == "Aether Vial") "i have ${r.groupValues[3]} on ${r.groupValues[4]}, ${r.groupValues[1]}vial in ${r.groupValues[2]}${r.groupValues[5]}" else t0 } ?: t0 }
+        // "Can I Spellskite it?": the card's name as the verb for its redirect.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (c\d+) (it|that|the spell|(?:the |their )?c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display == "Spellskite") "can i redirect ${r.groupValues[2]} with ${r.groupValues[1]}" else t0 } ?: t0 }
+        // "attacks into my untapped Spellskite": a creature of mine they attack into is something I have, not a blocker yet.
+        t2 = t2.let { t0 -> Regex("""\binto my untapped (c\d+|\d+/\d+)\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (r.groupValues[1].startsWith("c") && m.cards[r.groupValues[1].lowercase()]?.typeLine?.contains("Creature") == true) ", i have ${r.groupValues[1]}" else if (!r.groupValues[1].startsWith("c")) ", i have a ${r.groupValues[1]}" else r.value } }
+        // "If I block, does Spellskite survive?": the block with that creature, then the question.
+        t2 = t2.replace(Regex("""^if (?:i|we) block,? (does|will|would) (?:my |the )?(c\d+) (survive|die|live)\??$""", RegexOption.IGNORE_CASE), "i block with $2, $1 $2 $3")
+        // "against their Thalia": a target; "their Thalia with one card in hand": their hand size.
+        t2 = t2.replace(Regex("""\bagainst (their|my|the) (c\d+)\b""", RegexOption.IGNORE_CASE), "targeting $1 $2")
+        t2 = t2.replace(Regex("""\b(their|my opponent's|his|her) (c\d+) with (\d+|one|two|three|four|no|zero) cards? in hand\b""", RegexOption.IGNORE_CASE), "$1 $2, they have $3 cards in hand")
+        // "Both trigger on upkeep": the upkeep.
+        t2 = t2.replace(Regex("""^(?:both|they both|both of them) (?:trigger|triggers|go off) (?:on|at|in|during) (?:my |the )?upkeep\??$""", RegexOption.IGNORE_CASE), "my upkeep begins")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -3784,6 +3797,14 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.any { e -> e.verb == "cast" && (e.card?.name == name || e.obj?.let { ctx.objects[it]?.card?.name } == name) }) return@let
             if (ctx.events.none { e -> e.verb == "activate" && e.obj?.let { ctx.objects[it]?.card?.name } == "Aether Vial" }) return@let
             ctx.asks += EventSpec("ask", to = "text:No. $name was put onto the battlefield by Aether Vial's ability, not cast, so nothing that counters spells or triggers on a spell being cast (Chalice of the Void, Counterspell, Thalia's tax) ever sees it: it was never a spell (601.2, 603.6)."); return true
+        }
+        // "Does Smiter come in?": answered by the outcome.
+        if (Regex("""^does (?:my |the )?(?:c\d+|it|that) (?:come in|come into play|enter(?: the battlefield)?|hit the battlefield|get put onto the battlefield|come down)$""").matches(clause0)) { ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true }
+        // "Does persist still work later?" after Surgical Extraction took the card from the graveyard.
+        if (Regex("""^(?:does|will|can) (?:persist|undying|it) (?:still )?(?:work|persist|come back|return)(?: later| now| on it| from exile| afterwards)?$""").matches(clause0) && ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Surgical Extraction", "Extirpate") }) {
+            val card = ctx.lastMentioned?.let { ctx.objects[it] }?.card?.name ?: "the card"
+            ctx.asks += EventSpec("ask", to = "text:No, not for that card. Persist returns a creature only when it dies, that is, goes from the battlefield to a graveyard (702.79a, 700.4); a card exiled from the graveyard is simply gone, and nothing about persist brings it back from exile. Any other copy of $card still on the battlefield keeps its persist as usual.")
+            return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
@@ -9234,6 +9255,13 @@ class SituationParser(private val names: NameIndex) {
             if (said.size >= 2 && said.all { Regex("""^at the beginning of your (?:upkeep|end step|draw step|precombat main phase)""").containsMatchIn(it) }) {
                 val whoseTurn = when (turn) { "my" -> "your"; "their", "his", "her" -> "your opponent's"; else -> "" }
                 ctx.asks += EventSpec("ask", to = "text:They don't trigger at the same time. \"At the beginning of your upkeep\" means the upkeep of the permanent's controller (109.5), so each ability triggers only on its controller's turn.${if (whoseTurn.isNotEmpty()) " On $whoseTurn turn only $whoseTurn ability triggers; the other triggers on its controller's own upkeep." else ""} If two abilities did trigger at once, they would go on the stack in APNAP order: the active player's first, so the other player's would resolve first (603.3b).")
+                return true
+            }
+            // Both triggers belong to one player (Dark Confidant and Delver on my side): that player orders them.
+            val upkeepers = ctx.objects.values.filter { it.zone == "battlefield" && it.card.name in setOf("Dark Confidant", "Delver of Secrets", "Phyrexian Arena", "Bitterblossom", "Sylvan Library", "Bloodghast", "Howling Mine") }
+            if (upkeepers.size >= 2 && upkeepers.map { it.controller }.distinct().size == 1) {
+                val mine = upkeepers[0].controller == "me"
+                ctx.asks += EventSpec("ask", to = "text:${if (mine) "You" else "Their controller"} ${if (mine) "choose" else "chooses"}. ${upkeepers.joinToString(" and ") { it.card.name ?: it.id }} trigger at the same time and have the same controller, so ${if (mine) "you put" else "that player puts"} them on the stack in any order (603.3b); the one put on last resolves first. Pick the order by what you want to know first: Delver's reveal before Dark Confidant's draw, or the reverse.")
                 return true
             }
             val text = "Both abilities trigger at the same time. Triggered abilities are put on the stack in APNAP order: the active player puts all of theirs on the stack first, in any order, then each other player in turn order (603.3b). The last one put on the stack resolves first." +

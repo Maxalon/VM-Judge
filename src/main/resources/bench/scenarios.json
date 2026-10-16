@@ -32843,5 +32843,110 @@
       "Liliana of the Veil's ability can't be activated (Phyrexian Revoker names it)."
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-taxes-force-of-will-on-snapcaster",
+    "text": "I have Thalia and they cast Force of Will for free on my Snapcaster. Do they pay 1?",
+    "expect": [
+      "Force of Will still costs {1} more (Thalia, Guardian of Thraben): a cost increase applies to an alternative cost too (601.2f)."
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "firewalker-blocks-goblin-guide-kills-it",
+    "text": "They attack with Goblin Guide. I block with Kor Firewalker. Does Guide die?",
+    "expect": [
+      "Damage to Kor Firewalker from Goblin Guide is prevented (protection).",
+      "Yes: Goblin Guide died (it's in the graveyard)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-their-finks-persists",
+    "text": "I cast Lightning Bolt at their Kitchen Finks. Does it persist?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "opponent gains 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-thalia-vs-chalice-one",
+    "text": "They have Chalice on 1 and I vial in Thalia with Vial on 2. Is Thalia countered?",
+    "expect": [
+      "No. Thalia, Guardian of Thraben was put onto the battlefield by Aether Vial's ability, not cast"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-only-smiter-and-land",
+    "text": "My opponent casts Thoughtseize and I have only a Loxodon Smiter and a land in hand. Does Smiter come in?",
+    "expect": [
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-as-verb-vs-path",
+    "text": "I have Spellskite and they Path my Tarmogoyf. Can I Spellskite it?",
+    "expect": [
+      "Path to Exile now targets Spellskite instead of Tarmogoyf.",
+      "Spellskite: the battlefield → exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "shadow-thoughtseize-myself",
+    "text": "I have Death's Shadow at 10 life and cast Thoughtseize on myself. What size is Shadow?",
+    "expect": [
+      "Death's Shadow is 5/5.",
+      "You go from 10 to 8 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "flipped-delver-into-my-spellskite",
+    "text": "They attack with Delver flipped into my untapped Spellskite. If I block, does Spellskite survive?",
+    "expect": [
+      "Spellskite can't block Insectile Aberration (flying).",
+      "You take 3 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "confidant-and-delver-same-controller-order",
+    "text": "I have Dark Confidant and Delver. Both trigger on upkeep. Which resolves first?",
+    "expect": [
+      "You choose. Dark Confidant and Delver of Secrets trigger at the same time and have the same controller"
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-finks-persist-later",
+    "text": "They cast Surgical Extraction on my Kitchen Finks in the graveyard. Does persist still work later?",
+    "expect": [
+      "No, not for that card. Persist returns a creature only when it dies"
+    ],
+    "cite": []
+  },
+  {
+    "id": "brutality-all-three-against-thalia",
+    "text": "I cast Collective Brutality choosing all three modes against their Thalia with one card in hand. What happens?",
+    "expect": [
+      "Thalia, Guardian of Thraben: the battlefield → opponent's graveyard.",
+      "opponent loses 2 life.",
+      "You gain 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-at-2-3-vs-bridge-two-cards",
+    "text": "They have Ensnaring Bridge and 2 cards. I attack with Tarmogoyf at 2/3. Can it attack?",
+    "expect": [
+      "Yes: Tarmogoyf can attack."
+    ],
+    "cite": []
   }
 ]
