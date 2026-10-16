@@ -34938,5 +34938,98 @@
     "expect": [
       "Yes. Surgical Extraction has you search that player's graveyard, hand and library"
     ]
+  },
+  {
+    "id": "tt237-thalia-brute-force-vs-snapcaster-block",
+    "text": "I attack with Thalia and they block with a 2/1 Snapcaster. I cast Brute Force on Thalia. What happens?",
+    "expect": [
+      "Thalia, Guardian of Thraben is 5/4 until end of turn",
+      "Snapcaster Mage: the battlefield → opponent's graveyard"
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard"
+    ]
+  },
+  {
+    "id": "tt237-wrath-lose-both-no-sac",
+    "text": "They cast Wrath of God. I have Selfless Spirit and Thalia. Do I lose both if I don't sacrifice?",
+    "expect": [
+      "Yes: Selfless Spirit died",
+      "Yes: Thalia, Guardian of Thraben died"
+    ]
+  },
+  {
+    "id": "tt237-leyline-void-their-snapcaster",
+    "text": "I have Leyline of the Void. They cast Snapcaster Mage targeting Lightning Bolt in their graveyard. Does it work?",
+    "expect": [
+      "Snapcaster Mage's triggered ability doesn't resolve (all targets illegal)"
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "tt237-ooze-under-rip-grow",
+    "text": "My opponent has Rest in Peace. I cast Scavenging Ooze. Can it ever grow?",
+    "expect": [
+      "Not while Rest in Peace is out"
+    ]
+  },
+  {
+    "id": "tt237-goyf-blocked-by-finks-bolted",
+    "text": "They attack with Tarmogoyf which is 4/5. I block with Kitchen Finks and Bolt the Goyf before damage. Does it die?",
+    "expect": [
+      "Yes: Tarmogoyf died",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ]
+  },
+  {
+    "id": "tt237-chalice-two-vs-vialed-snapcaster",
+    "text": "I have Chalice on 2. They cast Snapcaster Mage with Vial. Is it countered?",
+    "expect": [
+      "No. Snapcaster Mage was put onto the battlefield by Aether Vial's ability, not cast"
+    ]
+  },
+  {
+    "id": "tt237-angel-pathed-at-1",
+    "text": "I'm at 1 with Platinum Angel and they Path the Angel. Do I lose immediately?",
+    "expect": [
+      "No: You are still in the game at 1 life"
+    ]
+  },
+  {
+    "id": "tt237-brainstorm-vs-thoughtseize-seen",
+    "text": "They cast Thoughtseize targeting me. I respond with Brainstorm. Do they see the cards I drew?",
+    "expect": [
+      "Yes. Brainstorm was cast in response, so it resolves first (608.1)"
+    ]
+  },
+  {
+    "id": "tt237-vial-one-thalia",
+    "text": "I have Aether Vial on 1 and Thalia in hand. Can I put Thalia in?",
+    "expect": [
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)"
+    ]
+  },
+  {
+    "id": "tt237-maze-on-attacker",
+    "text": "They attack with a 2/2 and I have Maze of Ith. I activate it on the attacker. Does it deal damage?",
+    "expect": [
+      "No: a 2/2 creature dealt no damage to you"
+    ]
+  },
+  {
+    "id": "tt237-ponder-thalia-one-land",
+    "text": "I cast Ponder with Thalia on their side and I have one land. Can I?",
+    "expect": [
+      "No: Ponder can't be cast (costs 2, only 1 mana available)"
+    ]
+  },
+  {
+    "id": "tt237-hymn-two-lands-in-hand",
+    "text": "They Hymn me and I have only two lands in hand. What happens?",
+    "expect": [
+      "You discard a basic land and a basic land"
+    ]
   }
 ]

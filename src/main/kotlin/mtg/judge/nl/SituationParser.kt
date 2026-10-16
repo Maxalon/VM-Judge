@@ -1115,6 +1115,12 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^can (?:my )?(?:spellskite|c\d+) (?:redirect|stop|take|deflect|eat|change|protect me from) (?:it|that|(?:the |their )?c\d+)\??$|^can (?:i|we) (?:redirect|spellskite|deflect) (?:it|that|(?:the |their )?c\d+)(?: (?:with|to|onto) (?:my )?(?:spellskite|c\d+))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "hand" && o.card.name == "Spellskite" } && ctx.objects.values.none { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name == "Spellskite" }) t2 = "skitehand-question"
         // "Do I see their hand?" after Surgical Extraction: a search looks at every card in the zone, hidden or not.
         if (Regex("""^(?:do|can|will) (?:i|we) (?:get to |have to )?(?:see|look at|view) (?:their|his|her|my opponent's|the opponent's) (?:whole |entire )?(?:hand|library|deck|hand and library)(?: too| as well)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "cast" && it.player == "me" && it.card?.name in setOf("Surgical Extraction", "Extirpate", "Lost Legacy", "Memoricide", "Cranial Extraction", "Unmoored Ego", "Infinite Obliteration", "Slaughter Games", "Sadistic Sacrament", "Thought Hemorrhage") }) t2 = "searchsees-question"
+        // "Do I lose both if I don't sacrifice?": both creatures asked about, with no sacrifice made.
+        t2 = t2.let { t0 -> Regex("""^do (?:i|we) lose (?:both|them both|both of them)(?: if (?:i|we) (?:don't|do not) (?:sac|sacrifice)(?: (?:it|the spirit|c\d+))?)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (ctx.objects.values.count { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) } >= 2) { if (r.value.contains("don't") || r.value.contains("do not")) ctx.notes += "No sacrifice is made, so nothing gives your creatures indestructible; the outcome shows what the spell does to each."; "bothback-question die" } else t0 } ?: t0 }
+        // "Can it ever grow?" (Scavenging Ooze under Rest in Peace): no card ever reaches a graveyard.
+        if (Regex("""^can (?:it|that|(?:my |the )?c\d+|the ooze) (?:ever |still )?(?:grow|get bigger|get counters|get any counters|eat anything|eat|do anything|gain me life)(?: at all| now| with that out)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && (ctx.objects.values.any { o -> o.card.name == "Scavenging Ooze" } || ctx.events.any { it.verb == "cast" && it.card?.name == "Scavenging Ooze" })) t2 = "oozeripped-question"
+        // "Do they see the cards I drew?" (Brainstorm in response to Thoughtseize): the hand is revealed as the spell resolves.
+        if (Regex("""^(?:do|does|will|can) (?:they|he|she|my opponent|the opponent) (?:get to )?(?:see|look at|know) (?:the cards? (?:i|we) (?:drew|draw|just drew|brainstormed into)|my new cards?|what (?:i|we) drew|my (?:whole |new )?hand(?: after)?|the new cards?)\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "cast" && it.player != "me" } && ctx.events.any { it.verb == "cast" && it.player == "me" }) t2 = "seedrawn-question"
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -4468,6 +4474,21 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", obj = r.groupValues[2], to = "survive")
             return true
         }
+        if (clause0 == "oozeripped-question") {
+            val ooze = ctx.objects.values.lastOrNull { o -> o.card.name == "Scavenging Ooze" }
+            val stop = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.card.name in setOf("Rest in Peace", "Leyline of the Void", "Dauthi Voidwalker", "Planar Void") }
+            if (ooze != null) ctx.asks += EventSpec("ask", obj = ooze.id, to = "pt")
+            ctx.asks += EventSpec("ask", to = "text:" + (if (stop == null) "Yes, whenever there is a card in any graveyard to exile: each activation ({G}) exiles target card from a graveyard, and if it was a creature card Scavenging Ooze gets a +1/+1 counter and you gain 1 life; the cards already in graveyards are its food."
+                else if (stop.card.name == "Rest in Peace") "Not while Rest in Peace is out. It exiled every graveyard as it entered, and now any card or token that would be put into a graveyard from anywhere is exiled instead (614.1a), so graveyards stay empty: Scavenging Ooze's ability has no legal target and can't even be activated (602.2b, 115.1), and with no creature card to exile it never gets a counter. It grows again only once Rest in Peace is gone${if (stop.controller != "me") " (your own graveyard too, since Rest in Peace affects everyone)" else ""}."
+                else "Only from your own graveyard. ${stop.card.name} exiles cards going to your opponents' graveyards, not yours (614.1a), so the Ooze can still eat creature cards from your graveyard; their creatures never reach a graveyard for it to target."))
+            return true
+        }
+        if (clause0 == "seedrawn-question") {
+            val theirs = ctx.events.last { it.verb == "cast" && it.player != "me" }.card?.name ?: "their spell"
+            val mine = ctx.events.last { it.verb == "cast" && it.player == "me" }.card?.name ?: "your spell"
+            ctx.asks += EventSpec("ask", to = "text:Yes. $mine was cast in response, so it resolves first (608.1): you draw and put cards back before $theirs does anything. $theirs then resolves and has you reveal your hand as it is at that moment (608.2), so they see every card in it, the ones you just drew included; the two you put back on top of your library aren't in the hand and aren't revealed. That is the point of responding: you choose what to show and what to hide on top.")
+            return true
+        }
         if (clause0 == "quellerback-question") {
             val card = ctx.quelledCard ?: "the exiled card"
             val entry = names.lookup(Names.normalize(card))
@@ -7618,9 +7639,11 @@ class SituationParser(private val names: NameIndex) {
         }
         // "I have only lands in hand" / "their hand is all lands": land cards, as many as a stated hand size or one.
         // Thoughtseize then finds nothing to take, instead of asking what the hand holds.
-        (Regex("""^(?:(?:has|have|holds?|holding|with|'ve got|am holding|'m holding) )?(?:only|nothing but|just|all|solely) lands?(?: cards?)?(?: in ($possPrefix)?hand)?$""").find(c)
-            ?: Regex("""^(my |their |his |her )hand is (?:all|only|nothing but|just|entirely) lands$""").find(c))?.let { r ->
-            val who = possessiveOwner(r.groupValues[1], ctx, m) ?: actor ?: subject ?: "me"
+        (Regex("""^(?:(?:has|have|holds?|holding|with|'ve got|am holding|'m holding) )?(?:only|nothing but|just|all|solely) (?:(\d+) )?lands?(?: cards?)?(?: in ($possPrefix)?hand)?$""").find(c)?.let { r -> Pair(r.groupValues[2], r.groupValues[1].toIntOrNull()) }
+            ?: Regex("""^(my |their |his |her )hand is (?:all|only|nothing but|just|entirely) lands$""").find(c)?.let { r -> Pair(r.groupValues[1], null as Int?) })?.let { (poss, count) ->
+            val who = possessiveOwner(poss, ctx, m) ?: actor ?: subject ?: "me"
+            // "I have only two lands in hand": the count said is the hand.
+            count?.let { ctx.handSize[who] = it }
             val n = ctx.handSize[who] ?: 1
             repeat(n) { var id = slug("a land"); var k = 2; while (ctx.objects.containsKey(id)) id = slug("a land") + "_" + (k++); ctx.objects[id] = ObjectSpec(id, CardRef(name = "a basic land"), controller = who, zone = "hand") }
             if (ctx.handSize[who] == null) ctx.notes += "${if (who == "me") "Your" else "Their"} hand is read as one land card, since only its being all lands was said; say how many cards for a precise count."
@@ -10087,7 +10110,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"${restore(clause0, m)}?\" is answered for each of the two creatures in the outcome below."; return true
         }
         // "do I die?" / "do they lose?" / "am I dead?" / "does Bob survive?"
-        Regex("""^(?:do|does|will|would|am|is|are|can|could) (i|they|my opponent|the opponent|opponent|he|she|@\w+) (?:still |then |also |even )?(die|dies|lose|loses|lose the game|survive|survives|dead|alive|win|wins|make it|live|lives)(?: the game| this| that)?(?: (?:this|next) turn| now| here)?$""").find(clause0)?.let { q ->
+        Regex("""^(?:do|does|will|would|am|is|are|can|could) (i|they|my opponent|the opponent|opponent|he|she|@\w+) (?:still |then |also |even )?(die|dies|lose|loses|lose the game|survive|survives|dead|alive|win|wins|make it|live|lives)(?: the game| this| that)?(?: (?:this|next) turn| now| here| immediately| right away| on the spot| at once| instantly| straight away)?$""").find(clause0)?.let { q ->
             // "does he die?" with a Jace or a Liliana on the table: the planeswalker, not a player.
             if (q.groupValues[1] in setOf("he", "she") && q.groupValues[2] !in setOf("win", "wins", "lose the game")) planeswalkerFor(if (q.groupValues[1] == "he") "him" else "her", ctx)?.let { pw ->
                 ctx.asks += EventSpec("ask", obj = pw, to = if (q.groupValues[2] in setOf("die", "dies", "dead", "lose", "loses")) "die" else "survive")
