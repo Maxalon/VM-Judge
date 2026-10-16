@@ -30803,7 +30803,7 @@
     "text": "I control Tarmogoyf and my opponent casts Dismember on it paying 4 life. What happens?",
     "expect": [
       "opponent pays 4 life.",
-      "Tarmogoyf is -5/-4 until end of turn.",
+      "Tarmogoyf gets -5/-5 until end of turn",
       "Tarmogoyf: the battlefield → your graveyard."
     ],
     "cite": []
@@ -32095,6 +32095,102 @@
     "text": "I have Kitchen Finks with a -1/-1 counter. It dies. Does it come back?",
     "expect": [
       "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it."
+    ],
+    "cite": []
+  },
+  {
+    "id": "revoker-names-vial",
+    "text": "I have Phyrexian Revoker naming Aether Vial. Can they still activate Vial?",
+    "expect": [
+      "No: Phyrexian Revoker says Aether Vial's activated abilities can't be activated."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-zero-cards-vs-goyf-four-types",
+    "text": "They attack with Tarmogoyf. I have Ensnaring Bridge and 0 cards. Graveyards have 4 types. Can it attack?",
+    "expect": [
+      "No: Tarmogoyf can't attack (Ensnaring Bridge: You have 0 cards in hand and Tarmogoyf's power is 4, 508.1c)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-cannot-target-firewalker",
+    "text": "I cast Lightning Bolt at their Kor Firewalker. What happens?",
+    "expect": [
+      "Lightning Bolt can't target Kor Firewalker."
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-in-snapcaster-for-free-under-thalia",
+    "text": "I have Thalia and Vial on 2. Can I vial in a Snapcaster for free?",
+    "expect": [
+      "Snapcaster Mage enters the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "confidant-bolted-in-response-to-trigger",
+    "text": "They Bolt my Dark Confidant in response to its trigger. Do I still lose life?",
+    "expect": [
+      "Dark Confidant's trigger still resolves even though Dark Confidant is gone (113.7a).",
+      "Yes: you lose life equal to the revealed card's mana value"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "blood-moon-dryad-arbor-still-creature",
+    "text": "They cast Blood Moon. I have Dryad Arbor. Is it still a creature?",
+    "expect": [
+      "Yes: Dryad Arbor is a creature (1/1)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "goblin-guide-vs-bridge-one-card",
+    "text": "I have Goblin Guide and they have Ensnaring Bridge with 1 card. Can Guide attack?",
+    "expect": [
+      "Goblin Guide can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-vs-snapcaster-trigger",
+    "text": "They have Rest in Peace. I cast Snapcaster Mage. Does it do anything?",
+    "expect": [
+      "Snapcaster Mage's trigger has no legal target (Rest in Peace keeps graveyards empty) and does nothing."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-vs-probe-paid-with-life",
+    "text": "I control Thalia. They cast Gitaxian Probe for free with Phyrexian mana paying life. Do they have to pay 1 mana?",
+    "expect": [
+      "Gitaxian Probe still costs {1} more (Thalia, Guardian of Thraben): a cost increase applies to an alternative cost too (601.2f)."
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "delver-bolted-in-response-to-upkeep-trigger",
+    "text": "I have Delver of Secrets and they Bolt it in response to the upkeep trigger. Does it still flip?",
+    "expect": [
+      "Delver of Secrets's trigger still resolves even though Delver of Secrets is gone (113.7a), but with nothing left to transform."
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "goyf-45-vs-dismember-survives",
+    "text": "My Tarmogoyf is a 4/5. They Dismember it. Does it die?",
+    "expect": [
+      "Tarmogoyf gets -5/-5 until end of turn",
+      "No: Tarmogoyf is still on the battlefield."
     ],
     "cite": []
   }

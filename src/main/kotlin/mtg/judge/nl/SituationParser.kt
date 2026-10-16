@@ -1619,6 +1619,24 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^(they|he|she|my opponent|the opponent) (?:have|has|hold|holds) (?:one|1|a single|only one|just one) card in (?:their |his |her )?hand,? (?:which|and it|that|and that) is (?:an? )?(land|basic land|c\d+|creature|instant|sorcery)\b""", RegexOption.IGNORE_CASE), "$1 have a $2 in hand")
         // "Can they cast it in response?": the cast, then whether it was allowed.
         t2 = t2.replace(Regex("""^can (they|he|she|i|we|my opponent|the opponent) (?:even |still |just )?(?:cast|play) (it|that|(?:the |their |my )?c\d+) in response(?: to (?:it|that|my spell|the spell))?\??$""", RegexOption.IGNORE_CASE), "$1 cast $2 in response, castallowed-question")
+        // "Ensnaring Bridge with 1 card": the cards are the hand.
+        t2 = t2.let { t0 -> Regex("""\b(c\d+) with (\d+|one|two|three|four|no|zero) cards?\b(?! in)""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1].lowercase()]?.display == "Ensnaring Bridge") "${r.groupValues[1]} with ${r.groupValues[2]} cards in hand" else r.value } }
+        // "Can I vial in a Snapcaster for free?": the Vial activation, with the question about it.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:still |even |just )?(vial|put|drop|flash|sneak) in (?:an? |my |the )?(c\d+)(?: with (?:my |the )?c\d+)?(?: for free| for nothing| without paying(?: mana)?| at instant speed| now| this turn| right now)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (r.groupValues[1].lowercase() == "vial" || ctx.objects.values.any { it.card.name == "Aether Vial" && it.zone == "battlefield" }) "vialin-question ${r.groupValues[2]}" else t0 } ?: t0 }
+        // "They Bolt my Dark Confidant in response to its trigger": the upkeep trigger is on the stack first.
+        t2 = t2.let { t0 -> Regex("""^(.*?),?\s+in response to (?:its|the|that|my|their|his|her) (upkeep |draw |etb |enters |enter |attack |own )?(?:trigger|triggered ability)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            val head = r.groupValues[1]
+            val upkeepCards = setOf("Dark Confidant", "Delver of Secrets", "Phyrexian Arena", "Bitterblossom", "Sylvan Library", "Bloodghast", "Vampire Nighthawk")
+            val tok = Regex("""(c\d+)""").findAll(head).map { it.value }.firstOrNull { m.cards[it]?.display in upkeepCards }
+            val upkeep = r.groupValues[2].lowercase().startsWith("upkeep") || tok != null
+            if (!upkeep) head
+            else {
+                val whose = if (tok != null && Regex("""\b(?:their|his|her|my opponent's|the opponent's) $tok\b""").containsMatchIn(head)) "their" else if (tok != null && Regex("""\bmy $tok\b""").containsMatchIn(head)) "my" else if (Regex("""^(?:they|he|she|my opponent|the opponent)\b""").containsMatchIn(head)) "my" else "my"
+                ctx.notes += "\"in response to its trigger\" is read as the upkeep trigger already on the stack; the spell resolves first, and the trigger then resolves on its own (113.7a)."
+                "$whose upkeep begins, $head"
+            }
+        } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
@@ -3195,7 +3213,11 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         Regex("""^vialin-question (it|that|c\d+)$""").find(clause0)?.let { r ->
-            val vial = ctx.objects.values.first { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" }
+            val vial = ctx.objects.values.firstOrNull { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" }
+                ?: ctx.objects.values.firstOrNull { it.card.name == "Aether Vial" && it.zone == "battlefield" }
+                ?: names.lookup(Names.normalize("Aether Vial"))?.let { v -> val vid = addObject(v, "me", false, ctx); ctx.objects[vid] = ctx.objects.getValue(vid).copy(counters = mapOf("charge" to 1)); ctx.notes += "No Aether Vial was described: one is assumed on the battlefield under your control with 1 charge counter (say how many it has)."; ctx.objects.getValue(vid) }
+                ?: return@let
+            if (ctx.objects.values.any { it.zone == "battlefield" && it.card.name in setOf("Thalia, Guardian of Thraben", "Chalice of the Void", "Counterbalance", "Sphere of Resistance", "Thorn of Amethyst", "Lodestone Golem") }) ctx.notes += "Aether Vial puts the creature onto the battlefield without casting it, so nothing that taxes or counters spells (Thalia, Chalice of the Void, counterspells) touches it: it was never a spell (601.2, 603.6)."
             val cardId = if (cardRef.matches(r.groupValues[1])) m.cards[r.groupValues[1]]?.let { c -> ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "hand" && it.card.name == c.display }?.id ?: addObject(c, "me", false, ctx, zone = "hand", allowDuplicate = true) }
                          else ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "hand" && isCreatureName(it.card.name) }?.id
             ctx.events += EventSpec("activate", player = "me", obj = vial.id, to = cardId?.let { "put:$it" })
@@ -5097,7 +5119,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.lastActor = taker; ctx.lastVerb = "discard"; ctx.lastMentioned = id; ctx.note(victim); return true
         }
         // "I put in a Snapcaster at instant speed", "vial in Snapcaster": the creature comes in off Aether Vial.
-        Regex("""^(?:(?:i|we|they|he|she|my opponent|the opponent|@\w+) )?(?:vials? in|puts? in|drops? in|vials?) (?:an? |my |the )?(c\d+|(?:\d+/\d+ )?[a-z]+(?: token)?)(?: (?:with|off|using|via) (?:my |the |their )?(c\d+))?(?: at instant speed| on (?:their|my) turn| in response| at (?:their |my )?(?:end step|eot|end of turn)| during combat)?$""").find(c)?.let { r ->
+        Regex("""^(?:(?:i|we|they|he|she|my opponent|the opponent|@\w+) )?(?:vials? in|puts? in|drops? in|vials?) (?:an? |my |the )?(c\d+|(?:\d+/\d+ )?[a-z]+(?: token)?)(?: (?:with|off|using|via) (?:my |the |their )?(c\d+))?(?: at instant speed| on (?:their|my) turn| in response| at (?:their |my )?(?:end step|eot|end of turn)| during combat| for free| for nothing| without paying(?: mana| anything| for it)?)?$""").find(c)?.let { r ->
             val who0 = actorOfClause(c) ?: ctx.lastActor ?: "me"
             // "They have Aether Vial on 1 and vial in a Spirit": the Vial's controller is the one using it; with no Vial described, one is assumed.
             val vialObj = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { m.cards.getValue(it) }?.let { objectIdFor(it, ctx) ?: addObject(it, who0, false, ctx) }?.let { ctx.objects[it] }
@@ -5122,7 +5144,9 @@ class SituationParser(private val names: NameIndex) {
                     ctx.notes += "\"a ${typeWord.replaceFirstChar { c -> c.uppercase() }}\" is read as an unnamed $mv-mana 2/2 creature card in ${if (who == "me") "your" else "their"} hand; name the card for its real size and cost."
                     cid
                 }
-            ctx.events += EventSpec("activate", player = who, obj = vial, to = "put:$cardId"); ctx.lastActor = who; ctx.lastMentioned = cardId; return true
+            ctx.events += EventSpec("activate", player = who, obj = vial, to = "put:$cardId"); ctx.lastActor = who; ctx.lastMentioned = cardId
+            if (ctx.objects.values.any { it.zone == "battlefield" && it.card.name in setOf("Thalia, Guardian of Thraben", "Chalice of the Void", "Counterbalance", "Sphere of Resistance", "Thorn of Amethyst", "Lodestone Golem") }) ctx.notes += "Aether Vial puts the creature onto the battlefield without casting it, so nothing that taxes or counters spells (Thalia, Chalice of the Void, counterspells) touches it: it was never a spell (601.2, 603.6)."
+            return true
         }
         // "I play a land and Sol Ring turn 1": the second thing played, with the verb left off and the turn said after it.
         Regex("""^(?:(?:i|we|they|he|she|my opponent|the opponent|@\w+) )?(c\d+)(?: on)? (?:turn|t) ?(\d+|one|two|three|four|five)$""").find(c)?.let { r ->

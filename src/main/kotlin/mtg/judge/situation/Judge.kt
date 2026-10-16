@@ -1311,7 +1311,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         (if (gain) Regex("""(?i)(?:^|\b)$subj (?:gains?|gain) (\d+) life\b""") else Regex("""(?i)(?:^|\b)$subj,? (?:who )?(?:loses?|lose) (\d+) life\b""")).findAll(text).sumOf { it.groupValues[1].toInt() }
                     }
                     val asked = e.amount
+                    val revealedUnknown = !gain && state.clarifications.any { c -> c.toString().contains("revealed card") || c.toString().contains("top card") }
                     state.outcomes += when {
+                        total == 0 && revealedUnknown -> "Yes: ${p.subject.lowercase()} ${p.v("loses", "lose")} life equal to the revealed card's mana value; say which card it was for the number (a land is 0)."
                         total == 0 -> "No: ${p.subject.lowercase()} ${if (gain) p.v("gains", "gain") else p.v("loses", "lose")} no life here."
                         asked != null && asked != total -> "No: ${p.subject.lowercase()} ${if (gain) p.v("gains", "gain") else p.v("loses", "lose")} $total life in all, not $asked."
                         asked != null -> "Yes: ${p.subject.lowercase()} ${if (gain) p.v("gains", "gain") else p.v("loses", "lose")} $total life."

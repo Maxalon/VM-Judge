@@ -1427,6 +1427,12 @@ class Engine(val state: GameState) {
                 }
             }
             StackKind.TRIGGERED, StackKind.ACTIVATED -> {
+                // Dark Confidant bolted in response to its upkeep trigger: the ability on the stack is independent of its source (113.7a).
+                if (item.kind == StackKind.TRIGGERED && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && !Regex("""(?i)leaves the battlefield|dies|is put into a graveyard|~ enters|this creature enters|this permanent enters|enters the battlefield""").containsMatchIn(item.text)) {
+                    val transforms = Regex("""(?i)\btransform\b""").containsMatchIn(item.text)
+                    trace.step("${item.source.name} has left the battlefield, but its triggered ability is already on the stack and resolves anyway: an ability on the stack exists independently of its source, using the source's last known information where it needs it.${if (transforms) " The part that would transform ${item.source.name} does nothing: there's no permanent to transform." else ""}", "113.7a", "608.2h")
+                    state.outcomes += "${item.source.name}'s trigger still resolves even though ${item.source.name} is gone (113.7a)${if (transforms) ", but with nothing left to transform" else ""}."
+                }
                 item.effect?.let { applyEffect(it, item) }
                 trace.step("${item.describe} finishes resolving and ceases to exist.", "608.2c", "608.2n")
             }
@@ -2980,7 +2986,9 @@ class Engine(val state: GameState) {
             is Effect.Pump -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let {
                 it.pumps += effect.power to effect.toughness
                 trace.step("${it.name} gets ${signed(effect.power)}/${signed(effect.toughness)} until end of turn; it's now ${it.power}/${it.toughness}.", "611.2a")
-                state.outcomes += "${it.name} is ${it.power}/${it.toughness} until end of turn."
+                // Tarmogoyf under Dismember: its base size moves again once the spell reaches the graveyard, so the final size is said at the end.
+                state.outcomes += if (Regex("""(?i)power and toughness are each equal to|power is equal to the number|toughness is equal to that number""").containsMatchIn(it.def.oracleText)) "${it.name} gets ${signed(effect.power)}/${signed(effect.toughness)} until end of turn (its base size is set by its own ability, so its final size is below)."
+                    else "${it.name} is ${it.power}/${it.toughness} until end of turn."
             } }
             is Effect.PumpSameName -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { t ->
                 // Tokens made by the same effect share a name (a Zombie token is "Zombie"), so they all shrink together.
