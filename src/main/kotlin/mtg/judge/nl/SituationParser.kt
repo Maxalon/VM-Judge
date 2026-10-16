@@ -213,6 +213,8 @@ class SituationParser(private val names: NameIndex) {
             // spell looks at, not a card waiting to be cast; the same when the hand holds more than the one card.
             if (ctx.objects.values.count { it.zone == "hand" && it.controller == who } != 1) continue
             if (ctx.events.any { e -> e.verb == "cast" && (e.card?.name?.lowercase() in discardSpells || e.card?.name?.contains("discard", true) == true || e.card?.name?.contains("reveals their hand", true) == true) }) continue
+            // "Surgical Extraction on my Bolt. I have another Bolt in hand": the copy in hand is what the spell goes looking for.
+            if (ctx.events.any { e -> e.verb == "cast" && e.card?.name in setOf("Surgical Extraction", "Extirpate", "Cranial Extraction", "Lost Legacy", "Memoricide", "Slaughter Games", "Unmoored Ego", "Necromentia", "Infinite Obliteration", "Sadistic Sacrament") }) continue
             val lastOther = ctx.events.indexOfLast { it.player != null && it.player != who && it.verb in setOf("attack", "attackAll", "cast", "activate") }
             if (lastOther < 0) continue
             val card = names.lookup(Names.normalize(held.card.name ?: "")) ?: continue
@@ -1622,7 +1624,7 @@ class SituationParser(private val names: NameIndex) {
         // "Ensnaring Bridge with 1 card": the cards are the hand.
         t2 = t2.let { t0 -> Regex("""\b(c\d+) with (\d+|one|two|three|four|no|zero) cards?\b(?! in)""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1].lowercase()]?.display == "Ensnaring Bridge") "${r.groupValues[1]} with ${r.groupValues[2]} cards in hand" else r.value } }
         // "Can I vial in a Snapcaster for free?": the Vial activation, with the question about it.
-        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:still |even |just )?(vial|put|drop|flash|sneak) in (?:an? |my |the )?(c\d+)(?: with (?:my |the )?c\d+)?(?: for free| for nothing| without paying(?: mana)?| at instant speed| now| this turn| right now)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:still |even |just )?(vial|put|drop|flash|sneak) in (?:an? |my |the )?(c\d+|creature|\d+-?drop|\d+/\d+(?: creature)?)(?: with (?:my |the )?c\d+)?(?: for free| for nothing| without paying(?: mana)?| at instant speed| now| this turn| right now)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             if (r.groupValues[1].lowercase() == "vial" || ctx.objects.values.any { it.card.name == "Aether Vial" && it.zone == "battlefield" }) "vialin-question ${r.groupValues[2]}" else t0 } ?: t0 }
         // "They Bolt my Dark Confidant in response to its trigger": the upkeep trigger is on the stack first.
         t2 = t2.let { t0 -> Regex("""^(.*?),?\s+in response to (?:its|the|that|my|their|his|her) (upkeep |draw |etb |enters |enter |attack |own )?(?:trigger|triggered ability)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
@@ -1637,6 +1639,16 @@ class SituationParser(private val names: NameIndex) {
                 "$whose upkeep begins, $head"
             }
         } ?: t0 }
+        // "I activate Deathrite Shaman exiling a Lightning Bolt from my graveyard": the card is the target.
+        t2 = t2.replace(Regex("""^(.*\bactivates? (?:my |the )?c\d+),? (?:exiling|to exile|exile|eating) (?:an? |the |my )?(c\d+) from (my|the|their) graveyard\??$""", RegexOption.IGNORE_CASE), "$1 targeting $2 in $3 graveyard")
+        // "How much do they pay?": the spell's cost.
+        t2 = t2.replace(Regex("""^how much (?:do|does|did|will|would) (?:they|he|she|i|we|my opponent|the opponent) (?:have to |need to )?pay(?: for (it|that|c\d+))?\??$""", RegexOption.IGNORE_CASE)) { r -> "how much does ${r.groupValues[1].ifEmpty { "it" }} cost" }
+        // "Can I attack with my 2/2?": the attack, then the question about that creature.
+        t2 = t2.replace(Regex("""^can (?:i|we) (?:still |even |also )?attack with my (\d+/\d+)\??$""", RegexOption.IGNORE_CASE), "i attack with my $1, can it attack")
+        // "Can they still destroy my land with it?" (Ghost Quarter under Blood Moon): whether the ability can be activated.
+        t2 = t2.replace(Regex("""^can (they|he|she|i|we) (?:still |even )?(?:destroy|kill|blow up|wasteland|hit|remove) (?:my|their|a|one of my|one of their) lands? with (it|that|(?:the |their |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "can $1 activate $2")
+        // "I have another Bolt in hand": a second copy, in hand.
+        t2 = t2.replace(Regex("""^(?:i|we) have another (c\d+) in (?:my |our )?hand$""", RegexOption.IGNORE_CASE), "i have $1 in hand")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
@@ -2846,7 +2858,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean {
-        if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("early: [$clause0] lastMentioned=${ctx.lastMentioned} lastCast=${ctx.lastCastEntry?.display} objects=${ctx.objects.keys}")
+        if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("early: [$clause0] lastMentioned=${ctx.lastMentioned} lastCast=${ctx.lastCastEntry?.display} objects=${ctx.objects.keys} events=${ctx.events.map { it.verb + ":" + (it.card?.name ?: it.obj ?: "") }}")
         // "I have another in hand": a second copy of the card just mentioned, in the speaker's hand.
         Regex("""^(?:i|we) (?:have|hold|'ve got|got) another(?: one| copy)?(?: of (?:it|that|them|(?:the |my )?c\d+))? in (?:my |our )?hand$""").find(clause0)?.let {
             val src = Regex("""(c\d+)""").find(clause0)?.value?.let { m.cards[it] }
@@ -3212,14 +3224,21 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", to = "text:There's nothing to redirect: $spell already targets Spellskite. You could still activate Spellskite (choosing the same target again is legal, 115.7), but it changes nothing; Spellskite is 0/4, so 3 damage doesn't kill it. About paying with life: at 2 life you may pay 2 life for {U/P} (119.4), but that leaves you at 0 and you lose as soon as state-based actions are checked (704.5a), so pay {U} if you activate it at all.")
             return true
         }
-        Regex("""^vialin-question (it|that|c\d+)$""").find(clause0)?.let { r ->
+        Regex("""^vialin-question (it|that|c\d+|creature|\d+-?drop|\d+/\d+(?: creature)?)$""").find(clause0)?.let { r ->
             val vial = ctx.objects.values.firstOrNull { it.card.name == "Aether Vial" && it.controller == "me" && it.zone == "battlefield" }
                 ?: ctx.objects.values.firstOrNull { it.card.name == "Aether Vial" && it.zone == "battlefield" }
                 ?: names.lookup(Names.normalize("Aether Vial"))?.let { v -> val vid = addObject(v, "me", false, ctx); ctx.objects[vid] = ctx.objects.getValue(vid).copy(counters = mapOf("charge" to 1)); ctx.notes += "No Aether Vial was described: one is assumed on the battlefield under your control with 1 charge counter (say how many it has)."; ctx.objects.getValue(vid) }
                 ?: return@let
             if (ctx.objects.values.any { it.zone == "battlefield" && it.card.name in setOf("Thalia, Guardian of Thraben", "Chalice of the Void", "Counterbalance", "Sphere of Resistance", "Thorn of Amethyst", "Lodestone Golem") }) ctx.notes += "Aether Vial puts the creature onto the battlefield without casting it, so nothing that taxes or counters spells (Thalia, Chalice of the Void, counterspells) touches it: it was never a spell (601.2, 603.6)."
             val cardId = if (cardRef.matches(r.groupValues[1])) m.cards[r.groupValues[1]]?.let { c -> ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "hand" && it.card.name == c.display }?.id ?: addObject(c, "me", false, ctx, zone = "hand", allowDuplicate = true) }
-                         else ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "hand" && isCreatureName(it.card.name) }?.id
+                         else if (r.groupValues[1] in setOf("it", "that")) ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "hand" && isCreatureName(it.card.name) }?.id
+                         else {
+                             // "Can I Vial in a creature?": an unnamed creature with the Vial's mana value.
+                             val mv = Regex("""^(\d+)-?drop""").find(r.groupValues[1])?.groupValues?.get(1)?.toIntOrNull() ?: vial.counters["charge"] ?: 1
+                             val name = "a $mv-mana creature"; var cid = slug(name); var k = 2; while (ctx.objects.containsKey(cid)) cid = slug(name) + "_" + (k++)
+                             ctx.objects[cid] = ObjectSpec(cid, CardRef(name = name), controller = "me", zone = "hand")
+                             ctx.notes += "\"a creature\" is read as an unnamed $mv-mana 2/2 creature card in your hand; name the card for its real size and cost."; cid
+                         }
             ctx.events += EventSpec("activate", player = "me", obj = vial.id, to = cardId?.let { "put:$it" })
             ctx.notes += "Aether Vial's ability is an activated ability with no timing restriction, so it can be activated on your opponent's turn (602.5); the creature's mana value must equal the number of charge counters. The outcome shows it being activated."
             return true
@@ -10142,6 +10161,13 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^(?:the|that|this) (?:trigger|triggered ability)\b""").containsMatchIn(seg)) {
             val lastObj = ctx.objects.keys.lastOrNull()
             if (lastObj != null) { out += "$lastObj:trigger"; return out }
+        }
+        // "targeting the Lightning Bolt in my graveyard" (Deathrite Shaman, Surgical Extraction): that card, in that graveyard.
+        Regex("""^(?:the |my |their |an? )?(c\d+) (?:in|from) (my|their|his|her|the|an opponent's|my opponent's) graveyard$""").find(seg.trim())?.let { r ->
+            val card = m.cards.getValue(r.groupValues[1])
+            val owner = when (r.groupValues[2]) { "my" -> "me"; "the" -> ctx.clauseActor ?: ctx.lastActor ?: "me"; else -> pronounPlayer(ctx, "their") }
+            val id = ctx.objects.values.lastOrNull { it.card.oracleId == card.oracleId && it.zone == "graveyard" && it.controller == owner }?.id ?: addObject(card, owner, false, ctx, zone = "graveyard", allowDuplicate = true)
+            out += id; return out
         }
         // A spell on the stack, or a permanent.
         Regex("""(?:the |my |their |an? )?(c\d+)""").find(seg)?.let { t ->

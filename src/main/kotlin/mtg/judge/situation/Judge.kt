@@ -1417,6 +1417,11 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     // "I have Loxodon Smiter in hand. Can I respond?": what's in hand decides.
                     val asker = e.player ?: "me"
                     val held = state.objects.values.filter { it.zone == Zone.HAND && it.controller == asker }
+                    // Teferi, Time Raveler on the other side: nothing at instant speed, flash or not.
+                    state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.controller != asker && Regex("""(?i)each opponent can cast spells only any time they could cast a sorcery""").containsMatchIn(o.def.oracleText) }?.let { tef ->
+                        state.outcomes += "No: ${tef.name} says each opponent can cast spells only any time they could cast a sorcery, so ${if (asker == "me") "you" else state.player(asker).subject.lowercase()} can't cast anything on ${state.player(tef.controller).possessive} turn or while anything is on the stack, flash or not: flash only lets a spell be cast when you could cast an instant, and ${tef.name} takes those times away."
+                        return true
+                    }
                     // "Can I flash it in?": a flash creature held answers itself.
                     held.firstOrNull { h -> h.def.has("flash") && "Instant" !in h.def.types }?.takeIf { ss == null }?.let { h ->
                         state.outcomes += "Yes: ${h.name} has flash, so it can be cast any time you could cast an instant (702.8a): in response, before ${state.stack.lastOrNull()?.source?.name ?: "the spell"} resolves, as long as you have the mana for it."

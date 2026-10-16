@@ -32193,5 +32193,98 @@
       "No: Tarmogoyf is still on the battlefield."
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-chalice-x1-cost",
+    "text": "I have Thalia. They cast Chalice of the Void for X=1. How much do they pay?",
+    "expect": [
+      "Chalice of the Void costs {X}{X} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 3 mana in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-blocks-22-persists",
+    "text": "They attack with a 2/2. I block with Kitchen Finks. Does Finks die?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "No: Kitchen Finks is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-takes-copy-in-hand",
+    "text": "They cast Surgical Extraction on the Lightning Bolt in my graveyard. I have another Bolt in hand. Do they get it too?",
+    "expect": [
+      "Surgical Extraction: every Lightning Bolt in your graveyard, hand and library is exiled (2 known here)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "leyline-does-not-protect-creatures",
+    "text": "I control Leyline of Sanctity. They cast Lightning Bolt at my Tarmogoyf. Does Leyline stop it?",
+    "expect": [
+      "Leyline of Sanctity doesn't protect Tarmogoyf: it gives its controller hexproof, not their creatures."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-asks-controllers-hand",
+    "text": "I have two cards in hand and they have Ensnaring Bridge. Can I attack with my 2/2?",
+    "expect": [
+      "Yes: a 2/2 creature can attack."
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-under-cage",
+    "text": "They have Grafdigger's Cage. Can I Vial in a creature?",
+    "expect": [
+      "a 1 mana creature enters the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "mirran-crusader-vs-black-blocker",
+    "text": "I attack with Mirran Crusader and they block with a black 4/4. What happens?",
+    "expect": [
+      "a 4/4 black creature can't block Mirran Crusader (protection).",
+      "opponent takes 2 damage. (×2)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "their-spellskite-redirects-bolt",
+    "text": "I cast Lightning Bolt at my opponent at 3 life while they have Spellskite. Can they redirect it?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of opponent."
+    ],
+    "cite": []
+  },
+  {
+    "id": "deathrite-exiles-bolt-drain",
+    "text": "I activate Deathrite Shaman exiling a Lightning Bolt from my graveyard. What happens?",
+    "expect": [
+      "Lightning Bolt: your graveyard → exile.",
+      "opponent loses 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "teferi-stops-flash",
+    "text": "My opponent has Teferi, Time Raveler. I have Snapcaster Mage in hand. Can I flash it in on their turn?",
+    "expect": [
+      "No: Teferi, Time Raveler says each opponent can cast spells only any time they could cast a sorcery"
+    ],
+    "cite": []
+  },
+  {
+    "id": "blood-moon-vs-ghost-quarter",
+    "text": "I have Blood Moon. They have Ghost Quarter. Can they still destroy my land with it?",
+    "expect": [
+      "No: Blood Moon makes Ghost Quarter a Mountain with none of its own abilities"
+    ],
+    "cite": [
+      "305.7"
+    ]
   }
 ]

@@ -4136,7 +4136,7 @@ class Engine(val state: GameState) {
         val self = selfReduction(obj)
         val tax = taxes.sumOf { it.second.amount } + commanderTax - self.first
         // The object asked about may be a hand copy the question made; the X chosen is on the one that was cast.
-        val xPart = if (printed.contains("{X}")) (obj.x ?: state.objects.values.lastOrNull { it.def.name == card.name && it.x != null }?.x ?: 0) else 0
+        val xPart = if (printed.contains("{X}")) (obj.x ?: state.objects.values.lastOrNull { it.def.name == card.name && it.x != null }?.x ?: 0) * Regex("""\{X\}""").findAll(printed).count() else 0
         var total = maxOf(colouredPips(printed), card.manaValue.toInt() + xPart + tax)
         costFloor(total)?.let { (o, f) -> return "${card.name} would cost $total mana${if (xPart > 0) " with X = $xPart" else ""}, but ${o.name} is untapped and makes each spell that would cost less than ${f.amount} cost ${f.amount}: $total → ${f.amount} mana in all (the extra is generic)." }
         if (xPart > 0) trace.step("X is $xPart, so ${card.name}'s {X} is paid as $xPart.", "107.3a")
