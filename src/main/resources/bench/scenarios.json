@@ -33291,5 +33291,111 @@
       "You lose 2 life in all"
     ],
     "cite": []
+  },
+  {
+    "id": "spellskite-bolted-in-response-redirect-resolves",
+    "text": "They Bolt my Tarmogoyf. I activate Spellskite targeting the Bolt. They Bolt Spellskite in response. Does the redirect still happen?",
+    "expect": [
+      "Yes: Spellskite's ability resolved",
+      "Lightning Bolt now targets Spellskite instead of Tarmogoyf"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "firewalker-vs-bolt",
+    "text": "I have Kor Firewalker. They cast Lightning Bolt at it. What happens?",
+    "expect": [
+      "Lightning Bolt can't target Kor Firewalker"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-flash-block-2-2",
+    "text": "My opponent attacks with a 2/2. I flash in Snapcaster Mage and block. Does Snapcaster survive?",
+    "expect": [
+      "Snapcaster Mage: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-bolted-in-response-next-spell",
+    "text": "I cast Thalia and they Bolt it in response. Does my next spell cost more?",
+    "expect": [
+      "Lightning Bolt can't target Thalia, Guardian of Thraben while it's still a spell on the stack",
+      "Yes, while Thalia, Guardian of Thraben stays on the battlefield"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "vial-3-thalia-mv-2",
+    "text": "I have Aether Vial on 3. Can I put in Thalia at instant speed?",
+    "expect": [
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 3 counters)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-for-2-life-at-2",
+    "text": "I cast Gitaxian Probe for 2 life at 2 life. Do I lose?",
+    "expect": [
+      "You lose the game"
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "thalia-does-not-tax-bob-trigger",
+    "text": "I have Dark Confidant and Thalia in play. Does Thalia tax Bob's trigger?",
+    "expect": [
+      "No. Thalia, Guardian of Thraben's effect raises the cost of spells",
+      "Dark Confidant's ability isn't a spell"
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-snapcaster-no-flashback",
+    "text": "They cast Surgical Extraction on my Snapcaster in the graveyard. Can I flash it back first?",
+    "expect": [
+      "No. Snapcaster Mage has no flashback"
+    ],
+    "cite": [
+      "702.34a"
+    ]
+  },
+  {
+    "id": "delver-reveal-bolt-have-to-flip",
+    "text": "My Delver of Secrets reveals Lightning Bolt on upkeep. Do I have to flip it?",
+    "expect": [
+      "No. Delver of Secrets' trigger says \"you may reveal that card\""
+    ],
+    "notExpect": [
+      "Yes. Delver of Secrets' upkeep trigger"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-next-creature-not-taxed",
+    "text": "I have Thalia. Does my next creature cost more?",
+    "expect": [
+      "No: Thalia, Guardian of Thraben taxes noncreature spells"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "thalia-next-instant-taxed",
+    "text": "I have Thalia. Does my next instant cost more?",
+    "expect": [
+      "Yes: Thalia, Guardian of Thraben makes each noncreature spell cost {1} more"
+    ],
+    "cite": [
+      "601.2f"
+    ]
   }
 ]

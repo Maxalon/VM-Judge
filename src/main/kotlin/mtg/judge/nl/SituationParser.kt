@@ -302,7 +302,12 @@ class SituationParser(private val names: NameIndex) {
     /** "Bob then bolts my Bears": the subject stands alone, so the "then" has to step over it to stay in front. */
     private val leadingThen = Regex("""^(?:then|next|later|finally)\s+""", RegexOption.IGNORE_CASE)
 
-    private fun splitSentences(text0: String): List<String> {
+    private fun splitSentences(text00: String): List<String> {
+        // "Does Thalia tax Bob's trigger?" with Dark Confidant in play: Bob is the card, not a player.
+        var text0 = text00
+        if (Regex("""(?i)\bdark confidant\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""\bBob\b"""), "Dark Confidant")
+        // "Does the redirect still happen?" about Spellskite: the noun, not the card Redirect.
+        if (Regex("""(?i)\bspellskite\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""(?i)\bthe redirect\b"""), "the redirection")
         val text = spokenLoyalty.replace(text0) { r ->
             val n = r.groupValues[3].toIntOrNull() ?: (spokenNumbers.indexOf(r.groupValues[3].lowercase()) + 1)
             "${r.groupValues[1]} ${if (r.groupValues[2].lowercase() == "minus") "-" else "+"}$n"
@@ -879,6 +884,17 @@ class SituationParser(private val names: NameIndex) {
                 if (m.cards[r.groupValues[2]]?.display?.lowercase() in discardSpells) "${r.groupValues[1]}, their hand is ${r.groupValues[3]}" else t0 } ?: t0 }
         // "How do I assign damage?": the attacker's damage among its blockers.
         t2 = t2.replace(Regex("""^how (?:do|should|would|can|must) (?:i|we) (?:assign|divide|split|distribute|order|allocate) (?:my |the |its |their |combat |the combat )?damage(?: (?:among|between|to) (?:them|the blockers|both|my blockers|their blockers))?\??$""", RegexOption.IGNORE_CASE), "damageassign-question")
+        // "Does the redirection still happen?": whether Spellskite's ability still resolves.
+        t2 = t2.replace(Regex("""^(?:does|will|would) (?:the |its |spellskite's )?redirection (?:still |even )?(?:happen|work|resolve|go through|go off|stick)\??$""", RegexOption.IGNORE_CASE), "skiteresolves-question")
+        // "Does my next spell cost more?": the taxes on the battlefield that reach that player's spells.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|would|do) (my|their|his|her|our) (?:next |other |future |later )?(spells?|instants?|sorcer(?:y|ies)|creatures?|creature spells?|noncreature spells?|artifacts?|enchantments?|planeswalkers?) (?:still |now |also )?cost (?:more|extra|one more|1 more|\{1\} more|2 more|an extra|more now|more mana)(?: now| too| as well| then| from now on)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                "nextspelltax-question ${if (r.groupValues[1].lowercase() in setOf("my", "our")) "me" else "they"} ${r.groupValues[2].lowercase().trimEnd('s').replace("sorcerie", "sorcery").replace(" ", "_")}" } ?: t0 }
+        // "Does Thalia tax Bob's trigger?": a cost increase on spells against an ability.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|would) (?:my |the |their )?(c\d+) (?:tax|increase the cost of|make .*? cost more|affect|hit|apply to) (?:my |the |their )?(c\d+)(?:'s)? (?:trigger|triggered ability|ability|etb|etb trigger|activation|activated ability)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "taxtrigger-question ${r.groupValues[1]} ${r.groupValues[2]}" } ?: t0 }
+        // "Can I flash it back first?" against a graveyard spell: whether the card has flashback at all.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:flash (it|that|(?:the |my )?c\d+) back|(?:flashback|flash back) (it|that|(?:the |my )?c\d+)|cast (it|that|(?:the |my )?c\d+) (?:with flashback|from (?:my |the )?graveyard)) (?:first|in response|before (?:it|that) resolves|before that|right now|now)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val what = (r.groupValues[1].ifEmpty { r.groupValues[2] }.ifEmpty { r.groupValues[3] }).removePrefix("the ").removePrefix("my ")
+                "flashfirst-question $what" } ?: t0 }
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -1619,7 +1635,7 @@ class SituationParser(private val names: NameIndex) {
             if (twin != null && partner != null) t2 = "twincombo-question"
         }
         // "My Delver of Secrets trigger reveals Lightning Bolt": the reveal, in the first person.
-        t2 = t2.let { t0 -> Regex("""^my (c\d+)(?:'s)? (?:trigger |upkeep trigger |ability |upkeep )?reveal(?:s|ed)? (?:an? |the )?(c\d+|land|creature|instant|sorcery|artifact|enchantment|planeswalker)(?: card)?(?: off the top| on top)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display?.startsWith("Delver of Secrets") == true) "i reveal ${r.groupValues[2]}" else t0 } ?: t0 }
+        t2 = t2.let { t0 -> Regex("""^my (c\d+)(?:'s)? (?:trigger |upkeep trigger |ability |upkeep )?reveal(?:s|ed)? (?:an? |the )?(c\d+|land|creature|instant|sorcery|artifact|enchantment|planeswalker)(?: card)?(?: off the top| on top)?(?: (?:on|at|in|during) (?:my |the )?(?:next )?upkeep)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[1]]?.display?.startsWith("Delver of Secrets") == true) "i reveal ${r.groupValues[2]}" else t0 } ?: t0 }
             // "I have Delver of Secrets. I reveal Lightning Bolt at upkeep. Does it flip?": the transform, in the card's words.
         if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.startsWith("Delver of Secrets") == true } || m.cards.values.any { it.display.startsWith("Delver of Secrets") }) {
             t2 = t2.replace(Regex("""^(?:i|we) reveal (?:an? |the )?(c\d+|land|creature|instant|sorcery|artifact|enchantment|planeswalker|nonland card|basic land|noncreature spell)(?: card)?(?: (?:at|in|during|on) (?:my |the )?(?:next )?upkeep| at the beginning of my upkeep| off the top| on top)?\??$""", RegexOption.IGNORE_CASE), "delver-reveal-question $1")
@@ -3929,6 +3945,41 @@ class SituationParser(private val names: NameIndex) {
                         (if (lethalAll) "Assigning ${parts.joinToString(" and ") { (b, t) -> "${t!!.second} to ${name(b)}" }} kills every blocker${if (parts.sumOf { it.second!!.second } < power!!) ", with ${power - parts.sumOf { it.second!!.second }} to spare that can go anywhere among them" else ""}." else if (power != null && parts.all { it.second != null }) "Its $power damage isn't enough to kill both (${parts.joinToString(" and ") { (b, t) -> "${name(b)} has toughness ${t!!.second}" }}), so choose which to kill: ${parts.filter { it.second!!.second <= power }.joinToString(" or ") { (b, t) -> "${t!!.second} to ${name(b)}" }.ifEmpty { "neither dies to this attacker alone" }}, with the rest wherever you like." else "Each blocker needs damage equal to its toughness to die (704.5g); the split is announced as combat damage is assigned, with all blockers dealing their damage back at the same time (510.2).")
                 }
             ctx.asks += EventSpec("ask", to = "text:$text"); return true
+        }
+        // "Does the redirection still happen?": Spellskite's ability on the stack, asked whether it still resolves.
+        if (clause0 == "skiteresolves-question") {
+            val skite = ctx.objects.values.lastOrNull { it.card.name == "Spellskite" }?.id ?: return false
+            ctx.asks += EventSpec("ask", obj = skite, to = "stillResolves"); return true
+        }
+        // "Does my next spell cost more?": the taxes on the battlefield.
+        Regex("""^nextspelltax-question (me|they) (\w+)$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1] == "me") "me" else pronounPlayer(ctx, "their")
+            ctx.asks += EventSpec("ask", player = who, to = "nextSpellTax:${r.groupValues[2]}"); ctx.note(who); return true
+        }
+        // "Does Thalia tax Bob's trigger?": spells have costs that can be increased; abilities don't get taxed by spell taxes.
+        Regex("""^taxtrigger-question (c\d+) (c\d+)$""").find(clause0)?.let { r ->
+            val taxer = m.cards[r.groupValues[1]] ?: return@let
+            val src = m.cards[r.groupValues[2]] ?: return@let
+            ctx.asks += EventSpec("ask", to = "text:No. ${taxer.display}'s effect raises the cost of spells (a cost increase applies when the spell's total cost is worked out, 601.2f), and ${src.display}'s ability isn't a spell: a triggered ability has no mana cost and nothing is paid to put it on the stack (113.3c, 603.3). Only an effect that specifically taxes abilities, like Suppression Field for activated abilities, could touch it.")
+            return true
+        }
+        // "Can I flash it back first?": only a card with flashback (printed or granted) can be cast from the graveyard.
+        Regex("""^flashfirst-question (it|that|c\d+)$""").find(clause0)?.let { r ->
+            val lastCast = ctx.events.lastOrNull { it.verb == "cast" }
+            val id = if (r.groupValues[1].startsWith("c")) m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) } else lastCast?.targets?.firstOrNull { it in ctx.objects } ?: ctx.lastMentioned?.takeIf { it in ctx.objects }
+            val obj = id?.let { ctx.objects[it] } ?: return@let
+            val entry = obj.card.name?.let { names.lookup(Names.normalize(it)) } ?: return@let
+            val snap = ctx.objects.values.any { it.controller == obj.controller && it.zone == "battlefield" && it.card.name == "Snapcaster Mage" }
+            if (Regex("""(?i)\bflashback\b""").containsMatchIn(entry.keywords) || snap) return@let
+            val spellName = lastCast?.card?.name ?: lastCast?.obj?.let { ctx.objects[it]?.card?.name } ?: "that spell"
+            ctx.asks += EventSpec("ask", to = "text:No. ${entry.display} has no flashback and nothing described gives it one, so it can't be cast from ${if (obj.controller == "me") "your" else "their"} graveyard at all (601.3, 702.34a); ${if (entry.isSpellOnly) "it's an ordinary card in the graveyard" else "a creature card in the graveyard can only be returned by an effect, not cast from there"}. ${if (obj.controller == "me") "You" else "They"} may respond to $spellName with instants and abilities, but ${entry.display} itself stays put, and $spellName exiles it when it resolves.")
+            return true
+        }
+        // "Do I have to flip it?" after a Delver reveal: revealing is "you may", so the transform is the player's choice.
+        if (Regex("""^(?:do|must|would) (?:i|we) (?:have to|need to|got to) (?:flip|transform|reveal) (?:it|that|him|her|(?:my )?c\d+)$""").matches(clause0) && (ctx.objects.values.any { it.card.name?.startsWith("Delver of Secrets") == true } || ctx.notes.any { it.startsWith("Delver of Secrets") })) {
+            ctx.asks.removeAll { it.to?.startsWith("text:Yes. Delver of Secrets' upkeep trigger") == true }
+            ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets' trigger says \"you may reveal that card\": the look is mandatory, the reveal isn't, and Delver transforms only if an instant or sorcery card is revealed this way. Keep the card hidden and Delver stays a 1/1 (the card stays on top either way). If you do reveal an instant or sorcery, the transform then isn't optional (701.27a).")
+            return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
