@@ -966,7 +966,7 @@ class SituationParser(private val names: NameIndex) {
                 val q = m.cards[r.groupValues[2]]; val tgt = m.cards[r.groupValues[3]]
                 if (q?.display == "Spell Queller" && tgt != null && ctx.objects.values.none { it.card.oracleId == tgt.oracleId }) "they cast ${r.groupValues[3]}, in response i cast ${r.groupValues[2]} targeting ${r.groupValues[3]}" else t0 } ?: t0 }
         // "Does it exile Wrath?" after a Spell Queller: where the spell ended up.
-        t2 = t2.replace(Regex("""^(?:does|did|will) (?:it|that|my c\d+|the c\d+|c\d+) (?:exile|eat|catch|get|snag|grab) (?:the |their |my opponent's )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "where does $1 go")
+        t2 = t2.replace(Regex("""^(?:does|did|will|can) (?:it|that|(?:my |the |their )?c\d+) (?:exile|eat|catch|get|snag|grab) (?:the |their |my |my opponent's )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "where does $1 go")
         // "They cast Surgical Extraction on my Kitchen Finks after it died": the death first, the spell in response to what follows it.
         t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent|i|we) (casts?|plays?) (c\d+) on (my |their |the )?(c\d+) (?:after|once|when) (?:it|that|he|she) (?:died|dies|is killed|got killed|was killed|hit the graveyard|went to the graveyard)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 val owner = when (r.groupValues[4].trim().lowercase()) { "my" -> "my"; "their" -> "their"; else -> if (r.groupValues[1].lowercase() in setOf("i", "we")) "their" else "my" }
@@ -987,7 +987,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\binto ((?:their |my opponent's |the opponent's |an? |the )?(?:untapped |tapped |open )?c\d+) and ((?:their |an? |the )?(?:untapped |tapped )?c\d+)\b""", RegexOption.IGNORE_CASE), "into $1 plus $2")
         // "they Surgical it in response to undying": the spell cast with the persist or undying trigger on the stack.
         t2 = t2.let { t0 -> Regex("""\b(they|he|she|my opponent|the opponent|i|we) (c\d+) (it|that|the card|(?:the |my |their )?c\d+) in response to (?:the |its )?(?:undying|persist)(?: trigger| triggering)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
-                t0.substring(0, r.range.first) + "in response ${r.groupValues[1]} cast ${r.groupValues[2]} on ${r.groupValues[3]}" } ?: t0 }
+                if (m.cards[r.groupValues[2]]?.isSpellOnly != true) t0 else t0.substring(0, r.range.first) + "in response ${r.groupValues[1]} cast ${r.groupValues[2]} on ${r.groupValues[3]}" } ?: t0 }
         // "Does the persisted Finks still block?": the returned creature is a new object.
         t2 = t2.replace(Regex("""^does the (?:persisted|returned|new|undying) (c\d+) still (?:block|attack|fight|deal damage)\??$""", RegexOption.IGNORE_CASE), "does $1 come back, persistblock-note")
         // "Dismember for 1 mana and 4 life ... on my own Death's Shadow": the life paid, then the target.
@@ -1020,6 +1020,29 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(c\d+) (?:they|he|she|my opponent) controls? with (?:an? |their )?(c\d+) out\b""", RegexOption.IGNORE_CASE), "their $1, they have $2")
         // "Does it get a Construct?" (Urza's Saga under Blood Moon): no chapter ability, no token.
         t2 = t2.replace(Regex("""^(?:does|will|can) (?:it|the saga|my saga|(?:my |the )?c\d+) (?:still |even )?(?:get|make|create|produce) (?:a |its |the |another )?construct(?: token)?\??$""", RegexOption.IGNORE_CASE), "sagachapter-question")
+        // "I Scavenging Ooze it in response to persist": the Ooze's name as the verb, at the card with the trigger waiting.
+        t2 = t2.let { t0 -> Regex("""(^|, |\band )(?:i|we) (c\d+) (it|that|the card|(?:the |my )?c\d+) in response to (?:the |its )?(?:persist|undying)(?: trigger| triggering)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[2]]?.display == "Scavenging Ooze") t0.substring(0, r.range.first) + ", i have ${r.groupValues[2]}, oozepersist-question ${r.groupValues[3].removePrefix("the ").removePrefix("my ")}" else t0 } ?: t0 }
+        // "Can Spellskite block one?": one of the attackers, blocked by it.
+        t2 = t2.replace(Regex("""^can (?:my |the )?(c\d+) block (?:one|one of them|either|either one|just one)\??$""", RegexOption.IGNORE_CASE), "i block one of them with $1")
+        // "they respond with Aether Vial putting in Spell Queller": their Vial, their creature, in response.
+        t2 = t2.let { t0 -> Regex("""\b(they|he|she|my opponent|the opponent) (?:respond|answer) with (?:their |an? |the )?(c\d+)(?:,)? (?:putting in|to put in|and put in|putting|dropping in) (?:an? |their |the )?(c\d+)(?: into play| onto the battlefield)?\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[2]]?.display == "Aether Vial") t0.substring(0, r.range.first) + "they have ${r.groupValues[2]}, in response they vial in ${r.groupValues[3]}" + t0.substring(r.range.last + 1) else t0 } ?: t0 }
+        // "How much mana total?": the sum of what was spent.
+        t2 = t2.replace(Regex("""^how much mana (?:total|in total|altogether|overall|all in all|did (?:i|we|that) (?:spend|cost|use) (?:in total|total|altogether))\??$""", RegexOption.IGNORE_CASE), "how much total mana")
+        // "They Surgical my Bolt in response to Snapcaster's trigger": the Mage cast at the Bolt first.
+        t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent) (c\d+) my (c\d+) in response to (?:my |the )?(c\d+)'s (?:trigger|triggered ability|etb)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[4]]?.display == "Snapcaster Mage") "i cast ${r.groupValues[4]} targeting ${r.groupValues[3]}, in response ${r.groupValues[1]} cast ${r.groupValues[2]} on my ${r.groupValues[3]}" else t0 } ?: t0 }
+        // "with my Celestial Colonnade animated and attacking": the manland sent in before the spell resolves.
+        t2 = t2.let { t0 -> Regex("""^(.*?),? with (my|their|the) (c\d+) (?:animated|turned on|activated|as a creature)(?: and (?:attacking|in combat|swinging))?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val land = m.cards[r.groupValues[3]]?.typeLine?.let { it.contains("Land") && !it.contains("Creature") } == true
+                val owner = if (r.groupValues[2].lowercase() == "their") "they" else "i"
+                val attacking = Regex("""\b(?:attacking|in combat|swinging)\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.value)
+                if (land) "${if (attacking) "$owner attack with ${r.groupValues[3]}" else "$owner activate ${r.groupValues[3]}"}, ${r.groupValues[1]}" else t0 } ?: t0 }
+        // "Can I still flash it back?" after the card left the graveyard: the cast is tried, and refused from exile.
+        t2 = t2.replace(Regex("""^can (?:i|we) still (?:flash back|flashback) (it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "can i flashback $1")
+        // "Does it stay a creature?" after Blood Moon on an animated manland: what it is now.
+        t2 = t2.replace(Regex("""^(?:does|will) (?:it|that|(?:my |the )?c\d+) (?:stay|remain|still be|still count as) (?:a |an )?(?:creature|animated|4/4|attacker)\??$""", RegexOption.IGNORE_CASE), "manlandnow-question")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -2882,7 +2905,9 @@ class SituationParser(private val names: NameIndex) {
             // "I have Dark Confidant and reveal Emrakul": a creature's reveal is from the library, read clause by clause.
             if (Regex("""\bhave (c\d+) and reveals? c\d+$""").find(t2)?.let { h -> m.cards[h.groupValues[1]]?.typeLine?.contains("Creature") } == true) return@let
             // "I have a Dark Confidant. I reveal a Griselbrand.": the reveal is Bob's, from the library, not a hand shown.
-            if (Regex("""^(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") }) return@let
+            if (Regex("""^(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && (o.card.name in setOf("Dark Confidant", "Dark Tutelage", "Bob") || o.card.name?.startsWith("Delver of Secrets") == true) }) return@let
+            // "My Delver is a 1/1 and I reveal Lightning Bolt": the reveal belongs to the Delver named in the same sentence.
+            if (Regex("""\b(?:i|we) reveals? """, RegexOption.IGNORE_CASE).containsMatchIn(t2) && m.cards.values.any { it.display.startsWith("Delver of Secrets") || it.display in setOf("Dark Confidant", "Dark Tutelage") }) return@let
             val before = t2.substring(0, r.range.first)
             val lastWord = Regex("""\b(i|my|i'm|i am|i've|we|they|their|he|she|his|her|my opponent|the opponent|opponent)\b""").findAll(before).lastOrNull()?.groupValues?.get(1)
             // "their hand is two Bolts": the owner is in the phrase itself before anything said earlier.
@@ -3903,8 +3928,12 @@ class SituationParser(private val names: NameIndex) {
         // "Can I eat it before it persists?": the Ooze's ability in response to the persist trigger.
         Regex("""^oozepersist-question (it|that|the card|c\d+)$""").find(clause0)?.let { r ->
             val ooze = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Scavenging Ooze" } ?: return false
+            // "They Bolt my Finks and I Ooze it in response to persist": the Bolt resolves first (the Finks dies, persist goes on the stack), then the Ooze eats the card.
+            val killer = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" && it.targets.any { t -> ctx.objects[t]?.controller == "me" } }
+            val killed = killer?.targets?.firstOrNull { t -> ctx.objects[t]?.controller == "me" }
+            if (killer != null && killed != null && ctx.events.indexOf(killer) > ctx.events.indexOfLast { it.verb == "resolveAll" || it.verb == "resolve" }) ctx.events += EventSpec("resolve")
             val dead = (if (r.groupValues[1].startsWith("c")) m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) } else null)
-                ?: ctx.events.lastOrNull { it.verb == "leave" && it.to == "graveyard" && it.obj != null }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return false
+                ?: ctx.events.lastOrNull { it.verb == "leave" && it.to == "graveyard" && it.obj != null }?.obj ?: killed ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return false
             val sweeper = ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name?.lowercase() in setOf("wrath of god", "damnation", "day of judgment", "supreme verdict", "terminus", "pyroclasm", "anger of the gods", "toxic deluge", "languish")
             ctx.events += EventSpec("activate", player = "me", obj = ooze.id, targets = listOf(dead))
             ctx.asks += EventSpec("ask", to = "text:${if (sweeper) "Only if Scavenging Ooze survived the sweeper: a creature that died alongside the persist creature is in the graveyard too, with no ability to activate (see above). If it is still there, yes. " else "Yes. "}Persist is a triggered ability: when the creature dies it goes on the stack, and before it resolves every player gets priority (603.3, 117.1). Scavenging Ooze's ability can be activated then, targeting the card in your graveyard; it resolves first (608.1), exiles the card, and the persist trigger then finds nothing to return (400.7), so the creature stays gone. The Ooze gets its counter and you gain 1 life, since it was a creature card.")
@@ -4297,6 +4326,11 @@ class SituationParser(private val names: NameIndex) {
             val moon = ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") }
             ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (714.2b), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (714.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
             return true
+        }
+        // "Does it stay a creature?": the animated land, whatever was cast after it.
+        if (clause0 == "manlandnow-question") {
+            val land = ctx.objects.values.lastOrNull { o -> o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.let { it.contains("Land") && !it.contains("Creature") } } == true && ctx.events.any { e -> (e.verb == "attack" || e.verb == "activate") && e.obj == o.id } }?.id ?: return false
+            ctx.asks += EventSpec("ask", obj = land, to = "identity"); return true
         }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
@@ -4905,8 +4939,11 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = "me", to = "attackCount"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "I have Aether Vial with 2 counters. Can I flash in my Thalia in response?": the Vial puts the creature in.
-        Regex("""^(?:can (?:i|we) |i |we )?(?:flash(?:es)? in|vials? in|drop in|put in|sneak in) (?:my |the |an? |a second |another |one more )?(c\d+)(?: with (?:the |my )?(?:vial|aether vial|c\d+))?( in response)?$""").find(clause0)?.let { r ->
-            val vial = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && (it.card.name ?: "").contains("Vial", true) } ?: return@let
+        Regex("""^(?:can (?:i|we) |i |we |(they|he|she|my opponent|the opponent) )?(?:flash(?:es)? in|vials? in|drop in|put in|sneak in|puts? in) (?:my |the |their |an? |a second |another |one more )?(c\d+)(?: with (?:the |my |their )?(?:vial|aether vial|c\d+))?( in response)?$""").find(clause0)?.let { r0 ->
+            val theirs = r0.groupValues[1].isNotEmpty()
+            val vialOwner = if (theirs) pronounPlayer(ctx, "their") else "me"
+            val r = object { val groupValues = listOf(r0.groupValues[0], r0.groupValues[2], r0.groupValues[3]) }
+            val vial = ctx.objects.values.lastOrNull { it.controller == vialOwner && it.zone == "battlefield" && (it.card.name ?: "").contains("Vial", true) } ?: return@let
             val card = m.cards[r.groupValues[1]] ?: return@let
             if (!card.typeLine.contains("Creature")) return@let
             // "I Vial in Spell Queller": a Vial whose counters weren't said has as many as the creature needs.
@@ -4915,11 +4952,11 @@ class SituationParser(private val names: NameIndex) {
             val chaliceOnMv = ctx.objects.values.any { it.card.name == "Chalice of the Void" && (it.counters["charge"] ?: -1) == card.manaValue } || ctx.events.any { e -> e.verb == "cast" && e.card?.name == "Chalice of the Void" && (e.amount ?: -1) == card.manaValue }
             if (chaliceOnMv && clause0.startsWith("can ")) ctx.asks += EventSpec("ask", to = "text:Yes. Aether Vial puts ${card.display} onto the battlefield; it is never cast, so Chalice of the Void's trigger (\"whenever a player casts a spell\") never triggers for it (608.3, 603.2), and nothing that counters spells can touch it.")
             // "Kitchen Finks in hand … can I vial in Kitchen Finks": the card already said to be in hand, not a second copy.
-            val cid = ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "hand" && it.card.name == card.display }?.id ?: addObject(card, "me", false, ctx, zone = "hand", allowDuplicate = true)
+            val cid = ctx.objects.values.firstOrNull { it.controller == vialOwner && it.zone == "hand" && it.card.name == card.display }?.id ?: addObject(card, vialOwner, false, ctx, zone = "hand", allowDuplicate = true)
             val inResponse = r.groupValues[2].isNotEmpty() || ctx.events.lastOrNull()?.verb == "cast"
             if (!inResponse && ctx.events.lastOrNull()?.verb in setOf("cast", "activate", "trigger")) ctx.events += EventSpec("resolveAll")
-            ctx.events += EventSpec("choose", player = "me", obj = vial.id, to = "put:$cid")
-            ctx.events += EventSpec("activate", player = "me", obj = vial.id); ctx.lastMentioned = cid
+            ctx.events += EventSpec("choose", player = vialOwner, obj = vial.id, to = "put:$cid")
+            ctx.events += EventSpec("activate", player = vialOwner, obj = vial.id); ctx.lastMentioned = cid; ctx.lastActor = vialOwner
             if (clause0.startsWith("can ") && inResponse) ctx.asks += EventSpec("ask", player = "me", to = "respond")
             ctx.notes += "\"${restore(clause0, m)}\" is read as activating ${vial.card.name} to put ${card.display} from your hand onto the battlefield${if (inResponse) " in response" else ""}; the outcome says whether it may."
             ctx.lastActor = "me"; ctx.lastVerb = "activate"; ctx.lastMentioned = cid; return true
@@ -7650,7 +7687,10 @@ class SituationParser(private val names: NameIndex) {
             val id = if (cardRef.matches(w)) addObject(m.cards.getValue(w), who, false, ctx, zone = "library", allowDuplicate = true)
                      else { val name = if (w.endsWith("land")) "a basic land" else (if (w.first() in "aeiou") "an " else "a ") + w; var nid = slug("$w card"); var k = 2; while (ctx.objects.containsKey(nid)) nid = slug("$w card") + "_" + (k++); ctx.objects[nid] = ObjectSpec(nid, CardRef(name = name), zone = "library", controller = who); nid }
             if (ctx.events.none { it.verb == "step" }) { ctx.events += EventSpec("step", player = who, to = "upkeep"); ctx.activePlayer = who }
-            ctx.notes += "\"reveal ${ctx.objects.getValue(id).card.name}\" is read as it being the top card of ${if (who == "me") "your" else "their"} library when the upkeep trigger reveals it."; ctx.lastMentioned = id; return true
+            ctx.notes += "\"reveal ${ctx.objects.getValue(id).card.name}\" is read as it being the top card of ${if (who == "me") "your" else "their"} library when the upkeep trigger reveals it."
+            // "They Bolt it in response to the trigger": "it" is the Delver or Confidant doing the revealing, not the card on top.
+            ctx.lastMentioned = ctx.objects.values.lastOrNull { it.controller == who && it.zone == "battlefield" && it.card.name?.let { n -> n.startsWith("Delver of Secrets") || n == "Dark Confidant" || n == "Dark Tutelage" } == true }?.id ?: id
+            return true
         }
         // "…and Thalia in hand": a card said to be in hand, with no verb of its own after the "and".
         Regex("""^(?:an? |my |their )?(c\d+) (?:in|is in|'s in) (?:my |their |his |her )?hand$""").find(c)?.let { r ->

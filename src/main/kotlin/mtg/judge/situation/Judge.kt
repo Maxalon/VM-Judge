@@ -266,6 +266,12 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         (c.oracleId?.let { it == o.def.oracleId } ?: o.def.name.equals(c.name ?: "", true)) } }
                     ?: e.card?.let { c -> state.objects.values.firstOrNull { o -> o.zone == Zone.COMMAND && o.controller == player &&
                         (c.oracleId?.let { it == o.def.oracleId } ?: o.def.name.equals(c.name ?: "", true)) } }
+                // "They Surgical my Bolt in response to Snapcaster's trigger. Can I still flash it back?": the card named is in exile now.
+                if (existing != null && existing.zone == Zone.EXILE && (e.to == "flashback" || e.to == "again")) {
+                    state.trace.step("${existing.name} is in exile, not ${state.player(player).possessive} graveyard: a card can be cast only from where a rule or effect allows (601.3), and nothing allows casting it from exile, so it can't be cast.", "601.3", "702.34a")
+                    state.outcomes += "${existing.name} can't be cast${if (e.to == "again") " again" else " with flashback"}: it's in exile, and nothing lets it be cast from there."
+                    return
+                }
                 // "Can I cast Bolt again?" after flashing it back, "can I flash it back?" under Leyline of the Void: the card is in exile.
                 if (existing == null && e.obj == null && e.card != null && (e.to == "flashback" || e.to == "again")) {
                     val exiled = state.objects.values.lastOrNull { o -> o.zone == Zone.EXILE && o.owner == player && (e.card.oracleId?.let { it == o.def.oracleId } ?: o.def.name.equals(e.card.name ?: "", true)) }
@@ -1355,7 +1361,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val castAlt = name?.let { n -> state.objects.values.lastOrNull { it.def.name.equals(n, true) && it.castForAlternativeCost != null }?.id }
                     state.outcomes += engine.spellCost(castAlt ?: e.obj ?: e.card?.name?.let { n -> state.objects.values.lastOrNull { it.def.name.equals(n, true) }?.id } ?: throw JudgeException("ask needs an object")); return true
                 }
-                if (e.to == "identity") { val o = state.obj(e.obj ?: throw JudgeException("ask needs an object")); val where = o.zone.name.lowercase().replace('_', ' '); state.outcomes += "It's ${o.def.name} in ${if (o.zone == Zone.HAND) "${state.player(o.controller).possessive} hand" else where}${if (state.trace.steps.any { it.text.contains("stops being a copy") || it.text.contains("was a copy of") }) ": a copy effect lasts only while the permanent is on the battlefield (400.7)" else ""}."; return true }
+                if (e.to == "identity") { val o = state.obj(e.obj ?: throw JudgeException("ask needs an object")); val where = o.zone.name.lowercase().replace('_', ' ')
+                    // "Does it stay a creature?" (an animated manland under Blood Moon): what it is right now, with the effects on it.
+                    if (o.isOnBattlefield() && o.animatedAs != null) {
+                        val moon = state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name in setOf("Blood Moon", "Magus of the Moon") }
+                        state.trace.step("${o.name}'s animation is the effect of its own ability that already resolved; it lasts until end of turn whatever happens to the land's abilities afterwards.", "611.2a", "613.1d")
+                        state.outcomes += "Yes: ${o.name} is still a ${o.power}/${o.toughness} creature until end of turn. The animation came from an ability that already resolved, and such an effect keeps applying for its duration even if its source loses the ability (611.2a)${moon?.let { "; ${it.name} makes it a Mountain with none of its own abilities from now on, so it can't be animated again while ${it.name} is out, but it stays animated this turn" } ?: ""}."
+                        return true
+                    }
+                    state.outcomes += "It's ${o.def.name} in ${if (o.zone == Zone.HAND) "${state.player(o.controller).possessive} hand" else where}${if (state.trace.steps.any { it.text.contains("stops being a copy") || it.text.contains("was a copy of") }) ": a copy effect lasts only while the permanent is on the battlefield (400.7)" else ""}."; return true }
                 if (e.to?.startsWith("text:") == true) {
                     val text = e.to.removePrefix("text:"); state.outcomes += text
                     // The rules the answer quotes are its citations, so they are listed and checked like any step's.

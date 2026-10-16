@@ -34290,5 +34290,98 @@
     "cite": [
       "714.2b"
     ]
+  },
+  {
+    "id": "ooze-verb-in-response-to-persist",
+    "text": "They Bolt my Kitchen Finks and I Scavenging Ooze it in response to persist. Do I gain life from both?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it left the graveyard before persist could return it",
+      "Scavenging Ooze has 1 +1/+1 counter"
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-for-life-no-mana-under-thalia",
+    "text": "I have Thalia and they cast Gitaxian Probe paying 2 life with no mana. Can they?",
+    "expect": [
+      "No: Gitaxian Probe can't be cast: the Phyrexian mana can be paid with life, but the other {1} needs mana"
+    ],
+    "cite": []
+  },
+  {
+    "id": "delver-bolted-in-response-to-reveal",
+    "text": "My Delver is a 1/1 and I reveal Lightning Bolt. They Bolt it in response to the trigger. Does it flip?",
+    "expect": [
+      "Delver of Secrets: the battlefield → your graveyard",
+      "but with nothing left to transform"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "spellskite-blocks-one-of-two",
+    "text": "They attack with two 2/2s and I have Spellskite untapped. Can Spellskite block one?",
+    "expect": [
+      "Spellskite has 2 damage marked",
+      "You take 2 damage"
+    ],
+    "cite": []
+  },
+  {
+    "id": "their-vial-queller-vs-my-thoughtseize",
+    "text": "I cast Thoughtseize and they respond with Aether Vial putting in Spell Queller. Can the Queller exile my Thoughtseize?",
+    "expect": [
+      "Thoughtseize: the stack → exile (Spell Queller)",
+      "Thoughtseize is in exile"
+    ],
+    "cite": []
+  },
+  {
+    "id": "shadow-at-10-bolted",
+    "text": "I have Death's Shadow at 10 life and they cast Lightning Bolt at me. How big is it after?",
+    "expect": [
+      "Death's Shadow is 6/6",
+      "You go from 10 to 7 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "aberration-blocked-by-spellskite",
+    "text": "I block their Insectile Aberration with Spellskite. Can I?",
+    "expect": [
+      "Spellskite can't block Insectile Aberration (flying)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-vs-snapcaster-trigger-flashback",
+    "text": "They Surgical Extraction my Lightning Bolt in response to Snapcaster's trigger. Can I still flash it back?",
+    "expect": [
+      "Lightning Bolt: your graveyard → exile",
+      "Lightning Bolt can't be cast with flashback: it's in exile"
+    ],
+    "cite": [
+      "601.3"
+    ]
+  },
+  {
+    "id": "firewalker-vs-two-pyroclasms",
+    "text": "I have Kor Firewalker and they cast Pyroclasm twice. Does it die?",
+    "expect": [
+      "No: Kor Firewalker is still on the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "blood-moon-animated-colonnade-attacking",
+    "text": "They cast Blood Moon with my Celestial Colonnade animated and attacking. Does it stay a creature?",
+    "expect": [
+      "opponent takes 4 damage",
+      "Yes: Celestial Colonnade is still a 4/4 creature until end of turn"
+    ],
+    "cite": [
+      "611.2a"
+    ]
   }
 ]
