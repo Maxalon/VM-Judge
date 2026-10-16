@@ -268,7 +268,9 @@ class SituationParser(private val names: NameIndex) {
         for (askedOf in ctx.asks.filter { it.to in setOf("playerSurvive", "playerDie") || (it.to == "playerDamage" && ctx.throughAsked) }.mapNotNull { it.player }.distinct()) {
             if (ctx.events.any { it.verb == "block" && it.player == askedOf }) continue
             // Another player's creatures block only when they were offered as blockers ("they have a 1/1 to block with").
-            if (askedOf != "me" && askedOf !in ctx.blockersOffered && !ctx.throughAsked) continue
+            // "They have one 3/3 untapped and are at 2. Can they survive?": asked whether they live, their untapped creatures block too.
+            val survivalOfTheirs = ctx.asks.any { it.player == askedOf && it.to in setOf("playerSurvive", "playerDie") } && Regex("""\b(?:they|he|she|my opponent|the opponent) (?:have|has|control|controls) [^.?]*\buntapped\b""", RegexOption.IGNORE_CASE).containsMatchIn(text)
+            if (askedOf != "me" && askedOf !in ctx.blockersOffered && !ctx.throughAsked && !survivalOfTheirs) continue
             val attackers = ctx.events.filter { it.verb == "attack" && it.player != askedOf && it.targets.firstOrNull() == askedOf }.mapNotNull { it.obj } +
                 ctx.events.filter { it.verb == "attackAll" && it.player != askedOf && (it.targets.isEmpty() || it.targets.firstOrNull() == askedOf) }.flatMap { a -> ctx.objects.values.filter { it.controller == a.player && it.zone == "battlefield" && isCreatureName(it.card.name) }.map { it.id } }
             val mine = ctx.objects.values.filter { it.controller == askedOf && it.zone == "battlefield" && isCreatureName(it.card.name) && it.tapped != true && ctx.events.none { e -> e.verb == "attack" && e.obj == it.id } }
@@ -1148,7 +1150,10 @@ class SituationParser(private val names: NameIndex) {
             if (block != null && cast != null && ctx.events.indexOf(cast) > ctx.events.indexOf(block)) t2 = "secondblocker-question"
         }
         // "I flip it with a Brainstorm reveal in response": Delver transforms only with its upkeep trigger.
-        if (Regex("""^(?:i|we) (?:flip|transform) (?:it|that|(?:my |the )?c\d+) (?:with|off|using|by revealing|revealing) (?:an? |the |my )?(?:c\d+|instant|sorcery)(?: reveal| cast| on top)?(?: in response| now| in combat| mid-combat| after blockers| before damage)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }) t2 = "delverflip-note"
+        // "they respond by flipping it with Brainstorm": the same for the opponent's Delver.
+        t2 = t2.let { t0 -> Regex("""(^|, |\s+and\s+)(?:i|we|they|he|she) responds? by (?:flipping|transforming) (?:it|that|(?:my |their |the )?c\d+) (?:with|off|using|by revealing|revealing) (?:an? |the |my |their )?(?:c\d+|instant|sorcery)(?: reveal)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (ctx.objects.values.any { o -> o.card.name?.startsWith("Delver of Secrets") == true } || m.cards.values.any { it.display.startsWith("Delver of Secrets") }) t0.replaceRange(r.range, "${r.groupValues[1]}delverflip-note") else t0 } ?: t0 }
+        if (Regex("""^(?:i|we|they|he|she) (?:flip|flips|transform|transforms) (?:it|that|(?:my |their |the )?c\d+) (?:with|off|using|by revealing|revealing) (?:an? |the |my |their )?(?:c\d+|instant|sorcery)(?: reveal| cast| on top)?(?: in response| now| in combat| mid-combat| after blockers| before damage)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.any { o -> o.card.name?.startsWith("Delver of Secrets") == true }) t2 = "delverflip-note"
         // "Can I Wasteland it in response to the chapter 3 trigger?": the chapter ability resolves whatever happens to the Saga.
         t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:wasteland|destroy|blow up|kill|strip mine|bounce|c\d+) (?:it|that|the saga|(?:their |the )?c\d+) (?:in response to|with|before|during|while) (?:the |its )?(?:chapter )?(one|two|three|1|2|3|i|ii|iii)(?:st|nd|rd)?(?: chapter)? (?:trigger|ability)(?: (?:is )?on the stack| resolves| triggers)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if ((ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).any { n -> n?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true }) "sagachapter-question ${r.groupValues[1].lowercase()}" else t0 } ?: t0 }
         // "Does it still make them discard?" with Leyline of Sanctity out: whether the spell targets is what matters.
@@ -1331,7 +1336,9 @@ class SituationParser(private val names: NameIndex) {
         // "My Snapcaster Mage flashes back Lightning Bolt": the Mage's controller casts the Bolt with flashback.
         t2 = t2.replace(Regex("""^(my|their|his|her) (c\d+) (?:flashes back|flashbacks|flash backs) (?:my |their |the |a )?(c\d+)$""", RegexOption.IGNORE_CASE)) { r -> "${if (r.groupValues[1].lowercase() == "my") "i" else "they"} flashback ${r.groupValues[3]} with ${r.groupValues[2]}" }
         // "How should I block?": the trades, one per attacker.
-        t2 = t2.replace(Regex("""^how (?:should|do|can|would) (?:i|we) block(?: this| here| them| it)?\??$""", RegexOption.IGNORE_CASE), "which should i block")
+        t2 = t2.replace(Regex("""^how (?:should|do|can|would) (?:i|we) block(?: this| here| them| it)?(?: to (?:survive|live|stay alive|not die|take the least damage|minimi[sz]e (?:the )?damage))?\??$""", RegexOption.IGNORE_CASE), "which should i block")
+        // "Do I die at 5 life if I don't block?": the life total said inside the question.
+        t2 = t2.replace(Regex("""^((?:do|will|would|am) (?:i|we) (?:die|lose|survive|live|dead)) at (\d+)(?: life)?( if .+)?\??$""", RegexOption.IGNORE_CASE), "i am at $2 life, $1$3")
         // "They cast Brainstorm and Ponder in one turn with 4 lands": their mana, then whether both can be paid for.
         t2 = t2.replace(Regex("""^(they|he|she|i|we) (?:casts?|plays?) (?:both )?(c\d+) and (c\d+) (?:in (?:one|the same|a single) turn|this turn|together) with (\d+|one|two|three|four|five|six) (?:untapped )?lands?(?: untapped)?$""", RegexOption.IGNORE_CASE)) { r -> "${if (r.groupValues[1].lowercase() in setOf("i", "we")) "i" else "they"} have ${r.groupValues[4]} lands, can ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "i" else "they"} cast ${r.groupValues[2]} and ${r.groupValues[3]} in the same turn" }
         // "they respond with Spellskite's ability": the redirect.
@@ -1359,7 +1366,7 @@ class SituationParser(private val names: NameIndex) {
         // "On my upkeep I reveal Griselbrand": the reveal is the upkeep trigger's; the time words add nothing.
         t2 = t2.replace(Regex("""^(?:on|during|in|at) (?:my|the) (?:next )?upkeep,? ((?:i|we|my c\d+) reveals? .+)$""", RegexOption.IGNORE_CASE), "$1")
         // "I have one 2/2 untapped at 3 life" / "I reveal Griselbrand at 7 life": the life total said as a tail.
-        t2 = t2.replace(Regex("""(^|, |\s+and\s+)((?:i|we) (?:have|control) (?:one|two|three|an?|\d+) (?:untapped )?\d+/\d+\b.*?|(?:i|we) reveals? .+?) at (\d+)(?: life)?$""", RegexOption.IGNORE_CASE), "$1i am at $3 life, $2")
+        t2 = t2.replace(Regex("""(^|, |\s+and\s+)((?:i|we) (?:have|control) (?:one|two|three|an?|\d+) (?:untapped )?\d+/\d+\b.*?|(?:i|we) reveals? .+?|(?:i|we) blocks? (?:(?:it|that|them|(?:the |their )?c\d+|(?:the |their )?\d+/\d+\S*) )?with (?:my |an? )?.+?) at (\d+)(?: life)?$""", RegexOption.IGNORE_CASE), "$1i am at $3 life, $2")
         // "Can I flashback Bolt in response?" with Snapcaster Mage in hand: the Mage is the way to it.
         t2 = t2.let { t0 -> Regex("""^can (?:i|we) (?:flashback|flash back) (?:the |my )?(c\d+) in response\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
             if (ctx.objects.values.any { o -> o.controller == "me" && o.zone == "hand" && o.card.name == "Snapcaster Mage" } && m.cards[r.groupValues[1]]?.isSpellOnly == true) "snapit-question hand" else t0 } ?: t0 }
@@ -4806,8 +4813,10 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         if (clause0 == "delverflip-note") {
-            val delver = ctx.objects.values.last { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
-            ctx.asks += EventSpec("ask", to = "text:Delver of Secrets can't be flipped now. Its transform is a triggered ability that triggers only at the beginning of your upkeep (\"At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform ~\", 603.2); casting or revealing an instant at any other time does nothing to it. In this combat it stays a 1/1 ${delver.card.name}, and the outcome below is worked out that way.")
+            val delver = ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.card.name?.startsWith("Delver of Secrets") == true }
+                ?: ctx.objects.values.lastOrNull { o -> o.card.name?.startsWith("Delver of Secrets") == true } ?: return false
+            val theirs = delver.controller != "me"
+            ctx.asks += EventSpec("ask", to = "text:Delver of Secrets can't be flipped now. Its transform is a triggered ability that triggers only at the beginning of ${if (theirs) "its controller's" else "your"} upkeep (\"At the beginning of your upkeep, look at the top card of your library. You may reveal that card. If an instant or sorcery card is revealed this way, transform ~\", 603.2); casting or revealing an instant at any other time does nothing to it. ${if (theirs) "Right now" else "In this combat"} it stays a 1/1 ${delver.card.name}, and the outcome below is worked out that way.")
             return true
         }
         Regex("""^sagachapter-question (\w+)$""").find(clause0)?.let { r ->

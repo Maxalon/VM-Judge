@@ -37234,5 +37234,113 @@
     "cite": [
       "119.4"
     ]
+  },
+  {
+    "id": "tt260-spirit-saves-thalia-from-wrath",
+    "text": "They cast Wrath of God. I have Thalia and Selfless Spirit. Can I save Thalia?",
+    "expect": [
+      "Selfless Spirit: the battlefield → your graveyard",
+      "Thalia, Guardian of Thraben is indestructible and isn't destroyed",
+      "Yes: Thalia, Guardian of Thraben is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt260-die-at-five-if-no-block",
+    "text": "They attack with a 6/6. I have Spellskite untapped. Do I die at 5 life if I don't block?",
+    "expect": [
+      "You take 6 damage",
+      "You lose the game",
+      "You go from 5 to -1 life"
+    ]
+  },
+  {
+    "id": "tt260-their-delver-flip-in-response",
+    "text": "I cast Lightning Bolt at their Delver and they respond by flipping it with Brainstorm. Does Bolt still kill it?",
+    "expect": [
+      "Delver of Secrets can't be flipped now",
+      "Yes: Delver of Secrets died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt260-force-pitching-brainstorm",
+    "text": "They cast Thoughtseize on me and I have Force of Will and Brainstorm in hand. Can I Force the Thoughtseize pitching Brainstorm?",
+    "expect": [
+      "You exile a blue card from your hand (Force of Will's alternative cost)",
+      "Thoughtseize is countered"
+    ]
+  },
+  {
+    "id": "tt260-my-chalice-vs-probe-life",
+    "text": "I control Chalice on 1. They cast Gitaxian Probe paying 2 life. Is it countered?",
+    "expect": [
+      "Yes: Gitaxian Probe is countered (by Chalice of the Void)"
+    ]
+  },
+  {
+    "id": "tt260-how-to-block-to-survive",
+    "text": "They attack with a 2/2 and a 3/3. I am at 2 and I have a 1/1 and a 4/4 untapped. How do I block to survive?",
+    "expect": [
+      "At 2 life the attack (5 in all) is lethal unblocked. Block a 3/3 creature with a 4/4 creature and block a 2/2 creature with a 1/1 creature: 0 gets through, you go to 2 and live."
+    ]
+  },
+  {
+    "id": "tt260-their-skite-takes-face-bolt",
+    "text": "My opponent has Spellskite. I cast Lightning Bolt at their face. Can they redirect it to Spellskite?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of opponent",
+      "Spellskite has 3 damage marked"
+    ]
+  },
+  {
+    "id": "tt260-path-thalia-cost-and-fate",
+    "text": "They have Thalia. I cast Path to Exile on Thalia. How much does it cost and does Thalia die?",
+    "expect": [
+      "Path to Exile costs {W} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all",
+      "No: Thalia, Guardian of Thraben didn't die, but it left the battlefield; it's in exile"
+    ]
+  },
+  {
+    "id": "tt260-hymn-smiter-and-mountain",
+    "text": "They Hymn me and I have Loxodon Smiter and a Mountain in hand. What happens?",
+    "expect": [
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)",
+      "Mountain: your hand → your graveyard"
+    ]
+  },
+  {
+    "id": "tt260-blocker-bolted-no-damage-to-them",
+    "text": "I attack with a 3/3 into their 2/2 and they block. Then I Bolt the blocker. Does my 3/3 deal damage to them?",
+    "expect": [
+      "No: a 3/3 creature dealt no damage to opponent"
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "tt260-can-they-survive-their-blocker",
+    "text": "I attack with two 2/2s. They have one 3/3 untapped and are at 2. Can they survive?",
+    "expect": [
+      "a 3/3 creature has 2 damage marked",
+      "No: opponent has lost the game",
+      "opponent goes from 2 to 0 life"
+    ]
+  },
+  {
+    "id": "tt260-skite-chump-trample-at-one",
+    "text": "My opponent attacks with a 5/5 trampler. I block with my 0/4 Spellskite at 1 life. Do I die?",
+    "expect": [
+      "You take 1 damage",
+      "Yes: You have lost the game",
+      "You go from 1 to 0 life"
+    ]
+  },
+  {
+    "id": "tt260-skite-cant-take-thoughtseize",
+    "text": "They cast Thoughtseize. I have Spellskite out and Thalia in hand. Can I redirect it?",
+    "expect": [
+      "Thoughtseize's target isn't changed (Spellskite isn't a legal target for it)",
+      "Thalia, Guardian of Thraben: your hand → your graveyard"
+    ]
   }
 ]
