@@ -33686,5 +33686,101 @@
       "summoning sick"
     ],
     "cite": []
+  },
+  {
+    "id": "thalia-first-strike-vs-finks",
+    "text": "I attack with Thalia and they block with Kitchen Finks. Who dies?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "No: Thalia, Guardian of Thraben is still on the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "push-flipped-delver",
+    "text": "They cast Fatal Push on my Delver that flipped. Does it die?",
+    "expect": [
+      "Yes: Delver of Secrets died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-vs-abrupt-decay-redirect",
+    "text": "I have Spellskite and they cast Abrupt Decay on my Tarmogoyf. Can I redirect it?",
+    "expect": [
+      "Abrupt Decay now targets Spellskite instead of Tarmogoyf",
+      "Spellskite: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-who-can-i-target-leyline",
+    "text": "My opponent has Leyline of Sanctity. I cast Gitaxian Probe. Who can I target?",
+    "expect": [
+      "Gitaxian Probe (\"target player\") can target you. Not opponent: opponent has hexproof (Leyline of Sanctity)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-own-firewalker",
+    "text": "I cast Lightning Bolt at my own Kor Firewalker. Do I gain life?",
+    "expect": [
+      "Lightning Bolt can't target Kor Firewalker",
+      "No: you gain no life here"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-cost-them-2-under-thalia",
+    "text": "They Thoughtseize me with Thalia out. Does it cost them 2?",
+    "expect": [
+      "Thoughtseize costs {B} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all"
+    ],
+    "cite": []
+  },
+  {
+    "id": "advice-vial-vs-thoughtseize",
+    "text": "I have Aether Vial on 2 and Thalia in hand. They cast Thoughtseize targeting me. What should I do?",
+    "expect": [
+      "Activate Aether Vial in response",
+      "Thalia, Guardian of Thraben enters the battlefield"
+    ],
+    "cite": [
+      "602.1"
+    ]
+  },
+  {
+    "id": "path-finks-in-response-to-wrath",
+    "text": "I Path my Kitchen Finks in response to a Wrath. Does it persist?",
+    "expect": [
+      "Kitchen Finks's persist doesn't return it: it was exiled"
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-with-two-more-in-deck",
+    "text": "They Surgical Extraction my Lightning Bolt and I have two more in my deck. What happens?",
+    "expect": [
+      "Surgical Extraction: every Lightning Bolt in your graveyard, hand and library is exiled (3 known here)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "two-delvers-one-flipped-one-blocker",
+    "text": "I attack with two Delvers, one flipped. They have one blocker, a 2/2. What happens?",
+    "expect": [
+      "Delver of Secrets is transformed into Insectile Aberration",
+      "opponent takes 3 damage",
+      "Delver of Secrets: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-saves-me-at-3",
+    "text": "I'm at 3 and they Bolt me. I have Spellskite. Can I redirect it to save myself?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of you"
+    ],
+    "cite": []
   }
 ]

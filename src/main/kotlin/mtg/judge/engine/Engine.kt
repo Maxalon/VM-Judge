@@ -4395,7 +4395,7 @@ class Engine(val state: GameState) {
     private fun qualitiesOf(def: CardDef): Set<String> = def.colors.mapNotNull { colorNames[it] }.toSet() + def.types.map { it.lowercase() } + def.types.map { it.lowercase() + "s" }
 
     /** Why [ref] can't be targeted by a spell/ability from [source] controlled by [controller], or null if it can. */
-    private fun targetingProblem(source: GameObject, controller: String, ref: Ref): Pair<String, String>? {
+    internal fun targetingProblem(source: GameObject, controller: String, ref: Ref): Pair<String, String>? {
         if (ref is Ref.Player && state.player(ref.id).protectedFromEverything) return "${state.nameOf(ref)} ${if (state.player(ref.id).you) "have" else "has"} protection from everything and can't be the target of spells or abilities" to "702.16b"
         // Veil of Summer: hexproof from a colour, for the player and for their permanents.
         if (ref is Ref.Player && ref.id != controller) state.player(ref.id).hexproofFrom.firstOrNull { it in source.def.colors }?.let { c -> return "${state.nameOf(ref)} ${if (state.player(ref.id).you) "have" else "has"} hexproof from ${colorWord(c)} until end of turn, and ${source.name} is ${colorWord(c)}, so it can't target ${if (state.player(ref.id).you) "you" else "them"}" to "702.11d" }
