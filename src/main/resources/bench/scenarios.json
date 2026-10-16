@@ -13774,11 +13774,11 @@
     "id": "thalia-taxes-the-bolt",
     "text": "I cast Thalia and they cast Lightning Bolt, how much does it cost",
     "expect": [
-      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+      "Lightning Bolt cost {R} when it was cast: Thalia, Guardian of Thraben wasn't on the battlefield yet"
     ],
     "notExpect": [],
     "cite": [
-      "604.2"
+      "601.2f"
     ]
   },
   {
@@ -32747,6 +32747,100 @@
     "text": "I cast Lingering Souls and flash it back. How many Spirits do I have?",
     "expect": [
       "You have 4 spirits."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-taxes-free-gut-shot",
+    "text": "I have Thalia and they cast Gut Shot for free. Does it still cost 1?",
+    "expect": [
+      "Gut Shot still costs {1} more (Thalia, Guardian of Thraben): a cost increase applies to an alternative cost too (601.2f)."
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "leyline-blocks-thoughtseize-smiter-in-hand",
+    "text": "They cast Thoughtseize targeting me. I have Leyline of Sanctity in play and Loxodon Smiter in hand. What happens?",
+    "expect": [
+      "Thoughtseize can't target you."
+    ],
+    "cite": []
+  },
+  {
+    "id": "their-flipped-delver-vs-spellskite-block",
+    "text": "My opponent attacks with Delver flipped. I block with Spellskite. Who dies?",
+    "expect": [
+      "Spellskite can't block Insectile Aberration (flying).",
+      "You take 3 damage."
+    ],
+    "cite": []
+  },
+  {
+    "id": "thalia-vialed-in-after-bolt-cast",
+    "text": "I activate Aether Vial with 2 counters to put in Thalia while they cast Lightning Bolt at me. Does Thalia tax the Bolt?",
+    "expect": [
+      "Lightning Bolt cost {R} when it was cast: Thalia, Guardian of Thraben wasn't on the battlefield yet"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "ooze-eats-own-graveyard",
+    "text": "I have Scavenging Ooze. Can I exile my own creature cards from my graveyard?",
+    "expect": [
+      "Yes. Scavenging Ooze says \"exile target card from a graveyard\", and \"a graveyard\" is any graveyard, your own included"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-snapcaster-vs-chalice-two",
+    "text": "They have Chalice on 2 and I cast Snapcaster Mage with Vial. Is it countered?",
+    "expect": [
+      "No. Snapcaster Mage was put onto the battlefield by Aether Vial's ability, not cast"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-one-card-vs-shadow-at-12",
+    "text": "I have Ensnaring Bridge with 1 card in hand and they attack with Death's Shadow at 12 life. Can it attack?",
+    "expect": [
+      "No: Death's Shadow can't attack (Ensnaring Bridge: You have 1 card in hand and Death's Shadow's power is 13, 508.1c)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-own-finks-get-basic",
+    "text": "I cast Path to Exile on my own Kitchen Finks. Do I get a basic?",
+    "expect": [
+      "Yes: the search is yours."
+    ],
+    "cite": []
+  },
+  {
+    "id": "bob-triggers-under-their-leyline",
+    "text": "I have Dark Confidant and they have Leyline of Sanctity. Does Bob still trigger?",
+    "expect": [
+      "Yes: Dark Confidant's ability triggered. Leyline of Sanctity on the other side changes nothing: the trigger doesn't target anyone"
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-on-my-bolt-no-others",
+    "text": "They cast Surgical Extraction on my Lightning Bolt. I have no other Bolts. What happens?",
+    "expect": [
+      "Lightning Bolt: your graveyard → exile.",
+      "Surgical Extraction: every Lightning Bolt in your graveyard, hand and library is exiled (1 known here)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "revoker-names-liliana-plus",
+    "text": "I have Phyrexian Revoker naming Liliana of the Veil. Can they plus her?",
+    "expect": [
+      "Liliana of the Veil's ability can't be activated (Phyrexian Revoker names it)."
     ],
     "cite": []
   }

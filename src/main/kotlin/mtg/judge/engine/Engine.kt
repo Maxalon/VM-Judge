@@ -4152,9 +4152,15 @@ class Engine(val state: GameState) {
             return "${card.name} cast with flashback costs ${fb.groupValues[1]}$extra (its flashback cost, 702.34a); the printed ${printed} isn't paid. It's exiled as it resolves."
         }
         // "They Bolt Thalia. Can they?": the cost is what it was as the spell was cast, when Thalia was still there.
-        val recorded = (obj.taxesAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.taxesAtCast }.lastOrNull())?.takeIf { it.isNotEmpty() }
+        // A cast that recorded no tax was untaxed: a Thalia that arrived afterwards (Aether Vial in response) doesn't reach it.
+        val recorded0 = obj.taxesAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.taxesAtCast }.lastOrNull()
+        val recorded = recorded0?.takeIf { it.isNotEmpty() }
+        if (recorded0 != null && recorded0.isEmpty() && obj.zone != Zone.HAND) {
+            val late = state.objects.values.filter { it.isOnBattlefield() && it.timestamp > obj.timestamp }.flatMap { o -> o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o } }
+            if (late.isNotEmpty()) { trace.step("${late.joinToString(" and ") { it.name }} came to the battlefield after ${card.name} was cast, and a cost increase applies only to spells cast while its source is on the battlefield; ${card.name}'s cost was locked in as it was cast.", "601.2f", "601.2a"); return "${card.name} cost $printed when it was cast: ${late.joinToString(" and ") { it.name }} wasn't on the battlefield yet, and a cost increase applies only to spells cast while it's there (601.2f); the cost was paid as the spell was cast and doesn't change afterwards." }
+        }
         val taxes: List<Pair<GameObject, StaticEffect.CostTax>> = recorded?.map { (n, amt) -> (state.objects.values.firstOrNull { it.def.name == n } ?: obj) to StaticEffect.CostTax(ObjFilter(kinds = emptySet()), amt) }
-            ?: state.objects.values.filter { it.isOnBattlefield() }
+            ?: if (recorded0 != null && obj.zone != Zone.HAND) emptyList() else state.objects.values.filter { it.isOnBattlefield() }
             .flatMap { o -> o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
                 .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o to it } }
         val commanderTax = if (obj.commander && obj.commanderCasts > 0) 2 * obj.commanderCasts else 0

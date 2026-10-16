@@ -597,7 +597,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         val muted = state.trace.steps.firstOrNull { it.text.contains("doesn't cause any abilities to trigger") }?.text?.substringBefore(" is on the battlefield")
                         val stripped = engine.printedAbilitiesGone(o)
                         state.outcomes += when {
-                            state.trace.steps.any { it.text.startsWith("${o.name}'s ability triggers") || it.text.startsWith("${o.name}'s evoke ability triggers") } -> "Yes: ${o.name}'s ability triggered."
+                            state.trace.steps.any { it.text.startsWith("${o.name}'s ability triggers") || it.text.startsWith("${o.name}'s evoke ability triggers") } -> "Yes: ${o.name}'s ability triggered." + (state.objects.values.firstOrNull { l -> l.isOnBattlefield() && l.controller != o.controller && l.def.oracleText.contains("You have hexproof", ignoreCase = true) }?.takeIf { o.def.abilities.filterIsInstance<TriggeredAbility>().all { a -> a.effect.targets().isEmpty() && !Regex("""(?i)\btarget\b""").containsMatchIn(a.text) } }?.let { l -> " ${l.name} on the other side changes nothing: the trigger doesn't target anyone, and hexproof only stops targeting (702.11a)." } ?: "")
                             muted != null -> "No: $muted stops it. ${o.name} entering doesn't cause any ability to trigger, its own included."
                             stripped != null -> "No: ${o.name} has no abilities under $stripped, so there is nothing to trigger."
                             else -> "No: ${o.name}'s ability didn't trigger (nothing that happened matched its trigger condition)."
