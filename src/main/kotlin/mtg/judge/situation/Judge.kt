@@ -1036,7 +1036,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val by = state.trace.steps.take(if (at < 0) state.trace.steps.size else at).lastOrNull { bySrc.containsMatchIn(it.text) && bySrc.find(it.text)?.groupValues?.get(1) != name }
                         ?: state.trace.steps.firstOrNull { it.text.contains("counter") && it.text.contains(name) && it.text.contains("resolves") && !it.text.startsWith("$name is countered") }
                     state.outcomes += when {
-                        state.outcomes.any { it == "$name is countered." } -> "Yes: $name is countered" + (by?.let { st -> (bySrc.find(st.text)?.groupValues?.get(1) ?: Regex("""^(.+?)(?:'s (?:triggered |activated )?ability)? (?:resolves|triggers)""").find(st.text)?.groupValues?.get(1))?.takeIf { src -> src != name && !src.startsWith("All players") && !src.contains(" is countered") }?.let { src -> " (by $src)" } } ?: "") + "."
+                        state.outcomes.any { it == "$name is countered." } -> "Yes: $name is countered" + (by?.let { st -> (bySrc.find(st.text)?.groupValues?.get(1) ?: Regex("""^(.+?)(?:'s (?:triggered |activated )?ability)? (?:resolves|triggers)""").find(st.text)?.groupValues?.get(1))?.takeIf { src -> src != name && !src.startsWith("All players") && !src.contains(" is countered") }?.let { src -> " (by $src${if (src == "Chalice of the Void" && state.objects.values.count { it.isOnBattlefield() && it.def.name == "Chalice of the Void" } > 1) (e.card?.let { c -> cardDef(c, state) }?.manaValue?.toInt()?.let { mv -> ", the one on $mv" } ?: "") else ""})" } } ?: "") + "."
                         state.outcomes.any { it.startsWith("$name isn't countered") || it.startsWith("$name can't be countered") } -> "No: $name isn't countered (it can't be)."
                         state.outcomes.any { it.startsWith("$name can't be cast") } -> "It's never cast: see above."
                         // "Leyline of Sanctity in response to my Bolt at them. Is my Bolt countered?": not countered, but it doesn't resolve either.
@@ -1759,6 +1759,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     if (attackers.size == 1) results.filter { (ab, kd, _) -> canBlock(ab.first, ab.second) && kd.first && !kd.second }.map { it.first.second.name }.takeIf { it.isNotEmpty() }?.let { names ->
                         state.outcomes += "${names.joinToString(" or ")} ${if (names.size == 1) "is" else "are"} the block${if (names.size == 1) "" else "s"} that kill${if (names.size == 1) "s" else ""} ${attackers[0].name} and survive${if (names.size == 1) "s" else ""}."
                     }
+                    state.trace.step("The defending player chooses which creatures block and whether to block at all; no rule forces a block.", "509.1a")
                     state.outcomes += "Unblocked, ${p.subject.lowercase()} ${p.v("takes", "take")} ${attackers.sumOf { it.power ?: 0 }} in all; which trade is best is yours to weigh, and the rules don't require a block (509.1a)."
                     return true
                 }

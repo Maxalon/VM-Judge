@@ -36440,5 +36440,127 @@
     "expect": [
       "You have 1 card in hand"
     ]
+  },
+  {
+    "id": "tt253-verdict-exactly-four-lands",
+    "text": "They have Thalia out. I have exactly 4 lands untapped. Can I cast Supreme Verdict?",
+    "expect": [
+      "No: Supreme Verdict can't be cast (costs 5, only 4 mana available)"
+    ]
+  },
+  {
+    "id": "tt253-which-blocks-best",
+    "text": "They attack with Goblin Guide. I have Spellskite and a 1/1 creature untapped. Which blocks best?",
+    "expect": [
+      "Blocking Goblin Guide with Spellskite: saves you 2 damage; Spellskite survives and Goblin Guide survives",
+      "Blocking Goblin Guide with a 1/1 creature: saves you 2 damage; a 1/1 creature dies"
+    ],
+    "cite": [
+      "509.1a"
+    ]
+  },
+  {
+    "id": "tt253-their-skite-redirect-dies",
+    "text": "They control Spellskite and a 4/5 Tarmogoyf. I cast Dismember on the Goyf. Can they redirect to Spellskite and does Spellskite die?",
+    "expect": [
+      "Dismember now targets Spellskite instead of Tarmogoyf",
+      "Yes: Spellskite died"
+    ]
+  },
+  {
+    "id": "tt253-thoughtseize-self-no-nonland",
+    "text": "I cast Thoughtseize targeting myself and have no nonland cards. What happens?",
+    "expect": [
+      "You discard nothing (no nonland card in hand)",
+      "You lose 2 life"
+    ]
+  },
+  {
+    "id": "tt253-redirect-hymn-statement",
+    "text": "I have Spellskite out. They cast Hymn to Tourach on me. I redirect it. What happens?",
+    "expect": [
+      "Hymn to Tourach's target isn't changed (Spellskite isn't a legal target for it)",
+      "You discard 2 cards"
+    ]
+  },
+  {
+    "id": "tt253-bob-bolted-upkeep-passive",
+    "text": "My Dark Confidant is bolted during my upkeep with Emrakul on top of my library. I am at 20. What happens?",
+    "expect": [
+      "Dark Confidant's trigger still resolves even though Dark Confidant is gone (113.7a)",
+      "You lose 15 life",
+      "You go from 20 to 5 life"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "tt253-path-my-shadow-at-five",
+    "text": "They Path my Death's Shadow at 5 life. Do I get the land?",
+    "expect": [
+      "Death's Shadow: the battlefield → exile",
+      "Yes: the search is yours"
+    ]
+  },
+  {
+    "id": "tt253-guide-blocked-skite-bolted",
+    "text": "They attack with Goblin Guide. I block with Spellskite and then Bolt the Guide. Do I take damage?",
+    "expect": [
+      "Goblin Guide: the battlefield → opponent's graveyard",
+      "No: you take no damage"
+    ]
+  },
+  {
+    "id": "tt253-mother-pro-red-fizzle",
+    "text": "They Bolt my Thalia. I have Mother of Runes untapped and give Thalia pro red. What happens?",
+    "expect": [
+      "Thalia, Guardian of Thraben has protection from red until end of turn",
+      "Lightning Bolt doesn't resolve (all targets illegal)"
+    ]
+  },
+  {
+    "id": "tt253-dismember-goyf-under-thalia",
+    "text": "They have Thalia out. My Tarmogoyf is 4/5. They Dismember it with Thalia out. What does it cost and does Goyf die?",
+    "expect": [
+      "Dismember costs {1}{B/P}{B/P} plus {1}",
+      "No: Tarmogoyf is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt253-vial-thalia-hymn-own-sentence",
+    "text": "I have Aether Vial on 2 and Thalia in hand. They cast Hymn to Tourach on me. I respond with the Vial and put Thalia in. Does Thalia get discarded?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield",
+      "No. Aether Vial's ability resolves first (608.1)"
+    ],
+    "cite": [
+      "608.1"
+    ]
+  },
+  {
+    "id": "tt253-two-chalices-one-on-each",
+    "text": "They have two Chalices, one on 1 and one on 2. I cast Gitaxian Probe. Which Chalice counters it?",
+    "expect": [
+      "Yes: Gitaxian Probe is countered (by Chalice of the Void, the one on 1)"
+    ]
+  },
+  {
+    "id": "tt253-chalice-on-one-and-chalice-on-two",
+    "text": "They have a Chalice on 1 and a Chalice on 2. I cast Gitaxian Probe. Which Chalice counters it?",
+    "expect": [
+      "Yes: Gitaxian Probe is countered (by Chalice of the Void, the one on 1)"
+    ]
+  },
+  {
+    "id": "tt253-thalia-in-hand-hymn-odds",
+    "text": "I have Thalia and two lands in hand. They cast Hymn to Tourach on me. Does Thalia get discarded?",
+    "expect": [
+      "67% to lose it",
+      "is discarded with probability 2/3 = 67%"
+    ],
+    "cite": [
+      "701.9a"
+    ]
   }
 ]
