@@ -1002,6 +1002,24 @@ class SituationParser(private val names: NameIndex) {
         // "They activate Spellskite paying 2 life at 2 life": the life total after the action is the actor's.
         t2 = t2.let { t0 -> Regex("""^(they|he|she|my opponent|the opponent) (activates?|uses?) ((?:(?!\b(?:me|us|and|attack)\b).)+?) (?:at|on|while at|being at) (\d+) life$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 if (Regex("""\b(?:at|on) \d+ life\b""", RegexOption.IGNORE_CASE).containsMatchIn(r.groupValues[3])) t0 else "my opponent is at ${r.groupValues[4]} life, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}" } ?: t0 }
+        // "I have two cards: Lightning Bolt and a Mountain": the hand, listed after a colon.
+        t2 = t2.replace(Regex("""^(?:i|we) (?:have|hold|'ve got) (?:two|three|four|five|\d+) cards?(?: in (?:my )?hand)?:? (?=(?:an? |the |two |three |\d+ )?(?:c\d+|lands?|basics?))""", RegexOption.IGNORE_CASE), "my hand is ")
+        // "I attack with Death's Shadow at 4 life": the attacker's own life total.
+        t2 = t2.let { t0 -> Regex("""^(i|we) (attacks?|swings?) with ((?:my |an? |the )?c\d+) at (\d+)(?: life)?(?=,|$| and\b)""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "i'm at ${r.groupValues[4]} life, ${r.groupValues[1]} ${r.groupValues[2]} with ${r.groupValues[3]}" + t0.substring(r.range.last + 1) } ?: t0 }
+        // "How big is Shadow when damage happens?": its size at that point, which the outcome carries.
+        t2 = t2.replace(Regex("""^(how big is (?:my |the )?(?:c\d+|it)) (?:when|at|by the time|once) (?:combat )?damage (?:happens|is dealt|comes|resolves)\??$""", RegexOption.IGNORE_CASE), "$1")
+        // "They cast Path on my Goyf and Bolt my Spellskite in response to the redirect": the redirect itself is stated between.
+        t2 = t2.let { t0 -> Regex("""^(.+?),? and (?:they |then )?(c\d+) my (c\d+) in response to (?:the|my|its) (?:redirection|deflection|redirect)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[3]]?.display == "Spellskite") { val spell = Regex("""\bcasts? (c\d+)""").find(r.groupValues[1])?.groupValues?.get(1) ?: "it"; "${r.groupValues[1]}, i activate ${r.groupValues[3]} targeting $spell, in response they ${r.groupValues[2]} my ${r.groupValues[3]}" } else t0 } ?: t0 }
+        // "I Thoughtseize myself with Leyline of Sanctity on my side": the Leyline first, then the spell at its owner.
+        t2 = t2.let { t0 -> Regex("""^(i|we) (c\d+) (?:myself|me|my own face) with (?:my |an? )?(c\d+)(?: out| on my side| in play| on the battlefield)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "i have ${r.groupValues[3]}, i cast ${r.groupValues[2]} targeting me" } ?: t0 }
+        // "They Snapcaster back a Thoughtseize targeting me": the Mage cast, the spell flashed back.
+        t2 = t2.let { t0 -> Regex("""^(they|i|we|he|she|my opponent|the opponent) (c\d+) back (?:an? |the |their |my )?(c\d+)((?: (?:targeting|on|at) .*)?)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[2]]?.display == "Snapcaster Mage") "${r.groupValues[1]} cast ${r.groupValues[2]}, snapflash-note ${r.groupValues[1]} ${r.groupValues[3]}${r.groupValues[4]}" else t0 } ?: t0 }
+        // "a Spellskite they control with Kor Firewalker out": both are theirs.
+        t2 = t2.replace(Regex("""\b(c\d+) (?:they|he|she|my opponent) controls? with (?:an? |their )?(c\d+) out\b""", RegexOption.IGNORE_CASE), "their $1, they have $2")
+        // "Does it get a Construct?" (Urza's Saga under Blood Moon): no chapter ability, no token.
+        t2 = t2.replace(Regex("""^(?:does|will|can) (?:it|the saga|my saga|(?:my |the )?c\d+) (?:still |even )?(?:get|make|create|produce) (?:a |its |the |another )?construct(?: token)?\??$""", RegexOption.IGNORE_CASE), "sagachapter-question")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -3545,6 +3563,9 @@ class SituationParser(private val names: NameIndex) {
                              ctx.notes += "\"a creature\" is read as an unnamed $mv-mana 2/2 creature card in your hand; name the card for its real size and cost."; cid
                          }
             ctx.events += EventSpec("activate", player = "me", obj = vial.id, to = cardId?.let { "put:$it" })
+            // "They cast Chalice for 1. Can I still put in Delver?": a Vial put is never a cast.
+            m.cards[r.groupValues[1]]?.let { e -> if (ctx.objects.values.any { it.card.name == "Chalice of the Void" && (it.counters["charge"] ?: -1) == e.manaValue } || ctx.events.any { ev -> ev.verb == "cast" && ev.card?.name == "Chalice of the Void" && (ev.amount ?: -1) == e.manaValue })
+                ctx.asks += EventSpec("ask", to = "text:Yes. Aether Vial puts ${e.display} onto the battlefield; it is never cast, so Chalice of the Void's trigger (\"whenever a player casts a spell\") never triggers for it (608.3, 603.2), and nothing that counters spells can touch it.") }
             ctx.notes += "Aether Vial's ability is an activated ability with no timing restriction, so it can be activated on your opponent's turn (602.5); the creature's mana value must equal the number of charge counters. The outcome shows it being activated."
             return true
         }
@@ -3854,11 +3875,11 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", card = card, to = "countered:last"); return true
         }
         // "Then they Snapcaster it": the spell they cast before is flashed back with the Mage's trigger.
-        Regex("""^snapflash-note (\w+) (c\d+|last)$""").find(clause0)?.let { r ->
+        Regex("""^snapflash-note (\w+) (c\d+|last)((?: (?:targeting|on|at) .*)?)$""").find(clause0)?.let { r ->
             val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else pronounPlayer(ctx, "their")
             val entry = if (r.groupValues[2] != "last") m.cards[r.groupValues[2]] else ctx.events.lastOrNull { it.verb == "cast" && (it.player ?: "me") == who && it.card?.name != "Snapcaster Mage" && (it.card?.name ?: it.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly } == true }?.let { e -> (e.card?.name ?: e.obj?.let { o -> ctx.objects[o]?.card?.name })?.let { n -> names.lookup(Names.normalize(n)) } }
             if (entry == null) return@let
-            emitCast(who, entry, " with flashback", m, ctx); return true
+            emitCast(who, entry, " with flashback" + r.groupValues[3], m, ctx); return true
         }
         // "Should I redirect?" with Spellskite: the redirect is played out and weighed.
         Regex("""^should (?:i|we) (?:redirect|deflect|spellskite|skite)(?: (?:it|that|the spell|the bolt))?(?: (?:to|onto|with) (?:my )?(?:spellskite|c\d+|it))?$""").find(clause0)?.let {
@@ -4270,6 +4291,13 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         readEarlyQuestionsC(clause0, m, ctx)?.let { return it }
+        // "Does it get a Construct?" with the Saga under Blood Moon: no chapter abilities, so nothing triggers on the lore counter.
+        if (clause0 == "sagachapter-question") {
+            val saga = ctx.objects.values.lastOrNull { it.card.name == "Urza's Saga" } ?: return false
+            val moon = ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") }
+            ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (714.2b), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (714.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
+            return true
+        }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
             return true
@@ -4883,6 +4911,9 @@ class SituationParser(private val names: NameIndex) {
             if (!card.typeLine.contains("Creature")) return@let
             // "I Vial in Spell Queller": a Vial whose counters weren't said has as many as the creature needs.
             if ((vial.counters["charge"] ?: 0) == 0 && card.manaValue > 0) { ctx.objects[vial.id] = vial.copy(counters = vial.counters + ("charge" to card.manaValue)); ctx.notes += "Aether Vial is assumed to have ${card.manaValue} charge counters, since ${card.display} was put in with it and nothing said otherwise." }
+            // "They cast Chalice for 1. Can I still put in Delver?": a Vial put is never a cast.
+            val chaliceOnMv = ctx.objects.values.any { it.card.name == "Chalice of the Void" && (it.counters["charge"] ?: -1) == card.manaValue } || ctx.events.any { e -> e.verb == "cast" && e.card?.name == "Chalice of the Void" && (e.amount ?: -1) == card.manaValue }
+            if (chaliceOnMv && clause0.startsWith("can ")) ctx.asks += EventSpec("ask", to = "text:Yes. Aether Vial puts ${card.display} onto the battlefield; it is never cast, so Chalice of the Void's trigger (\"whenever a player casts a spell\") never triggers for it (608.3, 603.2), and nothing that counters spells can touch it.")
             // "Kitchen Finks in hand … can I vial in Kitchen Finks": the card already said to be in hand, not a second copy.
             val cid = ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "hand" && it.card.name == card.display }?.id ?: addObject(card, "me", false, ctx, zone = "hand", allowDuplicate = true)
             val inResponse = r.groupValues[2].isNotEmpty() || ctx.events.lastOrNull()?.verb == "cast"

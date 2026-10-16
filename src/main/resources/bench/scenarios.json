@@ -34178,5 +34178,117 @@
       "You draw 1 card"
     ],
     "cite": []
+  },
+  {
+    "id": "thoughtseize-two-cards-colon",
+    "text": "They cast Thoughtseize on me. I have two cards: Lightning Bolt and a Mountain. What do they take?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain can't be chosen"
+    ],
+    "cite": []
+  },
+  {
+    "id": "shadow-attacks-at-4-bolted",
+    "text": "I attack with Death's Shadow at 4 life and they Bolt me after blockers. How big is Shadow when damage happens?",
+    "expect": [
+      "Death's Shadow is 12/12",
+      "opponent takes 12 damage"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-redirect-then-bolt-spellskite",
+    "text": "I have Spellskite. They cast Path on my Goyf and Bolt my Spellskite in response to the redirect. Where does Path go?",
+    "expect": [
+      "Spellskite: the battlefield → exile"
+    ],
+    "notExpect": [
+      "Tarmogoyf: the battlefield → exile"
+    ],
+    "cite": []
+  },
+  {
+    "id": "wrath-thalia-and-finks-after",
+    "text": "They cast Wrath of God. I have Thalia and Kitchen Finks. What do I have after?",
+    "expect": [
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "thoughtseize-myself-under-own-leyline",
+    "text": "I Thoughtseize myself with Leyline of Sanctity on my side. Can I?",
+    "expect": [
+      "You lose 2 life",
+      "Thoughtseize costs {B} — 1 mana"
+    ],
+    "cite": []
+  },
+  {
+    "id": "snapcaster-back-thoughtseize-life",
+    "text": "They Snapcaster back a Thoughtseize targeting me. How much life do they lose in total?",
+    "expect": [
+      "opponent loses 2 life in all"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-1-delver-under-chalice-1",
+    "text": "I have Aether Vial on 1. They cast Chalice of the Void for 1. Can I still put in Delver?",
+    "expect": [
+      "Delver of Secrets enters the battlefield",
+      "Yes. Aether Vial puts Delver of Secrets onto the battlefield; it is never cast"
+    ],
+    "cite": [
+      "608.3"
+    ]
+  },
+  {
+    "id": "thoughtseize-vs-their-spellskite",
+    "text": "My opponent has Spellskite. I cast Thoughtseize on them. Can they redirect it to Spellskite?",
+    "expect": [
+      "Thoughtseize's target isn't changed (Spellskite isn't a legal target for it)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-their-spellskite-their-firewalker",
+    "text": "I cast Lightning Bolt at a Spellskite they control with Kor Firewalker out. Do they gain life?",
+    "expect": [
+      "opponent gains 1 life in all"
+    ],
+    "notExpect": [
+      "You gain 1 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "goyf-4-types-vs-4-4-blocker",
+    "text": "They attack with Tarmogoyf with 4 types in graveyards. I have a 4/4 blocker. Who dies?",
+    "expect": [
+      "Yes: a 4/4 creature died",
+      "No: Tarmogoyf is still on the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "pyroclasm-bob-and-firewalker",
+    "text": "I have Dark Confidant and Kor Firewalker. They cast Pyroclasm. What survives?",
+    "expect": [
+      "No: Dark Confidant is in the graveyard",
+      "Yes: Kor Firewalker is still on the battlefield"
+    ],
+    "cite": []
+  },
+  {
+    "id": "saga-2-lore-under-blood-moon-construct",
+    "text": "They cast Blood Moon and I have Urza's Saga with 2 lore counters. Does it get a Construct?",
+    "expect": [
+      "No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities"
+    ],
+    "cite": [
+      "714.2b"
+    ]
   }
 ]
