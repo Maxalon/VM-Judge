@@ -945,6 +945,22 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.let { t0 -> Regex("""^(.*\b(c\d+)\b.*?),? and (?:i|we) have (two|three|four|\d+|another|one more|a second) more(?: (c\d+)s?)?(?: copies)? in (?:my |the )?(?:deck|library)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 val n = when (r.groupValues[3].lowercase()) { "another", "one more", "a second" -> 1; else -> number(r.groupValues[3]) ?: r.groupValues[3].toIntOrNull() ?: 1 }
                 "${r.groupValues[1]}, i have $n ${r.groupValues[4].ifEmpty { r.groupValues[2] }} in my library" } ?: t0 }
+        // "They cast Ponder with Thalia on my side and only one land": the caster's whole mana base, said last.
+        t2 = t2.let { t0 -> Regex("""(,? and |, )(?:only|just) (one|a single|\d+|two|three|four) (?:untapped )?lands?(?: untapped| open| up)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val n = when (r.groupValues[2].lowercase()) { "one", "a single" -> 1; else -> number(r.groupValues[2]) ?: r.groupValues[2].toIntOrNull() ?: 1 }
+                val who = actorOfClause(t0.substring(0, r.range.first)) ?: ctx.lastActor ?: "me"
+                t0.substring(0, r.range.first) + ", ${if (who == "me") "i have" else "they have"} $n land${if (n == 1) "" else "s"}" } ?: t0 }
+        // "I Vial in Spell Queller in response to their Wrath of God": their spell first, the Vial in response.
+        t2 = t2.let { t0 -> Regex("""^(.*\bvial in .*?) in response to (?:their |my opponent's |the |a )?(c\d+)(?: (?:on|at|targeting) .*)?$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "they cast ${r.groupValues[2]}, ${r.groupValues[1]} in response" } ?: t0 }
+        // "Can I Queller it?": Spell Queller's name as the verb for flashing it in at the spell.
+        t2 = t2.let { t0 -> Regex("""^can (?:i|we) (c\d+) (it|that|the spell|(?:their |the )?c\d+)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                if (m.cards[r.groupValues[1]]?.display == "Spell Queller") "can i cast ${r.groupValues[1]} in response" else t0 } ?: t0 }
+        // "I flash in Spell Queller on their Thalia": their creature spell is on the stack, the Queller answers it.
+        t2 = t2.let { t0 -> Regex("""^(i|we) (?:flash(?:es)? in|casts?|plays?) (?:my |an? )?(c\d+) (?:on|at|targeting) (?:their|my opponent's) (c\d+)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+                val q = m.cards[r.groupValues[2]]; val tgt = m.cards[r.groupValues[3]]
+                if (q?.display == "Spell Queller" && tgt != null && ctx.objects.values.none { it.card.oracleId == tgt.oracleId }) "they cast ${r.groupValues[3]}, in response i cast ${r.groupValues[2]} targeting ${r.groupValues[3]}" else t0 } ?: t0 }
+        // "Does it exile Wrath?" after a Spell Queller: where the spell ended up.
+        t2 = t2.replace(Regex("""^(?:does|did|will) (?:it|that|my c\d+|the c\d+|c\d+) (?:exile|eat|catch|get|snag|grab) (?:the |their |my opponent's )?(c\d+)\??$""", RegexOption.IGNORE_CASE), "where does $1 go")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         return t2
@@ -4729,6 +4745,8 @@ class SituationParser(private val names: NameIndex) {
             val vial = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && (it.card.name ?: "").contains("Vial", true) } ?: return@let
             val card = m.cards[r.groupValues[1]] ?: return@let
             if (!card.typeLine.contains("Creature")) return@let
+            // "I Vial in Spell Queller": a Vial whose counters weren't said has as many as the creature needs.
+            if ((vial.counters["charge"] ?: 0) == 0 && card.manaValue > 0) { ctx.objects[vial.id] = vial.copy(counters = vial.counters + ("charge" to card.manaValue)); ctx.notes += "Aether Vial is assumed to have ${card.manaValue} charge counters, since ${card.display} was put in with it and nothing said otherwise." }
             // "Kitchen Finks in hand … can I vial in Kitchen Finks": the card already said to be in hand, not a second copy.
             val cid = ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "hand" && it.card.name == card.display }?.id ?: addObject(card, "me", false, ctx, zone = "hand", allowDuplicate = true)
             val inResponse = r.groupValues[2].isNotEmpty() || ctx.events.lastOrNull()?.verb == "cast"
@@ -10296,6 +10314,8 @@ class SituationParser(private val names: NameIndex) {
                     id
                 }
             } else null
+            // "I have Spell Queller in hand. Can I Queller it?": the copy already said to be in hand is the one cast, not a second.
+            ?: ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "hand" && it.controller == who && card.typeLine.contains("Creature") }?.id
         repeat(n) { i -> ctx.events += EventSpec("cast", player = who, obj = gyObj, card = if (gyObj != null) null else CardRef(name = card.display, oracleId = card.oracleId), targets = targets, modes = modes, to = if (copyOf != null) "copy:$copyOf" else if (flashedBack) "flashback" else if (overload) "overload" else if (kicked) "kicked" else if (evoked) "evoke" else if (revolt != null) "revolt" else if (mastery != null) "spellmastery" else namedCard?.let { "name:$it" } ?: modeWord?.let { "mode:" + List(modeRepeat) { _ -> it }.joinToString("|") } ?: if (altCost) "altcost" else null, amount = xValue, payLife = ctx.payLife); if (secondTime != null && i == 0) ctx.events += EventSpec("resolveAll") }
         ctx.payLife = null
         if (n > 1) ctx.notes += "${card.display} is cast $n times, one copy after another (each is its own spell)." 

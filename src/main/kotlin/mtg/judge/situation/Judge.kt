@@ -550,6 +550,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "activate" -> {
                 val objId = e.obj ?: throw JudgeException("activate needs an object")
                 val obj = state.obj(objId)
+                // "I Vial in Spell Queller": a Vial whose counters were never said has as many as the creature put in needs.
+                if (obj.def.name == "Aether Vial" && !obj.counters.containsKey("charge")) e.to?.takeIf { it.startsWith("put:") }?.removePrefix("put:")?.let { cid -> state.objects[cid]?.def?.manaValue?.toInt() }?.takeIf { it > 0 }?.let { mv ->
+                    obj.counters["charge"] = mv; state.assumptions += "Aether Vial is assumed to have $mv charge counters: nothing said how many, and the creature put in with it has mana value $mv." }
                 // "I cast Walking Ballista for X=3 and ping their 1/1": the Ballista has to resolve and be on the
                 // battlefield before its ability can be activated; the pings come after, not in response to itself.
                 if (obj.zone == mtg.judge.engine.Zone.STACK && state.stack.any { it.source === obj }) { state.trace.step("${obj.name} is still a spell on the stack; a permanent's activated ability can be activated only once it's on the battlefield, so the spell resolves first.", "113.6", "601.2a"); engine.resolveAll() }

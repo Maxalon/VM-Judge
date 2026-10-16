@@ -33782,5 +33782,95 @@
       "Lightning Bolt now targets Spellskite instead of you"
     ],
     "cite": []
+  },
+  {
+    "id": "queller-it-thoughtseize",
+    "text": "They cast Thoughtseize on me and I have Spell Queller in hand. Can I Queller it?",
+    "expect": [
+      "Thoughtseize: the stack → exile (Spell Queller); it doesn't resolve"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dismember-goyf-one-land",
+    "text": "I have Tarmogoyf and they cast Dismember on it with only a land in the graveyards. Does it die?",
+    "expect": [
+      "Yes: Tarmogoyf died"
+    ],
+    "cite": []
+  },
+  {
+    "id": "queller-on-thalia-then-bolted",
+    "text": "I flash in Spell Queller on their Thalia. Then they Bolt my Queller. What happens to Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben: the stack → exile (Spell Queller)",
+      "Thalia, Guardian of Thraben comes back: opponent may cast it from exile without paying its mana cost"
+    ],
+    "cite": []
+  },
+  {
+    "id": "firewalker-at-3-face-bolt",
+    "text": "They Lightning Bolt my face and I'm at 3 with Kor Firewalker out. Do I die?",
+    "expect": [
+      "No: You are still in the game at 1 life"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-1-card-which-attacks",
+    "text": "I attack with a 2/2 and a 1/1. They have Ensnaring Bridge with 1 card. Which can attack?",
+    "expect": [
+      "No: a 2/2 creature can't attack (Ensnaring Bridge",
+      "Yes: a 1/1 creature can attack"
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "thalia-taxes-flashback-bolt",
+    "text": "I have Thalia. They cast Snapcaster Mage and flashback Lightning Bolt. How much does the Bolt cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ponder-under-thalia-one-land",
+    "text": "They cast Ponder with Thalia on my side and only one land. Can they?",
+    "expect": [
+      "No: Ponder can't be cast (costs 2, only 1 mana available)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-queller-vs-wrath",
+    "text": "I Vial in Spell Queller in response to their Wrath of God. Does it exile Wrath?",
+    "expect": [
+      "Wrath of God: the stack → exile (Spell Queller)",
+      "Wrath of God is in exile"
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-2-vs-vialed-snapcaster",
+    "text": "I have Chalice on 2 and they cast Snapcaster Mage with Vial. Is it countered?",
+    "expect": [
+      "No. Snapcaster Mage was put onto the battlefield by Aether Vial's ability, not cast"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bolt-shadow-player-at-2-in-combat",
+    "text": "My opponent attacks with Death's Shadow at 2 life. I Bolt them in response. What happens?",
+    "expect": [
+      "opponent loses the game"
+    ],
+    "notExpect": [
+      "You take 14 damage"
+    ],
+    "cite": [
+      "104.3a"
+    ]
   }
 ]

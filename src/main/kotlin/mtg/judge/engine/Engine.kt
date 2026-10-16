@@ -1736,6 +1736,9 @@ class Engine(val state: GameState) {
 
     /** The combat damage step (510), including a first-strike step when needed (510.4). */
     fun combatDamage() {
+        // "They attack with Death's Shadow at 2 life. I Bolt them in response": a player who has lost has left the game (104.3a), and combat damage is never dealt.
+        fun reallyLost(p: Player) = p.lost && p.id !in state.cantLoseThisTurn && state.objects.values.none { it.isOnBattlefield() && it.controller == p.id && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.CantLose } }
+        if (state.players.any { reallyLost(it) } && state.players.count { !reallyLost(it) } <= 1) { trace.step("The game is over: ${state.players.filter { reallyLost(it) }.joinToString(" and ") { it.subject }} ${if (state.players.count { reallyLost(it) } == 1) "has" else "have"} lost, so combat damage is never dealt.", "104.3a", "104.2a"); return }
         state.step = "combat_damage"
         // Fog Bank and the like: their own combat damage, given and taken, is prevented.
         for (o in state.objects.values.filter { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.any { e -> e is StaticEffect.PreventOwnCombatDamage } }) {
