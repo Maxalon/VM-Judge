@@ -36679,5 +36679,133 @@
     "cite": [
       "701.9a"
     ]
+  },
+  {
+    "id": "tt255-two-spells-one-turn-with-lands",
+    "text": "I have Thalia out. They cast Brainstorm and Ponder in one turn with 4 lands. Can they?",
+    "expect": [
+      "Yes: Brainstorm ({U}, 2) and Ponder ({U}, 2) cost 4 mana together, and opponent has 4 available"
+    ]
+  },
+  {
+    "id": "tt255-two-spells-one-turn-short",
+    "text": "I control Thalia. They cast Brainstorm and Ponder in one turn with 3 lands. Can they?",
+    "expect": [
+      "No: Brainstorm ({U}, 2) and Ponder ({U}, 2) cost 4 mana together, and opponent has only 3 available"
+    ]
+  },
+  {
+    "id": "tt255-their-attacker-damage-after-blocker-bolted",
+    "text": "They attack with a 2/2 and I block with my 2/2. Before damage they Bolt my blocker. Does their attacker deal damage to me?",
+    "expect": [
+      "a 2/2 creature deals no combat damage: its blocker left combat and it stays blocked",
+      "No: a 2/2 creature dealt no damage to you."
+    ]
+  },
+  {
+    "id": "tt255-respond-with-spellskites-ability",
+    "text": "My opponent is at 3. I cast Lightning Bolt at them and they respond with Spellskite's ability. Does Bolt still hit them?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of opponent",
+      "No: opponent takes no damage"
+    ],
+    "notExpect": [
+      "Spellskite enters the battlefield",
+      "opponent loses the game"
+    ]
+  },
+  {
+    "id": "tt255-shadow-cast-it-and-dies",
+    "text": "I have Death's Shadow in hand at 13 life. Can I cast it and does it die?",
+    "expect": [
+      "Death's Shadow enters the battlefield",
+      "Yes: Death's Shadow died (it's in the graveyard)"
+    ]
+  },
+  {
+    "id": "tt255-respond-tapping-for-mana",
+    "text": "They Wasteland my Tundra. Can I respond by tapping it for mana?",
+    "expect": [
+      "Tundra's mana ability: add {W}.",
+      "Yes. Tapping a land for mana is a mana ability: it doesn't use the stack"
+    ],
+    "cite": [
+      "605.3a"
+    ]
+  },
+  {
+    "id": "tt255-cavern-naming-human-after-counter",
+    "text": "They cast Counterspell on my Thalia. I have Cavern of Souls naming Human. Does Thalia resolve?",
+    "expect": [
+      "Thalia, Guardian of Thraben can't be countered (cast with Cavern of Souls)",
+      "Thalia, Guardian of Thraben enters the battlefield"
+    ],
+    "notExpect": [
+      "Yes: Thalia, Guardian of Thraben is countered"
+    ]
+  },
+  {
+    "id": "tt255-cast-it-they-bolt-it",
+    "text": "I have Grizzly Bears in hand. I cast it. They Bolt it. Does it die?",
+    "expect": [
+      "Grizzly Bears enters the battlefield",
+      "Grizzly Bears has 3 damage marked",
+      "Yes: Grizzly Bears died (it's in the graveyard)"
+    ],
+    "notExpect": [
+      "You take 3 damage"
+    ]
+  },
+  {
+    "id": "tt255-countered-creature-not-died",
+    "text": "I cast Grizzly Bears. They counter it. Does it die?",
+    "expect": [
+      "No: Grizzly Bears didn't die; it was countered, so the card went from the stack to the graveyard without ever being on the battlefield (701.5a, 700.4)"
+    ],
+    "cite": [
+      "700.4",
+      "701.5a"
+    ]
+  },
+  {
+    "id": "tt255-leyline-vs-thoughtseize",
+    "text": "I control Leyline of Sanctity. They cast Thoughtseize on me. What happens?",
+    "expect": [
+      "Thoughtseize can't target you",
+      "you have hexproof (Leyline of Sanctity)"
+    ]
+  },
+  {
+    "id": "tt255-bob-bolted-response-they-lose",
+    "text": "I Bolt their Dark Confidant in response to its upkeep trigger. Do they still lose life?",
+    "expect": [
+      "Dark Confidant's trigger still resolves even though Dark Confidant is gone (113.7a)",
+      "Yes: opponent loses life equal to the revealed card's mana value"
+    ]
+  },
+  {
+    "id": "tt255-probe-life-under-thalia-cost",
+    "text": "They have Thalia. I cast Gitaxian Probe paying 2 life. How much mana does it cost?",
+    "expect": [
+      "You pay 2 life. It pays Gitaxian Probe's Phyrexian mana (107.4f).",
+      "Gitaxian Probe costs {U/P} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all"
+    ]
+  },
+  {
+    "id": "tt255-goyf-blocked-by-skite-and-bolted",
+    "text": "I attack with Tarmogoyf which is 5/6. They block with Spellskite and Bolt the Goyf. Does it die?",
+    "expect": [
+      "Tarmogoyf has 3 damage marked",
+      "Spellskite: the battlefield → opponent's graveyard",
+      "No: Tarmogoyf is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt255-finks-dismember-persists",
+    "text": "I have Kitchen Finks. They cast Dismember on it. Does it persist?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1",
+      "You gain 2 life"
+    ]
   }
 ]
