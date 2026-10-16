@@ -1386,6 +1386,16 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^how (?:is|does|do) (?:the |its |combat )?damage (?:get )?(?:assigned|divided|split|dealt|work)(?: now| then| here)?\??$""", RegexOption.IGNORE_CASE), "damageassign-question")
         // "I have Spell Pierce and one Island": "one" of a named card in a list is just the card.
         t2 = t2.let { t0 -> Regex("""\band one (c\d+)(?=$|[,.?]| and\b| in hand)""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1]]?.typeLine?.contains("Land") == true && !Regex("""\b(?:i|we) have (?:an? |the )?c\d+ and one c\d+$""", RegexOption.IGNORE_CASE).containsMatchIn(t0)) r.value else "and ${r.groupValues[1]}" } }
+        // "their own Goblin Guide": "own" adds nothing.
+        t2 = t2.replace(Regex("""\b(my|their|his|her) own (?=c\d+\b|\d+/\d+)""", RegexOption.IGNORE_CASE), "$1 ")
+        // "they Snapcaster Mage flashback Counterspell on my Bolt": the Mage cast, then the flashback.
+        t2 = t2.let { t0 -> Regex("""(^|, |\s+and\s+)(i|we|they|he|she) (c\d+) (?:flashback|flash back|flashbacks|flashes back) (c\d+)\b""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (m.cards[r.groupValues[3]]?.display in setOf("Snapcaster Mage", "Torrential Gearhulk")) t0.replaceRange(r.range, "${r.groupValues[1]}${r.groupValues[2]} cast ${r.groupValues[3]} and flashback ${r.groupValues[4]}") else t0 } ?: t0 }
+        // "How much do I take?": damage.
+        t2 = t2.replace(Regex("""^how much (?:do|will|would) (i|we|they|he|she) take(?: from (?:it|that|the attack|combat))?\??$""", RegexOption.IGNORE_CASE), "how much damage do $1 take")
+        // "Kitchen Finks that already persisted": it carries the -1/-1 counter persist put on it.
+        t2 = t2.replace(Regex("""\b(c\d+) (?:that|which|who) (?:has )?(?:already )?(?:persisted|returned|came back(?: once| already)?|already came back|returned once|has persisted)(?: once| already| before)?\b""", RegexOption.IGNORE_CASE), "$1 with a -1/-1 counter")
+        // "Can I Queller it and what happens to Hymn?": the second half is what the outcome shows anyway.
+        t2 = t2.replace(Regex("""^(can (?:i|we) .+?) and what happens(?: to (?:it|that|the c\d+|c\d+|the spell))?\??$""", RegexOption.IGNORE_CASE), "$1")
         // "Which Chalice counters it?": whether it is countered, and by which.
         t2 = t2.replace(Regex("""^which (?:chalice|c\d+|one) counters? (?:it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "is it countered")
         // "I block the 3/3 with Spellskite and take the 2/2": the unblocked one is simply unblocked.
@@ -1969,7 +1979,7 @@ class SituationParser(private val names: NameIndex) {
             // "what happens to my lands?" with none described: one stands in.
         t2 = t2.let { t0 -> Regex("""\bwhat happens to my (lands|creatures|artifacts|enchantments|permanents|planeswalkers)\??$""", RegexOption.IGNORE_CASE).replace(t0) { r -> val k = r.groupValues[1].removeSuffix("s"); if (ctx.objects.values.any { it.controller == "me" && (it.card.name ?: "").contains(k, true) }) "what happens" else "i have a $k, what happens" } }
             // "Which can attack?" after the creatures were listed.
-        t2 = t2.replace(Regex("""^which(?: ones?| of them)? can (attack|block)\??$""", RegexOption.IGNORE_CASE), "which of my creatures can $1")
+        t2 = t2.replace(Regex("""^(?:which|what)(?: ones?| of them| of mine)? can (?:still |even )?(attack|block)(?: this turn| now| under (?:the )?bridge| them| into them)?\??$""", RegexOption.IGNORE_CASE), "which of my creatures can $1")
             // "they cast Ensnaring Bridge while I'm attacking (with a 3/3)": the attack is declared first.
         t2 = t2.let { t0 -> Regex("""\b(they|he|she|my opponent|the opponent|opponent) (casts?|plays?) ((?:an? |the )?c\d+) while (?:i'm|i am|we're) attacking(?: (?:with|them with) ((?:my |an? |the )?[^,]+?))?(?=[.,;?]|$)""", RegexOption.IGNORE_CASE).replace(t0) { r -> "i attack with ${r.groupValues[4].ifEmpty { "a creature" }}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}" } }
             // "my opponent taps Cabal Coffers with 5 Swamps": the Swamps are the board, then the tap.
@@ -2612,7 +2622,9 @@ class SituationParser(private val names: NameIndex) {
             // "I cast Snapcaster Mage and flash back Lightning Bolt at their 2/2": the Bolt is in the graveyard, the Mage targets it.
         t2 = Regex("""\b(i|we|they|he|she|my opponent|the opponent) (?:casts?|plays?) (c\d+) and (?:then )?(?:flash ?backs?|flashbacks?) (?:the |my |their )?(c\d+)\b""", RegexOption.IGNORE_CASE).replace(t2) { r ->
             val who = r.groupValues[1].lowercase(); val poss = if (who in setOf("i", "we")) "my" else "their"
-            if (m.cards[r.groupValues[2]]?.display != "Snapcaster Mage") r.value else "${r.groupValues[1]} have ${r.groupValues[3]} in $poss graveyard, ${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}, then ${r.groupValues[1]} flashback ${r.groupValues[3]}" }
+            // "I Bolt their 2/2 and they cast Snapcaster and flashback Counterspell on my Bolt": a response keeps my spell on the stack, so no "then".
+            val responding = r.range.first > 0 && (if (who in setOf("i", "we")) Regex("""^(?:they|he|she|my opponent|the opponent) """, RegexOption.IGNORE_CASE) else Regex("""^(?:i|we) """, RegexOption.IGNORE_CASE)).containsMatchIn(t2)
+            if (m.cards[r.groupValues[2]]?.display != "Snapcaster Mage") r.value else "${r.groupValues[1]} have ${r.groupValues[3]} in $poss graveyard, ${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}, ${if (responding) "" else "then "}${r.groupValues[1]} flashback ${r.groupValues[3]}" }
             // "Can my opponent cast Snapcaster Mage and flashback Lightning Bolt?": the same, asked; the flashback is the question.
         t2 = Regex("""^can (i|we|they|he|she|my opponent|the opponent) (?:casts?|plays?) (c\d+) and (?:then )?(?:flash ?backs?|flashbacks?) (?:the |my |their )?(c\d+)\??$""", RegexOption.IGNORE_CASE).replace(t2) { r ->
             val who = r.groupValues[1].lowercase(); val poss = if (who in setOf("i", "we")) "my" else "their"
@@ -5557,7 +5569,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = who, to = "lostCount:${r.groupValues[1].ifEmpty { r.groupValues[2] }}"); ctx.note(who); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "Where does Rancor go?" / "does Rancor come back to my hand?": the card's zone at the end, and why its return did or didn't happen.
-        Regex("""^(?:where does|where did|where will|where's) (?:it|that|(?:my |the )?(c\d+)) (?:go|end up|go to|land)(?: to| now| then)?$|^(?:does|will|did) (?:it|that|(?:my |the )?(c\d+)) (?:still )?(?:come back|return|go back|bounce back)(?: to (?:my|its owner's|the) hand)?$""").find(clause0)?.let { r ->
+        Regex("""^(?:where does|where did|where will|where's) (?:it|that|(?:my |the )?(c\d+)) (?:go|end up|go to|land)(?: to| now| then)?$|^(?:does|will|did) (?:it|that|(?:my |the )?(c\d+)) (?:still )?(?:come back|return|go back|bounce back)(?: again| a second time| twice| once more)?(?: to (?:my|its owner's|the) hand)?$""").find(clause0)?.let { r ->
             val ph = r.groupValues[1].ifEmpty { r.groupValues[2] }
             val id = ph.takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { c -> objectIdFor(c, ctx) ?: ctx.events.lastOrNull { e -> e.verb == "cast" && e.card?.name == c.display }?.let { slug(c.display) } }
                 ?: ctx.lastMentioned?.takeIf { it in ctx.objects && (isCreatureName(ctx.objects.getValue(it).card.name) || ctx.events.none { e -> e.verb == "cast" && e.targets.any { t -> t in ctx.objects && isCreatureName(ctx.objects.getValue(t).card.name) } }) }
@@ -11203,7 +11215,8 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.none { e -> e.verb == "cast" && (e.card?.name == spell || e.obj?.let { ctx.objects[it]?.card?.name } == spell) } && ctx.events.any { e -> e.verb == "activate" && e.obj?.let { ctx.objects[it]?.card?.name } == "Aether Vial" }) {
                 ctx.asks += EventSpec("ask", to = "text:No. $spell was put onto the battlefield by Aether Vial's ability, not cast, so nothing that counters spells or triggers on a spell being cast (Chalice of the Void, Counterspell, Thalia's tax) ever sees it: it was never a spell (601.2, 603.6)."); return true
             }
-            ctx.asks += EventSpec("ask", card = CardRef(name = spell), to = "countered")
+            // "Does my Bolt resolve?": the same question the other way round; the answer's yes and no are swapped.
+            ctx.asks += EventSpec("ask", card = CardRef(name = spell), to = if (Regex("""\bresolves?$""").containsMatchIn(clause0)) "countered:resolve" else "countered")
             ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "can I cast it next turn?" (rewritten above): a card given flashback until end of turn, or any card in a graveyard.
@@ -11510,7 +11523,12 @@ class SituationParser(private val names: NameIndex) {
                 } else if (snap < 0) null else {
                     val id = addObject(card, who, false, ctx, zone = "graveyard", allowDuplicate = true)
                     ctx.events[snap] = ctx.events[snap].copy(targets = listOf(id))
-                    if (snap == ctx.events.lastIndex) ctx.events += EventSpec("resolveAll")
+                    if (snap == ctx.events.lastIndex) {
+                        // "I Bolt their 2/2 and they Snapcaster, flashback Counterspell on my Bolt": only the Mage and its trigger resolve, the Bolt stays below.
+                        val lastResolve = ctx.events.indexOfLast { it.verb == "resolveAll" }
+                        val theirsBelow = (lastResolve + 1 until snap).any { i -> ctx.events[i].verb == "cast" && ctx.events[i].player != who }
+                        if (theirsBelow) { ctx.events += EventSpec("resolve"); ctx.events += EventSpec("resolve") } else ctx.events += EventSpec("resolveAll")
+                    }
                     ctx.notes += "${ctx.events[snap].card?.name}'s trigger is read as targeting ${card.display} in ${if (who == "me") "your" else "their"} graveyard, which is then flashed back."
                     id
                 }

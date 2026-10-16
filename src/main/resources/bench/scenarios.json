@@ -23280,7 +23280,7 @@
     "text": "i cast Counterspell targeting their Counterspell that targets my Grizzly Bears, does my bears resolve",
     "expect": [
       "Counterspell is countered.",
-      "No: Grizzly Bears isn't countered; it resolves."
+      "Yes: Grizzly Bears isn't countered; it resolves."
     ]
   },
   {
@@ -25587,7 +25587,7 @@
     "text": "I cast Counterspell on my opponent's Counterspell that targets my Grizzly Bears. Does my Grizzly Bears resolve?",
     "expect": [
       "Counterspell is countered.",
-      "No: Grizzly Bears isn't countered; it resolves."
+      "Yes: Grizzly Bears isn't countered; it resolves."
     ]
   },
   {
@@ -37440,6 +37440,110 @@
     ],
     "notExpect": [
       "No: Aether Vial is on the battlefield"
+    ]
+  },
+  {
+    "id": "tt262-wrath-their-own-guide",
+    "text": "They cast Wrath of God with my Thalia and their own Goblin Guide out. Who dies?",
+    "expect": [
+      "Goblin Guide: the battlefield → opponent's graveyard",
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard"
+    ]
+  },
+  {
+    "id": "tt262-shadow-at-thirteen-thoughtseize-self",
+    "text": "I have Death's Shadow at 13 life. I cast Thoughtseize on myself. Does Shadow survive?",
+    "expect": [
+      "Death's Shadow: the battlefield → your graveyard",
+      "No: Death's Shadow is in the graveyard"
+    ]
+  },
+  {
+    "id": "tt262-bridge-what-can-attack-mine",
+    "text": "They have Ensnaring Bridge with 1 card in hand. I have Goblin Guide and a 1/1. What can attack?",
+    "expect": [
+      "No: Goblin Guide can't attack (Ensnaring Bridge: opponent has 1 card in hand and Goblin Guide's power is 2, 508.1c)",
+      "Yes: a 1/1 creature can attack"
+    ]
+  },
+  {
+    "id": "tt262-snapcaster-flashback-counterspell-response",
+    "text": "I cast Bolt at their 2/2 and they Snapcaster Mage flashback Counterspell on my Bolt. Does my Bolt resolve?",
+    "expect": [
+      "Lightning Bolt is countered",
+      "No: it doesn't resolve. Lightning Bolt is countered"
+    ],
+    "notExpect": [
+      "a 2/2 creature has 3 damage marked"
+    ]
+  },
+  {
+    "id": "tt262-does-it-resolve-chalice",
+    "text": "They have Chalice on 1. I cast Thoughtseize. Does it resolve?",
+    "expect": [
+      "No: it doesn't resolve. Thoughtseize is countered (by Chalice of the Void)"
+    ]
+  },
+  {
+    "id": "tt262-trampler-into-skite-how-much",
+    "text": "They attack with a 4/4 trampler. I block with Spellskite. How much do I take?",
+    "expect": [
+      "Spellskite: the battlefield → your graveyard",
+      "No: you take no damage"
+    ]
+  },
+  {
+    "id": "tt262-leyline-bolt-face-can-they",
+    "text": "I have Leyline of Sanctity. They cast Lightning Bolt at my face. Can they?",
+    "expect": [
+      "Lightning Bolt can't target you",
+      "No: Lightning Bolt can't target you"
+    ]
+  },
+  {
+    "id": "tt262-verdict-five-lands-under-own-thalia",
+    "text": "I control Thalia and cast Supreme Verdict with 5 lands. Can I?",
+    "expect": [
+      "Yes: Supreme Verdict can be cast. Supreme Verdict costs {1}{W}{W}{U} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 5 mana in all. You have 5 available, enough."
+    ]
+  },
+  {
+    "id": "tt262-path-after-blockers-land",
+    "text": "I attack with Tarmogoyf and they Path it after blockers. Do I still get the land?",
+    "expect": [
+      "Yes: the search is yours"
+    ]
+  },
+  {
+    "id": "tt262-guide-into-wall",
+    "text": "They block my Goblin Guide with a 0/4 wall. Does Guide deal damage to them?",
+    "expect": [
+      "a 0/4 wall creature has 2 damage marked",
+      "No: Goblin Guide dealt no damage to opponent"
+    ]
+  },
+  {
+    "id": "tt262-finks-already-persisted",
+    "text": "I have Kitchen Finks that already persisted. They Bolt it. Does it come back again?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it",
+      "No: Kitchen Finks is in your graveyard"
+    ]
+  },
+  {
+    "id": "tt262-face-bolt-skite-hint",
+    "text": "My opponent has 2 life and a Spellskite. I Bolt their face. Do they die?",
+    "expect": [
+      "Spellskite's controller can respond: paying {U/P} changes Lightning Bolt's target to Spellskite (a 0/4)",
+      "Yes: opponent has lost the game"
+    ]
+  },
+  {
+    "id": "tt262-queller-hymn-and-what-happens",
+    "text": "I have Spell Queller in hand with 4 lands and they cast Hymn to Tourach. Can I Queller it and what happens to Hymn?",
+    "expect": [
+      "Spell Queller enters the battlefield",
+      "Hymn to Tourach: the stack → exile (Spell Queller); it doesn't resolve"
     ]
   }
 ]
