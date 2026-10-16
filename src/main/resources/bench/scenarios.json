@@ -32477,5 +32477,104 @@
       "opponent takes 1 damage."
     ],
     "cite": []
+  },
+  {
+    "id": "saga-under-blood-moon-precombat",
+    "text": "They have Blood Moon and I have Urza's Saga with 2 lore counters. What happens at my precombat main phase?",
+    "expect": [
+      "Urza's Saga gets a lore counter (3).",
+      "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities"
+    ],
+    "cite": [
+      "714.2b"
+    ]
+  },
+  {
+    "id": "spirits-into-bridge-zero-cards",
+    "text": "I attack with two Spirit tokens into their Ensnaring Bridge with 0 cards in hand. Can they attack?",
+    "expect": [
+      "Spirit token can't attack (Ensnaring Bridge). (×2)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "surgical-in-response-to-snapcaster",
+    "text": "I cast Snapcaster Mage targeting Lightning Bolt. They Surgical Extraction the Bolt in response. Can I still flash it back?",
+    "expect": [
+      "Lightning Bolt: your graveyard → exile.",
+      "Snapcaster Mage's triggered ability doesn't resolve (all targets illegal)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "deathrite-exiles-their-bolt-drains",
+    "text": "I have Deathrite Shaman and they have a Lightning Bolt in their graveyard. Can I exile it to gain life?",
+    "expect": [
+      "Lightning Bolt: opponent's graveyard → exile.",
+      "opponent loses 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "finks-block-at-1-life",
+    "text": "I'm at 1 life and I block their 2/2 with Kitchen Finks. Do I survive?",
+    "expect": [
+      "Yes: You are still in the game at 3 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "probe-no-mana-under-thalia",
+    "text": "They have Thalia and I cast Gitaxian Probe for 2 life with no mana. Can I?",
+    "expect": [
+      "Gitaxian Probe can't be cast: the Phyrexian mana can be paid with life, but the other {1} needs mana and only 0 is available."
+    ],
+    "cite": [
+      "107.4f"
+    ]
+  },
+  {
+    "id": "meddling-mage-names-push",
+    "text": "I have Meddling Mage naming Fatal Push. They cast Fatal Push on it. Does Mage die?",
+    "expect": [
+      "Fatal Push can't be cast (Meddling Mage names it).",
+      "No: Meddling Mage is still on the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "brutality-shrink-and-drain",
+    "text": "I cast Collective Brutality choosing -2/-2 on their Thalia and drain. What happens?",
+    "expect": [
+      "Thalia, Guardian of Thraben: the battlefield → opponent's graveyard.",
+      "opponent loses 2 life.",
+      "You gain 2 life."
+    ],
+    "cite": []
+  },
+  {
+    "id": "cage-stops-persist",
+    "text": "I have Grafdigger's Cage. They cast Kitchen Finks and it dies. Does persist work?",
+    "expect": [
+      "Kitchen Finks doesn't come back: Grafdigger's Cage stops creature cards entering from graveyards, so persist does nothing."
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-on-my-side-counters-thoughtseize",
+    "text": "They Thoughtseize me with a Chalice on 1 on my side. Does Chalice counter it?",
+    "expect": [
+      "Yes: Thoughtseize is countered (by Chalice of the Void)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "spellskite-cannot-take-surgical",
+    "text": "I have Spellskite. They cast Surgical Extraction on my graveyard Bolt. Can I redirect it to Spellskite?",
+    "expect": [
+      "Surgical Extraction's target isn't changed (Spellskite isn't a legal target for it).",
+      "Lightning Bolt: your graveyard → exile."
+    ],
+    "cite": []
   }
 ]

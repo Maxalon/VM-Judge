@@ -924,10 +924,12 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             .map { it.value.removeSuffix("s") }.filter { it.length > 1 && it !in setOf("the", "a", "an", "to", "of", "it", "that", "this", "your", "you", "their", "from", "on", "in", "any") }.toList()
         // Player shorthand for a mode: "bounce" is "return … to its owner's hand", "shatter" is "destroy … artifact".
         val shorthand = mapOf("bounce" to "return owner hand", "shatter" to "destroy artifact", "counterspell" to "counter spell", "fog" to "prevent all damage",
-            "tuck" to "bottom library", "wrath" to "destroy all creatures", "naturalize" to "destroy artifact enchantment", "disenchant" to "destroy artifact enchantment")
+            "tuck" to "bottom library", "wrath" to "destroy all creatures", "naturalize" to "destroy artifact enchantment", "disenchant" to "destroy artifact enchantment",
+            "drain" to "loses life gain life", "shrink" to "gets until end of turn", "discard" to "discards card")
+        // "-2/-2": the phrase itself in a mode's text decides before any word scoring (its digits are too short to score).
+        texts.indexOfFirst { it.lowercase().contains(phrase.trim().lowercase()) }.takeIf { it >= 0 && phrase.trim().length >= 3 }?.let { return it }
         val want = words(shorthand[phrase.trim()] ?: phrase)
         if (want.isEmpty()) return null
-        texts.indexOfFirst { it.lowercase().contains(phrase) }.takeIf { it >= 0 }?.let { return it }
         val scored = texts.mapIndexed { i, t -> i to words(t).toSet().let { have -> want.count { w -> w in have }.toDouble() / want.size } }
         val best = scored.maxByOrNull { it.second } ?: return null
         // A clear winner only: a tie means the asker's words fit two modes equally well, and guessing would be worse than asking.

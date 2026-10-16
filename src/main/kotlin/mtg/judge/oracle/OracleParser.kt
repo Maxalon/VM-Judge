@@ -1828,6 +1828,11 @@ object OracleParser {
         } }
         gainSelfRe.matchEntire(s)?.let { m -> keywordsIn(m.groupValues[1])?.let { kws -> return Effect.GainKeywordsSelf(kws) } }
         gainLifeRe.matchEntire(s)?.let { return Effect.GainLife(who(it.groupValues[1]), it.groupValues[2].toInt()) }
+        // "Target opponent loses 2 life and you gain 2 life" (Collective Brutality's drain mode).
+        Regex("""^(target player|target opponent|each opponent|that player|each player|an opponent) loses (\d+) life and you gain (\d+) life\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m ->
+            val w = m.groupValues[1].lowercase().let { if (it == "target opponent" || it == "an opponent") Who.TARGET_PLAYER else who(it) }
+            return Effect.Seq(listOf(Effect.LoseLife(w, m.groupValues[2].toInt()), Effect.GainLife(Who.YOU, m.groupValues[3].toInt())))
+        }
         loseLifeRe.matchEntire(s)?.let { return Effect.LoseLife(who(it.groupValues[1]), it.groupValues[2].toIntOrNull() ?: 0, x = it.groupValues[2].equals("X", true)) }
         if (Regex("""^you gain life equal to the life lost this way\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.GainLifeLostThisWay
         if (Regex("""^if a (?:creature|permanent) dealt damage this way would die this turn, exile it instead\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ExileIfDamagedDies

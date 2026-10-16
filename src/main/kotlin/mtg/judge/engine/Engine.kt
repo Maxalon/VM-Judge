@@ -131,7 +131,11 @@ class Engine(val state: GameState) {
             if (tax > 0 && alternative && taxes.isNotEmpty()) state.outcomes += "${card.name} still costs {$tax} more (${taxes.joinToString(", ") { it.first.name }}): a cost increase applies to an alternative cost too (601.2f)."
             // Mana stated as a count, or the untapped lands named ("I have 2 Islands"), less what earlier casts used.
             // A stated count plus any described mana sources (availableMana adds them up); described sources alone only when nothing else could pay.
-            (if (player.mana != null) availableMana(player) else availableMana(player)?.takeIf { landsOnly(player) })?.let { avail -> obj.manaAvailableAtCast = avail; if (cost > avail) { trace.step("${player.subject} ${player.v("has", "have")} only $avail mana available and ${card.name} costs $cost, so it can't be cast: the total cost can't be paid.", "601.2h", "601.2f"); state.outcomes += "${card.name} can't be cast (costs $cost, only $avail mana available)."; return null } else if (taxes.isNotEmpty() || commanderTax > 0) trace.step("${player.subject} ${player.v("has", "have")} $avail mana available, enough for the $cost.", "601.2h") }
+            (if (player.mana != null) availableMana(player) else availableMana(player)?.takeIf { landsOnly(player) })?.let { avail -> obj.manaAvailableAtCast = avail
+                val phyrexianPips = Regex("""\{[WUBRG]/P\}""").findAll(card.manaCost ?: "").count()
+                if (cost > avail && phyrexianPips > 0 && cost - phyrexianPips <= avail) trace.step("${player.subject} ${player.v("has", "have")} only $avail mana for a cost of $cost, but ${card.name}'s ${if (phyrexianPips == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"} can be paid with 2 life each (107.4f), which covers the shortfall; the rest is paid with mana.", "107.4f", "601.2h")
+                else if (cost > avail && phyrexianPips > 0) { trace.step("${player.subject} ${player.v("has", "have")} only $avail mana and ${card.name} costs $cost: its ${if (phyrexianPips == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"} can be paid with 2 life each, but the generic part${if (tax > 0) " (Thalia's tax included)" else ""} needs mana, so the total cost can't be paid.", "107.4f", "601.2h"); state.outcomes += "${card.name} can't be cast: the Phyrexian mana can be paid with life, but the other {${cost - phyrexianPips}} needs mana and only $avail is available."; return null }
+                else if (cost > avail) { trace.step("${player.subject} ${player.v("has", "have")} only $avail mana available and ${card.name} costs $cost, so it can't be cast: the total cost can't be paid.", "601.2h", "601.2f"); state.outcomes += "${card.name} can't be cast (costs $cost, only $avail mana available)."; return null } else if (taxes.isNotEmpty() || commanderTax > 0) trace.step("${player.subject} ${player.v("has", "have")} $avail mana available, enough for the $cost.", "601.2h") }
         }
         card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CantCastBeforeTurn>().firstOrNull()?.let { c ->
             val t = state.turnNumber
@@ -1080,6 +1084,10 @@ class Engine(val state: GameState) {
         return true
     }
 
+    /** A nonbasic land under Blood Moon (or Magus of the Moon): a Mountain with none of its own abilities. */
+    private fun underMoon(o: GameObject): Boolean = "Land" in o.def.types && "Basic" !in o.def.supertypes &&
+        state.objects.values.any { m -> m.isOnBattlefield() && m !== o && m.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.NonbasicLandsAreMountains } }
+
     /** Aven Mindcensor: an opponent's search looks at only the top four cards of the library (614.1a). */
     /** Who a narrated search belongs to: "its controller may search" is the targeted permanent's controller, "that player" the targeted player, otherwise the caster. */
     private fun searcherOf(text: String, item: StackItem, caster: String): String = when {
@@ -1301,7 +1309,8 @@ class Engine(val state: GameState) {
             val n = (saga.counters["lore"] ?: 0) + 1; saga.counters["lore"] = n
             trace.step("${state.player(activePlayer).possessive.replaceFirstChar { it.uppercase() }} precombat main phase begins, so a lore counter is put on ${saga.name} ($n now); this is a turn-based action that doesn't use the stack, and chapter $n triggers if ${saga.name} has one.", "714.3c", "714.2")
             state.outcomes += "${saga.name} gets a lore counter ($n)."
-            onEvent(GameEvent.LoreCounter(saga, n))
+            if (underMoon(saga)) trace.step("${saga.name} is a Mountain with no abilities under Blood Moon, so the lore counter triggers no chapter ability; the counter is still added, since that's a rule for Sagas rather than an ability of the card (714.2b).", "714.2b", "305.7")
+            else onEvent(GameEvent.LoreCounter(saga, n))
         }
         state.phase = when (step) { "untap", "upkeep", "draw" -> "beginning"; "precombat_main" -> "precombat_main"; "postcombat_main" -> "postcombat_main"; "end", "cleanup" -> "ending"; else -> "combat" }
         // "end" and "upkeep" are steps; "main" is a phase. Say which, so the line reads as Magic does.
@@ -1456,6 +1465,7 @@ class Engine(val state: GameState) {
             changed = false
             // 714.4: a Saga with lore counters at or past its last chapter, and no chapter ability of its on the stack, is sacrificed.
             for (saga in state.objects.values.filter { it.isOnBattlefield() && "Saga" in it.def.subtypes }) {
+                if (underMoon(saga)) continue   // no chapter abilities, so 714.4 never applies
                 val last = saga.def.abilities.filterIsInstance<TriggeredAbility>().mapNotNull { (it.trigger as? Trigger.Chapter)?.n }.maxOrNull() ?: continue
                 if ((saga.counters["lore"] ?: 0) >= last && state.stack.none { it.source === saga && it.kind == StackKind.TRIGGERED }) {
                     trace.step("${saga.name} has ${saga.counters["lore"]} lore counters, its final chapter is $last, and none of its chapter abilities is on the stack, so its controller sacrifices it (state-based action).", "714.4", "704.5s")
@@ -2097,6 +2107,12 @@ class Engine(val state: GameState) {
             return
         }
         val def = obj.def
+        // Grafdigger's Cage: creature cards in graveyards can't enter the battlefield, persist or not; Containment Priest exiles it instead.
+        uncastEntryBlocked(obj, Zone.GRAVEYARD)?.let { (name, how) ->
+            if (how == "cant") { trace.step("${obj.name} has $kw, but $name says creature cards in graveyards can't enter the battlefield, so it stays in the graveyard (the ability resolves and does nothing).", if (undying) "702.93a" else "702.79a", "614.1a"); state.outcomes += "${obj.name} doesn't come back: $name stops creature cards entering from graveyards, so $kw does nothing."; return }
+            obj.zone = Zone.EXILE
+            trace.step("${obj.name}'s $kw would return it, but $name says a nontoken creature entering without being cast is exiled instead, so it goes to exile.", if (undying) "702.93a" else "702.79a", "614.1a"); state.outcomes += "${obj.name}: your graveyard → exile ($name) instead of returning with $kw."; return
+        }
         val back = state.add(GameObject(freshObjectId(def.name), def, Zone.BATTLEFIELD, obj.owner, obj.owner))
         back.timestamp = state.tick(); back.summoningSick = def.isCreature
         obj.successor = back.id

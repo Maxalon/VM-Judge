@@ -1664,9 +1664,26 @@ class SituationParser(private val names: NameIndex) {
         // "Do they lose 2 life too?" (Thoughtseize): how much life that player loses.
         t2 = t2.replace(Regex("""^do (they|he|she|my opponent|the opponent|i|we) (?:also |still )?lose (?:the )?(?:\d+ |two )?life(?: too| as well| also)?\??$""", RegexOption.IGNORE_CASE), "how much life do $1 lose")
         // "I have Spirit tokens. Can they attack?": "they" are my tokens when nothing of the opponent's is a creature.
-        if (Regex("""^can they (?:still |even )?attack(?: into (?:it|that|the bridge))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.lastMentioned?.let { ctx.objects[it] }?.let { it.controller == "me" && (it.card.name ?: "").contains("token", true) } == true && ctx.objects.values.none { it.controller != "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }) t2 = "i attack with everything, do they take damage"
+        if (Regex("""^can they (?:still |even )?attack(?: into (?:it|that|the bridge))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.objects.values.none { it.controller != "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }) {
+            if (ctx.events.any { (it.verb == "attack" || it.verb == "attackAll") && it.player == "me" }) t2 = "do they take damage"
+            else if (ctx.lastMentioned?.let { ctx.objects[it] }?.let { it.controller == "me" && (it.card.name ?: "").contains("token", true) } == true) t2 = "i attack with everything, do they take damage"
+        }
         // "How much total mana?": what the described spells cost in all.
         if (Regex("""^how much (?:total )?mana(?: total| in all| is that| does that take| did (?:that|it) cost| do (?:i|we) need| do (?:i|we) spend| did (?:i|we) spend| for all that| altogether)?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim()) && ctx.events.any { it.verb == "cast" && it.player == "me" }) t2 = "manaspent-question"
+        // "I attack with two Spirits into their Ensnaring Bridge": a noncreature "into" is just something they have.
+        t2 = t2.let { t0 -> Regex("""\binto (?:their |his |her |the )?(c\d+)( with (?:\d+|no|zero|one|two|three|four|five) cards?(?: in hand)?)?\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[1].lowercase()]?.typeLine?.contains("Creature") == false) ", they have ${r.groupValues[1]}${if (r.groupValues[2].isNotEmpty()) ", they have " + Regex("""(\d+|no|zero|one|two|three|four|five)""").find(r.groupValues[2])!!.value + " cards in hand" else ""}" else r.value } }
+        // "into their Ensnaring Bridge with 0 cards in hand": the hand size that an earlier rewrite gave to me belongs to the Bridge's controller.
+        t2 = t2.let { t0 -> Regex("""(, they have (c\d+)), i have (\d+|no|zero|one|two|three|four|five) cards in hand\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (m.cards[r.groupValues[2].lowercase()]?.display == "Ensnaring Bridge") "${r.groupValues[1]}, they have ${r.groupValues[3]} cards in hand" else r.value } }
+        // "choosing -2/-2 on their Thalia and drain": the first mode's target moves after the modes.
+        t2 = t2.replace(Regex("""\bchoosing ((?:-\d+/-\d+|[a-z]+(?: [a-z]+)?)) (on|at|targeting) ((?:their |my |the )?c\d+) and ([a-z]+(?: [a-z]+)?)\b""", RegexOption.IGNORE_CASE), "choosing $1 and $4 $2 $3")
+        // "with no mana": said first, so the cast is checked against it.
+        t2 = t2.let { t0 -> Regex("""^(.*?),? with no mana(?: open| available| untapped| up| left)?\b(.*)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> if (r.groupValues[1].isBlank()) t0 else "i have no mana, ${r.groupValues[1]}${r.groupValues[2]}" } ?: t0 }
+        // "They cast Kitchen Finks and it dies": the creature just cast.
+        t2 = t2.replace(Regex("""^(they|i|we|he|she) (casts?|plays?) (c\d+)(.*?) and (?:it|that) (dies|died|is destroyed|gets destroyed|gets killed)\b""", RegexOption.IGNORE_CASE), "$1 $2 $3$4, $3 $5")
+        // "with a Chalice on 1 on my side": mine; "on their side": theirs.
+        t2 = t2.let { t0 -> Regex("""\bwith (?:an? |my |their )?(c\d+)((?: on \d+)?) on (my|their) side\b""", RegexOption.IGNORE_CASE).replace(t0) { r -> ", ${if (r.groupValues[3].lowercase() == "my") "i" else "they"} have ${r.groupValues[1]}${r.groupValues[2]}" } }
+        // "my graveyard Bolt": the card in that graveyard.
+        t2 = t2.replace(Regex("""\b(my|their|his|her) graveyard (c\d+)\b""", RegexOption.IGNORE_CASE), "the $2 in $1 graveyard")
         // "They have no basics left": a Path to Exile search that finds nothing.
         if (Regex("""^(?:they|he|she|my opponent|the opponent|i|we) (?:have|has) no (?:basics|basic lands|basics left|basic lands left|basic land cards)(?: left)?(?: in (?:their|my|the) (?:library|deck))?\??$""", RegexOption.IGNORE_CASE).matches(t2.trim())) t2 = if (Regex("""^(?:i|we)\b""", RegexOption.IGNORE_CASE).containsMatchIn(t2.trim())) "nobasics-note me" else "nobasics-note"
         // "a Dragon token that's 5/5": the size, said after the token, goes in front of it.
@@ -2653,7 +2670,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""\b(choosing|picking|selecting) (the )?(\w+)( mode)?,? and (?!(?:i|we|they|he|she|my|their|his|her|the opponent|my opponent|@\w+)\b)(the )?(\w+)( mode)?\b"""), "$1 $2$3$4 & $5$6$7")
         // "choosing counter target spell and draw a card": the modes are spelled out. Joining them keeps "draw a card"
         // from being read as a draw of its own, which would have the card drawn before the spell resolved.
-        t2 = t2.replace(Regex("""\b(choosing|picking|selecting) ((?:the )?[a-z][a-z0-9' ]{2,60}?),? and (?!(?:i|we|they|he|she|my|their|his|her|the opponent|my opponent|@\w+)\b)((?:the )?[a-z][a-z0-9' ]{2,60}?)(?=[.,;?]|\s*$)"""), "$1 $2 & $3")
+        t2 = t2.replace(Regex("""\b(choosing|picking|selecting) ((?:the )?(?:-\d+/-\d+|[a-z])[a-z0-9'/ -]{0,60}?),? and (?!(?:i|we|they|he|she|my|their|his|her|the opponent|my opponent|@\w+)\b)((?:the )?[a-z][a-z0-9'/ -]{2,60}?)(?=[.,;?]|\s*$)"""), "$1 $2 & $3")
         // "What happens when it enters?": "it" is the permanent the asker described, not the last card named.
         Regex("""^(?:what happens )?when (it|that|(?:$possPrefix)?c\d+) (?:enters|enter|comes in|etbs)(?: the battlefield)?\??$""").find(t2)?.let { r ->
             val named = Regex("""c\d+""").find(r.groupValues[1])?.value ?: Regex("""c\d+""").find(t2)?.value
@@ -3670,6 +3687,16 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", obj = mine.id, to = "pt"); ctx.notes += "\"${restore(clause0, m)}?\" is read as asking the size of your ${mine.card.name} once everything has resolved."; return true
         }
         if (clause0 == "manaspent-question") { ctx.asks += EventSpec("ask", player = "me", to = "manaSpent"); return true }
+        // "Can I exile it to gain life?" (Deathrite Shaman at a card in a graveyard): the ability the card's type picks.
+        Regex("""^can (?:i|we) (?:exile|eat) (it|that|(?:the |their |my )?c\d+)(?: with (?:it|c\d+|deathrite|the shaman|deathrite shaman))?(?: (?:to|and) (?:gain (?:2 )?life|get (?:2 )?life|drain(?: them)?|make mana|ping them|drain them for 2))?$""").find(clause0)?.let { r ->
+            val drs = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Deathrite Shaman" } ?: return@let
+            if (ctx.objects.values.any { it.controller == "me" && it.zone == "battlefield" && it.card.name == "Scavenging Ooze" }) return@let
+            val tok = Regex("""c\d+""").find(r.groupValues[1])?.value
+            val food = tok?.let { m.cards[it] }?.let { c -> ctx.objects.values.lastOrNull { it.card.oracleId == c.oracleId && it.zone == "graveyard" } }
+                ?: ctx.lastMentioned?.let { ctx.objects[it] }?.takeIf { it.zone == "graveyard" } ?: ctx.objects.values.lastOrNull { it.zone == "graveyard" } ?: return@let
+            ctx.events += EventSpec("activate", player = "me", obj = drs.id, targets = listOf(food.id)); ctx.lastActor = "me"; ctx.lastVerb = "activate"
+            ctx.notes += "\"${restore(clause0, m)}?\" is read as Deathrite Shaman's ability aimed at ${food.card.name}; which of its three abilities applies depends on that card's type, and the outcome says what it does."; return true
+        }
         if (clause0 == "devilchoice-question") {
             ctx.asks += EventSpec("ask", to = "text:Yes. Each Vexing Devil's enters-the-battlefield trigger is its own choice: \"any opponent may have Vexing Devil deal 4 damage to them. If a player does, sacrifice Vexing Devil.\" The choice is made as that trigger resolves (603.3, 608.2c), and what you chose for the first Devil has no bearing on the second: you may decline this time and let the 4/3 stay, or take 4 again and have it sacrificed.")
             return true
@@ -9740,12 +9767,12 @@ class SituationParser(private val names: NameIndex) {
             objectIdFor(copied, ctx) ?: addObject(copied, owner ?: ctx.other(who) ?: "opp", false, ctx)
         }
         // "choosing counter target spell & draw a card": whole mode lines, matched against the card's own modes by the judge.
-        val modeVerbs = """counter|draw|destroy|exile|return|tap|untap|gain|deal|discard|sacrifice|prevent|create|search|put|mill|bounce|shatter|fog|counterspell|kill|\d+ damage|damage"""
+        val modeVerbs = """counter|draw|destroy|exile|return|tap|untap|gain|deal|discard|sacrifice|prevent|create|search|put|mill|bounce|shatter|fog|counterspell|kill|\d+ damage|damage|-\d+/-\d+|drain|shrink"""
         // "choosing counter target spell and draw a card targeting their Bolt": the target may follow the modes.
         // "Healing Salve gaining 3 in response": the timing words aren't part of the mode.
         val restM = rest.replace(Regex("""\s*\bin response(?: to (?:it|that|this|the spell|the trigger|(?:the |my |their )?c\d+))?\s*$"""), "")
-        val modeWord = (Regex("""\b(?:choosing|picking|selecting) (?:the )?((?:$modeVerbs)[a-z0-9' ]*?) (?:and|&) (?:the )?((?:$modeVerbs)[a-z0-9' ]*?)(?:\s+(?:targeting|aimed at|on|at|to)\b.*)?\s*$""").find(restM.trim())?.let { mm -> mm.groupValues[1].trim() + "|" + mm.groupValues[2].trim() }
-            ?: Regex("""\b(?:choosing|picking|selecting) (?:the )?((?:$modeVerbs)[a-z0-9' ]*?)\s*$""").find(restM.trim())?.groupValues?.get(1)?.trim()
+        val modeWord = (Regex("""\b(?:choosing|picking|selecting) (?:the )?((?:$modeVerbs)[a-z0-9'/ -]*?) (?:and|&) (?:the )?((?:$modeVerbs)[a-z0-9'/ -]*?)(?:\s+(?:targeting|aimed at|on|at|to)\b.*)?\s*$""").find(restM.trim())?.let { mm -> mm.groupValues[1].trim() + "|" + mm.groupValues[2].trim() }
+            ?: Regex("""\b(?:choosing|picking|selecting) (?:the )?((?:$modeVerbs)[a-z0-9'/ -]*?)\s*$""").find(restM.trim())?.groupValues?.get(1)?.trim()
             ?: Regex("""\b(?:choosing|picking|selecting) (?:the )?(indestructible|double strike|first strike|damage|lifelink|hexproof|trample|flying|counter|draw|destroy|exile|bounce|pump|tap|untap|return)(?: mode)?,? (?:and|&) (?:the )?(indestructible|double strike|first strike|damage|lifelink|hexproof|trample|flying|counter|draw|destroy|exile|bounce|pump|tap|untap|return)(?: mode)?(?:\s+(?:targeting|aimed at)\b.*)?$""").find(restM.trim())?.let { mm -> mm.groupValues[1] + "|" + mm.groupValues[2] }
             ?: Regex("""(?:choosing|picking|with|for|selecting) (?:the )?([a-z][a-z-]+) (?:mode|option)\b""").find(rest)?.groupValues?.get(1)
             ?: Regex("""\b(?:choosing|picking|selecting|for|giving (?:it |them |my creatures? |my team |everything )?|to give (?:it |them )?|granting (?:it |them )?) ?(?:the )?(indestructible|double strike|first strike|damage|lifelink|hexproof|trample|flying|counter|draw|destroy|exile|bounce|pump)(?: until end of turn| this turn| mode)?$""").find(restM.trim())?.groupValues?.get(1)
@@ -10198,6 +10225,12 @@ class SituationParser(private val names: NameIndex) {
         // A spell on the stack, or a permanent.
         Regex("""(?:the |my |their |an? )?(c\d+)""").find(seg)?.let { t ->
             val card = m.cards.getValue(t.groupValues[1])
+            // "Snapcaster Mage targeting Lightning Bolt": the Bolt is a card in the caster's graveyard, not a spell on the stack.
+            if (card.isSpellOnly && ctx.castingCounterName in setOf("Snapcaster Mage", "Torrential Gearhulk", "Mission Briefing") && ctx.objects.values.none { it.card.oracleId == card.oracleId && it.zone == "graveyard" }) {
+                val caster = ctx.clauseActor ?: ctx.lastActor ?: "me"
+                val gy = addObject(card, caster, false, ctx, zone = "graveyard", allowDuplicate = true)
+                ctx.notes += "${card.display} is read as a card in ${if (caster == "me") "your" else "their"} graveyard, the kind of card ${ctx.castingCounterName} looks for."; out += gy; return out
+            }
             // "Bolt their Tarmogoyf" when I have a Tarmogoyf too: the possessive picks whose; a card only the other player has is a new object.
             val poss = Regex("""^(?:the )?(my|their|his|her|my opponent's|the opponent's|opponent's) """).find(seg.trim())?.groupValues?.get(1)
             val match = if (poss == null) objectIdFor(card, ctx)
