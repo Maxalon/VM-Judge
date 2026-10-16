@@ -36257,5 +36257,96 @@
       "Lightning Bolt now targets Spellskite instead of opponent",
       "Yes: opponent is still in the game at 3 life"
     ]
+  },
+  {
+    "id": "tt251-hymn-themselves-under-my-leyline",
+    "text": "I have Leyline of Sanctity and they cast Hymn to Tourach targeting themselves. Can they?",
+    "expect": [
+      "Yes: Hymn to Tourach can be cast",
+      "opponent discards 2 cards"
+    ]
+  },
+  {
+    "id": "tt251-skite-blocks-5-5",
+    "text": "They attack me with a 5/5 and I have Spellskite. If I block, how much damage do I take?",
+    "expect": [
+      "No: you take no damage",
+      "Spellskite: the battlefield → your graveyard"
+    ]
+  },
+  {
+    "id": "tt251-what-if-they-redirect",
+    "text": "I cast Lightning Bolt at my opponent at 3 life. They have Spellskite and 2 life to pay. What happens if they redirect?",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of opponent",
+      "Spellskite has 3 damage marked"
+    ],
+    "notExpect": [
+      "opponent loses the game"
+    ]
+  },
+  {
+    "id": "tt251-vial-thalia-vs-chalice-matters",
+    "text": "My opponent has Chalice on 1 and I cast Thoughtseize. In response I Vial in Thalia. Does it matter?",
+    "expect": [
+      "Thoughtseize is countered",
+      "No. Thalia, Guardian of Thraben arrives in response, but Thoughtseize was already cast"
+    ],
+    "notExpect": [
+      "is in your hand"
+    ]
+  },
+  {
+    "id": "tt251-hymn-smiter-and-mountain",
+    "text": "They Hymn me and I have Loxodon Smiter and a Mountain. What happens?",
+    "expect": [
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)",
+      "Mountain: your hand → your graveyard"
+    ]
+  },
+  {
+    "id": "tt251-end-step-thalia-taxes-next-turn",
+    "text": "I have Aether Vial on 2. In their end step I vial in Thalia. Does Thalia tax their spells next turn?",
+    "expect": [
+      "Yes. Thalia, Guardian of Thraben's tax is a static ability"
+    ]
+  },
+  {
+    "id": "tt251-teferi-theirs-force-my-sorcery",
+    "text": "They have Teferi, Time Raveler. In my main phase I cast Thoughtseize. Can they Force of Will it?",
+    "expect": [
+      "Thoughtseize is countered"
+    ]
+  },
+  {
+    "id": "tt251-shadow-5-5-bolted-me",
+    "text": "My Death's Shadow is 5/5 and they Bolt me. How big is it after?",
+    "expect": [
+      "Death's Shadow is 8/8",
+      "You go from 8 to 5 life"
+    ]
+  },
+  {
+    "id": "tt251-finks-blocks-guide",
+    "text": "I block their Goblin Guide with Kitchen Finks. Does Guide die and does Finks live?",
+    "expect": [
+      "Yes: Goblin Guide died (it's in the graveyard)",
+      "Yes: Kitchen Finks is still on the battlefield"
+    ]
+  },
+  {
+    "id": "tt251-surgical-vs-snapcaster-trigger-targeting-it",
+    "text": "They Surgical my Lightning Bolt in response to Snapcaster's trigger targeting it. Does the trigger fizzle?",
+    "expect": [
+      "Lightning Bolt: your graveyard → exile",
+      "Snapcaster Mage's triggered ability doesn't resolve (all targets illegal)"
+    ]
+  },
+  {
+    "id": "tt251-verdict-kills-skite",
+    "text": "They cast Supreme Verdict and I have Spellskite. Does Spellskite die?",
+    "expect": [
+      "Yes: Spellskite died (it's in the graveyard)"
+    ]
   }
 ]
