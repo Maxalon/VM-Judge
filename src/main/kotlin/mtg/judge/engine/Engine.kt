@@ -3542,6 +3542,12 @@ class Engine(val state: GameState) {
                     trace.step("${shy.joinToString(" and ") { it.name }} ${if (shy.size == 1) "has" else "have"} $kw, but ${item.source.name} doesn't target: it affects each ${effect.filter.raw}, and $kw only stops spells and abilities from targeting.", if (kw == "hexproof") "702.11b" else "702.18b", "115.1")
                     state.outcomes += "${shy.joinToString(" and ") { it.name }}'${if (shy.size == 1 && !shy[0].name.endsWith("s")) "s" else ""} $kw doesn't help: ${item.source.name} doesn't target anything."
                 }
+                // "Mother gives Thalia pro white. Wrath.": protection stops targeting, damage, enchanting and blocking; a sweeper does none of those.
+                if (effect.action in setOf("destroy", "exile", "bounce", "tuck", "sacrifice")) affected.filter { o -> protectionHit(state.protections(o), qualitiesOf(item.source.def), item.controller) != null }.takeIf { it.isNotEmpty() }?.let { prot ->
+                    val q = protectionHit(state.protections(prot[0]), qualitiesOf(item.source.def), item.controller)!!
+                    trace.step("${prot.joinToString(" and ") { it.name }} ${if (prot.size == 1) "has" else "have"} protection from ${protectionName(q)}, but protection only stops being targeted, damaged, enchanted or equipped, and blocked by sources with that quality; ${item.source.name} doesn't target and deals no damage, so it ${effect.action.removeSuffix("e")}es all the same.", "702.16b", "702.16e")
+                    state.outcomes += "${prot.joinToString(" and ") { it.name }}'${if (prot.size == 1 && !prot[0].name.endsWith("s")) "s" else ""} protection from ${protectionName(q)} doesn't help: ${item.source.name} doesn't target or deal damage."
+                }
                 if (effect.action in setOf("destroy", "exile", "bounce", "tuck") && affected.size > 1) { leavingTogether = affected.map { it.id }.toSet(); trace.step("All of them leave the battlefield simultaneously, so abilities that trigger on creatures dying or leaving look back and see every one of them.", "603.10a") }
                 try { for (o in affected) when (effect.action) {
                     "destroy" -> destroy(o, "${o.name} is destroyed.", "701.8a", canRegenerate = !effect.noRegen)

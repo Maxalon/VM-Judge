@@ -70,6 +70,8 @@ class SituationParser(private val names: NameIndex) {
         var lastActor: String? = null
         /** Position of the clause being read within its sentence (0 = first); a later clause with no subject continues the sentence's. */
         var clauseIndex = 0
+        /** The clause being read is the body of a "can I …?" question, retried as a statement. */
+        var inQuestion = false
         var clauseActor: String? = null            // the actor of the clause being read (for "their X" defaults)
         var currentClause: String = ""             // the clause being read, for rules deep in the grammar that need its wording
         var faceDownSeen = false                   // a face-down creature was described, for "what is it?"
@@ -234,8 +236,14 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.asks.any { it.to == "canKill" || it.to == "kill" }) continue
             // "Can I save it?" casts the card itself, choosing the mode that protects; casting it here first chose none.
             if (ctx.events.any { it.verb == "save" && it.player == who }) continue
-            ctx.events.add(lastOther + 1, EventSpec("cast", player = who, obj = held.id))
-            ctx.notes += "${card.display} is in ${if (who == "me") "your" else (ctx.players[who] ?: "your opponent") + "'s"} hand; assuming ${if (who == "me") "you cast" else "they cast"} it in response. Say it stays in hand if not."
+            // "They attack with Goblin Guide and I'm at 2. I have Bolt in hand. Can I survive?": the burn goes at the attacker it kills.
+            val burn = mapOf("Lightning Bolt" to 3, "Chain Lightning" to 3, "Lightning Strike" to 3, "Searing Spear" to 3, "Incinerate" to 3, "Lightning Helix" to 3, "Skewer the Critics" to 3, "Shock" to 2, "Burst Lightning" to 2, "Fiery Impulse" to 2, "Path to Exile" to 99, "Swords to Plowshares" to 99, "Dismember" to 5, "Unsummon" to 99, "Vapor Snag" to 99)
+            val survivalAsked = ctx.asks.any { it.player == who && it.to in setOf("playerSurvive", "playerDie") }
+            val attackerHit = if (survivalAsked && card.display in burn) ctx.events.filter { it.verb == "attack" && it.player != who && it.targets.firstOrNull() == who }.mapNotNull { it.obj }
+                .mapNotNull { a -> ctx.objects[a] }.filter { a -> val t = Regex("""/(\d+)""").find(a.card.name ?: "")?.groupValues?.get(1)?.toIntOrNull() ?: names.lookup(Names.normalize(a.card.name ?: ""))?.toughness?.toIntOrNull() ?: 99; t <= burn.getValue(card.display) }
+                .maxByOrNull { a -> Regex("""(\d+)/""").find(a.card.name ?: "")?.groupValues?.get(1)?.toIntOrNull() ?: names.lookup(Names.normalize(a.card.name ?: ""))?.power?.toIntOrNull() ?: 0 } else null
+            ctx.events.add(lastOther + 1, EventSpec("cast", player = who, obj = held.id, targets = listOfNotNull(attackerHit?.id)))
+            ctx.notes += "${card.display} is in ${if (who == "me") "your" else (ctx.players[who] ?: "your opponent") + "'s"} hand; assuming ${if (who == "me") "you cast" else "they cast"} it ${if (attackerHit != null) "at ${attackerHit.card.name} before combat damage" else "in response"}. Say it stays in hand if not."
         }
         // "I'm at 4, they have two 2/2s and I have a 4/4. If they attack with both, can I survive?": asked whether they live,
         // the asker's untapped creatures block (one attacker each), since that is the choice the question is about.
@@ -1316,6 +1324,8 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^can (?:i|we) respond by tapping (it|that|the land|my land|(?:my |the )?c\d+) for (?:the )?mana\??$""", RegexOption.IGNORE_CASE), "can i tap $1 for mana in response, in response i tap $1 for mana")
         // "Does their attacker deal damage to me?": whether I take damage.
         t2 = t2.replace(Regex("""^((?:does|will|would|did) )(?:their|his|her) (attacker|attacking creature) ((?:still )?(?:deal|do)s? (?:any |combat )?damage to me\??)$""", RegexOption.IGNORE_CASE), "$1the $2 $3")
+        // "It's my upkeep and the top card is a land": the Dark Confidant reveal said as the library's top card.
+        t2 = t2.replace(Regex("""(^|, |\s+and\s+)(?:the )?top card(?: of (?:my|the) library)? is (an? |my )?(land|basic|c\d+|\d+[- ]drop|\d+[- ]mana \w+)$""", RegexOption.IGNORE_CASE), "$1i reveal $2$3")
         // "Which Chalice counters it?": whether it is countered, and by which.
         t2 = t2.replace(Regex("""^which (?:chalice|c\d+|one) counters? (?:it|that|(?:the |my )?c\d+)\??$""", RegexOption.IGNORE_CASE), "is it countered")
         // "I block the 3/3 with Spellskite and take the 2/2": the unblocked one is simply unblocked.
@@ -3550,7 +3560,21 @@ class SituationParser(private val names: NameIndex) {
         """|^(?:nobody|no one|no-one|neither(?: player| of them)?|none of them|no creature|no blockers?) (?:blocks?|blocked|block)$""" +
         """|^(?:it|they|he|she|c\d+) (?:gets?|got|goes?|went) through$""")
 
+    /** "Can I counter their Thoughtseize?" under Teferi: whether the counterspell can be cast at all is the question. */
+    private fun counterCastabilityAsk(who: String, counter: NameIndex.Entry, clause0: String, ctx: Ctx) {
+        if (!(clause0.startsWith("can ") || ctx.inQuestion)) return
+        if (ctx.objects.values.none { o -> o.zone == "battlefield" && o.controller != who && o.card.name in setOf("Teferi, Time Raveler", "Grand Abolisher", "Dosan the Falling Leaf", "City of Solitude", "Teferi, Mage of Zhalfir", "Vexing Shusher") }) return
+        ctx.asks += EventSpec("ask", card = CardRef(name = counter.display, oracleId = counter.oracleId), to = "castAllowed")
+    }
+
     private fun readClause(clauseIn0: String, m: Marked, ctx: Ctx): Boolean {
+        // "Can I counter their Thoughtseize?": the body is retried as a statement further down; the rules that read it can still tell it was a question.
+        val wasQuestion = ctx.inQuestion
+        if (Regex("""^(?:can|could|may|should|am i able to) (?:i|we|they|he|she|my opponent|the opponent)\b""", RegexOption.IGNORE_CASE).containsMatchIn(clauseIn0.trim())) ctx.inQuestion = true
+        try { return readClause1(clauseIn0, m, ctx) } finally { ctx.inQuestion = wasQuestion }
+    }
+
+    private fun readClause1(clauseIn0: String, m: Marked, ctx: Ctx): Boolean {
         // "I try to activate it" / "they attempt to block": the attempt is the action, and the answer says how it goes.
         val clauseIn = clauseIn0.replace(Regex("""\b(?:tr(?:y|ies|ied)|attempts?|attempted|want(?:s|ed)?|would like) to (?=(?:activate|use|tap|untap|block|attack|cast|play|sacrifice|equip|counter|draw|search|target|crack|pop|fire|give|put|destroy|exile|bounce|kill|return|regenerate)\b)"""), "")
             // "I control Valakut and five other Mountains": "other" only says they aren't the card just named.
@@ -5001,7 +5025,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "\"${restore(clause0, m)}?\" is read as casting the same ${card.display} a second time; the outcome says where that card is now and whether it can be cast from there."; ctx.lastActor = "me"; return true
         }
         // "I have Spell Queller exiled their Thoughtseize": the Queller on the battlefield holding that card in exile.
-        Regex("""^(?:(?:i|we) have |my |(they|he|she|my opponent|the opponent) (?:have|has) |their )?(c\d+) (?:that |which |is |has )?(?:exiled|exiling|holding|with|that exiled|which exiled) (?:their |my opponent's |the opponent's |his |her |my )?(c\d+)(?: under it| exiled| in exile)?$""").find(clause0)?.let { r0 ->
+        Regex("""^(?:(?:i|we) have |my |(they|he|she|my opponent|the opponent) (?:have|has) |their )?(c\d+)(?: in play| on the battlefield| out| on board)? (?:that |which |is |has )?(?:exiled|exiling|holding|with|that exiled|which exiled) (?:their |my opponent's |the opponent's |his |her |my )?(c\d+)(?: under it| exiled| in exile)?$""").find(clause0)?.let { r0 ->
             val theirs = r0.groupValues[1].isNotEmpty() || clause0.startsWith("their ")
             val r = object { val groupValues = listOf(r0.groupValues[0], r0.groupValues[2], r0.groupValues[3]) }
             val q = m.cards[r.groupValues[1]] ?: return@let; val sp = m.cards[r.groupValues[2]] ?: return@let
@@ -5910,6 +5934,8 @@ class SituationParser(private val names: NameIndex) {
         // about as a creature is the permanent it became, the spell having resolved; stack talk ("counter it", "in response") keeps the spell.
         val oid = ctx.lastMentioned?.takeIf { it.startsWith("cast:") }?.removePrefix("cast:") ?: return
         run {
+            // A new sentence only: "I cast Bears and they Doom Blade it" in one breath is a response on the stack.
+            if (ctx.clauseIndex != 0 && !Regex("""^(?:does|will|would|is|how big is|what size is) (?:it|that)\b""").containsMatchIn(clause0)) return
             val o = ctx.objects[oid] ?: return
             if (o.zone != "hand" && o.zone != "battlefield") return
             if (!isCreatureName(o.card.name) || (o.card.name?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Creature") } != true)) return
@@ -5918,10 +5944,14 @@ class SituationParser(private val names: NameIndex) {
             // "they Bolt it" said with the card's name as the verb: a spell-only card aimed at "it".
             val spellVerb = Regex("""^(?:they|he|she|i|we|my opponent|the opponent|@\w+) (c\d+) (?:it|that)\b""").find(clause0)?.let { m.cards[it.groupValues[1]]?.isSpellOnly == true } == true
             if (!spellVerb && !Regex("""\b(?:bolts?|kills?|destroys?|dies?|survives?|lives?|blocks?|attacks?|paths?|push(?:es)?|dismembers?|swords|shocks?|burns?|targets?|damage|pumps?|fights?|removes?|exiles?|tap|taps|big|size)\b""").containsMatchIn(clause0)) return
-            if (ctx.events.lastOrNull()?.verb == "cast" && ctx.events.last().obj == oid) ctx.events += EventSpec("resolveAll")
-            ctx.lastMentioned = oid
+            if (ctx.events.lastOrNull()?.verb == "cast" && ctx.events.last().obj == o.id) ctx.events += EventSpec("resolveAll")
+            ctx.lastMentioned = o.id
         }
     }
+
+    /** "My opponent has Mana Drain. They counter it.": the counterspell that player was said to hold, if any. */
+    private fun heldCounter(who: String, ctx: Ctx): NameIndex.Entry? =
+        ctx.objects.values.lastOrNull { o -> o.zone == "hand" && o.controller == who && names.lookup(Names.normalize(o.card.name ?: ""))?.let { needsSpellTarget(it) } == true }?.let { o -> names.lookup(Names.normalize(o.card.name!!)) }
 
     private fun readClause0(clauseIn: String, m: Marked, ctx: Ctx): Boolean {
         settleCastIt(clauseIn.trim(), m, ctx)
@@ -9117,7 +9147,9 @@ class SituationParser(private val names: NameIndex) {
                 ?: ctx.objects.values.lastOrNull { o -> o.zone == "hand" && o.controller == who && names.lookup(Names.normalize(o.card.name ?: ""))?.let { needsSpellTarget(it) } == true }
                     ?.let { o -> names.lookup(Names.normalize(o.card.name!!)) }?.also { ctx.notes += "\"Counter it\" is read as casting ${it.display} from ${if (who == "me") "your" else "their"} hand." }
             val free = if (Regex("""\b(?:for free|alt(?:ernative)? cost|pitching|exiling)\b""").containsMatchIn(c)) " for free" else ""
-            if (counter != null) { ctx.inHand[who]?.remove(counter); emitCast(who, counter, " targeting " + slug(targetName) + ":spell" + free, m, ctx) }
+            if (counter != null) { ctx.inHand[who]?.remove(counter); emitCast(who, counter, " targeting " + slug(targetName) + ":spell" + free, m, ctx)
+                counterCastabilityAsk(who, counter, clause0, ctx)
+            }
             else { ctx.events += EventSpec("cast", player = who, card = CardRef(name = "a counterspell"), targets = listOf(slug(targetName) + ":spell")); ctx.lastActor = who; ctx.lastVerb = "cast"; ctx.notes += "No counterspell was named; assuming a plain \"counter target spell\"." }
             return true
         }
@@ -9128,7 +9160,8 @@ class SituationParser(private val names: NameIndex) {
             val owner = when (val w = r.groupValues[1].trim()) { "my" -> "me"; "their", "my opponent's" -> pronounPlayer(ctx, "their"); "" -> ctx.other(who) ?: "me"; else -> if (w.startsWith("@")) w.removePrefix("@").removeSuffix("'s") else ctx.other(who) ?: "me" }
             if (target.display !in ctx.castCards) emitCast(owner, target, "", m, ctx)
             if (r.groupValues[3].isNotEmpty()) emitCast(who, m.cards.getValue(r.groupValues[3]), " targeting ${r.groupValues[2]}", m, ctx)
-            else { ctx.events += EventSpec("cast", player = who, card = CardRef(name = "a counterspell"), targets = listOf(slug(target.display) + ":spell")); ctx.lastActor = who; ctx.lastVerb = "cast"; ctx.notes += "No counterspell was named; assuming a plain \"counter target spell\"." }
+            else heldCounter(who, ctx)?.let { held -> emitCast(who, held, " targeting " + slug(target.display) + ":spell", m, ctx); ctx.notes += "\"Counter it\" is read as casting ${held.display} from ${if (who == "me") "your" else "their"} hand."; counterCastabilityAsk(who, held, clause0, ctx) }
+                ?: run { ctx.events += EventSpec("cast", player = who, card = CardRef(name = "a counterspell"), targets = listOf(slug(target.display) + ":spell")); ctx.lastActor = who; ctx.lastVerb = "cast"; ctx.notes += "No counterspell was named; assuming a plain \"counter target spell\"." }
             return true
         }
         // The same thing said in the passive: "my Lightning Bolt gets countered (by Counterspell)", "it was countered".
@@ -9145,7 +9178,8 @@ class SituationParser(private val names: NameIndex) {
             if (target != null && target.display !in ctx.castCards) emitCast(owner, target, "", m, ctx)
             val counter = r.groupValues[4].takeIf { it.isNotEmpty() }?.let { m.cards.getValue(it) }
             if (counter != null) emitCast(who, counter, " targeting " + slug(targetName) + ":spell", m, ctx)
-            else { ctx.events += EventSpec("cast", player = who, card = CardRef(name = "a counterspell"), targets = listOf(slug(targetName) + ":spell")); ctx.lastActor = who; ctx.lastVerb = "cast"; ctx.notes += "No counterspell was named; assuming a plain \"counter target spell\"." }
+            else heldCounter(who, ctx)?.let { held -> emitCast(who, held, " targeting " + slug(targetName) + ":spell", m, ctx); ctx.notes += "\"Counter it\" is read as casting ${held.display} from ${if (who == "me") "your" else "their"} hand."; counterCastabilityAsk(who, held, clause0, ctx) }
+                ?: run { ctx.events += EventSpec("cast", player = who, card = CardRef(name = "a counterspell"), targets = listOf(slug(targetName) + ":spell")); ctx.lastActor = who; ctx.lastVerb = "cast"; ctx.notes += "No counterspell was named; assuming a plain \"counter target spell\"." }
             ctx.note(who); ctx.note(owner)
             return true
         }

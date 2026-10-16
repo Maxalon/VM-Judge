@@ -36807,5 +36807,121 @@
       "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1",
       "You gain 2 life"
     ]
+  },
+  {
+    "id": "tt256-queller-in-play-exiling-pathed",
+    "text": "I have Spell Queller in play exiling their Bolt. They Path my Queller. What happens to the Bolt?",
+    "expect": [
+      "Lightning Bolt comes back: opponent may cast it from exile without paying its mana cost as Spell Queller's leave trigger resolves"
+    ],
+    "notExpect": [
+      "has no exiled card to give back"
+    ]
+  },
+  {
+    "id": "tt256-mother-cant-save-from-wrath",
+    "text": "I have Mother of Runes and Thalia. They cast Wrath of God. Can Mother save Thalia?",
+    "expect": [
+      "Thalia, Guardian of Thraben's protection from white doesn't help: Wrath of God doesn't target or deal damage.",
+      "No: Thalia, Guardian of Thraben is in the graveyard"
+    ],
+    "cite": [
+      "702.16b",
+      "702.16e"
+    ]
+  },
+  {
+    "id": "tt256-teferi-stops-counterspell",
+    "text": "My opponent has Teferi, Time Raveler. I have Counterspell. Can I counter their Thoughtseize?",
+    "expect": [
+      "Counterspell can't be cast (Teferi, Time Raveler: sorcery speed only)",
+      "No: Counterspell can't be cast"
+    ],
+    "notExpect": [
+      "a counterspell can't be cast"
+    ]
+  },
+  {
+    "id": "tt256-bob-top-card-is-a-land",
+    "text": "I have Dark Confidant. It's my upkeep and the top card is a land. Do I lose life?",
+    "expect": [
+      "You lose no life (a basic land has mana value 0)",
+      "No: you lose no life here"
+    ]
+  },
+  {
+    "id": "tt256-finks-cast-and-bolted-under-leyline",
+    "text": "They have Leyline of the Void. I cast Kitchen Finks. It resolves and they Bolt it. Does it persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Leyline of the Void)",
+      "No: Kitchen Finks is in exile"
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "tt256-survive-bolting-the-attacker",
+    "text": "They attack with Goblin Guide and I'm at 2. I have a Mountain untapped and Bolt in hand. Can I survive?",
+    "expect": [
+      "Goblin Guide: the battlefield → opponent's graveyard",
+      "Yes: You are still in the game at 2 life"
+    ],
+    "notExpect": [
+      "You lose the game"
+    ]
+  },
+  {
+    "id": "tt256-bridge-what-gets-through",
+    "text": "They have Ensnaring Bridge and 2 cards in hand. I attack with my 3/3 and 1/1. What gets through?",
+    "expect": [
+      "a 3/3 creature can't attack (Ensnaring Bridge)",
+      "opponent takes 1 damage"
+    ]
+  },
+  {
+    "id": "tt256-first-strike-blocker-trade",
+    "text": "I attack with a 2/2 and they block with a 1/1 first striker. What happens?",
+    "expect": [
+      "a 2/2 creature has 1 damage marked",
+      "a 1/1 creature with first strike: the battlefield → opponent's graveyard"
+    ]
+  },
+  {
+    "id": "tt256-path-own-goyf-in-response",
+    "text": "I cast Path to Exile on my own Tarmogoyf in response to their Bolt. Do I get the land?",
+    "expect": [
+      "Lightning Bolt doesn't resolve (all targets illegal)",
+      "Yes: the search is yours"
+    ]
+  },
+  {
+    "id": "tt256-probe-life-vs-chalice",
+    "text": "I cast Gitaxian Probe with Chalice on 1 on their side. Can I pay life to get around it?",
+    "expect": [
+      "Gitaxian Probe is countered",
+      "No. Paying 2 life for a Phyrexian mana symbol is only a way of paying the cost"
+    ],
+    "cite": [
+      "202.3g"
+    ]
+  },
+  {
+    "id": "tt256-dismember-four-life-at-three",
+    "text": "I Dismember my own Spellskite at 3 life paying 4 life. Can I?",
+    "expect": [
+      "No: Dismember can't be cast paying 4 life: you have only 3 life, and life can't be paid beyond the life total (119.4)"
+    ],
+    "cite": [
+      "119.4"
+    ]
+  },
+  {
+    "id": "tt256-thoughtseize-smiter-thalia",
+    "text": "They cast Thoughtseize at me. I have Loxodon Smiter and Thalia in hand. What can they take and what happens?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Loxodon Smiter, Thalia, Guardian of Thraben",
+      "Loxodon Smiter: your hand → the battlefield (its own ability, discarded to an opponent's spell)"
+    ]
   }
 ]
