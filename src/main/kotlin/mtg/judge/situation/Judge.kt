@@ -805,7 +805,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "quelled" -> { val q = e.obj ?: throw JudgeException("quelled needs an object"); val c = e.targets.firstOrNull() ?: throw JudgeException("quelled needs a card"); state.quelled[q] = c; state.objects[c]?.exiledBy = q }
             // "I play a land": counted against the one land a player may play each turn (305.2).
             "playland" -> { val objId = e.obj ?: throw JudgeException("playLand needs an object"); engine.playLand(e.player ?: state.obj(objId).controller, objId) }
-            "leave" -> if (e.targets.isEmpty()) engine.leave(e.obj ?: throw JudgeException("leave needs an object"), zone(e.to ?: "graveyard"))
+            // "My Kitchen Finks dies twice": the second death is the returned creature's, the new object that followed it (400.7).
+            "leave" -> if (e.targets.isEmpty()) engine.leave(generateSequence(state.obj(e.obj ?: throw JudgeException("leave needs an object"))) { it.successor?.let { id -> state.objects[id] } }.last().id, zone(e.to ?: "graveyard"))
                        else engine.leaveTogether(listOf(e.obj ?: throw JudgeException("leave needs an object")) + e.targets, zone(e.to ?: "graveyard"))
             "damage" -> {
                 val srcName = e.source?.let { state.objects[it]?.name } ?: e.source ?: "A source"

@@ -35883,5 +35883,95 @@
     "expect": [
       "No. Spellskite's ability can change a target only to Spellskite itself"
     ]
+  },
+  {
+    "id": "tt247-skite-already-targeted",
+    "text": "They cast Lightning Bolt at my Spellskite. I activate Spellskite targeting the Bolt. Does anything happen?",
+    "expect": [
+      "Lightning Bolt already targets Spellskite; nothing changes",
+      "Spellskite has 3 damage marked"
+    ]
+  },
+  {
+    "id": "tt247-flier-vs-reach-and-4-4",
+    "text": "I attack with a 2/2 flier. They have a 3/3 with reach and a 4/4. What can block?",
+    "expect": [
+      "Yes: a 3/3 creature with reach can block a 2/2 creature with flying",
+      "No: a 4/4 creature can't block a 2/2 creature with flying (flying)"
+    ]
+  },
+  {
+    "id": "tt247-chalice-two-vs-vialed-snapcaster",
+    "text": "My opponent has Chalice on 2. I cast Snapcaster Mage with Aether Vial on 2. Is it countered?",
+    "expect": [
+      "No. Snapcaster Mage was put onto the battlefield by Aether Vial's ability, not cast"
+    ]
+  },
+  {
+    "id": "tt247-only-skite-in-hand-must-take",
+    "text": "They cast Thoughtseize on me and I have only Spellskite in hand. Do they have to take it?",
+    "expect": [
+      "Thoughtseize lets opponent choose a nonland card from your hand: Spellskite",
+      "Spellskite: your hand → your graveyard"
+    ]
+  },
+  {
+    "id": "tt247-bob-reveals-a-probe",
+    "text": "I have Dark Confidant and reveal a Gitaxian Probe. How much life?",
+    "expect": [
+      "You lose 1 life (Gitaxian Probe's mana value)"
+    ]
+  },
+  {
+    "id": "tt247-leyline-doesnt-shield-goyf",
+    "text": "They have Leyline of Sanctity. Can I Lightning Bolt their Tarmogoyf?",
+    "expect": [
+      "Leyline of Sanctity doesn't protect Tarmogoyf: it gives its controller hexproof, not their creatures",
+      "Tarmogoyf: the battlefield → opponent's graveyard"
+    ]
+  },
+  {
+    "id": "tt247-growth-after-damage-too-late",
+    "text": "I block their 4/4 with my 2/2 and Giant Growth it after damage. Does my creature survive?",
+    "expect": [
+      "Giant Growth can't be cast: a 2/2 creature is already in the graveyard",
+      "No: a 2/2 creature is in the graveyard"
+    ]
+  },
+  {
+    "id": "tt247-two-guides-into-my-empty-hand-bridge",
+    "text": "They attack with two Goblin Guides and I have Ensnaring Bridge with no cards. Can they attack?",
+    "expect": [
+      "No: Goblin Guide can't attack (Ensnaring Bridge: You have 0 cards in hand and Goblin Guide's power is 2, 508.1c). (×2)"
+    ],
+    "notExpect": [
+      "(×4)"
+    ]
+  },
+  {
+    "id": "tt247-bolt-one-mountain-under-thalia",
+    "text": "I have Thalia. They cast Lightning Bolt with exactly one Mountain untapped. Can they?",
+    "expect": [
+      "No: Lightning Bolt can't be cast (costs 2, only 1 mana available)"
+    ]
+  },
+  {
+    "id": "tt247-finks-dies-twice",
+    "text": "My Kitchen Finks dies twice. Does it come back the second time?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1",
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died"
+    ],
+    "notExpect": [
+      "your graveyard → your graveyard"
+    ]
+  },
+  {
+    "id": "tt247-stifle-the-path",
+    "text": "They Path my Tarmogoyf. I have Stifle. Can I Stifle the Path?",
+    "expect": [
+      "Stifle can't target Path to Exile: it's a spell, not an activated or triggered ability",
+      "Tarmogoyf: the battlefield → exile"
+    ]
   }
 ]
