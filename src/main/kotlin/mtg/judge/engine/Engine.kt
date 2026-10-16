@@ -2803,7 +2803,9 @@ class Engine(val state: GameState) {
                 val chooser = state.player(item.controller)
                 val hand = state.objects.values.filter { it.zone == Zone.HAND && it.owner == p.id }
                 trace.step("${p.subject} ${p.v("reveals", "reveal")} ${if (p.you) "your" else "their"} hand${if (hand.isEmpty()) "" else ": ${hand.joinToString(", ") { it.name }}"}.", "701.20a")
-                if (hand.isEmpty()) {
+                if (hand.isEmpty() && p.id in state.explicitDiscards) {
+                    trace.step("The card ${item.source.name} took from ${p.possessive} hand was said already; nothing else in that hand was described, so nothing more happens here.", "701.9a")
+                } else if (hand.isEmpty()) {
                     state.clarifications += Clarification("${p.possessive} hand", "${item.source.name} has ${if (p.you) "you" else p.name} reveal ${if (p.you) "your" else "their"} hand and discard ${effect.what}; what is in it?")
                     trace.step("The situation doesn't say what is in ${p.possessive} hand, so which card is discarded can't be said.", "701.9a")
                     // Leyline of the Void, Rest in Peace: whatever it is, it's exiled rather than put into the graveyard.

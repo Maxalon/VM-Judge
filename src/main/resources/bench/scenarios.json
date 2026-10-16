@@ -27768,8 +27768,8 @@
     "id": "thoughtseize-only-lands",
     "text": "My opponent casts Thoughtseize on me and I have only lands in hand. What happens?",
     "expect": [
-      "You discard nothing (no nonland card in hand).",
-      "opponent loses 2 life."
+      "You discard nothing (no nonland card in hand)",
+      "opponent loses 2 life"
     ]
   },
   {
@@ -33397,5 +33397,91 @@
     "cite": [
       "601.2f"
     ]
+  },
+  {
+    "id": "vial-1-cannot-save-thalia",
+    "text": "I have Aether Vial on 1. They cast Thoughtseize and take my Thalia. Can I Vial in response to save it?",
+    "expect": [
+      "No. Aether Vial with 1 charge counter puts a creature card with mana value exactly 1",
+      "Thalia, Guardian of Thraben's mana value is 2"
+    ],
+    "cite": []
+  },
+  {
+    "id": "vial-2-saves-thalia",
+    "text": "I have Aether Vial on 2. They cast Thoughtseize and take my Thalia. Can I Vial in response to save it?",
+    "expect": [
+      "Thalia, Guardian of Thraben enters the battlefield",
+      "Yes: after Thoughtseize is cast its controller gets priority"
+    ],
+    "cite": []
+  },
+  {
+    "id": "path-no-basics-in-deck",
+    "text": "They Path my Snapcaster. Do I get the land if I have no basics in my deck?",
+    "expect": [
+      "No land: the search is yours, but there is no basic land card left"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "bolt-face-again-after-spellskite",
+    "text": "I cast Lightning Bolt at their face and they Spellskite it. Can I Bolt their face again?",
+    "expect": [
+      "Yes, with a second Lightning Bolt in hand",
+      "Lightning Bolt now targets Spellskite instead of opponent"
+    ],
+    "cite": []
+  },
+  {
+    "id": "bridge-empty-hand-0-1-attacks",
+    "text": "My opponent has Ensnaring Bridge with 0 cards in hand. Can my 0/1 attack?",
+    "expect": [
+      "Yes: a 0/1 creature can attack"
+    ],
+    "cite": []
+  },
+  {
+    "id": "rip-deathrite-nothing-to-do",
+    "text": "I have Rest in Peace. They cast Deathrite Shaman. Can it do anything?",
+    "expect": [
+      "Rest in Peace means it never will have a target here"
+    ],
+    "cite": []
+  },
+  {
+    "id": "hymn-with-one-card",
+    "text": "They cast Hymn to Tourach on me with 1 card in hand. What happens?",
+    "expect": [
+      "You discard 1 card (1 → 0 in hand)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "flipped-delver-vs-spellskite-block",
+    "text": "I attack with Delver flipped and they block with Spellskite. Who dies?",
+    "expect": [
+      "Spellskite can't block Insectile Aberration (flying)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "deaths-shadow-at-13",
+    "text": "I cast Death's Shadow at 13 life. What happens?",
+    "expect": [
+      "Death's Shadow: the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "chalice-0-vs-probe-for-life",
+    "text": "I have Chalice on 0. They cast Gitaxian Probe for 2 life. Is it countered?",
+    "expect": [
+      "No: Gitaxian Probe isn't countered",
+      "Gitaxian Probe's mana value is 1"
+    ],
+    "cite": []
   }
 ]

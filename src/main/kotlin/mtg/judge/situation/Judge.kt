@@ -389,7 +389,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     } else engine.sacrifice(player, objId)
                 }
             }
-            "discard" -> { val objId = e.obj ?: throw JudgeException("discard needs an object"); engine.discard(e.player ?: state.obj(objId).owner, objId) }
+            "discard" -> { val objId = e.obj ?: throw JudgeException("discard needs an object"); val who = e.player ?: state.obj(objId).owner; state.explicitDiscards += who; engine.discard(who, objId) }
             "counters" -> engine.putCounters(e.obj ?: throw JudgeException("counters needs an object"), e.amount ?: 1, e.to ?: "+1/+1")
             "tap" -> engine.tapObject(e.obj ?: throw JudgeException("tap needs an object"))
             "untap" -> engine.untapObject(e.obj ?: throw JudgeException("untap needs an object"))
@@ -702,7 +702,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             any.isEmpty() -> "${o.name} has no activated abilities."
                             o.tapped == true && tapAbilities.isNotEmpty() && tapAbilities.size == any.size -> "No: ${o.name} is already tapped, and every one of its abilities costs {T}."
                             tapAbilities.isNotEmpty() && o.def.isCreature && o.summoningSick == true && !state.hasKeyword(o, "haste") ->
-                                "No: ${o.name} came under ${state.player(o.controller).possessive} control this turn and doesn\'t have haste, so its {T} ability can\'t be activated yet (302.6).${if (tapAbilities.size < any.size) " Its abilities without {T} in the cost still can be." else ""}"
+                                "No: ${o.name} came under ${state.player(o.controller).possessive} control this turn and doesn\'t have haste, so its {T} ability can\'t be activated yet (302.6).${if (tapAbilities.size < any.size) " Its abilities without {T} in the cost still can be." else ""}" +
+                                    (state.objects.values.firstOrNull { k -> k.isOnBattlefield() && k.def.name in setOf("Rest in Peace", "Leyline of the Void", "Dauthi Voidwalker") && Regex("""(?i)target .*card from a graveyard""").containsMatchIn(o.def.oracleText) }?.let { k -> " And ${k.name} means it never will have a target here: every card that would go to a graveyard is exiled instead, so each of ${o.name}'s abilities, which target a card in a graveyard, has nothing legal to aim at (602.2b${if (k.def.name == "Rest in Peace") ", and the graveyards are already empty" else ""})." } ?: "")
                             tapAbilities.isNotEmpty() && o.def.isCreature && o.summoningSick == true ->
                                 "Yes: ${o.name} has haste, so it can use its {T} ability the turn it came under ${state.player(o.controller).possessive} control (702.10b)."
                             // Deathrite Shaman with empty graveyards: every ability needs a target and none is legal, so none can be activated.
@@ -1005,7 +1006,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         state.outcomes.any { it.startsWith("$name can't be cast") } -> "It's never cast: see above."
                         // "Leyline of Sanctity in response to my Bolt at them. Is my Bolt countered?": not countered, but it doesn't resolve either.
                         state.outcomes.any { it.startsWith("$name doesn't resolve") } -> "No, $name isn't countered, but it doesn't resolve either: ${if (state.outcomes.any { it.startsWith("$name doesn't resolve (all targets illegal)") }) "every target it had became illegal, so it's removed from the stack as it would resolve and does nothing (608.2b)" else "see above"}. The result is the same as a counter (it goes to the graveyard without effect), but it isn't \"countered\", so \"can't be countered\" wouldn't have saved it and nothing that triggers on a spell being countered triggers."
-                        else -> "No: $name isn't countered; it resolves."
+                        else -> "No: $name isn't countered; it resolves." + (state.objects.values.filter { it.isOnBattlefield() && it.def.name == "Chalice of the Void" }.map { it.counters["charge"] ?: 0 }.takeIf { it.isNotEmpty() }?.let { ns ->
+                            val def = state.objects.values.lastOrNull { it.def.name == name }?.def
+                            val mv = def?.manaValue?.toInt()
+                            if (mv != null && ns.none { it == mv }) " Chalice of the Void on ${ns.joinToString(" or ")} only counters a spell whose mana value is ${ns.joinToString(" or ")}; $name's mana value is $mv${if (def.manaCost?.contains("/P}") == true) " (a Phyrexian symbol counts 1 whether it's paid with mana or 2 life, 202.3g)" else ""}, so Chalice's trigger doesn't even trigger (202.3)." else "" } ?: "")
                     }
                     return true
                 }
@@ -1530,7 +1534,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         state.outcomes.any { Regex("""(?i)^${Regex.escape(p.subject)} choose(?:s)? to search""").containsMatchIn(it) && it.contains("land") }
                     val reveal = state.outcomes.firstOrNull { it.contains("If it's a land card, that player puts it into their hand") }?.substringBefore(":")
                     if (reveal != null && !searched) { state.outcomes += "It depends on the top card of ${p.possessive} library: $reveal's trigger reveals it, and if it's a land card ${p.subject.lowercase()} ${p.v("puts", "put")} it into ${p.possessive} hand. The library's order isn't known here, so it can't be said either way."; return true }
-                    state.outcomes += if (searched) "Yes: the search is ${if (p.you) "yours" else p.name + "'s"}. The card gives it to the exiled creature's controller, which is ${p.subject.lowercase()}; ${p.subject.lowercase()} may search for a basic land card and put it onto the battlefield tapped."
+                    val nothingLeft = state.outcomes.any { it.contains("find nothing (none left in") } || state.trace.steps.any { it.text.contains("finds nothing") || it.text.contains("find nothing") }
+                    state.outcomes += if (nothingLeft) "No land: the search is ${if (p.you) "yours" else p.name + "'s"}, but there is no basic land card left in ${p.possessive} library to find, so nothing enters; the library is still shuffled (701.23a, 701.23c)."
+                        else if (searched) "Yes: the search is ${if (p.you) "yours" else p.name + "'s"}. The card gives it to the exiled creature's controller, which is ${p.subject.lowercase()}; ${p.subject.lowercase()} may search for a basic land card and put it onto the battlefield tapped."
                         else "No: nothing here has ${p.subject.lowercase()} search for a land."
                     return true
                 }
