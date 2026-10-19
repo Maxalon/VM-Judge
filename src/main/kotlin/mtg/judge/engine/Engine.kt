@@ -1395,6 +1395,7 @@ class Engine(val state: GameState) {
         emptyManaPools()
         if (step == "untap") {
             state.activePlayer = activePlayer; state.step = step; state.phase = "beginning"
+            if (Turns.skipsStep(this, step, activePlayer)) return   // Stasis: "players skip their untap steps" (614.10)
             val p = state.player(activePlayer)
             // Phased-out permanents phase in as their controller's untap step begins (702.26a, 702.26c).
             state.objects.values.filter { it.zone == Zone.BATTLEFIELD && it.phasedOut && it.controller == activePlayer }.takeIf { it.isNotEmpty() }?.let { back ->
@@ -1468,6 +1469,7 @@ class Engine(val state: GameState) {
             stateBasedActions()   // 514.3a: with the until-end-of-turn effects gone, an Equipment on a land that stopped being a creature comes off
             return
         }
+        if ((step == "upkeep" || step == "draw") && Turns.skipsStep(this, step, activePlayer)) return
         state.activePlayer = activePlayer
         state.step = step
         if (step == "precombat_main") for (saga in state.objects.values.filter { it.isOnBattlefield() && it.controller == activePlayer && "Saga" in it.def.subtypes && it.def.abilities.any { a -> a is TriggeredAbility && a.trigger is Trigger.Chapter } }) {
@@ -1479,7 +1481,7 @@ class Engine(val state: GameState) {
         }
         state.phase = when (step) { "untap", "upkeep", "draw" -> "beginning"; "precombat_main" -> "precombat_main"; "postcombat_main" -> "postcombat_main"; "end", "cleanup" -> "ending"; else -> "combat" }
         // "end" and "upkeep" are steps; "main" is a phase. Say which, so the line reads as Magic does.
-        val stepName = step.replace('_', ' ').let { n -> if (n.endsWith(" step") || n.endsWith(" phase") || n == "combat") n else if (n == "main") "$n phase" else "$n step" }
+        val stepName = step.replace('_', ' ').let { n -> if (n.endsWith(" step") || n.endsWith(" phase") || n == "combat") n else if (n == "main" || n.endsWith(" main")) "$n phase" else "$n step" }
         trace.step("${state.player(activePlayer).possessive.replaceFirstChar { it.uppercase() }} $stepName begins.", when (step) { "upkeep" -> "503.1"; "end" -> "513.1"; "draw" -> "504.1"; else -> "500.1" })
         // 504.1: the active player draws a card as a turn-based action. Triggers on the step happen after it.
         if (step == "draw") {
@@ -1510,6 +1512,7 @@ class Engine(val state: GameState) {
         if (step == "upkeep") keywordUpkeep(activePlayer)   // rebound's delayed trigger, suspend's time counters
         if (step == "upkeep") winLossUpkeep(activePlayer)   // Pact of Negation's delayed trigger
         if (step == "end") keywordEndStep(activePlayer)   // unearth's delayed exile
+        if (step == "end") Turns.endStep(this, activePlayer)   // "at the beginning of the next end step" delayed triggers (603.7a)
         // 725.2: the monarch's end-step draw is an inherent ability with no source, so it isn't on any permanent.
         if (step == "end") state.monarch?.let { mid ->
             if (mid == activePlayer) {
@@ -1574,6 +1577,7 @@ class Engine(val state: GameState) {
                 if (def.isInstantOrSorcery) {
                     if (item.targetsUnknown) trace.step("${def.name} resolves, but its target was never stated, so what it does to it isn't shown.", "608.2c")
                     else item.effect?.let { applyEffect(it, item) } ?: if (!Generic.isGeneric(def)) state.unsupported.add(Unsupported(def.name, "The spell has no modeled effect.")) else Unit
+                    if (state.turns.endedBy == item.id) return   // it ended the turn: exiled with the rest of the stack (724.1b)
                     val kwZone = keywordResolutionZone(item)   // buyback and rebound decide where the spell goes (702.27a, 702.88a)
                     val exilesItself = effectContains(item.effect) { it is Effect.ExileSelfSpell }
                     val willExile = item.source.owner in state.exileInsteadThisTurn && !item.source.token && !item.flashback && !exilesItself
@@ -1633,6 +1637,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${item.source.name}'s trigger still resolves even though ${item.source.name} is gone (113.7a)${if (transforms) ", but with nothing left to transform" else ""}."
                 }
                 item.effect?.let { applyEffect(it, item) }
+                if (state.turns.endedBy == item.id) return   // Sundial of the Infinite: the ability ended the turn (724.1b)
                 trace.step("${item.describe} finishes resolving and ceases to exist.", "608.2c", "608.2n")
             }
         }
@@ -1808,6 +1813,7 @@ class Engine(val state: GameState) {
             }
             for (obj in state.objects.values.toList()) {
                 if (!obj.isOnBattlefield()) continue
+                if (obj.def.isAura && state.players.any { it.id == obj.attachedTo && !it.lost }) continue   // "Enchant player" (Paradox Haze, curses): on a player in the game
                 val host = obj.attachedTo?.let { state.objects[it] }
                 if (obj.def.isAura) {
                     val enchant = obj.def.enchant
@@ -3721,6 +3727,7 @@ class Engine(val state: GameState) {
                 else trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${missing.joinToString(" or ") { "an $it" }}, so ${item.source.name} adds only what it says first, not ${effect.text}.", "605.1a")
             }
             is Effect.Narrated -> {
+                if (Turns.resolve(this, effect.text, item)) return   // extra turns, skips, ending the turn, extra phases (Turns.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 if (quellerReturns(effect, item)) return
                 // "that many": the count of what the previous part affected (Settle the Wreckage's exiled attackers).
@@ -3811,6 +3818,7 @@ class Engine(val state: GameState) {
                 state.outcomes += "${sp.source.name} can't be countered (${item.source.name})."
             } }
             is Effect.Unparsed -> {
+                if (Turns.resolve(this, effect.text, item)) return
                 trace.step("(Not modeled: \"${effect.text}\")")
                 enterBlockersNote(item, effect.text)
                 // Counterbalance: the spell is countered if the revealed card's mana value matches it.

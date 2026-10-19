@@ -40718,5 +40718,266 @@
       "104.3a",
       "104.2a"
     ]
+  },
+  {
+    "id": "tu1",
+    "text": "I cast Time Walk and then Time Warp. In which order do I take the extra turns?",
+    "expect": [
+      "The extra turn from Time Warp comes first, then the one from Time Walk",
+      "the most recently created one is taken first (500.7)"
+    ],
+    "cite": [
+      "500.7"
+    ]
+  },
+  {
+    "id": "tu2",
+    "text": "My opponent casts Time Stop during my combat after attackers are declared. What happens to my attackers and to the end step?",
+    "expect": [
+      "Time Stop ends the turn: everything on the stack is exiled, all creatures are removed from combat",
+      "The end step is skipped, so \"at the beginning of the end step\" abilities don't trigger this turn (724.1e)"
+    ],
+    "cite": [
+      "724.1b",
+      "724.1c",
+      "724.1d",
+      "724.1e",
+      "514.2"
+    ]
+  },
+  {
+    "id": "tu3",
+    "text": "I cast Sundial of the Infinite's ability in my end step with a creature from Sneak Attack. Does the creature stay?",
+    "expect": [
+      "stays on the battlefield: Sneak Attack's delayed trigger was exiled from the stack before it resolved, and it won't trigger again",
+      "Yes: a 2/2 creature is still on the battlefield."
+    ],
+    "cite": [
+      "603.7b",
+      "724.1b",
+      "603.7a"
+    ]
+  },
+  {
+    "id": "tu4",
+    "text": "I control Stasis. Do I skip my untap step? Does my opponent?",
+    "expect": [
+      "so you skip your untap step (it applies to every player, whoever controls it)",
+      "so opponent skips their untap step"
+    ],
+    "cite": [
+      "614.10",
+      "500.11"
+    ]
+  },
+  {
+    "id": "tu5",
+    "text": "I attack my opponent with two 2/2s and they don't block. Then I cast Relentless Assault in my second main phase. Do my creatures untap?",
+    "expect": [
+      "a 2/2 creature untaps (Relentless Assault).",
+      "Yes: Relentless Assault untaps all creatures that attacked this turn (701.26b)",
+      "After this main phase you get an additional combat phase followed by an additional main phase"
+    ],
+    "cite": [
+      "701.26b",
+      "500.8"
+    ]
+  },
+  {
+    "id": "tu6",
+    "text": "During my extra combat phase from Aggravated Assault, can I cast sorceries between combats?",
+    "expect": [
+      "Yes, in the main phases: Aggravated Assault adds an additional combat phase followed by an additional main phase"
+    ],
+    "cite": [
+      "500.8",
+      "505.1a",
+      "307.1"
+    ]
+  },
+  {
+    "id": "tu7",
+    "text": "I control my opponent's turn with Mindslaver. Can I make them concede?",
+    "expect": [
+      "No: the controller of another player can't make that player concede (723.6)"
+    ],
+    "cite": [
+      "723.6",
+      "104.3a"
+    ]
+  },
+  {
+    "id": "tu8",
+    "text": "I control my opponent with Mindslaver. Can I see their hand and make them cast their spells?",
+    "expect": [
+      "Yes to both. Anything in the game the controlled player could see, you see too, their hand included (723.4)"
+    ],
+    "cite": [
+      "723.4",
+      "723.5"
+    ]
+  },
+  {
+    "id": "tu9",
+    "text": "My opponent takes the initiative from me by attacking. When do I venture?",
+    "expect": [
+      "Not until you take it back.",
+      "you stopped having it (726.3)"
+    ],
+    "cite": [
+      "726.2",
+      "726.3"
+    ]
+  },
+  {
+    "id": "tu10",
+    "text": "I am the monarch. My opponent deals combat damage to me. Who draws at end step?",
+    "expect": [
+      "opponent is the monarch.",
+      "opponent draws 1 card."
+    ],
+    "cite": [
+      "725.2",
+      "725.3"
+    ]
+  },
+  {
+    "id": "tu11",
+    "text": "It becomes night. What happens to my daybound creature?",
+    "expect": [
+      "It transforms to its nightbound face as it becomes night (702.145b)"
+    ],
+    "cite": [
+      "702.145b",
+      "702.145c"
+    ]
+  },
+  {
+    "id": "tu12",
+    "text": "I skip my next turn because of Chronatog. My opponent gives me an extra turn. Do I take it?",
+    "expect": [
+      "No: the extra turn from your opponent's effect is your next turn, and Chronatog said to skip the next turn, so it's skipped"
+    ],
+    "cite": [
+      "614.10",
+      "614.10a",
+      "500.7"
+    ]
+  },
+  {
+    "id": "tu13",
+    "text": "I control Smokestack with 2 soot counters and 2 permanents. What happens on my upkeep?",
+    "expect": [
+      "You sacrifice 2 permanents (Smokestack: one per soot counter, 2).",
+      "The order of Smokestack's two triggers is your choice (603.3b)",
+      "Smokestack has 3 soot counters."
+    ],
+    "cite": [
+      "701.21a",
+      "603.3b"
+    ]
+  },
+  {
+    "id": "tu14",
+    "text": "Can I cast an instant during my untap step?",
+    "expect": [
+      "No: no player receives priority during the untap step"
+    ],
+    "cite": [
+      "502.4"
+    ]
+  },
+  {
+    "id": "tu15",
+    "text": "Can I cast an instant during the cleanup step?",
+    "expect": [
+      "Normally no: no player receives priority during the cleanup step (514.3)",
+      "another cleanup step begins (514.3a)"
+    ],
+    "cite": [
+      "514.3",
+      "514.3a"
+    ]
+  },
+  {
+    "id": "tu16",
+    "text": "During my draw step I cast a spell before drawing. Is that allowed?",
+    "expect": [
+      "No: the draw for the turn happens first, as the draw step begins (504.1)"
+    ],
+    "cite": [
+      "504.1",
+      "504.2"
+    ]
+  },
+  {
+    "id": "tu17",
+    "text": "My opponent casts a creature with flash in my beginning of combat step. Can it block?",
+    "expect": [
+      "Yes: cast in the beginning of combat step, it resolves before attackers are declared",
+      "it doesn't stop blocking (302.6)"
+    ],
+    "cite": [
+      "509.1a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "tu18",
+    "text": "Does an until end of turn pump wear off before my end step triggers?",
+    "expect": [
+      "No: \"until end of turn\" effects end in the cleanup step (514.2), which comes after the end step."
+    ],
+    "cite": [
+      "514.2",
+      "513.1"
+    ]
+  },
+  {
+    "id": "tu19",
+    "text": "I cast a sorcery in my second main phase after combat. Then I want another combat. Can I?",
+    "expect": [
+      "No: a turn has one combat phase",
+      "You get another one only if an effect adds it"
+    ],
+    "cite": [
+      "500.1",
+      "500.8"
+    ]
+  },
+  {
+    "id": "tu20",
+    "text": "With Paradox Haze I have two upkeeps. Does my Dark Confidant trigger twice?",
+    "expect": [
+      "Yes, twice: Paradox Haze gives you an additional upkeep step after the first (500.9)"
+    ],
+    "cite": [
+      "500.6",
+      "500.9"
+    ]
+  },
+  {
+    "id": "tu21",
+    "text": "I cast Nexus of Fate. My opponent controls Stranglehold. Do I get the extra turn?",
+    "expect": [
+      "You don't get to take the extra turn from Nexus of Fate: Stranglehold makes you skip it (614.10).",
+      "No: you skip it."
+    ],
+    "cite": [
+      "500.7",
+      "614.10"
+    ]
+  },
+  {
+    "id": "tu22",
+    "text": "I cast Final Fortune. What happens at my next end step?",
+    "expect": [
+      "Nothing at this turn's end step.",
+      "at the beginning of that end step you lose the game (603.7a)"
+    ],
+    "cite": [
+      "603.7a",
+      "603.7b"
+    ]
   }
 ]

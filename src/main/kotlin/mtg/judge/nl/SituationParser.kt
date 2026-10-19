@@ -1909,6 +1909,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = loopRewrite(t2, m, ctx)
         t2 = costRewrites(t2, m, ctx)
         t2 = winLossRewrites(t2, m, ctx)
+        t2 = turnRewrites(t2, m, ctx)
         t2 = stackRewrites(t2, m, ctx)
         t2 = combatRewrites(t2, m, ctx)
         t2 = replacementRewrites(t2, m, ctx)
@@ -5242,6 +5243,144 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- turn structure: extra turns, skips, ending the turn, extra phases (500–514, 614.10, 723–726, 731), see TurnAsks.kt ----
+
+    /**
+     * Turn-structure table talk: "in which order do I take the extra turns?", "do I skip my untap step?", "Sundial in my
+     * end step with a creature from Sneak Attack", "after my first combat", "can I make them concede?". Questions become
+     * "turn-question …" markers for [readTurnQuestions]; a few situations said in one breath become their events here.
+     */
+    private fun turnRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('?', '.', '!').trim()
+        val io = RegexOption.IGNORE_CASE
+        fun re(p: String) = Regex(p, io)
+        val asked = ctx.asks.lastOrNull()?.to ?: ""
+        val pl = """(i|we|my opponent|the opponent|they|he|she)"""
+        fun who(w: String) = if (w.lowercase() in setOf("i", "we")) "mine" else "theirs"   // not "opp": later rewrites spell that out
+        // "In which order do I take the extra turns?" / "Which extra turn comes first?"
+        if (re("""^(?:in )?(?:which|what) order (?:do|will|would|does|are|is) (?:i|we|they|he|she|my opponent) (?:take|get|play) (?:the |these |those |both |my |their |all )?(?:extra |additional )?turns(?: in)?$|^(?:which|what) extra turn (?:do (?:i|we) take|comes|is taken|happens) first$|^(?:in )?(?:which|what) order (?:are|do) the extra turns (?:taken|happen|come|go)$""").matches(q)) return "turn-question extraorder"
+        // "My opponent casts Time Stop during my combat after attackers are declared": the declare attackers step.
+        re("""^(.+?) (?:during|in) (my|their|his|her) combat(?: phase)?,? (?:right )?after (?:attackers are declared|(?:the )?attackers have been declared|(?:i|we|they|he|she) (?:declare|declared|have declared|has declared) (?:attackers|attacks|my attackers|their attackers)|(?:i|we|they|he|she) attacks?(?:ed)?)$""").find(q)?.let { r ->
+            ctx.notes += "\"After attackers are declared\" is read as the declare attackers step."
+            return "${r.groupValues[1]} during ${r.groupValues[2]} declare attackers step"
+        }
+        if (re("""^what happens to (?:my|their|the|his|her) (?:attackers|attacking creatures|attack)(?: and (?:to )?(?:the|my|their) end step)?$|^(?:do|does) (?:my|the|their) end step (?:still )?happen$""").matches(q)) return "turn-question endturn"
+        // "I activate Sundial of the Infinite's ability in my end step with a creature from Sneak Attack."
+        re("""^(?:i|we) (?:activate|use|cast) (c\d+)(?:'s ability)? (?:in|during|at) (?:my|the) end step with (?:a|the|my) creature (?:from|put (?:in |onto the battlefield )?(?:by|with)|(?:i )?(?:sneaked|snuck) in with) (c\d+)$""").find(q)?.let { r ->
+            val dial = m.cards[r.groupValues[1]] ?: return@let; val sneak = m.cards[r.groupValues[2]] ?: return@let
+            val dialId = addObject(dial, "me", false, ctx); val sneakId = addObject(sneak, "me", false, ctx)
+            var cid = slug("a creature"); var k = 2; while (ctx.objects.containsKey(cid)) cid = slug("a creature") + "_" + (k++)
+            ctx.objects[cid] = ObjectSpec(cid, CardRef(name = "a 2/2 creature"), zone = "hand", controller = "me")
+            ctx.events += EventSpec("activate", player = "me", obj = sneakId, to = "put:$cid")
+            ctx.events += EventSpec("step", player = "me", to = "end")
+            ctx.events += EventSpec("activate", player = "me", obj = dialId)
+            ctx.activePlayer = "me"; ctx.note("me"); ctx.lastActor = "me"; ctx.lastMentioned = cid
+            ctx.notes += "\"A creature from ${sneak.display}\" is read as a 2/2 creature put onto the battlefield with ${sneak.display} earlier this turn; ${dial.display} is activated in the end step with ${sneak.display}'s end-step trigger on the stack."
+            return "turn-question ack"
+        }
+        // "In response to the trigger I activate Sundial": in the end step, the trigger that just went on the stack.
+        re("""^in response(?: to (?:the|that|its|this|c\d+'s) (?:delayed )?trigger(?:ed ability)?)?,? ((?:i|we) (?:activate|use) c\d+.*)$""").find(q)?.let { r ->
+            if (ctx.events.lastOrNull()?.let { it.verb == "step" && it.to == "end" } == true) return r.groupValues[1]
+        }
+        if (re("""^(?:does|will|would) (?:the|that|my) creature (?:stay|survive|stick around|remain|stay on the battlefield|live)$""").matches(q) && ctx.events.any { it.verb == "activate" && it.to?.startsWith("put:") == true })
+            return "turn-question stays"
+        // "Do I skip my untap step?" / "Does my opponent?"
+        re("""^(?:do|does|will|would) $pl (?:also |still |both )?skip (?:my|our|their|his|her|the) (untap|upkeep|draw) steps?$""").find(q)?.let { r -> return "turn-question skipstep ${who(r.groupValues[1])} ${r.groupValues[2].lowercase()}" }
+        if (asked.startsWith("turn:skipStep:")) re("""^(?:and |what about |how about )?(?:does |do )?(my opponent|the opponent|they|he|she|me|i)(?: too| as well| also)?$""").find(q)?.let { r ->
+            val w = r.groupValues[1].lowercase(); val p = if (w in setOf("me", "i")) "mine" else "theirs"
+            return "turn-question skipstep $p ${asked.removePrefix("turn:skipStep:")}"
+        }
+        // "I cast Relentless Assault after my first combat": the postcombat main phase, combat done.
+        re("""^(?:then |and then )?(i|we) cast (c\d+|an? (?:sorcery|spell|instant)) (?:after|following) (?:my |our |the )?(?:first )?combat(?: phase)?$|^(?:then |and then )?(i|we) cast (c\d+|an? (?:sorcery|spell|instant)) (?:in|during) (?:my|our) (?:second|postcombat) main(?: phase)?(?: after combat)?$""").find(q)?.let { r ->
+            val what = r.groupValues[2].ifEmpty { r.groupValues[4] }
+            if (ctx.events.any { it.verb == "attack" || it.verb == "attackAll" }) ctx.events += EventSpec("combatDamage")   // the combat described is over
+            ctx.events += EventSpec("step", player = "me", to = "postcombat_main"); ctx.activePlayer = "me"; ctx.note("me")
+            return "i cast $what"
+        }
+        if (re("""^(?:do|will|does) (?:my|our|the|all my|all of my) (?:creatures|attackers|attacking creatures|guys)(?: that attacked)? (?:untap|get untapped)$""").matches(q)) return "turn-question untapattackers"
+        // "During my extra combat phase from Aggravated Assault, can I cast sorceries between combats?"
+        re("""^(?:during|in) (?:my|the|an?) (?:extra|additional|second) combat(?: phase)? (?:from|with|given by|granted by|thanks to) (c\d+),? can (?:i|we) cast (?:a )?sorcer(?:y|ies)(?: between (?:the )?combats| in between| after (?:it|that|the (?:extra )?combat))?$""").find(q)?.let { r -> return "turn-question sorcerybetween ${r.groupValues[1]}" }
+        // Mindslaver: "I control my opponent's turn with Mindslaver" / "I control my opponent with Mindslaver".
+        re("""^(?:i|we) (?:control|take control of|am controlling|'m controlling|gain control of) (?:my opponent|the opponent|them|him|her)(?:'s turn| during their turn| for their turn)? (?:with|using|via|from|thanks to) (c\d+)$""").find(q)?.let { r -> return "turn-question controlplayer ${r.groupValues[1]}" }
+        if (re("""^can (?:i|we) (?:make|force|have) (?:them|him|her|my opponent|the opponent|that player) (?:to )?concede(?: the game)?$""").matches(q)) return "turn-question say controlConcede"
+        if (re("""^can (?:i|we) see (?:their|his|her|my opponent's) hand(?: and (?:make|have|force) (?:them|him|her) (?:to )?(?:cast|play) (?:their|his|her|the|my) (?:spells|cards)(?: for them)?)?$|^can (?:i|we) (?:make|have|force) (?:them|him|her) (?:to )?(?:cast|play) (?:their|his|her) (?:spells|cards)$""").matches(q)) return "turn-question say controlSeeCast"
+        // Initiative: "My opponent takes the initiative from me by attacking. When do I venture?"
+        if (re("""^(?:my opponent|the opponent|they|he|she) (?:takes?|took|steals?|stole|gets?|got) the initiative from (?:me|us)(?: by (?:attacking(?: me)?|dealing combat damage(?: to me)?|hitting me))?$""").matches(q)) return "turn-question initiativelost"
+        if (re("""^when (?:do|will|can) (?:i|we) (?:get to )?venture(?: into (?:the )?(?:undercity|dungeon))?(?: now| again| next)?$""").matches(q))
+            return "turn-question say ${if (ctx.notes.any { it.startsWith("\"Takes the initiative from you\"") }) "initiativeLost" else "initiativeVenture"}"
+        // Monarch: "My opponent deals combat damage to me" when someone is the monarch: their attack, on their turn.
+        re("""^(my opponent|the opponent|they|he|she) (?:deals?|dealt) combat damage to (?:me|us)$""").find(q)?.let {
+            if (ctx.events.any { it.verb == "monarch" }) { ctx.notes += "\"Deals combat damage to you\" is read as an unblocked attack by a creature of theirs, on their turn."; return "it's my opponent's turn, my opponent attacks me with a creature and i don't block" }
+        }
+        if (re("""^who draws(?: a card)?(?: (?:at|in|during|on) (?:the |this |that )?end (?:step|of (?:the )?turn))$""").matches(q) && ctx.events.any { it.verb == "monarch" }) return "turn-question monarchdraw"
+        // Day and night.
+        // "night" is close enough to card names (Night of Souls' Betrayal) to be marked as one: read the words as said.
+        re("""^it (?:becomes|turns|is now|'s now|is) (night|day|c\d+)$""").find(q)?.let { r ->
+            val said = re("""\bit (?:becomes|turns|is now|'s now|is) (night|day)\b""").find(ctx.fullText)?.groupValues?.get(1)?.lowercase()
+            val w = if (r.groupValues[1].startsWith("c")) said else r.groupValues[1].lowercase()
+            if (w != null) return "turn-question $w"
+        }
+        if (re("""^what happens to (?:my|their|the|a|his|her) daybound (?:creature|permanent|card|werewolf)s?$""").matches(q)) return "turn-question say nightDaybound"
+        // Chronatog: "I skip my next turn because of Chronatog. My opponent gives me an extra turn. Do I take it?"
+        re("""^(?:i|we) (?:skip|am skipping|'m skipping|will skip|have to skip) (?:my|our) next turn (?:because of|due to|from|with|thanks to|by activating) (c\d+)$""").find(q)?.let { r -> return "i activate ${r.groupValues[1]}" }
+        re("""^(my opponent|the opponent|they|he|she) (?:gives?|grants?|gave) (?:me|us) an extra turn$""").find(q)?.let { return "turn-question giveextra" }
+        if (re("""^(?:do|will|would|can|should) (?:i|we) (?:still |actually )?(?:take|get to take|play) (?:it|that turn|the extra turn|that extra turn)$""").matches(q) && (ctx.events.any { it.verb == "turn" } || ctx.events.any { it.verb == "activate" }))
+            return "turn-question takeextra"
+        // Rules of the steps themselves.
+        val anyone = """(?:i|we|they|my opponent|anyone|a player|players|you)"""
+        val act = """(?:cast|play|activate) (?:an? )?(?:instants?|spells?|abilit(?:y|ies)|anything)(?: or (?:activate )?(?:an? )?abilit(?:y|ies))?"""
+        if (re("""^can $anyone $act (?:during|in) (?:my|their|the|his|her|an?) untap step$""").matches(q)) return "turn-question say untapPriority"
+        if (re("""^can $anyone $act (?:during|in) (?:my|their|the|his|her|an?) cleanup(?: step)?$""").matches(q)) return "turn-question say cleanupPriority"
+        if (re("""^(?:during|in) (?:my|the) draw step,? (?:i|we) (?:cast|want to cast|try to cast) (?:an? )?(?:spell|instant)(?: before (?:drawing|i draw|my draw|the draw|i've drawn))$""").matches(q)) return "turn-question say beforeDraw"
+        if (re("""^(?:is (?:that|this|it) (?:allowed|legal|ok|okay|possible)|can (?:i|we) do (?:that|this))$""").matches(q) && asked.startsWith("turn:say:")) return "turn-question ack"
+        if (re("""^(my opponent|the opponent|they|he|she) casts? an? creature with flash (?:in|during|at) (?:my|their|his|her|the) beginning of combat(?: step)?$""").matches(q)) return "turn-question flashbeginning"
+        if (re("""^can (?:it|that creature|the creature|they) block$""").matches(q) && ctx.notes.any { it.startsWith("\"A creature with flash cast in the beginning of combat") }) return "turn-question say flashBlocker"
+        if (re("""^(?:does|do|will) (?:an? |the |my )?(?:until end of turn |until-end-of-turn |"until end of turn" )?(?:pump|boost|effect|buff)s?(?: that lasts? until end of turn| until end of turn)? (?:wear off|end|expire|go away|stop) before (?:my |the |their )?end step(?: triggers?)?$""").matches(q)) return "turn-question say pumpEndStep"
+        if (re("""^(?:then )?(?:i|we) (?:want|would like|'d like) (?:another|a second|an extra|one more) combat(?: phase)?$""").matches(q)) return "turn-question wantcombat"
+        if (re("""^can (?:i|we)(?: do that| have it)?$""").matches(q) && ctx.notes.any { it.startsWith("\"Another combat\"") }) return "turn-question say anotherCombat"
+        if (re("""^(?:then )?(?:i|we) want (?:another|a second|an extra|one more) combat,? can (?:i|we)$|^(?:then )?can (?:i|we) (?:have|take|get|go to) (?:another|a second|an extra|one more) combat(?: phase)?$""").matches(q)) return "turn-question say anotherCombat"
+        // Paradox Haze: "With Paradox Haze I have two upkeeps. Does my Dark Confidant trigger twice?"
+        re("""^with (c\d+),? (?:i|we) (?:have|get) (?:two|2|an extra|an additional|extra) upkeeps?(?: steps?)?$""").find(q)?.let { r -> return "turn-question haze ${r.groupValues[1]}" }
+        re("""^(?:does|will|would) (?:my |the )?(c\d+) trigger (?:twice|two times|in (?:both|each) upkeeps?|each upkeep)$""").find(q)?.let { r -> return "turn-question eachupkeep ${r.groupValues[1]}" }
+        // Final Fortune: "What happens at my next end step?"
+        if (re("""^what happens (?:at|in|during) (?:my|the) next end step$""").matches(q)) return "turn-question nextendstep"
+        return t
+    }
+
+    /** The markers [turnRewrites] leaves: turn-structure questions answered by TurnAsks in the judge. */
+    private fun readTurnQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        if (!c.startsWith("turn-question ")) return null
+        val parts = c.removePrefix("turn-question ").split(' ')
+        fun ask(to: String, player: String? = null, obj: String? = null, card: CardRef? = null) { ctx.asks += EventSpec("ask", player = player, obj = obj, to = to, card = card); player?.let { ctx.note(it) } }
+        when (parts[0]) {
+            "extraorder" -> ask("turn:extraOrder", "me")
+            "endturn" -> ask("turn:endTurn")
+            "stays" -> ctx.lastMentioned?.takeIf { it in ctx.objects }?.let { ask("survive", obj = it) } ?: return false
+            "skipstep" -> ask("turn:skipStep:${parts[2]}", if (parts[1] == "mine") "me" else ctx.other("me") ?: "opp")
+            "untapattackers" -> ask("turn:untapAttackers", "me")
+            "sorcerybetween" -> { val card = m.cards[parts[1]] ?: return false; addObject(card, "me", false, ctx); ask("turn:sorceryBetween", "me", card = CardRef(name = card.display, oracleId = card.oracleId)) }
+            "controlplayer" -> { m.cards[parts[1]]?.let { ctx.notes += "\"Controlling their turn\" with ${it.display} is read as controlling that player during their turn (723.1)." }; ctx.note("opp") }
+            "say" -> ask("turn:say:${parts[1]}")
+            "initiativelost" -> { ctx.notes += "\"Takes the initiative from you\": their creatures dealt combat damage to you while you had the initiative (726.2)."; ctx.note("opp") }
+            "monarchdraw" -> { ctx.events += EventSpec("step", player = ctx.activePlayer ?: "me", to = "end"); ask("whoDoes:draw") }
+            "night", "day" -> ctx.notes += "\"It becomes ${parts[0]}\": the game has the ${parts[0]} designation from now on (731.1)."
+            "giveextra" -> {
+                if (ctx.events.lastOrNull()?.verb in setOf("cast", "activate")) ctx.events += EventSpec("resolveAll")
+                ctx.events += EventSpec("turn", player = "me", to = "extraTurn", source = "your opponent's effect"); ctx.note("opp")
+            }
+            "wantcombat" -> ctx.notes += "\"Another combat\" is asked after the combat phase is over, in the second main phase."
+            "takeextra" -> ask("turn:takeExtra", "me")
+            "ack" -> {}
+            "flashbeginning" -> { ctx.notes += "\"A creature with flash cast in the beginning of combat step\" is answered from the rules below."; ctx.note("opp") }
+            "haze" -> { val card = m.cards[parts[1]] ?: return false; val id = addObject(card, "me", false, ctx); ctx.objects[id] = ctx.objects.getValue(id).copy(attachedTo = "me"); ctx.note("me") }
+            "eachupkeep" -> { val card = m.cards[parts[1]] ?: return false; ask("turn:eachUpkeep", "me", obj = addObject(card, "me", false, ctx)) }
+            "nextendstep" -> ask("turn:nextEndStep", "me")
+            else -> return false
+        }
+        return true
+    }
+
     /** The markers [stackRewrites] leaves: stack, priority and timing questions, answered by StackAsks in the judge. */
     private fun readStackQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         Regex("""^floatmana-question (me|opp) (\d+)(?: (\S+))?$""").find(clause0)?.let { r ->
@@ -5636,6 +5775,7 @@ class SituationParser(private val names: NameIndex) {
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readCostQuestions(clause0, m, ctx)?.let { return it }
         readWinLossQuestions(clause0, m, ctx)?.let { return it }
+        readTurnQuestions(clause0, m, ctx)?.let { return it }
         readStackQuestions(clause0, m, ctx)?.let { return it }
         readCombatQuestions(clause0, m, ctx)?.let { return it }
         replacementQuestions(clause0, m, ctx)?.let { return it }

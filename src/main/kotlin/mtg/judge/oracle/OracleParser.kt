@@ -350,6 +350,7 @@ object OracleParser {
 
     fun parseTrigger(cond: String): Trigger {
         val c = cond.trim().trimEnd(',')
+        mtg.judge.engine.Turns.trigger(c)?.let { return it }   // Paradox Haze: "enchanted player's first upkeep each turn"
         Regex("""^the beginning of (?:(your|each player's|each|an opponent's|each opponent's|the) )?(upkeep|draw step|precombat main phase|first main phase|combat on your turn|combat on each of your turns|combat on each opponent's turn|combat|end step|next end step|postcombat main phase|second main phase|untap step|end of combat step|turn)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             val whose = when (m.groupValues[1].lowercase()) { "your" -> Who.YOU; "an opponent's", "each opponent's" -> Who.OPPONENT; else -> Who.ANY_PLAYER }
             val stepKey = m.groupValues[2].lowercase().substringBefore(" on ")
@@ -649,6 +650,7 @@ object OracleParser {
     /** "Creatures you control get +1/+1", "Other Elf creatures you control get +1/+1 and have trample", "Creatures you control have haste". */
     fun parseStatic(line: String): List<StaticEffect> {
         WinLoss.parseStatic(line)?.let { return it }
+        mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
         Regex("""^all cards that aren't on the battlefield, spells, and permanents are the chosen colou?r in addition to their other colou?rs\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EverythingIsChosenColour) }
@@ -1340,6 +1342,7 @@ object OracleParser {
         // A leading "Then" only orders the sentence after the one before it ("Then amass Orcs 1"); the pronoun
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
+        mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
         WinLoss.parseSentence(s) { target(it, Kind.PLAYER) }?.let { return it }
         // Spell Queller's leave trigger: the engine plays it out from the card it remembered exiling.

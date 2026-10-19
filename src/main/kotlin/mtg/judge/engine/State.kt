@@ -302,6 +302,8 @@ class GameState(
     val quelled = mutableMapOf<String, String>()
     /** The game's turn number, when the situation said so. */
     var turnNumber: Int? = null
+    /** Extra turns, skips, extra phases and delayed end-step triggers this turn has set up (see Turns.kt). */
+    val turns = TurnPlan()
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */
     val combatDamageMuted = mutableSetOf<String>()
     /** Spells cast this turn, per player (storm counts, Aetherflux Reservoir). */
