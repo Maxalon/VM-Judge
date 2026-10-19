@@ -124,26 +124,41 @@ class Engine(val state: GameState) {
             taxes.filter { it.second.perOtherSpellThisTurn }.forEach { (o, t) -> trace.step("${o.name}: ${player.subject.lowercase()} ${player.v("has", "have")} cast $earlier other spell${if (earlier == 1) "" else "s"} this turn, so ${card.name} costs {${t.amount * earlier}} more.", "601.2f") }
             val tax = taxes.sumOf { if (it.second.perOtherSpellThisTurn) it.second.amount * earlier else it.second.amount } + commanderTax
             obj.taxesAtCast = taxes.map { it.first.name to (if (it.second.perOtherSpellThisTurn) it.second.amount * earlier else it.second.amount) }
-            var cost = card.manaValue.toInt() + (x ?: 0) * maxOf(0, Regex("""\{X\}""").findAll(card.manaCost ?: "").count() - 1) + tax + obj.kwf.extraCost
-            // Kicked: the kicker cost is an additional cost paid with the spell (702.33b).
-            if (kicked) Regex("""(?i)\bkicker\s+((?:\{[^}]+\})+)""").find(card.oracleText)?.let { k ->
-                val kmv = Regex("""\{([^}]+)\}""").findAll(k.groupValues[1]).sumOf { s -> s.groupValues[1].toIntOrNull() ?: if (s.groupValues[1].equals("X", true)) (x ?: 0) else 1 }
-                cost += kmv; trace.step("${card.name} is kicked, so its kicker cost ${k.groupValues[1]} is paid as an additional cost: {${cost}} in all.", "702.33b", "601.2f")
+            // The total cost in 601.2f order (Costs.kt): mana or alternative cost, additional costs, increases,
+            // reductions, then Trinisphere. Phyrexian symbols paid with life leave the mana part (601.2b, 107.4f).
+            state.pendingCost?.let { pc -> obj.castCost.free = obj.castCost.free || pc.free; obj.castCost.kicked = obj.castCost.kicked || pc.kicked }
+            state.pendingCost = null
+            val ownLifeCost = card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostText>().any { Regex("""(?i)\bpay (X|\d+) life\b""").containsMatchIn(it.text) }
+            val tc = totalCost(obj, x, kicked, alternative, if (ownLifeCost) null else payLife)
+            obj.castCost.phyrexianLife = tc.phyrexianLife; obj.castCost.locked = tc
+            var cost = tc.floorFrom
+            // Kicked: the kicker cost is an additional cost paid with the spell (702.33a).
+            if (kicked || obj.castCost.kicked) tc.changes.firstOrNull { it.source == "kicker" }?.let { k ->
+                trace.step("${card.name} is kicked, so its kicker cost ${k.shown} is paid as an additional cost${if (tc.free) ", even though the spell is cast without paying its mana cost: that replaces only the mana cost (118.9d)" else ""}: {${cost}} in all.", "702.33a", "601.2f", *(if (tc.free) arrayOf("118.9d") else emptyArray()))
             }
-            // Trinisphere: a spell that would cost less than three costs three.
-            costFloor(cost)?.let { (o, f) -> trace.step("${o.name} is untapped and says each spell that would cost less than ${f.amount} mana costs ${f.amount} mana, so ${card.name} costs {${f.amount}} in all (the extra is generic).", "601.2f", "118.7"); state.outcomes += "${card.name} costs ${f.amount} mana in all (${o.name}: a spell that would cost less than ${f.amount} costs ${f.amount})."; cost = f.amount }
+            if (tc.free) trace.step("${card.name} is cast without paying its mana cost: that is an alternative cost of no mana, which replaces the mana cost${if ((card.manaCost ?: "").contains("{X}")) "; X can only be 0 (107.3b)" else ""}. Additional costs and cost increases still apply.", "118.9", "601.2f", *(if ((card.manaCost ?: "").contains("{X}")) arrayOf("107.3b") else emptyArray()))
+            // Trinisphere: a spell that would cost less than three costs three, counted after every other change.
+            tc.floor?.let { (o, f) -> trace.step("$o is untapped and says each spell that would cost less than $f mana costs $f mana, so ${card.name} costs {$f} in all (the extra is generic).", "601.2f", "118.7"); state.outcomes += "${card.name} costs $f mana in all ($o: a spell that would cost less than $f costs $f)."; cost = f }
+            // "Goblin Electromancer and Counterspell": a generic reduction can't touch {U}{U} (118.7a).
+            if (tc.reductionCapped) tc.changes.filter { it.kind == "reduction" }.let { rs ->
+                trace.step("${rs.joinToString(" and ") { it.source }} would make ${card.name} cost ${rs.sumOf { -it.amount }} less, but a cost reduction takes off only generic mana, and ${card.name}'s cost has ${if (tc.generic == 0) "no generic mana left" else "only that much generic mana"}: it costs ${tc.text}.", "118.7a", "601.2f")
+                state.outcomes += "${rs.joinToString(" and ") { it.source }} can't take ${card.name} below ${tc.text}: a reduction takes off only generic mana (118.7a)."
+            }
             if (taxes.isNotEmpty() || commanderTax > 0) {
                 val change = when { tax > 0 -> "plus {$tax}"; tax < 0 -> "less {${-tax}}"; else -> "unchanged" }
-                trace.step("${(taxes.map { "${it.first.name} makes ${card.name} cost {${kotlin.math.abs(it.second.amount)}} ${if (it.second.amount < 0) "less" else "more"}" } + (if (commanderTax > 0) listOf("the commander tax adds {$commanderTax}") else emptyList())).joinToString(" and ")}: its total cost is ${card.manaCost ?: "?"} $change (${cost} mana in all).", "601.2f", "118.7")
+                val baseText = if (tc.alternative) "its alternative cost (${tc.baseMana} in mana)" else if (tc.phyrexianLife > 0) "${tc.baseMana} (its Phyrexian mana paid with life)" else card.manaCost ?: "?"
+                trace.step("${(taxes.map { "${it.first.name} makes ${card.name} cost {${kotlin.math.abs(it.second.amount)}} ${if (it.second.amount < 0) "less" else "more"}" } + (if (commanderTax > 0) listOf("the commander tax adds {$commanderTax}") else emptyList())).joinToString(" and ")}: its total cost is $baseText $change (${tc.floorFrom} mana in all).", "601.2f", "118.7", *(if (tc.alternative) arrayOf("118.9d") else emptyArray()))
             }
+            // Delve and convoke pay part of the locked-in total; they aren't reductions (702.66b, 702.51b).
+            val due = maxOf(0, cost - obj.castCost.delved - obj.castCost.convoked)
             if (tax > 0 && alternative && taxes.isNotEmpty()) state.outcomes += "${card.name} still costs {$tax} more (${taxes.joinToString(", ") { it.first.name }}): a cost increase applies to an alternative cost too (601.2f)."
             // Mana stated as a count, or the untapped lands named ("I have 2 Islands"), less what earlier casts used.
             // A stated count plus any described mana sources (availableMana adds them up); described sources alone only when nothing else could pay.
             (if (player.mana != null) availableMana(player) else availableMana(player)?.takeIf { landsOnly(player) })?.let { avail -> obj.manaAvailableAtCast = avail
-                val phyrexianPips = Regex("""\{[WUBRG]/P\}""").findAll(card.manaCost ?: "").count()
-                if (cost > avail && phyrexianPips > 0 && cost - phyrexianPips <= avail) trace.step("${player.subject} ${player.v("has", "have")} only $avail mana for a cost of $cost, but ${card.name}'s ${if (phyrexianPips == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"} can be paid with 2 life each (107.4f), which covers the shortfall; the rest is paid with mana.", "107.4f", "601.2h")
-                else if (cost > avail && phyrexianPips > 0) { trace.step("${player.subject} ${player.v("has", "have")} only $avail mana and ${card.name} costs $cost: its ${if (phyrexianPips == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"} can be paid with 2 life each, but the generic part${if (tax > 0) " (Thalia's tax included)" else ""} needs mana, so the total cost can't be paid.", "107.4f", "601.2h"); state.outcomes += "${card.name} can't be cast: the Phyrexian mana can be paid with life, but the other {${cost - phyrexianPips}} needs mana and only $avail is available."; return null }
-                else if (cost > avail) { trace.step("${player.subject} ${player.v("has", "have")} only $avail mana available and ${card.name} costs $cost, so it can't be cast: the total cost can't be paid.", "601.2h", "601.2f"); state.outcomes += "${card.name} can't be cast (costs $cost, only $avail mana available)."; return null } else if (taxes.isNotEmpty() || commanderTax > 0) trace.step("${player.subject} ${player.v("has", "have")} $avail mana available, enough for the $cost.", "601.2h") }
+                val phyrexianPips = Regex("""\{[WUBRG]/P\}""").findAll(card.manaCost ?: "").count() - tc.phyrexianLife
+                if (due > avail && phyrexianPips > 0 && due - phyrexianPips <= avail) trace.step("${player.subject} ${player.v("has", "have")} only $avail mana for a cost of $due, but ${card.name}'s ${if (phyrexianPips == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"} can be paid with 2 life each (107.4f), which covers the shortfall; the rest is paid with mana.", "107.4f", "601.2h")
+                else if (due > avail && (phyrexianPips > 0 || tc.phyrexianLife > 0)) { trace.step("${player.subject} ${player.v("has", "have")} only $avail mana and ${card.name} costs $due: its ${if (phyrexianPips == 1) "Phyrexian mana symbol" else "Phyrexian mana symbols"} can be paid with 2 life each, but the generic part${if (tax > 0) " (Thalia's tax included)" else ""} needs mana, so the total cost can't be paid.", "107.4f", "601.2h"); state.outcomes += "${card.name} can't be cast: the Phyrexian mana can be paid with life, but the other {${due - phyrexianPips}} needs mana and only $avail is available."; return null }
+                else if (due > avail) { trace.step("${player.subject} ${player.v("has", "have")} only $avail mana available and ${card.name} costs $due, so it can't be cast: the total cost can't be paid.", "601.2h", "601.2f"); state.outcomes += "${card.name} can't be cast (costs $due, only $avail mana available)."; return null } else if (taxes.isNotEmpty() || commanderTax > 0) trace.step("${player.subject} ${player.v("has", "have")} $avail mana available, enough for the $due.", "601.2h") }
         }
         card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CantCastBeforeTurn>().firstOrNull()?.let { c ->
             val t = state.turnNumber
@@ -1158,7 +1173,7 @@ class Engine(val state: GameState) {
 
     /** "I get a poison counter": ten or more and that player loses (704.5c). */
     /** Trinisphere: the untapped permanent whose cost floor is above [cost], with the floor, or null. */
-    private fun costFloor(cost: Int): Pair<GameObject, StaticEffect.CostFloor>? = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.filterIsInstance<StaticEffect.CostFloor>().filter { f -> (!f.whileUntapped || o.tapped != true) && f.amount > cost }.map { o to it } }.maxByOrNull { it.second.amount }
+    internal fun costFloor(cost: Int): Pair<GameObject, StaticEffect.CostFloor>? = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.filterIsInstance<StaticEffect.CostFloor>().filter { f -> (!f.whileUntapped || o.tapped != true) && f.amount > cost }.map { o to it } }.maxByOrNull { it.second.amount }
 
     /** "I create a Treasure": tokens made by the situation itself, through the same doublers as a card's would be. */
     fun createTokens(playerId: String, desc: String, count: Int) {
@@ -1358,7 +1373,7 @@ class Engine(val state: GameState) {
     }
 
     /** Whether a spell being cast matches a spell filter (for cost taxes and "whenever you cast" checks). */
-    private fun spellMatches(f: ObjFilter, card: CardDef): Boolean {
+    internal fun spellMatches(f: ObjFilter, card: CardDef): Boolean {
         val typeOk = f.kinds.any { k -> when (k) { Kind.SPELL -> true; Kind.CREATURE -> card.isCreature; Kind.ARTIFACT -> "Artifact" in card.types; Kind.ENCHANTMENT -> "Enchantment" in card.types; Kind.PLANESWALKER -> card.isPlaneswalker; else -> false } }
         val notOk = f.notKinds.none { k -> when (k) { Kind.CREATURE -> card.isCreature; Kind.ARTIFACT -> "Artifact" in card.types; Kind.ENCHANTMENT -> "Enchantment" in card.types; Kind.PLANESWALKER -> card.isPlaneswalker; Kind.LAND -> "Land" in card.types; else -> false } }
         val colourOk = f.colors.all { it in card.colors } && f.notColors.none { it in card.colors }
@@ -5031,6 +5046,9 @@ class Engine(val state: GameState) {
             val extra = fb.groupValues[2].trim().takeIf { it.isNotEmpty() }?.let { ", plus ${it.lowercase()}" } ?: ""
             return "${card.name} cast with flashback costs ${fb.groupValues[1]}$extra (its flashback cost, 702.34a); the printed ${printed} isn't paid. It's exiled as it resolves."
         }
+        // "I cast Fireball with X=4 under Goblin Electromancer", "Gitaxian Probe paying life under Trinisphere": the
+        // total cost locked in as it was cast, step by step (Costs.kt).
+        costBreakdownAnswer(obj)?.let { return it }
         // "They Bolt Thalia. Can they?": the cost is what it was as the spell was cast, when Thalia was still there.
         // A cast that recorded no tax was untaxed: a Thalia that arrived afterwards (Aether Vial in response) doesn't reach it.
         val recorded0 = obj.taxesAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.taxesAtCast }.lastOrNull()
@@ -5057,6 +5075,7 @@ class Engine(val state: GameState) {
         if (taxes.isEmpty() && commanderTax == 0 && self.first == 0 && idle.isNotEmpty()) { trace.step("${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes ${t.filter.raw.ifEmpty { "spell" }}s" }}, and ${card.name} isn't one, so its cost is unchanged.", "601.2f"); state.outcomes += "${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes only ${t.filter.raw.ifEmpty { "spell" }}s" }}, and ${card.name} isn't one." }
         // "I cast Force of Will pitching a blue card. What does it cost me?": the alternative cost it was cast for, plus any tax.
         obj.castForAlternativeCost?.let { alt -> val what = alt.replace("your hand", "${p.possessive} hand").trimEnd('.')
+            trace.step("${card.name} was cast for its alternative cost ($what), which replaces its mana cost; ${if (tax > 0) "cost increases still apply to it, so the tax of {$tax} is paid on top" else "no mana was paid for it"}.", "118.9", "118.9d", "601.2f")
             return "${card.name} was cast for its alternative cost, not its mana cost: $what (601.2b). " +
                 (if (tax > 0) "${taxes.joinToString("; ") { (o, t) -> "${o.name} makes it cost {${kotlin.math.abs(t.amount)}} more" }}: a tax applies to whatever cost is paid (601.2f), so ${p.subject.lowercase()} ${p.v("pays", "pay")} {$tax} on top of that. Yes." else "No mana was paid for it; its printed cost, $printed, is what it costs cast normally.") }
         // "Chalice on 1. Can I cast Dismember paying life?": a Chalice set to another number doesn't touch it, and life payments don't change mana value.
@@ -5139,7 +5158,7 @@ class Engine(val state: GameState) {
     private fun colouredPips(cost: String) = Regex("""\{([^}]+)\}""").findAll(cost).count { !Regex("""^\d+$|^X$""").matches(it.groupValues[1]) }
 
     /** "~ costs {1} less to cast for each creature on the battlefield": how much less, and why. */
-    private fun selfReduction(obj: GameObject): Pair<Int, String> {
+    internal fun selfReduction(obj: GameObject): Pair<Int, String> {
         val r = obj.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.SelfCostReduction>().firstOrNull() ?: return 0 to ""
         val per = r.per ?: return r.amount to "a flat {${r.amount}}"
         val n = when (per) {

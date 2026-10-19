@@ -5007,14 +5007,12 @@
     "id": "electromancer-cuts-a-cost",
     "text": "I control Goblin Electromancer and cast Counterspell with 1 mana available. What happens?",
     "expect": [
-      "cost {1} less",
-      "less {1} (1 mana in all)"
-    ],
-    "notExpect": [
-      "can't be cast"
+      "Counterspell can't be cast (costs 2, only 1 mana available).",
+      "a reduction takes off only generic mana (118.7a)"
     ],
     "cite": [
-      "601.2f"
+      "601.2f",
+      "118.7a"
     ]
   },
   {
@@ -19074,7 +19072,7 @@
       "Rite of Replication can't be cast (costs 9, only 7 mana available)."
     ],
     "cite": [
-      "702.33b"
+      "702.33a"
     ]
   },
   {
@@ -30741,7 +30739,7 @@
     "id": "thalia-probe-for-life-still-pays",
     "text": "I have Thalia, Guardian of Thraben and my opponent casts Gitaxian Probe for 2 life. Do they still pay 1?",
     "expect": [
-      "Gitaxian Probe costs {U/P} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more)"
+      "Gitaxian Probe costs {1} plus 2 life in all: {0} (its mana cost, with its Phyrexian symbol paid with 2 life) + {1} (Thalia, Guardian of Thraben) = {1}."
     ],
     "notExpect": [
       "Not understood"
@@ -31846,7 +31844,7 @@
     "id": "thalia-taxes-probe-for-life",
     "text": "I have Thalia and they cast Gitaxian Probe for 2 life. Does Thalia tax it?",
     "expect": [
-      "Gitaxian Probe costs {U/P} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+      "Gitaxian Probe costs {1} plus 2 life in all: {0} (its mana cost, with its Phyrexian symbol paid with 2 life) + {1} (Thalia, Guardian of Thraben) = {1}."
     ],
     "cite": []
   },
@@ -36794,7 +36792,7 @@
     "text": "They have Thalia. I cast Gitaxian Probe paying 2 life. How much mana does it cost?",
     "expect": [
       "You pay 2 life. It pays Gitaxian Probe's Phyrexian mana (107.4f).",
-      "Gitaxian Probe costs {U/P} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all"
+      "Gitaxian Probe costs {1} plus 2 life in all: {0} (its mana cost, with its Phyrexian symbol paid with 2 life) + {1} (Thalia, Guardian of Thraben) = {1}."
     ]
   },
   {
@@ -40166,6 +40164,224 @@
     "cite": [
       "702.140a",
       "702.140c"
+    ]
+  },
+  {
+    "id": "co1",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Force of Will by exiling a blue card. Do I have to pay 1?",
+    "expect": [
+      "Force of Will was cast for its alternative cost, not its mana cost: pay 1 life and exile a blue card from your hand (601.2b).",
+      "so you pay {1} on top of that. Yes."
+    ],
+    "cite": [
+      "118.9d",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "co2",
+    "text": "Trinisphere is on the battlefield. I cast Gitaxian Probe paying 2 life. How much mana do I pay?",
+    "expect": [
+      "Gitaxian Probe costs {3} plus 2 life in all: {0} (its mana cost, with its Phyrexian symbol paid with 2 life), which Trinisphere raises to {3} (3 mana)."
+    ],
+    "cite": [
+      "601.2f",
+      "107.4f"
+    ]
+  },
+  {
+    "id": "co3",
+    "text": "Trinisphere is on the battlefield and my opponent casts a kicked Goblin Bushwhacker. What is the total cost?",
+    "expect": [
+      "Goblin Bushwhacker costs {1}{R}{R} in all: {R} (its mana cost) + {R} (kicker) = {R}{R}, which Trinisphere raises to {1}{R}{R} (3 mana).",
+      "Goblin Bushwhacker is 2/1 with haste until end of turn."
+    ],
+    "cite": [
+      "601.2f",
+      "702.33a"
+    ]
+  },
+  {
+    "id": "co4",
+    "text": "I control Helm of Awakening and my opponent controls Thalia, Guardian of Thraben. I cast Lightning Bolt. What does it cost?",
+    "expect": [
+      "Lightning Bolt costs {R} in all: {R} (its mana cost) + {1} (Thalia, Guardian of Thraben) − {1} (Helm of Awakening) = {R}."
+    ],
+    "cite": [
+      "601.2f",
+      "118.7a"
+    ]
+  },
+  {
+    "id": "co5",
+    "text": "I control Goblin Electromancer. I cast Fireball with X=4. How much do I pay?",
+    "expect": [
+      "Fireball costs {3}{R} in all: {4}{R} (its mana cost {X}{R} with X = 4) − {1} (Goblin Electromancer) = {3}{R}."
+    ],
+    "cite": [
+      "601.2f",
+      "118.7a"
+    ]
+  },
+  {
+    "id": "co6",
+    "text": "I cast Goblin Bushwhacker without paying its mana cost using Omniscience. Can I kick it?",
+    "expect": [
+      "Yes: kicker is an additional cost, and casting Goblin Bushwhacker without paying its mana cost replaces only its mana cost, so you can still pay the kicker {R} (118.9d, 702.33a).",
+      "Goblin Bushwhacker is 2/1 with haste until end of turn."
+    ],
+    "cite": [
+      "118.9d",
+      "702.33a",
+      "118.8"
+    ]
+  },
+  {
+    "id": "co7",
+    "text": "I cast Rolling Thunder without paying its mana cost. What is X?",
+    "expect": [
+      "X is 0: when a spell with {X} in its mana cost is cast without paying its mana cost, the only legal choice for X is 0 (107.3b)."
+    ],
+    "cite": [
+      "107.3b"
+    ]
+  },
+  {
+    "id": "co8",
+    "text": "I control Cavern of Souls naming Elf. Can I use its mana to cast an Elf creature spell so it can't be countered? What if I cast Counterspell with it?",
+    "expect": [
+      "Yes for an Elf creature spell",
+      "Counterspell isn't an Elf creature spell",
+      "Cavern of Souls can't help cast Counterspell."
+    ],
+    "cite": [
+      "106.6"
+    ]
+  },
+  {
+    "id": "co9",
+    "text": "I activate Lion's Eye Diamond in response to my own spell. Can I use the mana to pay for the spell on the stack?",
+    "expect": [
+      "No: a spell's costs are paid while it is being cast (601.2g, 601.2h)"
+    ],
+    "cite": [
+      "601.2g",
+      "601.2h",
+      "500.5",
+      "605.3a"
+    ]
+  },
+  {
+    "id": "co11",
+    "text": "My opponent controls Sphere of Resistance. I cast Gush by returning two Islands. What do I pay?",
+    "expect": [
+      "Gush still costs {1} more (Sphere of Resistance): a cost increase applies to an alternative cost too (601.2f).",
+      "so you pay {1} on top of that."
+    ],
+    "notExpect": [
+      "6 mana in all"
+    ],
+    "cite": [
+      "118.9d",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "co12",
+    "text": "I have exactly 2 life. Can I pay a Phyrexian mana symbol with 2 life?",
+    "expect": [
+      "Yes: a Phyrexian mana symbol can be paid with 2 life (107.4f)",
+      "At exactly 2 life you can pay it, but you go to 0 and lose the game"
+    ],
+    "cite": [
+      "119.4",
+      "107.4f",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "co14",
+    "text": "I tap Elvish Mystic for mana in my upkeep and then move to my draw step. Can I use the mana in my main phase?",
+    "expect": [
+      "No: you have no mana floating. Unspent mana empties from each player's mana pool at the end of every step and phase (500.5, 106.4)."
+    ],
+    "notExpect": [
+      "Yes."
+    ],
+    "cite": [
+      "500.5"
+    ]
+  },
+  {
+    "id": "co15",
+    "text": "Trinisphere is on the battlefield. I cast Chord of Calling with X=0 with convoke tapping three creatures. Does it cost 3?",
+    "expect": [
+      "Chord of Calling costs {G}{G}{G} in all",
+      "Trinisphere doesn't change it: it raises only a total below 3, and the total is already 3"
+    ],
+    "notExpect": [
+      "Chord of Calling costs 3 mana in all (Trinisphere"
+    ],
+    "cite": [
+      "702.51b",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "co16",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Treasure Cruise exiling 7 cards with delve. What do I pay?",
+    "expect": [
+      "Treasure Cruise costs {8}{U} (9 mana, Thalia, Guardian of Thraben +{1} included); delving 7 cards out of the graveyard pays for 7 of the generic mana, so you pay {1}{U} (2 mana) (702.66a)."
+    ],
+    "cite": [
+      "702.66a",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "co17",
+    "text": "I cast three spells this turn. My opponent casts Mindbreak Trap without paying its mana cost. Which spells can it exile?",
+    "expect": [
+      "Any spells still on the stack, as many as its caster wants",
+      "Exiling isn't countering"
+    ],
+    "cite": [
+      "601.2c",
+      "118.9"
+    ]
+  },
+  {
+    "id": "co18",
+    "text": "I cast a spell with mana from Lotus Petal and Dark Ritual. My opponent counters the spell. Do I get my mana back?",
+    "expect": [
+      "a spell is countered.",
+      "No: the mana was spent paying the spell's cost as it was cast (601.2h).",
+      "so Lotus Petal and Dark Ritual stay used up."
+    ],
+    "cite": [
+      "601.2h",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "co20",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Gitaxian Probe paying 2 life. How much do I pay in total?",
+    "expect": [
+      "Gitaxian Probe costs {1} plus 2 life in all: {0} (its mana cost, with its Phyrexian symbol paid with 2 life) + {1} (Thalia, Guardian of Thraben) = {1}."
+    ],
+    "cite": [
+      "601.2f",
+      "107.4f"
+    ]
+  },
+  {
+    "id": "co21",
+    "text": "My opponent casts Lightning Bolt targeting me. In response I activate Aether Vial with 4 counters to put Mystic Snake onto the battlefield. Does Snake counter the Bolt?",
+    "expect": [
+      "Yes: Lightning Bolt is countered (by Mystic Snake)."
+    ],
+    "cite": [
+      "603.6a"
     ]
   }
 ]

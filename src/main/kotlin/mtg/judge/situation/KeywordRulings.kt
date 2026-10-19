@@ -10,6 +10,7 @@ import mtg.judge.engine.Ref
 import mtg.judge.engine.Zone
 import mtg.judge.engine.costMv
 import mtg.judge.engine.keywordCostText
+import mtg.judge.engine.totalCost
 import mtg.judge.oracle.OracleParser
 
 /**
@@ -100,18 +101,23 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                     state.outcomes += "${def.name} has delve: each card exiled from ${p.possessive} graveyard pays for {1} of its generic mana, up to $generic here, so with enough cards it costs only ${cost.replace(Regex("""\{\d+\}"""), "").ifEmpty { "{0}" }} (702.66a). How many cards ${p.subject.lowercase()} exile${if (p.you) "" else "s"} wasn't said."
                     return plain
                 }
-                obj.kwf.extraCost -= n
+                // Delve pays the total cost, taxes included ("Treasure Cruise under Thalia": {8}{U}), and isn't a reduction (702.66b).
+                val tc = engine0?.totalCost(obj, e.amount, kicked = false, alternative = false)
+                val totalText = tc?.text ?: cost.ifEmpty { "{0}" }; val totalMv = tc?.total ?: def.manaValue.toInt()
+                if (tc != null) n = minOf(if (said > 0) said else if (gy.isNotEmpty()) gy.size else (p.graveyardSize ?: 0), tc.generic)
+                obj.castCost.delved = n
                 gy.take(n).forEach { it.zone = Zone.EXILE }
                 if (gy.size < n && p.graveyardSize != null) p.graveyardSize = (p.graveyardSize!! - (n - gy.size)).coerceAtLeast(0)
-                val left = cost.replace(Regex("""\{(\d+)\}""")) { m -> val r = m.groupValues[1].toInt() - n; if (r > 0) "{$r}" else "" }
-                state.trace.step("${def.name} has delve: after its total cost ${cost.ifEmpty { "{0}" }} is determined, ${p.subject.lowercase()} exile${if (p.you) "" else "s"} $n card${if (n == 1) "" else "s"} from ${p.possessive} graveyard, and each one pays for {1} of the generic mana in the cost. Delve isn't an additional or alternative cost, and it can pay only generic mana, never a coloured symbol. ${p.subject} ${p.v("pays", "pay")} $left (${def.manaValue.toInt() - n} mana).", "702.66a", "702.66b")
-                state.outcomes += "${def.name} costs ${cost.ifEmpty { "{0}" }} (${def.manaValue.toInt()} mana); delving $n card${if (n == 1) "" else "s"} out of the graveyard pays for $n of the generic mana, so ${p.subject.lowercase()} ${p.v("pays", "pay")} $left (${def.manaValue.toInt() - n} mana) (702.66a)."
+                val left = if (tc != null) mtg.judge.engine.manaText(tc.generic - n, tc.symbols) else cost.replace(Regex("""\{(\d+)\}""")) { m -> val r = m.groupValues[1].toInt() - n; if (r > 0) "{$r}" else "" }
+                val taxNote = tc?.changes?.takeIf { it.isNotEmpty() }?.let { cs -> ", ${cs.joinToString(" and ") { c -> "${c.source} ${if (c.amount < 0) "−" else "+"}${c.shown}" }} included" } ?: ""
+                state.trace.step("${def.name} has delve: after its total cost $totalText$taxNote is determined, ${p.subject.lowercase()} exile${if (p.you) "" else "s"} $n card${if (n == 1) "" else "s"} from ${p.possessive} graveyard, and each one pays for {1} of the generic mana in the cost. Delve isn't an additional or alternative cost, and it can pay only generic mana, never a coloured symbol. ${p.subject} ${p.v("pays", "pay")} $left (${totalMv - n} mana).", "702.66a", "702.66b", *(if (taxNote.isNotEmpty()) arrayOf("601.2f") else emptyArray()))
+                state.outcomes += "${def.name} costs $totalText ($totalMv mana$taxNote); delving $n card${if (n == 1) "" else "s"} out of the graveyard pays for $n of the generic mana, so ${p.subject.lowercase()} ${p.v("pays", "pay")} $left (${totalMv - n} mana) (702.66a)."
                 if (said == 0 && gy.isEmpty() && (p.graveyardSize ?: 0) == 0) state.assumptions += "How many cards ${p.subject.lowercase()} exile${if (p.you) "" else "s"} with delve wasn't said and the graveyard wasn't described; say how many for the exact cost."
             }
             "convoke" -> {
                 val n = arg.toIntOrNull() ?: 0
                 val x = e.amount ?: 0
-                val total = def.manaValue.toInt() + x * maxOf(1, Regex("""\{X\}""").findAll(def.manaCost ?: "").count())
+                val total = engine0?.totalCost(obj, x, kicked = false, alternative = false)?.total ?: (def.manaValue.toInt() + x * maxOf(1, Regex("""\{X\}""").findAll(def.manaCost ?: "").count()))
                 if (!def.keywords.any { it.equals("convoke", true) }) { state.outcomes += "${def.name} doesn't have convoke, so it is cast normally."; return plain }
                 if (n == 0) {
                     state.trace.step("${def.name} has convoke: after its total cost is determined, ${p.subject.lowercase()} may tap untapped creatures ${p.subject.lowercase()} control${if (p.you) "" else "s"}, each paying for {1} or one mana of its colour. It isn't an additional or alternative cost, and tapping a creature this way isn't a {T} ability of that creature, so even a creature that came under ${p.possessive} control this turn can be tapped for it.", "702.51a", "702.51b", "302.6")
@@ -120,7 +126,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 }
                 val mine = state.objects.values.filter { it.isOnBattlefield() && it.controller == player && state.isCreature(it) && it.tapped != true }.take(n)
                 mine.forEach { engine0?.tapObject(it.id) ?: run { it.tapped = true } }
-                obj.kwf.extraCost -= n
+                obj.castCost.convoked = n
                 state.trace.step("${def.name} has convoke: after its total cost is determined ({$total} here${if (x > 0) ", with X = $x" else ""}), ${p.subject.lowercase()} tap${if (p.you) "" else "s"} $n untapped creature${if (n == 1) "" else "s"}, and each pays for {1} or one mana of its colour. Convoke isn't an additional or alternative cost. Tapping a creature this way isn't a {T} ability of that creature, so even a creature that came under ${p.possessive} control this turn can be tapped for it. ${p.subject} ${p.v("pays", "pay")} the other ${total - n} in mana.", "702.51a", "702.51b", "302.6")
                 state.outcomes += "${def.name} costs $total${if (x > 0) " with X = $x" else ""}; tapping $n creature${if (n == 1) "" else "s"} to convoke pays for $n of it, so ${p.subject.lowercase()} ${p.v("pays", "pay")} ${total - n} in mana (702.51a)."
             }

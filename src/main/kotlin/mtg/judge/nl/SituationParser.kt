@@ -1517,6 +1517,46 @@ class SituationParser(private val names: NameIndex) {
      * "Myr Retriever with Ichor Wellspring" in a list of what someone controls is two permanents unless the second is
      * an Aura or Equipment, the only things a permanent is "with" by being attached.
      */
+    /**
+     * Cost and mana questions (track costs): "how much mana do I pay?", "can I kick it?" after a free cast, "what
+     * is X?", Cavern of Souls' mana, mana made after a spell was cast, Phyrexian mana at 2 life. Each becomes a
+     * "cost…" marker read by [readCostQuestions], or the ordinary "how much does it cost" question.
+     */
+    private fun costRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('?', '.', '!').trim()
+        val cast = ctx.events.lastOrNull { it.verb == "cast" }
+        val who = """(?:i|we|they|he|she|my opponent|the opponent)"""
+        // "How much mana do I pay?", "What is the total cost?", "How much do I pay in total?": the cost of the spell just cast.
+        if (cast != null && Regex("""^(?:how much (?:mana )?(?:do|does|will|would|did) $who (?:have to |need to )?pay(?: for (?:it|that|the spell))?(?: in total| in all| altogether| total)?|what(?: is|'s) (?:the|its) total cost|(?:the )?total cost|what (?:do|does|did) $who (?:have to |actually )?pay(?: for (?:it|that))?(?: in total| in all)?|what (?:do|does) (?:it|that) cost (?:in total|in all))$""").matches(q)) return "how much does it cost"
+        // "I cast Gush by returning two Islands": the card's own alternative cost (118.9), said by what it pays.
+        Regex("""^(.*\bcasts? c\d+) (?:by |while )?(?:returning|bouncing) (?:two|2|an?|one|1) (?:c\d+|islands?|lands?|forests?|mountains?|plains|swamps?)(?: (?:i|they|you) control)?(?: to (?:my|their|its owner's|their owner's|our) hands?)?(.*)$""").find(q)?.let { r -> return "${r.groupValues[1]} for its alternative cost${r.groupValues[2]}" }
+        // "Do I have to pay 1?" (Force of Will under Thalia): the existing "do I still pay 1" question.
+        Regex("""^do ($who) (?:have to|need to|still have to) pay (1|one|the 1|the tax|the extra|extra|more|1 more|one more)(?: mana)?$""").find(q)?.let { r -> if (cast != null) return "do ${r.groupValues[1]} still pay ${r.groupValues[2]}" }
+        // "I cast Goblin Bushwhacker without paying its mana cost. Can I kick it?"
+        if (cast != null && Regex("""^(?:can|could|may) $who (?:still )?(?:kick|pay (?:the |its )?kicker(?: cost)?(?: for| on)?) ?(?:it|that|c\d+)?$""").matches(q)) return "costkick-question"
+        // "I cast Rolling Thunder without paying its mana cost. What is X?"
+        if (cast != null && Regex("""^(?:what(?: is|'s| does) x(?: equal| become)?|how much is x|what (?:is|'s) the value of x|what can x be|what x (?:do|does|can) $who (?:choose|pick))$""").matches(q)) return "costx-question"
+        // "Can I use its mana to cast an Elf creature spell so it can't be countered?" (Cavern of Souls)
+        if (ctx.objects.values.any { it.card.name == "Cavern of Souls" }) {
+            Regex("""^can $who (?:use|spend|tap) (?:its|the|c\d+'s|cavern's) mana (?:to cast|on|for) (?:an? )?([a-z]+) (?:creature )?spell(?: so (?:it|that it) can't be countered)?$""").find(q)?.let { r -> return "costcavern-question ${r.groupValues[1]}" }
+            Regex("""^what if $who (?:cast|try to cast) (c\d+) with (?:it|its mana|the mana|c\d+)$""").find(q)?.let { r -> return "costcavernother-question ${r.groupValues[1]}" }
+        }
+        // "Can I use the mana to pay for the spell on the stack?" (Lion's Eye Diamond activated in response to it)
+        if (Regex("""^can $who (?:use|spend) (?:the|that|this|its) mana (?:to pay )?(?:for|on) (?:the|my|my own|that) spell(?: (?:on the stack|i (?:already )?cast|already on the stack))?$""").matches(q) && ctx.events.any { it.verb == "activate" }) return "costlatemana-question"
+        // "I have exactly 2 life." / "Can I pay a Phyrexian mana symbol with 2 life?"
+        Regex("""^(i|we) (?:have|am at|'m at) exactly (\d+) life$""").find(q)?.let { r -> return "${r.groupValues[1]} am at ${r.groupValues[2]} life" }
+        if (Regex("""^can $who pay (?:a|the|one|my) phyrexian (?:mana )?(?:symbol|mana|cost)(?: symbol)? (?:with|by paying) (?:2|two) life$""").matches(q)) return "costphylife-question"
+        // "I tap Elvish Mystic in my upkeep and move to my draw step. Can I use the mana in my main phase?"
+        if (Regex("""^can $who (?:still )?(?:use|spend) (?:the|that|this|my|its) mana (?:in|during|on) (?:my |the |our |their )?(?:first |second |precombat |postcombat )?(?:main phase|main|draw step|combat|end step|upkeep|turn)(?: later)?$""").matches(q)) return "poolnow-question"
+        // "I cast a spell with mana from Lotus Petal and Dark Ritual": the spell, with where its mana came from.
+        Regex("""^($who) casts? (an? (?:spell|creature|instant|sorcery)|c\d+) (?:with|using|paying with) (?:the )?mana from (c\d+)(?:,? and (c\d+))?$""").find(q)?.let { r ->
+            return "costspellwith-question ${r.groupValues[1].replace(' ', '_')} ${r.groupValues[2].replace(' ', '_')} ${r.groupValues[3]} ${r.groupValues[4]}".trim() }
+        Regex("""^do ($who) get (?:my|the|their|that|our|his|her) mana back$""").find(q)?.let { r -> return "costmanaback-question " + (if (r.groupValues[1] in setOf("i", "we")) "me" else "opp") }
+        // "Which spells can it exile?" (Mindbreak Trap)
+        if (cast != null && cast.card?.name == "Mindbreak Trap" && Regex("""^(?:which|what) spells? (?:can|does|will|could) (?:it|that|c\d+) exile$""").matches(q)) return "costtrap-question"
+        return t
+    }
+
     private fun loopRewrite(t: String, m: Marked, ctx: Ctx): String {
         val withAnd = Regex("""^((?:i|we|they|my opponent|the opponent) (?:control|controls|have|has|got|'ve got) (?:(?:c\d+|and),? )*)(c\d+) with (c\d+)$""", RegexOption.IGNORE_CASE).find(t.trim().trimEnd('.'))?.let { r ->
             val tl = m.cards[r.groupValues[3]]?.typeLine ?: return@let null
@@ -1783,6 +1823,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = costRewrites(t2, m, ctx)
         t2 = stackRewrites(t2, m, ctx)
         t2 = combatRewrites(t2, m, ctx)
         t2 = replacementRewrites(t2, m, ctx)
@@ -5449,7 +5490,66 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /** The markers [costRewrites] leaves, answered by CostAsks in the judge. */
+    private fun readCostQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        val lastCast = ctx.events.lastOrNull { it.verb == "cast" }
+        fun castName(e: EventSpec?) = e?.card?.name ?: e?.obj?.let { ctx.objects[it]?.card?.name }
+        fun ask(to: String, card: String? = castName(lastCast), source: String? = null, amount: Int? = null) {
+            ctx.asks += EventSpec("ask", player = lastCast?.player ?: "me", card = card?.let { CardRef(name = it) }, to = to, source = source, amount = amount)
+            ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."
+        }
+        when {
+            // Kicked as well as free: the cast is replayed with both choices made (601.2b).
+            c == "costkick-question" -> {
+                val i = ctx.events.indexOfLast { it.verb == "cast" }; if (i < 0) return null
+                val e = ctx.events[i]
+                if (e.to == "altcost") { ctx.events[i] = e.copy(to = "kicked"); ctx.events.add(i, EventSpec("costplan", player = e.player, to = "free,kicked")) }
+                else if (e.to == null) ctx.events[i] = e.copy(to = "kicked")
+                ask("cost:kick"); return true
+            }
+            c == "costx-question" -> { ask("cost:x"); return true }
+            c.startsWith("costcavern-question ") -> { ask("cost:cavern:" + c.removePrefix("costcavern-question ").trim(), card = null, source = "Cavern of Souls"); return true }
+            c.startsWith("costcavernother-question ") -> {
+                val card = m.cards[c.removePrefix("costcavernother-question ").trim()] ?: return null
+                addObject(card, "me", false, ctx, zone = "hand", allowDuplicate = true)
+                val i = ctx.asks.indexOfLast { it.to?.startsWith("cost:cavern:") == true }
+                if (i >= 0) ctx.asks[i] = ctx.asks[i].copy(to = ctx.asks[i].to!!.split(':').take(3).joinToString(":") + ":" + card.display)
+                else ctx.asks += EventSpec("ask", player = "me", to = "cost:cavern:the chosen type:${card.display}", source = "Cavern of Souls")
+                return true
+            }
+            c == "costlatemana-question" -> {
+                val src = ctx.events.lastOrNull { it.verb == "activate" }?.obj?.let { ctx.objects[it]?.card?.name }
+                ctx.asks += EventSpec("ask", player = "me", to = "cost:lateMana", source = src); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+            }
+            c == "costphylife-question" -> {
+                val life = Regex("""(?i)\b(?:i have|i'm at|i am at) (?:exactly )?(\d+) life\b""").find(ctx.fullText)?.groupValues?.get(1)?.toIntOrNull()
+                ctx.asks += EventSpec("ask", player = "me", to = "cost:phyLife", amount = life); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+            }
+            c.startsWith("costspellwith-question ") -> {
+                val parts = c.removePrefix("costspellwith-question ").split(' ')
+                val who = if (parts[0] in setOf("i", "we")) "me" else pronounPlayer(ctx, parts[0].replace('_', ' '))
+                val srcs = parts.drop(2).mapNotNull { m.cards[it] }
+                srcs.forEach { addObject(it, who, false, ctx, zone = "graveyard", allowDuplicate = true) }
+                val spell = parts[1]
+                val named = m.cards[spell]
+                ctx.events += EventSpec("cast", player = who, card = named?.let { CardRef(name = it.display, oracleId = it.oracleId) } ?: CardRef(name = spell.replace('_', ' ')))
+                ctx.lastActor = who; ctx.lastVerb = "cast"; ctx.lastMentioned = "cast:" + slug(named?.display ?: spell.replace('_', ' '))
+                ctx.notes += "The mana from ${srcs.joinToString(" and ") { it.display }} was spent casting it; ${if (srcs.size == 1) "that card is" else "those cards are"} in the graveyard now (used up or resolved)."
+                return true
+            }
+            c.startsWith("costmanaback-question") -> {
+                val srcs = ctx.objects.values.filter { it.zone == "graveyard" }.mapNotNull { it.card.name }.distinct()
+                val asker = c.removePrefix("costmanaback-question").trim().let { w -> if (w == "opp") pronounPlayer(ctx, "they") else "me" }
+                ctx.asks += EventSpec("ask", player = asker, to = "cost:manaBack", source = srcs.joinToString("|")); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+            }
+            c == "costtrap-question" -> { ask("cost:trap"); return true }
+        }
+        return null
+    }
+
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readCostQuestions(clause0, m, ctx)?.let { return it }
         readStackQuestions(clause0, m, ctx)?.let { return it }
         readCombatQuestions(clause0, m, ctx)?.let { return it }
         replacementQuestions(clause0, m, ctx)?.let { return it }

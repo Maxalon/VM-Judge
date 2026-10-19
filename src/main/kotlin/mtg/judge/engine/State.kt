@@ -133,6 +133,8 @@ class GameObject(
     var manaAvailableAtCast: Int? = null
     /** "pitching a blue card": the alternative cost this spell was cast for, in the card's words, so "what did it cost?" answers with it. */
     var castForAlternativeCost: String? = null
+    /** How it was paid for as it was cast: free, Phyrexian life, delve, convoke, and the locked-in total (Costs.kt). */
+    val castCost = CastCost()
     /** A double-faced card showing its back face (Insectile Aberration); it turns back to the front face when it leaves the battlefield (712.8). */
     var transformed: Boolean = false
     /** The cost-raising permanents that applied as it was cast (name to amount), for "how much did it cost?" asked once they have left. */
@@ -288,6 +290,8 @@ class GameState(
     var describedLandsAreTheBase = false
     /** "Can I cast Path to Exile?" with no creature named: the question is whether the cast is allowed, so a stand-in target is fine. */
     var castabilityAsked = false
+    /** Payment choices said for the next spell cast ("without paying its mana cost", "kicking it"), see Costs.kt. */
+    var pendingCost: CastCost? = null
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */
     val ceased = mutableMapOf<String, String>()
     /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.19b). */
