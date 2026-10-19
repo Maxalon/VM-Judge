@@ -17,6 +17,7 @@ import mtg.judge.engine.Trigger
 import mtg.judge.engine.TriggeredAbility
 import mtg.judge.engine.UnparsedAbility
 import mtg.judge.engine.Who
+import mtg.judge.engine.WinLoss
 
 /**
  * Turns Oracle text into abilities and effects the engine understands.
@@ -191,6 +192,7 @@ object OracleParser {
                     abilities += TriggeredAbility(Trigger.ThisLeavesBattlefield, Effect.SacrificeEnchanted, ltb)
                 }
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
+                isSpell && WinLoss.isSpellLine(selfRef) -> spellLines += selfRef   // Pact of Negation's delayed trigger is part of the spell
                 selfRef.startsWith("When ", true) || selfRef.startsWith("Whenever ", true) || selfRef.startsWith("At ", true) || abilityWord.containsMatchIn(selfRef) -> abilities += parseTriggeredAll(selfRef)
                 isActivated(selfRef) -> abilities += parseActivated(selfRef)
                 isSpell -> spellLines += selfRef
@@ -646,6 +648,7 @@ object OracleParser {
 
     /** "Creatures you control get +1/+1", "Other Elf creatures you control get +1/+1 and have trample", "Creatures you control have haste". */
     fun parseStatic(line: String): List<StaticEffect> {
+        WinLoss.parseStatic(line)?.let { return it }
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
         Regex("""^all cards that aren't on the battlefield, spells, and permanents are the chosen colou?r in addition to their other colou?rs\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EverythingIsChosenColour) }
@@ -1056,6 +1059,7 @@ object OracleParser {
     private val sentenceSplit = Regex("""(?<=\.)\s+(?=[A-Z~])""")
 
     fun parseEffect(text: String): Effect {
+        WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
         Regex("""^look at the top X cards of your library, where X is your devotion to (white|blue|black|red|green)\. Put up to one of them on top of your library and the rest on the bottom of your library in a random order\. If X is greater than or equal to the number of cards in your library, you win the game\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfDevotionCoversLibrary(mapOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G').getValue(it.groupValues[1].lowercase())) }
         if (Regex("""^If ~ was cast from your hand and you've cast another spell named ~ this game, you win the game\. Otherwise, put ~ into its owner's library seventh from the top and you gain (\d+) life\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfCastBefore(it.groupValues[1].toInt()) } != null) Unit
         // "Exile up to one other target creature" (Solitude): read as one target. A spell cast with none chosen
@@ -1337,6 +1341,7 @@ object OracleParser {
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
+        WinLoss.parseSentence(s) { target(it, Kind.PLAYER) }?.let { return it }
         // Spell Queller's leave trigger: the engine plays it out from the card it remembered exiling.
         Regex("""^the exiled card's owner may cast (?:that card|it) without paying its mana cost\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("608.2c", "118.7a")) }
         // "(You may) have ~ deal 3 damage to any target" says what "~ deals 3 damage to any target" says.

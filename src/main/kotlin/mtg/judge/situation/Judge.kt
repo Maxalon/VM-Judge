@@ -492,6 +492,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     p.lost = true
                     state.trace.step("${p.subject} ${p.v("concedes", "concede")} and leaves the game. A player who concedes loses the game immediately; it isn't a state-based action and can't be responded to.", "104.3a", "800.4a")
                     state.outcomes += "${p.subject} ${p.v("concedes", "concede")} and ${p.v("loses", "lose")} the game."
+                    WinLossAsks.conceded(p, state, engine)
                 }
             }
             "discardcount" -> engine.discardCount(e.player ?: throw JudgeException("discard needs a player"), e.amount ?: 1)
@@ -906,6 +907,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             }
             "floatmana" -> StackAsks.applyEvent("floatmana", e, state)
             "costplan" -> CostAsks.applyEvent(e, state)
+            "wlcastbefore", "wlemblem", "wllose" -> WinLossAsks.applyEvent(e, state, engine) { c -> cardDef(c, state)?.oracleText }
             "kw" -> kw.apply(e, state, engine)
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
@@ -955,6 +957,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
 
     private fun describeEvent(e: EventSpec, state: GameState): String {
         val who = e.player?.let { state.players.firstOrNull { p -> p.id == it }?.let { p -> if (p.you) "you" else p.name } ?: it }
+        WinLossAsks.describe(e, who)?.let { return it }
         val tg = if (e.targets.isEmpty()) "" else " targeting " + e.targets.joinToString(" and ") { runCatching { state.nameOf(parseRef(it, state)) }.getOrDefault(it) }
         return when (e.verb.lowercase()) {
             "cast" -> { val land = e.card?.let { c -> runCatching { cardDef(c, state) }.getOrNull() }?.let { "Land" in it.types && !it.isInstantOrSorcery } == true
@@ -2016,6 +2019,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         if (!flashEnabler) { state.outcomes += "No, not with ${held.joinToString(" or ") { it.name }}: ${if (held.size == 1) "it's" else "they're"} not ${if (held.size == 1) "an instant and ${if (held[0].def.isCreature) "a creature" else "a spell"} without flash" else "instants"}, so ${if (held.size == 1) "it" else "they"} can only be cast in ${state.player(asker).possessive} own main phase with an empty stack (${if (held.any { it.def.isCreature }) "302.1" else "307.1"}). Only an instant, a spell with flash, or an activated ability could be used while ${last?.name ?: "the spell"} is on the stack (117.1a)."; return true }
                     }
                     state.outcomes += if (ss != null) "No: ${ss.name} has split second, so while it's on the stack players can't cast spells or activate abilities that aren't mana abilities (702.61a). Triggered abilities still trigger, and special actions like turning a morph face up are still allowed."
+                        else if (last == null && curEvents.any { it.verb == "activate" }) curEvents.last { it.verb == "activate" }.obj.let { id -> "Yes: once ${state.objects[id]?.name ?: id ?: "the permanent"}'s ability is activated and on the stack, its controller gets priority and then each other player does in turn; instants can be cast and abilities activated in response before it resolves (117.3c, 117.4). Its costs (tapping, sacrificing) were paid as it was activated, so those can't be responded to." }
                         else "Yes: after ${last?.name ?: "a spell"} is cast its controller gets priority, then each player does in turn; instants can be cast and abilities activated before it resolves (117.3c, 117.4)."
                     return true
                 }
@@ -2223,6 +2227,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     return true
                 }
                 if (StackAsks.answer(e, state, engine)) return true
+                if (WinLossAsks.answer(e, state)) return true
                 if (e.to?.startsWith("combat:") == true) return CombatAsks.answer(e, state, engine)
                 if (e.to?.startsWith("cost:") == true) return CostAsks.answer(e, state, engine)
                 return false
@@ -2263,6 +2268,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     if (o != null && o.zone != Zone.STACK && o.zone != Zone.BATTLEFIELD) { state.assumptions += "\"${o.name}\" is no longer on the stack; it is read as that card in ${state.player(o.controller).possessive} ${o.zone.name.lowercase()}."; return Ref.Obj(o.id) }
                     null
                 }
+                ?: WinLossAsks.notAnAbility(state, objId)?.let { throw JudgeException(it) }
                 ?: throw JudgeException("No ${kind} from '$objId' is on the stack")
             return Ref.Stack(item.id)
         }
@@ -2305,11 +2311,12 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
 
     /** The yes/no for "do they survive / die / win?", phrased the way it was asked. */
     private fun playerAnswer(to: String, p: mtg.judge.engine.Player, state: GameState): String {
+        WinLossAsks.playerAnswer(to, p, state)?.let { return it }
         val won = !p.lost && state.players.all { it.id == p.id || it.lost }
         val alive = "${p.subject} ${p.v("is", "are")} still in the game${p.life?.let { " at $it life" } ?: ""}."
         return when (to) {
             "playerDie" -> if (p.lost) "Yes: ${p.subject} ${p.v("has", "have")} lost the game." else "No: $alive" + (if (p.librarySize == 0) " An empty library isn't a loss by itself: ${p.subject.lowercase()} ${p.v("loses", "lose")} only when ${p.subject.lowercase()} would draw from it, at the next state-based check (704.5b)." else "")
-            "playerWin" -> (if (won) "Yes: ${p.subject} ${p.v("has", "have")} won the game." else if (p.lost) "No: ${p.subject} ${p.v("has", "have")} lost the game." else "No: ${p.subject} ${p.v("hasn't", "haven't")} won; ${alive.replaceFirstChar { it.lowercase() }}") + (state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && it.def.abilities.filterIsInstance<mtg.judge.engine.TriggeredAbility>().any { a -> a.trigger == mtg.judge.engine.Trigger.ThisEnters && a.text.contains("win the game", true) } }.takeIf { !won }?.firstOrNull()?.let { o -> " ${o.name}'s ability triggers only as it enters the battlefield; it is already there, so nothing checks now. Say you cast it if that is what you mean." } ?: "")
+            "playerWin" -> (if (won) "Yes: ${p.subject} ${p.v("has", "have")} won the game." else if (p.lost) "No: ${p.subject} ${p.v("has", "have")} lost the game." else "No: ${p.subject} ${p.v("hasn't", "haven't")} won; ${alive.replaceFirstChar { it.lowercase() }}") + (state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && it.def.abilities.filterIsInstance<mtg.judge.engine.TriggeredAbility>().any { a -> a.trigger == mtg.judge.engine.Trigger.ThisEnters && a.text.contains("win the game", true) } && it.enteredFrom == null }.takeIf { !won }?.firstOrNull()?.let { o -> " ${o.name}'s ability triggers only as it enters the battlefield; it is already there, so nothing checks now. Say you cast it if that is what you mean." } ?: "")
             else -> if (p.lost) "No: ${p.subject} ${p.v("has", "have")} lost the game." else "Yes: $alive"
         }
     }

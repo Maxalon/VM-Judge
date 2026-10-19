@@ -651,9 +651,9 @@ class Engine(val state: GameState) {
             val maniac = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.controller == who.id && Regex("""(?i)would draw a card while your library has no cards in it, (?:you win the game instead|instead you win the game)""").containsMatchIn(o.rulesText) }
             if (maniac != null) {
                 who.librarySize = 0
-                trace.step("${who.subject} would draw a card with no cards in ${who.possessive} library. ${maniac.name} replaces that draw: ${who.subject.lowercase()} ${who.v("wins", "win")} the game instead. No card is drawn and ${who.subject.lowercase()} ${who.v("doesn't", "don't")} lose for it: the replacement applies before the draw would happen, so there is no failed draw for the state-based action to see.", "614.1a", "104.2a", "704.5b")
-                state.players.filter { it.id != who.id }.forEach { it.lost = true }
-                state.outcomes += "${who.subject} ${who.v("wins", "win")} the game (${maniac.name})."
+                // A replacement effect, not a trigger: there is nothing on the stack for Stifle to counter (614.1a, 121.6a).
+                if (winGame(who, "${who.subject} would draw a card with no cards in ${who.possessive} library. ${maniac.name} replaces that draw with a win (a replacement effect, applied even with no card to draw, and not a triggered ability, so there is nothing on the stack to respond to or counter). No card is drawn and ${who.subject.lowercase()} ${who.v("doesn't", "don't")} lose for it: the replacement applies before the draw would happen, and there is no failed draw for the state-based action to see", "614.1a", "121.6a", "104.2b", "704.5b"))
+                    state.outcomes += "${who.subject} ${who.v("wins", "win")} the game (${maniac.name})."
                 return
             }
             who.librarySize = 0; who.drewFromEmpty = true
@@ -1063,7 +1063,7 @@ class Engine(val state: GameState) {
         if (untilEndOfTurn && o.controlRevertsTo == null) o.controlRevertsTo = o.controller
         o.controller = playerId
         if (state.isCreature(o)) o.summoningSick = true
-        trace.step("${p.subject} ${p.v("gains", "gain")} control of ${o.name}${if (untilEndOfTurn) " until end of turn" else ""} (it was ${was.possessive}). A control-changing effect applies in layer 2; the permanent doesn't change zones, so it isn't summoning sick only if it has haste or has been under its new controller's control since the turn began.", "613.1b", "611.2a", "302.6")
+        trace.step("${p.subject} ${p.v("gains", "gain")} control of ${o.name}${if (untilEndOfTurn) " until end of turn" else ""} (it was ${if (was.you) "yours" else was.possessive}). A control-changing effect applies in layer 2; the permanent doesn't change zones, so it isn't summoning sick only if it has haste or has been under its new controller's control since the turn began.", "613.1b", "611.2a", "302.6")
         state.outcomes += "${p.subject} ${p.v("controls", "control")} ${o.name}${if (untilEndOfTurn) " until end of turn" else ""}."
     }
 
@@ -1508,6 +1508,7 @@ class Engine(val state: GameState) {
         } }
         onEvent(GameEvent.StepBegins(step, activePlayer))
         if (step == "upkeep") keywordUpkeep(activePlayer)   // rebound's delayed trigger, suspend's time counters
+        if (step == "upkeep") winLossUpkeep(activePlayer)   // Pact of Negation's delayed trigger
         if (step == "end") keywordEndStep(activePlayer)   // unearth's delayed exile
         // 725.2: the monarch's end-step draw is an inherent ability with no source, so it isn't on any permanent.
         if (step == "end") state.monarch?.let { mid ->
@@ -1544,7 +1545,7 @@ class Engine(val state: GameState) {
         state.discardCause = item.controller   // whose spell or ability is making anyone discard while this resolves (Loxodon Smiter)
         trace.step("All players pass priority; ${item.describe} (top of the stack) starts to resolve.", "117.4", "608.1")
         // Killing the Top in response to its ability: the ability is already on the stack and exists independently of its source.
-        if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
+        if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.effect !is WinLossEffect) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
         // 608.2b target legality
         if (item.targets.isNotEmpty()) {
             val legal = item.targets.map { it to isTargetLegal(item, it) }
@@ -1589,6 +1590,7 @@ class Engine(val state: GameState) {
                 } else if (item.source.kwf.mutateTarget != null && resolveMutating(item)) {
                     // merged with its target instead of entering the battlefield (702.140c)
                 } else {
+                    item.source.enteredFrom = Zone.STACK   // a resolving permanent spell, for "if you didn't cast it" (Phage)
                     item.source.zone = Zone.BATTLEFIELD; item.source.tapped = false; item.source.summoningSick = state.isCreature(item.source); item.source.timestamp = state.tick()
                     if (def.isAura) {
                         val t = item.targets.firstOrNull()
@@ -1625,7 +1627,7 @@ class Engine(val state: GameState) {
             }
             StackKind.TRIGGERED, StackKind.ACTIVATED -> {
                 // Dark Confidant bolted in response to its upkeep trigger: the ability on the stack is independent of its source (113.7a).
-                if (item.kind == StackKind.TRIGGERED && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && !Regex("""(?i)leaves the battlefield|dies|is put into a graveyard|~ enters|this creature enters|this permanent enters|enters the battlefield""").containsMatchIn(item.text)) {
+                if (item.kind == StackKind.TRIGGERED && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.effect !is WinLossEffect && !Regex("""(?i)leaves the battlefield|dies|is put into a graveyard|~ enters|this creature enters|this permanent enters|enters the battlefield""").containsMatchIn(item.text)) {
                     val transforms = Regex("""(?i)\btransform\b""").containsMatchIn(item.text)
                     trace.step("${item.source.name} has left the battlefield, but its triggered ability is already on the stack and resolves anyway: an ability on the stack exists independently of its source, using the source's last known information where it needs it.${if (transforms) " The part that would transform ${item.source.name} does nothing: there's no permanent to transform." else ""}", "113.7a", "608.2h")
                     state.outcomes += "${item.source.name}'s trigger still resolves even though ${item.source.name} is gone (113.7a)${if (transforms) ", but with nothing left to transform" else ""}."
@@ -1816,23 +1818,7 @@ class Engine(val state: GameState) {
                     if (host == null || !host.isOnBattlefield() || !state.isCreature(host)) { obj.attachedTo = null; trace.step("${obj.name} is no longer attached to a creature, so it becomes unattached and stays on the battlefield (state-based action).", "704.3", "704.5n"); state.outcomes += "${obj.name} stays on the battlefield, unattached."; changed = true }
                 }
             }
-            for (p in state.players) {
-                p.commanderDamage.entries.firstOrNull { it.value >= 21 }?.let { (cid, dmg) -> if (!p.lost) { p.lost = true; trace.step("${p.subject} ${p.v("has", "have")} been dealt $dmg combat damage by ${state.objects[cid]?.name ?: "a commander"} and ${p.v("loses", "lose")} the game (state-based action).", "704.6c", "903.10a"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} the game (commander damage)."; changed = true } }
-                if (p.poison >= 10 && !p.lost) { p.lost = true; trace.step("${p.subject} ${p.v("has", "have")} ${p.poison} poison counters and ${p.v("loses", "lose")} the game (state-based action).", "704.3", "704.5c"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} the game (poison)."; changed = true }
-                val life = p.life
-                val cantLose = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == p.id && it.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.CantLose } }
-                // Angel's Grace: the same thing for a turn, from a spell that has already resolved.
-                if (cantLose == null && p.id in state.cantLoseThisTurn && ((life != null && life <= 0) || p.poison >= 10 || p.drewFromEmpty || p.commanderDamage.values.any { it >= 21 })) {
-                    if (state.outcomes.none { it.contains("can't lose the game this turn") }) { trace.step("${p.subject} would lose the game, but ${p.subject.lowercase()} can't lose this turn, so the state-based action doesn't apply.", "704.5a", "104.3b"); state.outcomes += "${p.subject} ${p.v("stays", "stay")} in the game: ${p.subject.lowercase()} can't lose the game this turn." }
-                    continue
-                }
-                if (cantLose != null && ((life != null && life <= 0) || p.poison >= 10 || p.drewFromEmpty || p.commanderDamage.values.any { it >= 21 })) { if (state.outcomes.none { it.contains("${cantLose.name} keeps") }) { trace.step("${p.subject} would lose the game, but ${cantLose.name} says ${p.subject.lowercase()} can't lose, so the state-based action doesn't apply while it's on the battlefield.", "704.5a", "104.3b"); state.outcomes += "${p.subject} ${p.v("stays", "stay")} in the game: ${cantLose.name} keeps ${p.subject.lowercase()} from losing." }; continue }
-                if (p.drewFromEmpty && !p.lost) { p.lost = true; p.drewFromEmpty = false; trace.step("${p.subject} attempted to draw from an empty library since state-based actions were last checked, so ${p.subject.lowercase()} ${p.v("loses", "lose")} the game (state-based action).", "704.5b", "121.4"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} the game (drew from an empty library)."; changed = true }
-                // Phyrexian Unlife: 0 or less life isn't a loss while it's out.
-                val unlife = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == p.id && it.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NoLossAtZeroLife } }
-                if (unlife != null && life != null && life <= 0 && !p.lost && state.outcomes.none { it.contains("${unlife.name} keeps") }) { trace.step("${p.subject} ${p.v("has", "have")} $life life, but ${unlife.name} says ${p.subject.lowercase()} ${p.v("doesn't", "don't")} lose the game for having 0 or less life, so the state-based action doesn't apply. From here damage is dealt to ${p.subject.lowercase()} as though its source had infect: poison counters instead of life loss.", "704.5a"); state.outcomes += "${p.subject} ${p.v("stays", "stay")} in the game at $life life: ${unlife.name} keeps ${p.subject.lowercase()} from losing for having 0 or less life. Further damage gives ${p.subject.lowercase()} poison counters instead (10 poison loses, 704.5c)." }
-                if (life != null && life <= 0 && !p.lost && unlife == null) { p.lost = true; trace.step("${p.subject} ${p.v("has", "have")} $life life and ${p.v("loses", "lose")} the game (state-based action).${state.objects.values.firstOrNull { it.isOnBattlefield() && it.owner == p.id && it.controller != p.id && it.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.CantLose } }?.let { a -> " ${a.name} is now controlled by ${state.player(a.controller).subject.lowercase()}, and its \"you can't lose\" means its controller, so it no longer protects ${p.subject.lowercase()}." } ?: ""}", "704.3", "704.5a"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} the game."; changed = true }
-            }
+            if (playerStateBasedActions()) changed = true   // 704.5a-c, 704.6c, 104.4a, 800.4a: see WinLoss.kt
         }
     }
 
@@ -2917,8 +2903,7 @@ class Engine(val state: GameState) {
             is Effect.WinIfCastBefore -> {
                 val you = state.player(item.controller); val times = state.spellsCast[item.source.name] ?: 1
                 if (times >= 2) {
-                    trace.step("${item.source.name} was cast from ${you.possessive} hand and another spell with that name was cast earlier this game (${times - 1} before), so ${you.subject.lowercase()} ${you.v("wins", "win")} the game.", "104.2b")
-                    state.players.filter { it.id != you.id }.forEach { it.lost = true }; state.outcomes += "${you.subject} ${you.v("wins", "win")} the game."
+                    if (winGame(you, "${item.source.name} was cast from ${you.possessive} hand and another spell with that name was cast earlier this game (${times - 1} before; a cast counts even if that spell was countered)", "104.2b")) state.outcomes += "${you.subject} ${you.v("wins", "win")} the game."
                     state.assumptions += "${item.source.name} was cast from ${you.possessive} hand both times (a copy or a cast from elsewhere wouldn't count)."
                 } else {
                     trace.step("This is the first ${item.source.name} ${you.subject.lowercase()} ${you.v("has", "have")} cast this game, so instead of going to the graveyard it's put into ${you.possessive} library seventh from the top, and ${you.subject.lowercase()} ${you.v("gains", "gain")} ${effect.life} life.", "608.2c", "119.3")
@@ -3299,7 +3284,7 @@ class Engine(val state: GameState) {
                 trace.step("X is ${you.possessive} devotion to $colour: $x${if (you.devotion[effect.color] != null) " (as stated)" else " (${effect.color} symbols in the mana costs of permanents ${you.subject.lowercase()} ${you.v("controls", "control")}, ${item.source.name} included)"}. ${you.subject} ${you.v("looks", "look")} at the top $x cards, putting up to one back on top and the rest on the bottom.", "700.5", "701.22a")
                 val lib = you.librarySize
                 if (lib == null) { state.clarifications += Clarification("${you.possessive} library", "${item.source.name} wins the game if X ($x) is at least the number of cards in ${you.possessive} library; how many cards are there?"); trace.step("Whether $x is at least the number of cards in ${you.possessive} library isn't known, so the win can't be decided.", "608.2h") }
-                else if (x >= lib) { trace.step("X ($x) is greater than or equal to the $lib card${if (lib == 1) "" else "s"} in ${you.possessive} library, so ${you.subject.lowercase()} ${you.v("wins", "win")} the game. This happens as the ability resolves, not as a state-based action; an empty library on its own would only matter when drawing.", "104.2b"); state.players.filter { it.id != you.id }.forEach { it.lost = true }; state.outcomes += "${you.subject} ${you.v("wins", "win")} the game (${item.source.name}: X = $x, library = $lib)." }
+                else if (x >= lib) { if (winGame(you, "X ($x) is greater than or equal to the $lib card${if (lib == 1) "" else "s"} in ${you.possessive} library. This happens as the ability resolves, not as a state-based action; an empty library on its own would only matter when drawing", "104.2b")) state.outcomes += "${you.subject} ${you.v("wins", "win")} the game (${item.source.name}: X = $x, library = $lib)." }
                 else { trace.step("X ($x) is less than the $lib cards in ${you.possessive} library, so nothing more happens.", "608.2h"); state.outcomes += "${item.source.name} doesn't win the game (X = $x, library = $lib)." }
             }
             is Effect.SacrificeThatMany -> {
@@ -3362,7 +3347,7 @@ class Engine(val state: GameState) {
                         }
                     }
                     else {
-                        trace.step("${you.subject} ${you.v("puts", "put")} ${chosen.name} from ${you.possessive} hand onto the battlefield${if (counters != null) " (its mana value ${chosen.def.manaValue.toInt()} matches the $counters counters)" else ""}. It's put there directly rather than cast, so it never was a spell: it can't be countered and 'whenever you cast' abilities don't trigger.", "608.2c", *(if (counters != null) arrayOf("202.3") else emptyArray()))
+                        trace.step("${you.subject} ${you.v("puts", "put")} ${chosen.name} from ${if (fromZone == Zone.HAND) "${you.possessive} hand" else "${state.player(chosen.owner).possessive} $zoneName"} onto the battlefield${if (counters != null) " (its mana value ${chosen.def.manaValue.toInt()} matches the $counters counters)" else ""}. It's put there directly rather than cast, so it never was a spell: it can't be countered and 'whenever you cast' abilities don't trigger.", "608.2c", *(if (counters != null) arrayOf("202.3") else emptyArray()))
                         val host = chosen.attachedTo?.let { state.objects[it] }
                         if (chosen.def.isAura && host != null) trace.step("${chosen.name} is an Aura entering without being cast: ${you.subject.lowercase()} ${you.v("chooses", "choose")} what it enchants as it enters (it doesn't target, so hexproof and shroud don't stop it): ${host.name}.", "303.4f")
                         else if (chosen.def.isAura) { chosen.attachedTo = null; state.clarifications += Clarification("${chosen.name}'s host", "${chosen.name} enters the battlefield without being cast; what does it enchant? (303.4f)") }
@@ -3637,9 +3622,10 @@ class Engine(val state: GameState) {
                 applyEffect(effect.choice, item); applyEffect(effect.then, item)
             }
             is Effect.IfCondition -> applyIfCondition(effect, item)
+            is WinLossEffect -> applyWinLoss(effect, item)
             is Effect.GainControl -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 val was = state.player(o.controller); if (effect.untilEndOfTurn && o.controlRevertsTo == null) o.controlRevertsTo = o.controller; o.controller = item.controller
-                trace.step("${state.player(item.controller).subject} ${state.player(item.controller).v("gains", "gain")} control of ${o.name}${if (effect.untilEndOfTurn) " until end of turn" else ""} (it was ${was.possessive}). A control-changing effect applies in layer 2; the permanent doesn't change zones, so it isn't summoning sick only if it has haste or has been under its new controller's control since the turn began.", "613.1b", "611.2a", "302.6")
+                trace.step("${state.player(item.controller).subject} ${state.player(item.controller).v("gains", "gain")} control of ${o.name}${if (effect.untilEndOfTurn) " until end of turn" else ""} (it was ${if (was.you) "yours" else was.possessive}). A control-changing effect applies in layer 2; the permanent doesn't change zones, so it isn't summoning sick only if it has haste or has been under its new controller's control since the turn began.", "613.1b", "611.2a", "302.6")
                 if (state.isCreature(o)) o.summoningSick = true
                 state.outcomes += "${state.player(item.controller).subject} ${state.player(item.controller).v("controls", "control")} ${o.name}${if (effect.untilEndOfTurn) " until end of turn" else ""}."
             } }
@@ -3882,11 +3868,11 @@ class Engine(val state: GameState) {
             ok
         } ?: state.conditionHolds(effect.condition, item.source)
         if (holds) {
-            trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves, and it holds, so the rest happens.", "608.2")
+            trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves, and it holds, so the rest happens.", "608.2", *WinLoss.interveningIf(item))
             applyEffect(effect.then, item)
         } else {
             if (effect.condition !is Condition.TargetIsColor) {
-                trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves. It needs ${state.describeCondition(effect.condition)}, which isn't so, so ${if (effect.otherwise != null) "the ordinary effect happens instead" else "nothing happens"}.", "608.2")
+                trace.step("${item.describe} checks \"if ${effect.raw}\" as it resolves. It needs ${state.describeCondition(effect.condition)}, which isn't so, so ${if (effect.otherwise != null) "the ordinary effect happens instead" else "nothing happens"}.${if (WinLoss.interveningIf(item).isNotEmpty()) " It's an intervening \"if\" (right after the trigger condition), so it was checked when the ability triggered and is checked again now; it must be true both times." else ""}", "608.2", *WinLoss.interveningIf(item))
                 if (effect.otherwise != null) applyEffect(effect.otherwise, item)
                 else state.outcomes += "Nothing happens from ${item.describe}: it needs ${state.describeCondition(effect.condition)}."
             }
@@ -5599,6 +5585,7 @@ class Engine(val state: GameState) {
     private fun objOf(ref: Ref): GameObject? = (ref as? Ref.Obj)?.let { state.objects[it.id] }
     private fun describeTargets(targets: List<Ref>) = if (targets.isEmpty()) "" else " targeting " + targets.joinToString(" and ") { state.nameOf(it) }
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
+        is WinLossEffect -> WinLoss.describe(effect, item.source.name)
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"
         is Effect.Damage -> if (effect.selfPower) "deal damage equal to its power to ${effect.target.raw}" else "deal ${effect.amount} damage to ${effect.target.raw}"

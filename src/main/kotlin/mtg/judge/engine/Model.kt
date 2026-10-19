@@ -446,6 +446,7 @@ sealed interface Effect {
         is IfCondition -> then.targets()
         is Repeat -> body.targets()
         is LoseLifeUnlessSacOrDiscard -> emptyList()
+        is WinLossEffect -> WinLoss.targets(this)
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is Exploit, is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
         is Investigate, is Surveil, is SacrificeUnlessEscaped, is Hideaway, is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()

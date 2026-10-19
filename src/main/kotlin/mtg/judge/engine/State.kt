@@ -314,6 +314,8 @@ class GameState(
     val matchingSpellsThisTurn = mutableMapOf<String, MutableList<CardDef>>()
     /** Spells cast this game by name (Approach of the Second Sun). */
     val spellsCast = mutableMapOf<String, Int>()
+    /** Winning and losing (WinLoss.kt): Pact upkeep triggers waiting, emblems, objects that left with a player. */
+    val winLoss = WinLossState()
     /** Prevention/regeneration shields created by resolved effects this turn (615.7, 701.19a). */
     val shields = mutableListOf<Shield>()
     val outcomes = mutableListOf<String>()

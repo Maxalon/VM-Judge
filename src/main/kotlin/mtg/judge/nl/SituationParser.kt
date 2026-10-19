@@ -1819,11 +1819,96 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- winning, losing and drawing the game (104, 704.5a-c, 800.4a), see WinLoss.kt and WinLossAsks.kt ----
+
+    /** Sentence rewrites for the ways a game is won, lost or drawn. */
+    private fun winLossRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t
+        val ic = RegexOption.IGNORE_CASE
+        // "I cast Thassa's Oracle with an empty library": the caster's library has no cards in it.
+        t2 = t2.replace(Regex("""\bwith an empty library\b""", ic), "with no cards in the library")
+        // "My opponent and I are both at 4 life": one life total for each player.
+        t2 = t2.replace(Regex("""^(?:(?:my opponent|the opponent|they) and (?:i|me)|(?:i|me) and (?:my opponent|the opponent)) (?:are|'re) both (?:at|on) (\d+)(?: life)?$""", ic), "we are both at $1 life")
+        // "Both players have empty libraries": each library is empty.
+        t2 = t2.replace(Regex("""^(?:both players|both of us|we both|each player|everyone) (?:have|has) (?:an? )?empty librar(?:y|ies)$|^both (?:of our |our |players' )?libraries are empty$|^(?:neither player|neither of us) has any cards (?:left )?in (?:their|our) librar(?:y|ies)$""", ic), "my library is empty and their library is empty")
+        // "In response to its upkeep trigger my opponent Bolts me": the same as the response said after it.
+        t2 = t2.replace(Regex("""^in response to (its|the|that|my|their|his|her) upkeep (trigger|triggered ability),?\s+(.+)$""", ic), "$3 in response to $1 upkeep $2")
+        // "In response to the trigger my opponent makes me draw a card": the creature has resolved and its enters
+        // trigger waits on the stack while the draw happens.
+        Regex("""^in response to (?:the|its|that|c\d+'s) (?:etb |enters |enter )?(?:trigger|triggered ability),?\s+(?:(?:my opponent|the opponent|they|he|she) (?:makes?|forces?|has) me draw|i draw) (a|an|one|two|three|\d+) cards?$""", ic).find(t2.trim())?.let { r ->
+            return "wlrespdraw-question ${if (r.groupValues[1] in setOf("a", "an", "one")) 1 else number(r.groupValues[1]) ?: 1}"
+        }
+        t2 = t2.replace(Regex("""^(?:my opponent|the opponent|they|he|she) (?:makes?|forces?) me draw (a card|one card|\w+ cards)$""", ic), "i draw $1")
+        // "The first time I cast it this game it was countered": that cast still counts as a spell cast this game.
+        if (Regex("""^(?:the first time (?:i|we) cast (?:it|c\d+)(?: this game)?,? (?:it|c\d+) (?:was|got) countered|(?:my|the) first (?:one|c\d+)(?: (?:i|we) cast)?(?: this game)? (?:was|got) countered)$""", ic).matches(t2.trim())) return "wlcastbefore-question"
+        // "On their next upkeep they don't pay": the Pact's delayed trigger, and the choice not to pay it.
+        t2 = t2.replace(Regex("""^(?:on|at the beginning of|during|in) (their|his|her|my) (?:next )?upkeep,? (they|he|she|i|we) (?:don't|do not|doesn't|does not|can't|cannot|didn't|choose not to|chooses not to|skips?) pay(?:ing)?(?: for (?:it|the pact|c\d+)| the pact| (?:\{[^}]+\})+)?$""", ic), "$1 upkeep begins and $2 don't pay")
+        // "My commander has dealt 21 combat damage to my opponent over the game": commander damage already dealt.
+        t2 = t2.replace(Regex("""^(?:my commander|c\d+) (?:has )?(?:dealt|done) (\d+) combat (?:commander )?damage to (?:my opponent|the opponent|them|him|her)(?: over (?:the course of )?the game| this game| in total| so far)?$""", ic), "my opponent has been dealt $1 combat damage from the same commander over the game")
+        // "They cast Fireball dealing 20 damage to me": the target and X of a damage spell, said by the damage.
+        t2 = t2.replace(Regex("""^(.*\bcasts? (c\d+)) dealing (\d+) damage to (me|my opponent|them|him|her|(?:my |their )?c\d+)$""", ic), "$1 targeting $4 with x=$3")
+        // "I control Gideon of the Trials and I have its emblem", "I have the Gideon of the Trials emblem".
+        // "My opponent controls my Grizzly Bears when they lose the game": the board, then the loss.
+        // "My opponent concedes while their Pact trigger is on the stack": a concession happens at once, whatever waits on the stack (104.3a).
+        Regex("""^(.+?\bconcedes?|.+?\bscoops?)(?: the game)?,? (?:while|with|when) (.+?) (?:is|are) (?:still )?on the stack$""", ic).find(t2.trim())?.let { r ->
+            ctx.notes += "\"${restore(r.groupValues[2], m)}\" being on the stack doesn't matter: a player can concede at any time, and leaves the game at once (104.3a); it never resolves for them."
+            t2 = r.groupValues[1]
+        }
+        // A permanent of mine they control is one they gained control of: it's still mine (108.3), which is what matters when they leave.
+        t2 = t2.replace(Regex("""^((?:in an? \w+[- ]player game,?\s+)?)(my opponent|the opponent|they|he|she) controls? my (c\d+) when (they|he|she) (?:lose|loses|lost) the game$""", ic), "$1$2 gains control of my $3 and $4 lose the game")
+        t2 = t2.replace(Regex("""^(.+?) when (they|he|she|i|we) (?:lose|loses|lost) the game$""", ic), "$1 and $2 lose the game")
+        return t2
+    }
+
+    /** Question markers and plain statements for winning and losing. */
+    private fun readWinLossQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        fun who(w: String) = when (w.lowercase()) { "i", "we", "me", "my" -> "me"; else -> pronounPlayer(ctx) }
+        Regex("""^wlrespdraw-question (\d+)$""").find(c)?.let { r ->
+            val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return@let
+            val who = cast.player ?: "me"
+            ctx.events += EventSpec("resolve"); ctx.events += EventSpec("draw", player = who, amount = r.groupValues[1].toInt())
+            ctx.notes += "\"In response to the trigger\" is read as ${cast.card?.name ?: "the spell"} having resolved, with its enters trigger on the stack while the card is drawn."
+            ctx.lastActor = who; return true
+        }
+        if (c == "wlcastbefore-question") {
+            val at = ctx.events.indexOfLast { it.verb == "cast" }.takeIf { it >= 0 } ?: return null
+            val cast = ctx.events[at]
+            ctx.events.add(at, EventSpec("wlCastBefore", player = cast.player ?: "me", card = cast.card))
+            ctx.notes += "An earlier ${cast.card?.name ?: "cast"} that was countered was still cast: a spell is cast once its casting is complete (601.2i), whatever happens to it afterwards."
+            return true
+        }
+        Regex("""^(i|we|they|he|she|my opponent) (?:have|has|got|get|gets|'ve got) (?:an? |the |its |his |her |their )?(?:(c\d+)(?:'s)? )?emblem(?: from (c\d+))?$""").find(c)?.let { r0 ->
+            val r = Regex("""^(\S+) (\S+)$""").find("${r0.groupValues[1].replace(' ', '_')} ${r0.groupValues[2].ifEmpty { r0.groupValues[3] }.ifEmpty { "it" }}")!!
+            val p = who(r.groupValues[1].replace('_', ' '))
+            val card = m.cards[r.groupValues[2]]?.let { CardRef(name = it.display, oracleId = it.oracleId) } ?: ctx.objects.values.lastOrNull { it.controller == p && it.zone == "battlefield" }?.card ?: return@let
+            ctx.events += EventSpec("wlEmblem", player = p, card = card)
+            ctx.note(p); return true
+        }
+        // "In a four player game I lose", "my opponent loses the game": that player is out (104.3e) and leaves (800.4a).
+        Regex("""^(i|we|they|he|she|my opponent|the opponent) (?:lose|loses|lost)(?: the game)?$""").find(c)?.let { r ->
+            if (r.groupValues[0].endsWith("lose") && !r.groupValues[0].contains("the game") && (ctx.tableSize ?: 2) <= 2) return@let
+            val p = who(r.groupValues[1])
+            ctx.events += EventSpec("wlLose", player = p); ctx.note(p); ctx.lastActor = p; return true
+        }
+        // "What happens to my permanents and the spells I control?" after a player leaves the game.
+        Regex("""^what happens to (my|their|his|her) (?:permanents|stuff|cards|things|board|objects)(?:,? and (?:to )?(?:the |my |their )?(?:spells|abilities|spells and abilities) (?:i|they|he|she) control(?: on the stack)?)?$""").find(c)?.let { r ->
+            val p = who(r.groupValues[1])
+            ctx.asks += EventSpec("ask", player = p, to = "wl:leave"); return true
+        }
+        // "Can I go below 0 life?" while Ad Nauseam resolves.
+        if (Regex("""^can (?:i|we|they|he|she) (?:go|drop|fall|keep going|keep revealing)(?: cards)? (?:below|under|to less than|past|at) (?:0|zero)(?: life)?$""").matches(c)) {
+            ctx.asks += EventSpec("ask", player = ctx.lastActor ?: "me", to = "wl:belowZero"); return true
+        }
+        return null
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = costRewrites(t2, m, ctx)
+        t2 = winLossRewrites(t2, m, ctx)
         t2 = stackRewrites(t2, m, ctx)
         t2 = combatRewrites(t2, m, ctx)
         t2 = replacementRewrites(t2, m, ctx)
@@ -5550,6 +5635,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readCostQuestions(clause0, m, ctx)?.let { return it }
+        readWinLossQuestions(clause0, m, ctx)?.let { return it }
         readStackQuestions(clause0, m, ctx)?.let { return it }
         readCombatQuestions(clause0, m, ctx)?.let { return it }
         replacementQuestions(clause0, m, ctx)?.let { return it }
@@ -9727,7 +9813,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.lastMentioned = id; ctx.lastOwner = who; ctx.lastVerb = "have"; return true
         }
         // "I have 21 commander damage from their commander": damage already taken from that commander.
-        Regex("""^(?:(?:have|has|took|taken|am at|'ve taken|have taken) )?(\d+) commander damage(?: from (?:their|his|her|my opponent's|@\w+'s) commander| from (?:it|them))?(?: over .*| so far| already| this game)?$""").find(c)?.let { r ->
+        Regex("""^(?:(?:have|has|took|taken|am at|'ve taken|have taken|has taken) )?(\d+) commander damage(?: from (?:their|his|her|my opponent's|@\w+'s) commander| from (?:it|them))?(?: over .*| so far| already| this game)?$""").find(c)?.let { r ->
             val victim = actor ?: subject ?: "me"
             val src = Regex("""from (@\w+)'s commander""").find(c)?.groupValues?.get(1)?.removePrefix("@") ?: ctx.other(victim) ?: "opp"
             val id = commanderObject(src, ctx)

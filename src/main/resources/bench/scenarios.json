@@ -1774,7 +1774,7 @@
     ],
     "cite": [
       "704.5b",
-      "104.3b"
+      "104.3c"
     ]
   },
   {
@@ -2850,7 +2850,7 @@
       "opponent has 21 poison counters"
     ],
     "cite": [
-      "104.3b"
+      "104.3d"
     ]
   },
   {
@@ -40382,6 +40382,341 @@
     ],
     "cite": [
       "603.6a"
+    ]
+  },
+  {
+    "id": "wl1",
+    "text": "I have Laboratory Maniac and an empty library. I cast Brainstorm. My opponent casts Stifle targeting Laboratory Maniac's ability. Do I win?",
+    "expect": [
+      "Laboratory Maniac's ability can't be countered: it's a replacement effect",
+      "Yes: You have won the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "614.1a",
+      "121.6a",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wl2",
+    "text": "I cast Thassa's Oracle with an empty library. My opponent Stifles the trigger. Do I win? Do I lose?",
+    "expect": [
+      "Thassa's Oracle's triggered ability is countered.",
+      "No: You haven't won; you are still in the game.",
+      "An empty library isn't a loss by itself"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "wl3",
+    "text": "I cast Thassa's Oracle with an empty library. In response to the trigger my opponent makes me draw a card. Do I win?",
+    "expect": [
+      "You lose the game (drew from an empty library).",
+      "No: You have lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.5b",
+      "121.4"
+    ]
+  },
+  {
+    "id": "wl4",
+    "text": "I control Platinum Angel and have 12 poison counters. Do I lose?",
+    "expect": [
+      "You stay in the game: Platinum Angel keeps you from losing.",
+      "No: You are still in the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.5c",
+      "104.3d",
+      "101.1"
+    ]
+  },
+  {
+    "id": "wl5",
+    "text": "My opponent controls Platinum Angel. I cast Thassa's Oracle with an empty library. Do I win?",
+    "expect": [
+      "You don't win the game: Platinum Angel (opponent's) says you can't.",
+      "No: You haven't won"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "104.2b",
+      "101.1"
+    ]
+  },
+  {
+    "id": "wl6",
+    "text": "I cast Approach of the Second Sun from my hand. The first time I cast it this game it was countered. Do I win?",
+    "expect": [
+      "You win the game.",
+      "Yes: You have won the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "601.2i",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wl7",
+    "text": "My opponent and I are both at 4 life. I cast Flame Rift. Who wins?",
+    "expect": [
+      "The game is a draw: you and opponent lose simultaneously, so nobody wins (104.4a).",
+      "No: the game is a draw."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "104.4a",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wl8",
+    "text": "I attack with Phage the Untouchable and it's unblocked. What happens?",
+    "expect": [
+      "opponent loses the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "104.3e",
+      "104.2a"
+    ]
+  },
+  {
+    "id": "wl9",
+    "text": "Phage the Untouchable is in my graveyard. I cast Reanimate targeting Phage the Untouchable. What happens?",
+    "expect": [
+      "You lose the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.4",
+      "104.3e"
+    ]
+  },
+  {
+    "id": "wl10",
+    "text": "I have 10 poison counters and control Platinum Angel. My opponent destroys Platinum Angel. Do I lose?",
+    "expect": [
+      "You lose the game (poison).",
+      "Yes: You have lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.5c"
+    ]
+  },
+  {
+    "id": "wl11",
+    "text": "I control Abyssal Persecutor and my opponent is at -5 life. Do they lose?",
+    "expect": [
+      "opponent stays in the game: Abyssal Persecutor keeps opponent from losing.",
+      "No: opponent is still in the game at -5 life."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.5a",
+      "101.1"
+    ]
+  },
+  {
+    "id": "wl12",
+    "text": "I control Abyssal Persecutor and my opponent is at -5 life. I destroy Abyssal Persecutor. Do they lose?",
+    "expect": [
+      "Abyssal Persecutor: the battlefield → your graveyard.",
+      "Yes: opponent has lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wl13",
+    "text": "I control Worship and a creature. I am at 20 life. My opponent casts Fireball dealing 20 damage to me. What happens?",
+    "expect": [
+      "You stay at 1 life (Worship).",
+      "You go from 20 to 1 life."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "614.1b"
+    ]
+  },
+  {
+    "id": "wl14",
+    "text": "My opponent casts Pact of Negation targeting my Brainstorm. On their next upkeep they don't pay. Do they lose?",
+    "expect": [
+      "opponent must pay {3}{U}{U} or lose the game (Pact of Negation)",
+      "Yes: opponent has lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.7a",
+      "104.3e"
+    ]
+  },
+  {
+    "id": "wl15",
+    "text": "I have Felidar Sovereign and 40 life. In response to its upkeep trigger my opponent casts Lightning Bolt targeting me. Do I win?",
+    "expect": [
+      "Nothing happens from Felidar Sovereign's triggered ability",
+      "No: You haven't won; you are still in the game at 37 life."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "wl16",
+    "text": "In a four player game I lose. What happens to my permanents and the spells I control?",
+    "expect": [
+      "You leave the game: everything you own leaves the game with you"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "800.4a",
+      "104.5"
+    ]
+  },
+  {
+    "id": "wl17",
+    "text": "In a four player game my opponent controls my Grizzly Bears when they lose the game. What happens to the Bears?",
+    "expect": [
+      "Grizzly Bears goes back to your control (800.4a)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "800.4a"
+    ]
+  },
+  {
+    "id": "wl18",
+    "text": "I am at 3 life. I cast Ad Nauseam. Can I go below 0 life?",
+    "expect": [
+      "Yes: you can keep going while Ad Nauseam resolves, and your life can drop below 0."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "107.1b",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wl19",
+    "text": "My commander has dealt 21 combat damage to my opponent over the game. Do they lose?",
+    "expect": [
+      "opponent loses the game (commander damage).",
+      "Yes: opponent has lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.6c",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wl20",
+    "text": "I activate Door to Nothingness targeting my opponent. Can my opponent respond?",
+    "expect": [
+      "opponent loses the game.",
+      "Yes: once Door to Nothingness's ability is activated"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "104.3e"
+    ]
+  },
+  {
+    "id": "wl21",
+    "text": "Both players have empty libraries. I cast Prosperity with X=1. Who loses?",
+    "expect": [
+      "The game is a draw: you and opponent lose simultaneously",
+      "so the game is a draw (104.4a)"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "104.4a",
+      "704.5b"
+    ]
+  },
+  {
+    "id": "wl22",
+    "text": "I control Gideon of the Trials and I have its emblem. My opponent casts Thassa's Oracle with an empty library. Do they win?",
+    "expect": [
+      "opponent doesn't win the game: your Gideon of the Trials emblem says opponent can't.",
+      "No: opponent hasn't won"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "114.4",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wl23",
+    "text": "My opponent concedes while their Pact of Negation trigger is on the stack. What happens?",
+    "expect": [
+      "You win the game: opponent conceded"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "104.3a",
+      "104.2a"
     ]
   }
 ]
