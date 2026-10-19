@@ -38313,5 +38313,197 @@
     "cite": [
       "707.9b"
     ]
+  },
+  {
+    "id": "loop-melira-finks-infinite-life",
+    "text": "I have Melira, Sylvok Outcast, Kitchen Finks and Viscera Seer. Can I gain infinite life?",
+    "expect": [
+      "Yes: an arbitrarily large amount of life",
+      "sacrifice Kitchen Finks to Viscera Seer (scry 1); persist returns it, and Melira, Sylvok Outcast stops the -1/-1 counter it would come back with",
+      "you gain 2 life"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.79a",
+      "732.1b",
+      "732.2a",
+      "104.4b"
+    ]
+  },
+  {
+    "id": "loop-melira-redcap-damage",
+    "text": "I have Melira, Murderous Redcap and Viscera Seer. How much damage can I deal?",
+    "expect": [
+      "As much as you like: an arbitrarily large amount of damage",
+      "opponent takes 2 damage"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.79a",
+      "732.2a",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "loop-kiki-resto-win",
+    "text": "I control Kiki-Jiki, Mirror Breaker and Restoration Angel. Can I win this turn?",
+    "expect": [
+      "Yes, if nothing is done about it: tap Kiki-Jiki, Mirror Breaker to copy Restoration Angel",
+      "exiles Kiki-Jiki, Mirror Breaker and returns it, untapped"
+    ],
+    "notExpect": [
+      "untaps Kiki-Jiki"
+    ],
+    "cite": [
+      "707.9b",
+      "732.1b"
+    ]
+  },
+  {
+    "id": "loop-twin-pestermite-vs-spellskite",
+    "text": "Splinter Twin on Pestermite. They have Spellskite. Can I still win?",
+    "expect": [
+      "Not if they use it. Spellskite can break it",
+      "can change that target to Spellskite"
+    ],
+    "notExpect": [
+      "Yes, if nothing is done about it"
+    ],
+    "cite": [
+      "115.7",
+      "115.7a"
+    ]
+  },
+  {
+    "id": "loop-kiki-exarch-spellskite-cant-stop",
+    "text": "I control Kiki-Jiki, Mirror Breaker and Deceiver Exarch. My opponent has Spellskite. Can I win this turn?",
+    "expect": [
+      "Yes, if nothing is done about it: tap Kiki-Jiki, Mirror Breaker to copy Deceiver Exarch",
+      "Spellskite can't stop it"
+    ],
+    "notExpect": [],
+    "cite": [
+      "115.7a",
+      "700.2b"
+    ]
+  },
+  {
+    "id": "loop-mikaeus-triskelion",
+    "text": "I have Mikaeus, the Unhallowed and Triskelion. What happens?",
+    "expect": [
+      "this board has a loop that deals an arbitrarily large amount of damage",
+      "comes back with 4 +1/+1 counters",
+      "The first time round is different (opponent takes 1 damage"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.93a",
+      "732.1b",
+      "732.2a"
+    ]
+  },
+  {
+    "id": "loop-two-oblivion-rings",
+    "text": "Two Oblivion Rings each exiling the other. What happens?",
+    "expect": [
+      "There is no loop. Two Oblivion Rings can't each be holding the other"
+    ],
+    "notExpect": [],
+    "cite": [
+      "607.2a"
+    ]
+  },
+  {
+    "id": "loop-sanguine-bond-exquisite-blood",
+    "text": "I have Sanguine Bond and Exquisite Blood. I gain 1 life. What happens?",
+    "expect": [
+      "This is a loop of mandatory triggered abilities",
+      "It isn't a draw, though",
+      "opponent loses the game."
+    ],
+    "notExpect": [
+      "The game is a draw"
+    ],
+    "cite": [
+      "704.5a",
+      "104.4b"
+    ]
+  },
+  {
+    "id": "loop-worldgorger-animate-dead-draw",
+    "text": "I have Worldgorger Dragon and Animate Dead on it with no other permanents. What happens?",
+    "expect": [
+      "The game is a draw: Animate Dead and Worldgorger Dragon keep triggering each other"
+    ],
+    "notExpect": [],
+    "cite": [
+      "732.4",
+      "104.4b",
+      "303.4f"
+    ]
+  },
+  {
+    "id": "loop-grindstone-painter-not-infinite",
+    "text": "I have Grinding Station and Painter's Servant and Grindstone. Is that infinite?",
+    "expect": [
+      "one activation of Grindstone ({3}, {T}) targeting your opponent mills their entire library",
+      "Grinding Station adds nothing here"
+    ],
+    "notExpect": [],
+    "cite": [
+      "704.5b",
+      "701.17b"
+    ]
+  },
+  {
+    "id": "loop-kci-trawler-not-modeled",
+    "text": "I control Krark-Clan Ironworks, Scrap Trawler and Myr Retriever with Ichor Wellspring. Is this infinite mana?",
+    "expect": [
+      "Not answered: whether this loops"
+    ],
+    "notExpect": [
+      "Yes, it's a loop",
+      "No: nothing described here forms a loop"
+    ],
+    "cite": [
+      "732.1b"
+    ]
+  },
+  {
+    "id": "sanguine-bond-theirs-my-lifegain",
+    "text": "They have Sanguine Bond and I gain 1 life from Kitchen Finks. Do I lose life?",
+    "expect": [
+      "No: you lose no life here. Sanguine Bond triggers only when its own controller gains life"
+    ],
+    "notExpect": [],
+    "cite": [
+      "109.5",
+      "603.2"
+    ]
+  },
+  {
+    "id": "loop-demonstrate-at-tournament",
+    "text": "How do I demonstrate a loop at a tournament?",
+    "expect": [
+      "Show it once, then propose a shortcut"
+    ],
+    "notExpect": [],
+    "cite": [
+      "732.2a",
+      "732.2b"
+    ]
+  },
+  {
+    "id": "loop-finks-seer-no-melira",
+    "text": "I have Kitchen Finks and Viscera Seer. Can I gain infinite life?",
+    "expect": [
+      "No: nothing described here forms a loop"
+    ],
+    "notExpect": [
+      "arbitrarily large"
+    ],
+    "cite": [
+      "732.1b"
+    ]
   }
 ]

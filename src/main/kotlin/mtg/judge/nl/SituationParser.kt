@@ -1485,9 +1485,43 @@ class SituationParser(private val names: NameIndex) {
         return t
     }
 
+    /**
+     * "Can I gain infinite life?", "How much damage can I deal?", "Is that infinite?", "Can I still win?" asked of a
+     * board where nothing has happened yet: a question about a loop on it, answered by playing the board (LoopFinder).
+     * "Myr Retriever with Ichor Wellspring" in a list of what someone controls is two permanents unless the second is
+     * an Aura or Equipment, the only things a permanent is "with" by being attached.
+     */
+    private fun loopRewrite(t: String, m: Marked, ctx: Ctx): String {
+        val withAnd = Regex("""^((?:i|we|they|my opponent|the opponent) (?:control|controls|have|has|got|'ve got) (?:(?:c\d+|and),? )*)(c\d+) with (c\d+)$""", RegexOption.IGNORE_CASE).find(t.trim().trimEnd('.'))?.let { r ->
+            val tl = m.cards[r.groupValues[3]]?.typeLine ?: return@let null
+            if (tl.contains("Aura") || tl.contains("Equipment") || tl.contains("Creature") || !Regex("""\b(Artifact|Enchantment|Land|Planeswalker|Battle)\b""").containsMatchIn(tl)) null
+            else "${r.groupValues[1]}${r.groupValues[2]} and ${r.groupValues[3]}"
+        }
+        if (withAnd != null) return withAnd
+        val q = t.trim()
+        // "How do I demonstrate a loop at a tournament?": no board, just the shortcut rules, as the rules table says them.
+        if (Regex("""^how (?:do|can|should|would) (?:i|you|we) (?:demonstrate|show|shortcut|present|prove|do) (?:a |an |my |the |this )?(?:infinite )?(?:loop|combo)\b.*$""", RegexOption.IGNORE_CASE).matches(q) && ctx.objects.isEmpty())
+            return "loopdemo-question"
+        // "Two Oblivion Rings each exiling the other": the board as said can't exist; the second Ring cast at the first is what can.
+        Regex("""^(?:(?:i|we|they|my opponent) (?:have|has|control|controls) )?(?:2|two) (c\d+),? (?:each |both )?(?:exiling|holding|having exiled) (?:the other|each other)(?: one)?\.?$""", RegexOption.IGNORE_CASE).find(q)?.let { r -> return "ringpair-question ${r.groupValues[1]}" }
+        val boardOnly = ctx.events.isEmpty() && ctx.objects.values.none { it.zone == "hand" || it.zone == "stack" } && ctx.objects.values.any { it.controller == "me" && it.zone == "battlefield" }
+        if (!boardOnly) return t
+        fun re(s: String) = Regex(s, RegexOption.IGNORE_CASE).matches(q)
+        val kind = when {
+            re("""^can (?:i|we) (?:gain|get|have) (?:infinite|unlimited|endless|arbitrarily much|as much) life(?: with (?:this|that|these|them))?\??$""") || re("""^how much life can (?:i|we) (?:gain|get)(?: with (?:this|that|these|them))?\??$""") -> "life"
+            re("""^how much damage can (?:i|we) (?:deal|do)(?: with (?:this|that|these|them|it))?\??$""") || re("""^can (?:i|we) (?:deal|do) (?:infinite|unlimited) damage\??$""") -> "damage"
+            re("""^(?:is|isn't) (?:that|this|it) (?:an? )?infinite mana(?: combo| loop)?\??$""") -> "mana"
+            re("""^(?:is|isn't) (?:that|this|it) (?:an? )?(?:infinite|loop)(?: combo| loop)?\??$""") || re("""^(?:can (?:i|we) go infinite|is (?:that|this|there) a loop|do (?:i|we) have a (?:loop|combo)|is (?:that|this) a combo)\??$""") -> "infinite"
+            re("""^can (?:i|we) (?:still )?(?:win|combo off|go off|kill them|kill my opponent|win the game)(?: this turn| right now| now| on the spot| from here)?\??$""") -> "win"
+            else -> null
+        }
+        return kind?.let { "loop-question $it" } ?: t
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
+        t2 = loopRewrite(t2, m, ctx)
         // "has ward 2", "with ward {2}", "ward 2 on Thalia": one spelling of the keyword and its mana cost (702.21a).
         t2 = t2.replace(Regex("""\bward (?:of )?\{?(\d+)\}?(?![/\d])""", RegexOption.IGNORE_CASE), "ward {$1}")
         // "I Bolt their creature with ward 2 and pay": the creature and its keyword first, then the spell aimed at it.
@@ -4821,6 +4855,18 @@ class SituationParser(private val names: NameIndex) {
             if (at < 0) return@let
             ctx.events[at] = ctx.events[at].copy(amount = r.groupValues[1].toInt()); return true
         }
+        // "Two Oblivion Rings each exiling the other": the first Ring on the battlefield and the second cast at it, then why it can't loop.
+        Regex("""^ringpair-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val first = addObject(card, "me", false, ctx, allowDuplicate = true)
+            ctx.events += EventSpec("cast", player = "me", card = CardRef(name = card.display, oracleId = card.oracleId), targets = listOf(first)); ctx.lastActor = "me"; ctx.lastVerb = "cast"
+            ctx.notes += "Two ${card.display}s can't each be exiling the other, so this is read as the way it can happen: one ${card.display} on the battlefield and a second one cast with its enters ability aimed at the first."
+            ctx.asks += EventSpec("ask", to = "text:There is no loop. Two ${card.display}s can't each be holding the other: whichever entered second exiled the first, and the first one's leave ability then returned whatever it had exiled (here, nothing). Its leave ability and its enters ability are linked: it returns only a card its own enters ability exiled (607.2a), and one in exile exiles nothing. If the second one later leaves the battlefield, the first returns as a new object (400.7) and its enters ability exiles a new target, chosen then (603.3d), so nothing repeats on its own.")
+            return true
+        }
+        if (clause0 == "loopdemo-question") { mtg.judge.cr.RulesAnswers.lookup("demonstrate a loop")?.let { a -> ctx.asks += EventSpec("ask", to = "text:" + a.text + " (" + a.rules.joinToString(", ") + ")") }; return true }
+        // "Can I gain infinite life?" and the rest (see loopRewrite): the board is played to find the loop.
+        Regex("""^loop-question (\w+)$""").find(clause0)?.let { r -> ctx.asks += EventSpec("ask", player = "me", to = "loop:${r.groupValues[1]}"); return true }
         // "Does it get a Construct?" with the Saga under Blood Moon: no chapter abilities, so nothing triggers on the lore counter.
         if (clause0 == "sagachapter-question") {
             val saga = ctx.objects.values.lastOrNull { it.card.name == "Urza's Saga" } ?: return false
