@@ -657,7 +657,45 @@ class Engine(val state: GameState) {
      * being activated is already on the stack (603.3, 117.5). So they end up above it and resolve first. While this
      * holds a trigger, putTriggerOnStack queues it here instead of stacking it.
      */
-    private var triggerHold: MutableList<() -> Unit>? = null
+    private var triggerHold: MutableList<Pair<String, () -> Unit>>? = null
+
+    /**
+     * Abilities that trigger during one simultaneous event (a Wrath killing six creatures, one state-based check)
+     * all wait until a player would receive priority, and then go on the stack together in APNAP order: the active
+     * player puts all of theirs on first, then each other player in turn order (603.3b, 101.4). Triggered one death
+     * at a time, Bob's and Carol's Blood Artist triggers were interleaved; held here they are stacked player by player.
+     */
+    private fun <T> heldTriggers(block: () -> T): T {
+        val hold = mutableListOf<Pair<String, () -> Unit>>()
+        val outer = triggerHold
+        triggerHold = hold
+        try { return block() } finally { triggerHold = outer; flushTriggers(hold) }
+    }
+
+    /** Puts held triggers on the stack in APNAP order, saying so when more than one player has some (603.3b, 101.4). */
+    private fun flushTriggers(hold: List<Pair<String, () -> Unit>>) {
+        if (hold.isEmpty()) return
+        val order = apnapOrder()
+        val sorted = hold.sortedBy { order.indexOf(it.first).let { i -> if (i < 0) order.size else i } }
+        val controllers = sorted.map { it.first }.distinct()
+        if (controllers.size > 1 && triggerHold == null) {
+            fun who(p: String) = state.player(p).let { if (it.you) "you" else it.name }
+            fun whose(p: String) = state.player(p).let { if (it.you) "yours" else it.possessive }
+            val ap = state.activePlayer
+            val parts = controllers.map { c -> val n = sorted.count { it.first == c }; val pl = state.player(c); val own = if (pl.you) "yours" else "theirs"
+                "${who(c)} ${if (pl.you) "put" else "puts"} ${when (n) { 1 -> own; 2 -> "both of $own"; else -> "all $n of $own" }}" }
+            trace.step("Abilities of several players triggered at once, so they go on the stack in APNAP order${if (ap != null) " (${who(ap)} ${if (state.player(ap).you) "are" else "is"} the active player)" else ""}: ${parts.joinToString(", then ")}, in turn order, each player ordering their own as they like. The last ones put on the stack, ${whose(controllers.last())}, resolve first.", "603.3b", "101.4")
+            state.apnapBatches += sorted.map { it.first }
+        }
+        for ((_, put) in sorted) put()
+    }
+
+    /** Turn order starting with the active player (101.4); with no active player stated, the order players were named in. */
+    fun apnapOrder(): List<String> {
+        val order = state.players.map { it.id }
+        val ap = state.activePlayer ?: return order
+        return order.dropWhile { it != ap } + order.takeWhile { it != ap }
+    }
 
     /** No colour said for "protection from the color of your choice": the colour of the opponent's spell aimed at the creature (Path at a Goyf: white). */
     private fun protectionColourChoice(item: StackItem): String? {
@@ -671,11 +709,11 @@ class Engine(val state: GameState) {
     }
 
     fun activate(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
-        val hold = mutableListOf<() -> Unit>()
+        val hold = mutableListOf<Pair<String, () -> Unit>>()
         val outer = triggerHold
         triggerHold = hold
         try { return activate0(playerId, objectId, abilityIndex, targets, choice, x, payLife) }
-        finally { triggerHold = outer; hold.forEach { it() } }
+        finally { triggerHold = outer; flushTriggers(hold) }
     }
 
     private fun activate0(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
@@ -1173,7 +1211,7 @@ class Engine(val state: GameState) {
         val names = objectIds.mapNotNull { state.objects[it]?.name }
         trace.step("${names.joinToString(" and ")} leave the battlefield at the same time, so abilities that trigger on one of them leaving look back and see the other go too.", "603.10a")
         leavingTogether = objectIds.toSet()
-        try { for (id in objectIds) leave(id, to) } finally { leavingTogether = emptySet() }
+        heldTriggers { try { for (id in objectIds) leave(id, to) } finally { leavingTogether = emptySet() } }
     }
 
     fun leave(objectId: String, to: Zone) {
@@ -1555,7 +1593,7 @@ class Engine(val state: GameState) {
             // Creatures dying to the same state-based check die at once: each sees the others go (603.10a).
             val dying = state.objects.values.filter { o -> o.isOnBattlefield() && (o.def.isCreature || o.animatedAs != null) && o.toughness?.let { t -> t <= 0 || (!o.has("indestructible") && ((o.damage >= t && o.damage > 0) || (o.dealtDeathtouchDamage && o.damage > 0))) } == true }
             if (dying.size > 1) { leavingTogether = dying.map { it.id }.toSet(); trace.step("${dying.joinToString(", ") { it.name }} are all put into their owners' graveyards by the same state-based check, simultaneously; abilities that trigger on a creature dying see all of them go, including a creature's own leaving alongside the others.", "704.3", "603.10a") }
-            try { for (obj in state.objects.values.toList()) {
+            heldTriggers { try { for (obj in state.objects.values.toList()) {
                 if (!obj.isOnBattlefield()) continue
                 if (obj.def.isCreature || obj.animatedAs != null) {
                     val t = obj.toughness
@@ -1569,7 +1607,7 @@ class Engine(val state: GameState) {
                     if (lethal) { destroy(obj, "${obj.name} has ${obj.damage} damage marked and toughness $t, so it's destroyed (state-based action).", "704.3", "704.5g"); changed = true; continue }
                     if (obj.dealtDeathtouchDamage && obj.damage > 0) { destroy(obj, "${obj.name} was dealt damage by a source with deathtouch, so it's destroyed (state-based action).", "704.3", "704.5h", "702.2b"); changed = true; continue }
                 }
-            } } finally { if (dying.size > 1) leavingTogether = emptySet() }
+            } } finally { if (dying.size > 1) leavingTogether = emptySet() } }
             for (obj in state.objects.values.toList()) {
                 if (obj.isOnBattlefield() && obj.def.isPlaneswalker && (obj.counters["loyalty"] ?: 0) <= 0) { move(obj, Zone.GRAVEYARD, "${obj.name} has 0 loyalty and is put into its owner's graveyard (state-based action).", "704.3", "704.5i", "306.9"); changed = true }
             }
@@ -2049,7 +2087,7 @@ class Engine(val state: GameState) {
             val causedObject = when (event) { is GameEvent.AttacksAlone -> event.obj.id; is GameEvent.Attacks -> event.obj.id; is GameEvent.EntersBattlefield -> event.obj.id; is GameEvent.Dies -> event.obj.id; is GameEvent.BecomesTarget -> event.sourceId; is GameEvent.SpellCast -> event.item.id; is GameEvent.BecomesBlockedBy -> event.blocker.id; is GameEvent.Blocks -> event.blocked?.id; else -> null }
             putTriggerOnStack(obj, ability, emptyList(), causedBy, causedAmount, causedObject)
         }
-        if (ordered.size > 1) trace.step("Multiple abilities triggered at once; they are put on the stack in APNAP order, each player choosing the order among their own.", "603.3b")
+        if (ordered.size > 1 && triggerHold == null) trace.step("Multiple abilities triggered at once; they are put on the stack in APNAP order, each player choosing the order among their own.", "603.3b")
     }
 
     private fun matches(obj: GameObject, trigger: Trigger, event: GameEvent, fromGraveyard: Boolean = false): Boolean {
@@ -2234,7 +2272,7 @@ class Engine(val state: GameState) {
 
     private fun putTriggerOnStack(obj: GameObject, ability: TriggeredAbility, targets: List<Ref>, causedBy: String? = null, causedAmount: Int? = null, causedObject: String? = null): StackItem? {
         triggerHold?.let { hold ->
-            hold += { putTriggerOnStack(obj, ability, targets, causedBy, causedAmount, causedObject) }
+            hold += obj.controller to { putTriggerOnStack(obj, ability, targets, causedBy, causedAmount, causedObject) }
             return null
         }
         val needed = ability.effect.targets()
@@ -2265,6 +2303,13 @@ class Engine(val state: GameState) {
                     state.assumptions += "${obj.name}'s triggered ability targets ${state.nameOf(Ref.Player(opp.id))} (\"${spec.raw}\"; assuming its controller chose an opponent rather than themselves)."
                     listOf(Ref.Player(opp.id))
                 } else null
+            // "Two opponents each have a Blood Artist. How much life do I lose?": with several opponents to pick from, a
+            // harmful "target player" is taken as aimed at the player the question is about, and the answer says so.
+            state.focusPlayer?.takeIf { f -> inferred == null && targets.isEmpty() && Kind.PLAYER in spec.filter.kinds && !helpsThePlayer(ability.effect) && state.opponentsOf(obj.controller).let { os -> os.size > 1 && os.any { it.id == f } } && targetingProblem(obj, obj.controller, Ref.Player(f)) == null }?.let { f ->
+                targets = listOf(Ref.Player(f))
+                val line = "${obj.name}'s triggered abilities target ${state.nameOf(Ref.Player(f))} (\"${spec.raw}\"; ${state.player(obj.controller).let { if (it.you) "you" else it.name }} could aim each one at any player, and the question is about ${state.nameOf(Ref.Player(f))}, so all of them are taken as aimed there)."
+                if (line !in state.assumptions) state.assumptions += line
+            }
             if (inferred != null && inferred.isEmpty() && targets.isEmpty()) {
                 trace.step("${obj.name}'s triggered ability has no legal target, so it's removed from the stack and does nothing.", "603.3d"); state.outcomes += "${obj.name}'s triggered ability has no legal target and is removed from the stack."; return null
             }
@@ -2308,6 +2353,14 @@ class Engine(val state: GameState) {
                 targets = listOf(Ref.Player(opps.single().id))
                 val word = if (Regex("""(?i)\btarget opponent\b""").containsMatchIn(ability.text)) "target opponent" else "target player"
                 state.assumptions += "${obj.name}'s triggered ability targets ${state.nameOf(targets[0])} (\"$word\"; assuming its controller chose an opponent rather than themselves)."
+            }
+            // "Two opponents each have a Blood Artist. How much life do I lose?": with several opponents to pick from, a
+            // harmful "target player" is taken as aimed at the player the question is about, and the answer says so.
+            else state.focusPlayer?.takeIf { f -> opps.any { it.id == f } && !helpsThePlayer(ability.effect) && targetingProblem(obj, obj.controller, Ref.Player(f)) == null }?.let { f ->
+                targets = listOf(Ref.Player(f))
+                val word = if (Regex("""(?i)\btarget opponent\b""").containsMatchIn(ability.text)) "target opponent" else "target player"
+                val line = "${obj.name}'s triggered abilities target ${state.nameOf(Ref.Player(f))} (\"$word\"; each controller could aim each one at any ${if (word == "target opponent") "opponent" else "player"}, and the question is about ${state.nameOf(Ref.Player(f))}, so all of them are taken as aimed there)."
+                if (line !in state.assumptions) state.assumptions += line
             }
         }
         if (needed.size > targets.size) {
@@ -2363,11 +2416,20 @@ class Engine(val state: GameState) {
         }
         if (payer != null && state.willPay.remove(payer.id)) {
             trace.step("${payer.subject} ${payer.v("pays", "pay")} ${effect.cost}, so ${item.describe} does nothing more.", "608.2g")
+            // Ward's {1} paid to save Path to Exile: not part of Path's cost, but mana spent on it all the same.
+            if (effect.effect is Effect.Counter) (item.targets.firstOrNull() as? Ref.Stack)?.let { state.stackItem(it.id) }?.let { saved ->
+                val need = Regex("""\{(\d+)\}""").findAll(effect.cost).sumOf { it.groupValues[1].toInt() } + Regex("""\{[WUBRGC]\}""").findAll(effect.cost).count()
+                if (need > 0) state.paidToSaveSpell.getOrPut(saved.source.id) { mutableListOf() } += (if (item.text.startsWith("Ward", true)) "ward" else item.source.name) to need
+            }
             state.outcomes += "${payer.subject} ${payer.v("pays", "pay")} ${effect.cost}; ${item.describe} has no further effect."
         } else {
             if (payer != null && payer.id in state.wontPay) trace.step("${payer.subject} ${payer.v("declines", "decline")} to pay ${effect.cost}.", "608.2g")
             else if (cantPay != null) state.outcomes += "${payer!!.subject} can't pay ${effect.cost} for ${item.describe}: ${payer.subject.lowercase()} ${payer.v("has", "have")} only $cantPay mana available."
             else state.assumptions += "${payer?.subject ?: "The player"} ${payer?.v("does", "do") ?: "does"} not pay ${effect.cost} for ${item.describe}."
+            // "Their creature has ward 2. I Bolt it and don't pay": the ward trigger is what counters the spell.
+            if (cantPay == null && item.text.startsWith("Ward", true) && effect.effect is Effect.Counter) (item.targets.firstOrNull() as? Ref.Stack)?.let { state.stackItem(it.id) }?.let { sp ->
+                state.outcomes += "${item.source.name}'s ward ability (ward ${effect.cost}) triggered when ${sp.describe} targeted it; ${payer?.subject?.lowercase() ?: "its controller"} didn't pay ${effect.cost}, so ward counters ${sp.describe} (702.21a)."
+            }
             applyEffect(effect.effect, item)
         }
     }
@@ -2535,7 +2597,7 @@ class Engine(val state: GameState) {
                 item.lastCount = affected.size
                 if (affected.isEmpty()) trace.step("${state.nameOf(ref)} ${if (state.player(pid).you) "control" else "controls"} no ${effect.filter.raw}, so nothing happens.")
                 if (affected.size > 1 && effect.action in setOf("destroy", "exile", "bounce")) leavingTogether = affected.map { it.id }.toSet()
-                try { for (o in affected) when (effect.action) {
+                heldTriggers { try { for (o in affected) when (effect.action) {
                     "destroy" -> destroy(o, "${o.name} is destroyed.", "701.8a")
                     "exile" -> move(o, Zone.EXILE, "${o.name} is exiled.", "701.13a")
                     "bounce" -> move(o, Zone.HAND, "${o.name} is returned to its owner's hand.", "400.7")
@@ -2544,7 +2606,7 @@ class Engine(val state: GameState) {
                     // "Each creature deals damage to itself equal to its power": its own power, as a source of damage to itself.
                     "selfdamage" -> { val n = o.power ?: 0; if (n > 0) applyDamage(o.name, Ref.Obj(o.id), n, o) else trace.step("${o.name} has power $n, so it deals no damage to itself.", "120.1") }
                     else -> state.unsupported += Unsupported(item.describe, "Unknown action ${effect.action}")
-                } } finally { leavingTogether = emptySet() }
+                } } finally { leavingTogether = emptySet() } }
             }
             is Effect.PreventCombatToAndBy -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o -> state.combatDamageMuted += o.id; trace.step("A prevention effect applies to ${o.name} for the rest of the turn: all combat damage that would be dealt to it or by it is prevented. It stays attacking (it was untapped, not removed from combat), so it's still blocked or unblocked as before, but no combat damage happens either way.", "615.1", "506.4"); state.outcomes += "${o.name}'s combat damage this turn (dealt and received) is prevented." } }
             is Effect.WinIfCastBefore -> {
@@ -3565,7 +3627,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${prot.joinToString(" and ") { it.name }}'${if (prot.size == 1 && !prot[0].name.endsWith("s")) "s" else ""} protection from ${protectionName(q)} doesn't help: ${item.source.name} doesn't target or deal damage."
                 }
                 if (effect.action in setOf("destroy", "exile", "bounce", "tuck") && affected.size > 1) { leavingTogether = affected.map { it.id }.toSet(); trace.step("All of them leave the battlefield simultaneously, so abilities that trigger on creatures dying or leaving look back and see every one of them.", "603.10a") }
-                try { for (o in affected) when (effect.action) {
+                heldTriggers { try { for (o in affected) when (effect.action) {
                     "destroy" -> destroy(o, "${o.name} is destroyed.", "701.8a", canRegenerate = !effect.noRegen)
                     "exile" -> move(o, Zone.EXILE, "${o.name} is exiled.", "701.13a")
                     "bounce" -> move(o, Zone.HAND, "${o.name} is returned to its owner's hand.", "400.7")
@@ -3577,7 +3639,7 @@ class Engine(val state: GameState) {
                     "selfdamage" -> { val n = o.power ?: 0; if (n > 0) applyDamage(o.name, Ref.Obj(o.id), n, o) else trace.step("${o.name} has power $n, so it deals no damage to itself.", "120.1") }
                     // "Each creature deals 1 damage to its controller."
                     "controllerdamage" -> applyDamage(o.name, Ref.Player(o.controller), effect.amount, o)
-                } } finally { leavingTogether = emptySet() }
+                } } finally { leavingTogether = emptySet() } }
             }
             is Effect.LoseLifeEqual -> for (p in resolvePlayers(effect.who, item)) {
                 val n = when (val c = effect.count) {
