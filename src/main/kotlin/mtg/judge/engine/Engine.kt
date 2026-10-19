@@ -150,6 +150,7 @@ class Engine(val state: GameState) {
             // enter() already says it entered; saying it again here printed the line twice.
             obj.controller = playerId; enter(obj.id); stateBasedActions()
             if ("Basic" !in card.supertypes) narrateLandTypeSetters(land = obj)
+            narrateLayers(obj)
             return null
         }
         var effect = card.spellEffect ?: card.enchant?.takeIf { card.isAura }?.let { Effect.Attach(TargetSpec(it, "enchant ${it.raw}")) }
@@ -639,8 +640,7 @@ class Engine(val state: GameState) {
     /** What strips a permanent of the abilities printed on it right now (Blood Moon, Humility), or null. */
     fun printedAbilitiesGone(obj: GameObject): String? {
         if (!obj.isOnBattlefield()) return null
-        if ("Land" in obj.def.types && "Basic" !in obj.def.supertypes)
-            state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } }?.let { return it.name }
+        state.moonOn(obj)?.let { return it.name }
         return state.abilitiesLostOn(obj)?.first?.name
     }
 
@@ -681,14 +681,19 @@ class Engine(val state: GameState) {
     private fun activate0(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
         val obj = state.obj(objectId)
         val abilities = activatedAbilitiesOf(obj)
-        if ("Land" in obj.def.types && "Basic" !in obj.def.supertypes) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } }?.let { moon ->
+        state.moonOn(obj)?.let { moon ->
             val p = state.player(playerId)
             if (state.trace.steps.none { it.text.startsWith("${moon.name} makes ${obj.name} a Mountain") })
                 trace.step("${moon.name} makes ${obj.name} a Mountain: it loses its other land types and all its printed abilities and has only \"{T}: Add {R}\" (a type-changing effect, layer 4).", "613.1d", "305.7")
             // Asked for one of the land's own abilities: under the moon there is no such ability any more.
-            val asked = abilityIndex?.let { abilities.getOrNull(it) }
+            // "They Wasteland my Blood Moon": a target named means the land's own targeted ability, not the Mountain's mana.
+            val asked = abilityIndex?.let { abilities.getOrNull(it) } ?: abilities.firstOrNull { targets.isNotEmpty() && !isManaEffect(it.effect) && it.effect.targets().isNotEmpty() }
             if (asked != null && !(isManaEffect(asked.effect))) {
                 trace.step("${obj.name} no longer has \"${asked.text.replace("~", obj.name)}\", so it can't be activated.", "613.1d", "305.7")
+                // And the target named couldn't have been chosen anyway ("Destroy target nonbasic land" at an enchantment).
+                val spec = asked.effect.targets().firstOrNull()
+                (targets.firstOrNull() as? Ref.Obj)?.let { state.objects[it.id] }?.let { t -> if (spec != null && !filterMatches(spec.filter, Ref.Obj(t.id), playerId, obj))
+                    trace.step("Even with the ability, ${t.name} wouldn't be a legal target: the ability needs ${spec.raw.let { r -> if (Regex("^[aeiou]", RegexOption.IGNORE_CASE).containsMatchIn(r)) "an $r" else "a $r" }}.", "115.1", "601.2c") }
                 state.outcomes += "${obj.name}'s own ability is gone under ${moon.name}, so it can't be activated."; return null
             }
             if (obj.tapped == true) { trace.step("${obj.name} is already tapped, so it can't be tapped for mana.", "118.3", "701.26a"); state.outcomes += "${obj.name} can't be tapped (already tapped)."; return null }
@@ -1132,8 +1137,7 @@ class Engine(val state: GameState) {
     }
 
     /** A nonbasic land under Blood Moon (or Magus of the Moon): a Mountain with none of its own abilities. */
-    private fun underMoon(o: GameObject): Boolean = "Land" in o.def.types && "Basic" !in o.def.supertypes &&
-        state.objects.values.any { m -> m.isOnBattlefield() && m !== o && m.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.NonbasicLandsAreMountains } }
+    private fun underMoon(o: GameObject): Boolean = state.moonOn(o) != null
 
     /** Aven Mindcensor: an opponent's search looks at only the top four cards of the library (614.1a). */
     /** Who a narrated search belongs to: "its controller may search" is the targeted permanent's controller, "that player" the targeted player, otherwise the caster. */
@@ -1493,6 +1497,7 @@ class Engine(val state: GameState) {
                     now.abilities.filterIsInstance<UnparsedAbility>().takeIf { it.isNotEmpty() }?.let { un -> if (state.unsupported.none { it.what == now.name }) state.unsupported += Unsupported(now.name, "Rules text not modeled: " + un.joinToString(" | ") { it.text }) }
                     state.outcomes += "${if (now !== def) "${def.name}, a copy of ${now.name}," else now.name} enters the battlefield."
                     narrateLandTypeSetters(item.source)
+                    narrateLayers(item.source)
                     onEvent(GameEvent.EntersBattlefield(item.source))
                     if (item.evoked) onEvokeEntered(item.source)
                 }
@@ -1553,11 +1558,11 @@ class Engine(val state: GameState) {
                 changed = true
             }
             // Creatures dying to the same state-based check die at once: each sees the others go (603.10a).
-            val dying = state.objects.values.filter { o -> o.isOnBattlefield() && (o.def.isCreature || o.animatedAs != null) && o.toughness?.let { t -> t <= 0 || (!o.has("indestructible") && ((o.damage >= t && o.damage > 0) || (o.dealtDeathtouchDamage && o.damage > 0))) } == true }
+            val dying = state.objects.values.filter { o -> o.isOnBattlefield() && state.hasCreatureType(o) && o.toughness?.let { t -> t <= 0 || (!o.has("indestructible") && ((o.damage >= t && o.damage > 0) || (o.dealtDeathtouchDamage && o.damage > 0))) } == true }
             if (dying.size > 1) { leavingTogether = dying.map { it.id }.toSet(); trace.step("${dying.joinToString(", ") { it.name }} are all put into their owners' graveyards by the same state-based check, simultaneously; abilities that trigger on a creature dying see all of them go, including a creature's own leaving alongside the others.", "704.3", "603.10a") }
             try { for (obj in state.objects.values.toList()) {
                 if (!obj.isOnBattlefield()) continue
-                if (obj.def.isCreature || obj.animatedAs != null) {
+                if (state.hasCreatureType(obj)) {
                     val t = obj.toughness
                     if (t != null && t <= 0) { move(obj, Zone.GRAVEYARD, "${obj.name} has toughness $t and is put into its owner's graveyard (state-based action).", "704.3", "704.5f"); changed = true; continue }
                     val lethal = t != null && obj.damage >= t && obj.damage > 0
@@ -1592,7 +1597,7 @@ class Engine(val state: GameState) {
                 if (obj.def.isAura) {
                     val enchant = obj.def.enchant
                     // Animate Dead: once its card is back on the battlefield, it enchants "creature put onto the battlefield with ~".
-                    val legal = host != null && host.isOnBattlefield() && (enchant == null || state.matches(enchant, host, obj.controller, obj) || (enchant.inGraveyard && (host.def.isCreature || host.animatedAs != null)))
+                    val legal = host != null && host.isOnBattlefield() && (enchant == null || state.matches(enchant, host, obj.controller, obj) || (enchant.inGraveyard && state.hasCreatureType(host)))
                     if (!legal) { move(obj, Zone.GRAVEYARD, "${obj.name} is ${if (host == null || !host.isOnBattlefield()) "no longer attached to anything" else "attached to something it can't enchant"}, so it's put into its owner's graveyard (state-based action).", "704.3", "704.5m"); changed = true }
                 } else if (obj.def.isEquipment && obj.attachedTo != null) {
                     if (host == null || !host.isOnBattlefield() || !host.def.isCreature) { obj.attachedTo = null; trace.step("${obj.name} is no longer attached to a creature, so it becomes unattached and stays on the battlefield (state-based action).", "704.3", "704.5n"); state.outcomes += "${obj.name} stays on the battlefield, unattached."; changed = true }
@@ -2171,6 +2176,11 @@ class Engine(val state: GameState) {
         val rule = if (undying) "702.93a" else "702.79a"
         val ability = TriggeredAbility(Trigger.ThisDies, Effect.Narrated(if (undying) "~undying-return~" else "~persist-return~", listOf(rule)), "When this creature dies, if it had no $kind counters on it, return it to the battlefield under its owner's control with a $kind counter on it.")
         trace.step("${obj.name}'s $kw triggers: it died with no $kind counters on it, so the ability goes on the stack and returns it when it resolves.", rule, "603.2")
+        // "I control Yixlid Jailer. Does their Kitchen Finks persist?": the trigger looks back to the battlefield, where it had persist.
+        graveyardAbilitiesGone()?.let { j ->
+            trace.step("${j.name} takes abilities away only from cards in graveyards. ${kw.replaceFirstChar { it.uppercase() }} is a leaves-the-battlefield ability, and those look back in time: it triggers from how ${obj.name} was on the battlefield, where it still had $kw, so ${j.name} doesn't stop it.", "603.10a", "603.6c", "613.1f")
+            state.outcomes += "${j.name} doesn't stop ${obj.name}'s $kw: it triggers on leaving the battlefield and looks back to the creature as it was there (603.10a)."
+        }
         putTriggerOnStack(obj, ability, emptyList())
     }
 
@@ -3092,7 +3102,7 @@ class Engine(val state: GameState) {
             } }
             is Effect.PumpSameName -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { t ->
                 // Tokens made by the same effect share a name (a Zombie token is "Zombie"), so they all shrink together.
-                val all = listOf(t) + state.objects.values.filter { o -> o !== t && o.isOnBattlefield() && (o.def.isCreature || o.animatedAs != null) && o.def.name.equals(t.def.name, true) }
+                val all = listOf(t) + state.objects.values.filter { o -> o !== t && o.isOnBattlefield() && state.hasCreatureType(o) && o.def.name.equals(t.def.name, true) }
                 for (o in all) { o.pumps += effect.power to effect.toughness }
                 trace.step("${t.name} gets ${signed(effect.power)}/${signed(effect.toughness)} until end of turn, and so does every other creature with the same name" + (if (all.size > 1) " (${all.drop(1).joinToString(", ") { it.name }})" else " (there are none)") + "; a token's name is its creature type unless the effect that made it says otherwise, so tokens made alike share a name.", "611.2a", "111.3")
                 for (o in all) state.outcomes += "${o.name} is ${o.power}/${o.toughness} until end of turn."
@@ -3420,7 +3430,7 @@ class Engine(val state: GameState) {
                     exiled.forEach { move(it, Zone.EXILE, "${p.subject} ${p.v("exiles", "exile")} ${it.name} from ${p.possessive} graveyard.", "701.13a") }
                     if (exiled.isEmpty()) trace.step("${p.subject} ${p.v("has", "have")} no creature cards in ${p.possessive} graveyard to exile.", "701.13a")
                 }
-                for (p in state.players) state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && (it.def.isCreature || it.animatedAs != null) }.toList().forEach { sacrifice(p.id, it.id) }
+                for (p in state.players) state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && state.hasCreatureType(it) }.toList().forEach { sacrifice(p.id, it.id) }
                 for (p in state.players) {
                     val exiled = exiledBy.getValue(p.id)
                     exiled.forEach { enter(it.id) }
@@ -4176,7 +4186,8 @@ class Engine(val state: GameState) {
     }
 
     fun narrateLandTypeSetters(only: GameObject? = null, land: GameObject? = null) {
-        val moons = state.objects.values.filter { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } && (only == null || it === only) }
+        val moons = state.objects.values.filter { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } && (only == null || it === only) &&
+            state.layers()?.inert?.none { (e, _) -> e.source === it && e.effect == StaticEffect.NonbasicLandsAreMountains } != false }
         // "They cast Blood Moon. I have three Islands.": basic lands are untouched, and that is worth saying.
         if (land == null) for (moon in moons) for (p in state.players) {
             val basics = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && "Land" in it.def.types && "Basic" in it.def.supertypes }
@@ -4187,14 +4198,109 @@ class Engine(val state: GameState) {
                 state.outcomes += "${moon.name} doesn't touch ${p.possessive} $names: they're basic lands, and ${moon.name} changes only nonbasic ones."
             }
         }
-        for (moon in moons) for (land in state.objects.values.filter { it.isOnBattlefield() && "Land" in it.def.types && "Basic" !in it.def.supertypes && (land == null || it === land) }) {
+        for (moon in moons) for (land in state.objects.values.filter { it.isOnBattlefield() && "Land" in it.def.types && "Basic" !in it.def.supertypes && (land == null || it === land) && state.moonOn(it) != null }) {
             val saga = "Saga" in land.def.subtypes
             trace.step("${moon.name} makes ${land.name} a Mountain: it loses its other land types and every ability from its rules text${if (saga) ", chapter abilities included," else ""} and has only \"{T}: Add {R}\" (a type-changing effect, layer 4).${if (saga) " It's still an enchantment and a Saga; its lore counters stay, and with no chapter abilities it is neither sacrificed nor able to do anything." else ""}", "613.1d", "305.7", *(if (saga) arrayOf("714.4") else emptyArray()))
             state.outcomes += "${land.name} is a Mountain with no abilities (${moon.name})."
-            if (land.def.isCreature) state.outcomes += "${land.name} is still a creature (${state.describePt(land)}): ${moon.name} changes only its land type and abilities."
+            if (land.def.isCreature) {
+                // "They have Blood Moon. I have Dryad Arbor.": a land type set doesn't touch card types or creature types (305.7).
+                val kept = state.subtypesOf(land).filter { it !in Layers.landTypes }
+                val lost = land.def.subtypes.filter { it in Layers.landTypes && it != "Mountain" }
+                if (kept.isNotEmpty() || lost.isNotEmpty()) trace.step("Setting a land type doesn't add or remove card types, so ${land.name} is still a land creature${if (kept.isNotEmpty()) " and keeps its creature type ${kept.joinToString(" and ")}" else ""}${if (lost.isNotEmpty()) "; it loses ${lost.joinToString(" and ")}, and with it the intrinsic mana ability ${lost.joinToString(" and ") { it }} gave it (305.6), so it taps for {R} instead" else ""}.", "305.7", "305.6", "613.1d")
+                state.outcomes += "${land.name} is still a creature (${state.describePt(land)}): ${moon.name} changes only its land type and abilities."
+            }
             if (saga) state.outcomes += "${land.name} stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (714.4)."
             state.unsupported.removeAll { it.what == land.name }
         }
+    }
+
+    /**
+     * What the layer system does with the continuous effects on the battlefield where it isn't plain (613): a dependency
+     * that overrides timestamps (Blood Moon applies before Urborg's ability, which then doesn't exist, 613.8), a type change
+     * that makes something a creature (Opalescence, Darksteel Mutation), an effect that keeps applying after its source lost
+     * the ability (613.6), and two effects that set the same base size, applied in timestamp order (613.7). [only]
+     * narrows it to what involves one permanent that just arrived.
+     */
+    fun narrateLayers(only: GameObject? = null) {
+        val view = state.layers() ?: return
+        if (view.effects.isEmpty()) return
+        fun step(t: String, vararg r: String) { if (state.trace.steps.none { it.text == t }) trace.step(t, *r) }
+        fun out(t: String) { if (t !in state.outcomes) state.outcomes += t }
+        val rule = mapOf(4 to "613.1d", 5 to "613.1e", 6 to "613.1f", 7 to "613.4b")
+        val layerName = mapOf(4 to "layer 4", 5 to "layer 5", 6 to "layer 6", 7 to "layer 7b")
+        fun relevant(e: LayerEffect) = only == null || e.source === only || view.targetsOf(e).any { it === only }
+        // 613.8a: one effect waits for another, whatever their timestamps.
+        for ((a, b, layer) in view.dependencies) {
+            if (!relevant(a) && !relevant(b)) continue
+            val inertA = view.inert.any { it.first === a }
+            val why = if (inertA) "applying ${b.label}'s would take away the ability ${a.label}'s effect comes from" else "applying ${b.label}'s would change what ${a.label}'s applies to"
+            val older = if (a.timestamp < b.timestamp) ", even though ${a.source.name} has the earlier timestamp" else ""
+            step("${a.label}'s effect depends on ${b.label}'s: both apply in ${layerName[layer]}, and $why (613.8a). A dependent effect waits until what it depends on has applied, so ${b.label}'s applies first$older: dependency overrides timestamp order (613.8b).", "613.8a", "613.8b", rule.getValue(layer))
+            if (inertA) {
+                step("Once ${b.label}'s effect has applied, ${a.source.name} no longer has the ability, so ${a.label}'s effect doesn't exist and changes nothing.", "613.8a", *(if (state.moonOn(a.source) != null) arrayOf("305.7") else arrayOf("613.1f")))
+                val what = when (val eff = a.effect) {
+                    is StaticEffect.LandsAlsoType -> "${a.source.name} makes no land a ${eff.landType}: ${b.label}'s effect applies first (613.8a), takes ${a.source.name}'s ability away, and the other lands keep only their own land types${if (state.moonOn(a.source) != null) "; ${a.source.name} itself is a Mountain with no abilities" else ""}."
+                    else -> "${a.source.name}'s ability does nothing: ${b.label}'s effect applies first (613.8a) and takes it away."
+                }
+                out(what)
+            }
+        }
+        // Type changes that make something a creature, or something else.
+        for (e in view.applied[4].orEmpty()) {
+            val eff = e.effect as? StaticEffect.BecomesType ?: continue
+            if (!relevant(e)) continue
+            val ts = view.targetsOf(e)
+            val sizeWord = if (eff.ptManaValue) "base power and toughness each equal to its mana value" else "base power and toughness ${eff.power}/${eff.toughness}"
+            if (ts.isEmpty()) step("${e.source.name}'s ability applies to ${eff.filter.raw.removePrefix("each ")}s, and there's none on the battlefield, so it makes nothing a creature right now.", "613.1d", "604.2")
+            if (eff.filter.other && !state.hasCreatureType(e.source)) step("${e.source.name} itself isn't changed: its ability says ${eff.filter.raw}, so it stays a noncreature ${state.typesOf(e.source).joinToString(" ").lowercase()}.", "613.1d")
+            for (t in ts) {
+                if (eff.replaceTypes) step("${e.source.name} makes ${t.name} ${withArticle(listOf(eff.subtypes.joinToString(" "), eff.addTypes.sortedBy { it != "Artifact" }.joinToString(" ").lowercase()).filter { it.isNotBlank() }.joinToString(" "))} instead of its old card types and creature types (layer 4), takes away all its other abilities${if (eff.keywords.isNotEmpty()) " and gives it ${eff.keywords.joinToString(" and ")}" else ""} (layer 6), and gives it $sizeWord (layer 7b). Its colour, name and supertypes don't change.", "613.1d", "613.1f", "613.4b")
+                else step("${e.source.name} makes ${t.name} a creature in addition to its other types (layer 4), with $sizeWord${if (eff.ptManaValue) ", ${t.def.manaValue.toInt()}" else ""} (layer 7b).", "613.1d", "613.4b")
+            }
+            if (eff.filter.other && !state.hasCreatureType(e.source)) out("${e.source.name} isn't a creature: its ability changes ${eff.filter.raw}, not ${e.source.name} itself.")
+            for (t in ts) out("${t.name} is ${describeLayered(t)}.")
+        }
+        // An effect that started applying keeps going (613.6), and one that finished before its source lost the ability stands.
+        for (e in view.effects) {
+            if (!e.fromStatic || e.locked == null || !relevant(e) || e.effect == null) continue
+            val c = state.charsOf(e.source)
+            val taker = c.rulesTextLostTo ?: c.abilitiesLostTo ?: continue
+            if (taker === e.source && e.layers.size < 2) continue
+            val lossLayer = if (c.rulesTextLostTo != null) 4 else 6
+            if (e.layers.max() < lossLayer)
+                step("${e.source.name} loses its abilities only in ${layerName[lossLayer]} (${taker.name}), after its own effect has already applied in ${layerName[e.layers.max()]}, so that effect still applies (613.1, 613.6).", "613.1", "613.6", rule.getValue(lossLayer))
+            else if (taker === e.source)
+                step("${e.source.name} is a creature now, so its own effect takes its abilities away too (${layerName[lossLayer]}); the effect has already started applying, so it keeps applying to the same objects in the later layers even though the ability generating it is gone (613.6).", "613.6", rule.getValue(lossLayer))
+            else
+                step("${taker.name} takes ${e.source.name}'s abilities away in ${layerName[lossLayer]}, but ${e.source.name}'s effect had already started applying, so it keeps applying to the same objects in the later layers (613.6).", "613.6", rule.getValue(lossLayer))
+        }
+        // Two effects setting the same base size: the later timestamp wins (613.4b, 613.7).
+        for (o in state.objects.values.filter { it.isOnBattlefield() }) {
+            val setters = view.applied[7].orEmpty().filter { e -> view.targetsOf(e).any { it === o } }
+            if (setters.size < 2 || (only != null && setters.none { relevant(it) })) continue
+            val c = state.charsOf(o)
+            val last = setters.last(); val pt = c.basePt ?: continue
+            val prev = c.ptHistory.getOrNull(c.ptHistory.size - 2)
+            step("${setters.joinToString(" and ") { it.label }} each set ${o.name}'s base power and toughness in layer 7b, and neither depends on the other, so they apply in timestamp order (613.4b, 613.7): ${setters.first().source.name} has the earlier timestamp, so ${last.label}'s applies last and ${o.name}'s base power and toughness are ${pt.first}/${pt.second}.", "613.4b", "613.7")
+            if (!state.timestampsStated && setters.all { it.fromStatic } && prev != null && prev.second != pt)
+                state.assumptions += "Which of ${setters.first().source.name} and ${last.source.name} entered the battlefield first wasn't said; they're taken in the order named. Had ${last.source.name} entered first, ${o.name} would be ${prev.second.first}/${prev.second.second}."
+            out("${o.name} is ${describeLayered(o)}.")
+        }
+    }
+
+    /** "a 4/4 enchantment creature with no abilities": what the layers have made of a permanent, for outcomes. */
+    fun describeLayered(o: GameObject): String {
+        val c = state.charsOf(o)
+        val types = c.supertypes.filter { it != "Basic" }.map { it.lowercase() } + c.subtypes.filter { it !in Layers.landTypes || "Land" in c.types } + c.types.sortedBy { if (it == "Creature") 1 else 0 }.map { it.lowercase() }
+        val pt = if (state.isCreature(o)) "${o.power}/${o.toughness} " else ""
+        val abilities = when {
+            c.abilitiesLostTo != null && c.keywords.isNotEmpty() -> " with ${c.keywords.joinToString(" and ")} and no other abilities (${c.abilitiesLostTo!!.name})"
+            c.abilitiesLostTo === o -> " with no abilities (its own ${o.name} effect takes them, layer 6)"
+            c.abilitiesLostTo != null -> " with no abilities (${c.abilitiesLostTo!!.name})"
+            c.rulesTextLostTo != null -> " with no abilities of its own (${c.rulesTextLostTo!!.name})"
+            else -> ""
+        }
+        return withArticle(pt + types.joinToString(" ")) + abilities
     }
 
     /** What mana a permanent can make, for "what color mana can it make?"; a land under a Blood Moon makes only {R}. */
@@ -4373,8 +4479,8 @@ class Engine(val state: GameState) {
             .mapNotNull { o ->
                 val a = activatedAbilitiesOf(o).firstOrNull { ab -> isManaEffect(ab.effect) } ?: return@mapNotNull null
                 if (a.cost.contains("{T}") && o.def.isCreature && o.summoningSick == true && !state.hasKeyword(o, "haste")) return@mapNotNull Triple(o, "summoning sick, so it can't be tapped for mana yet", null as Int?)
-                val moon = state.objects.values.firstOrNull { m -> m.isOnBattlefield() && m.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } }
-                if (moon != null && "Land" in o.def.types && "Basic" !in o.def.supertypes) return@mapNotNull Triple(o, "{R} (it's a Mountain under ${moon.name})", 1)
+                val moon = state.moonOn(o)
+                if (moon != null) return@mapNotNull Triple(o, "{R} (it's a Mountain under ${moon.name})", 1)
                 val made = manaMade(a.effect, playerId) ?: (a.effect as? Effect.AddMana)?.let { "add ${it.text}" } ?: ((a.effect as? Effect.Seq)?.effects?.firstOrNull() as? Effect.AddMana)?.let { "add ${it.text}" } ?: return@mapNotNull null
                 if (made.startsWith("add no mana")) return@mapNotNull Triple(o, "nothing right now", 0)
                 val text = made.removePrefix("add ")
@@ -4410,8 +4516,8 @@ class Engine(val state: GameState) {
 
     fun manaOptions(objectId: String): String {
         val o = state.obj(objectId)
-        val moon = state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NonbasicLandsAreMountains } }
-        if (moon != null && "Land" in o.def.types && "Basic" !in o.def.supertypes) return "${o.name} is a Mountain under ${moon.name}, so it taps for {R} and nothing else."
+        val moon = state.moonOn(o)
+        if (moon != null) return "${o.name} is a Mountain under ${moon.name}, so it taps for {R} and nothing else."
         val mana = activatedAbilitiesOf(o).filter { a -> isManaEffect(a.effect) }
         if (mana.isEmpty()) return "${o.name} has no mana ability the engine recognises."
         // "Add {B} for each Swamp you control" is more useful with the count worked out for the board described.

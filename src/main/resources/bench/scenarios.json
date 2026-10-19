@@ -37751,5 +37751,207 @@
       "Death's Shadow: your hand → your graveyard",
       "opponent loses 2 life"
     ]
+  },
+  {
+    "id": "layers-humility-first-opalescence-makes-it-4-4",
+    "text": "I control Humility and Opalescence. Humility entered first. What is Opalescence and what are my creatures?",
+    "expect": [
+      "Opalescence isn't a creature: its ability changes each other non-Aura enchantment",
+      "Humility is a 4/4 enchantment creature with no abilities"
+    ],
+    "cite": [
+      "613.1d",
+      "613.6",
+      "613.4b",
+      "613.7"
+    ]
+  },
+  {
+    "id": "layers-opalescence-first-humility-is-1-1",
+    "text": "I control Opalescence and Humility. Opalescence entered first. How big is Humility?",
+    "expect": [
+      "Humility is a 1/1 enchantment creature with no abilities"
+    ],
+    "notExpect": [
+      "Humility is a 4/4"
+    ],
+    "cite": [
+      "613.6",
+      "613.4b",
+      "613.7"
+    ]
+  },
+  {
+    "id": "layers-opalescence-humility-opalescence-ruling",
+    "text": "I control Opalescence, Humility and another Opalescence, in that order. How big is Humility?",
+    "expect": [
+      "Humility is a 4/4 enchantment creature with no abilities",
+      "Opalescence is a 1/1 enchantment creature with no abilities"
+    ],
+    "cite": [
+      "613.6",
+      "613.7"
+    ]
+  },
+  {
+    "id": "layers-blood-moon-stops-urborg-played-after",
+    "text": "They have Blood Moon. I play Urborg, Tomb of Yawgmoth. Does my Urborg make my other lands Swamps?",
+    "expect": [
+      "No: Blood Moon applies first and Urborg, Tomb of Yawgmoth loses the ability, so no land becomes a Swamp"
+    ],
+    "cite": [
+      "613.8a",
+      "613.8b",
+      "305.7"
+    ]
+  },
+  {
+    "id": "layers-painter-goyf-blue-grindstone-mills-all",
+    "text": "I control Painter's Servant naming blue. Is my Tarmogoyf blue and does Grindstone mill the whole library?",
+    "expect": [
+      "Yes: Tarmogoyf is blue",
+      "it repeats until the whole library is in the graveyard"
+    ],
+    "cite": [
+      "613.1e",
+      "701.17a"
+    ]
+  },
+  {
+    "id": "layers-blood-moon-dryad-arbor-stays-a-creature",
+    "text": "They have Blood Moon. I have Dryad Arbor. Is it still a creature and can it tap for mana?",
+    "expect": [
+      "Yes: Dryad Arbor is a creature (1/1).",
+      "Yes, but only for {R}: Blood Moon makes Dryad Arbor a Mountain"
+    ],
+    "cite": [
+      "305.7",
+      "305.6",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "layers-humility-giant-growth-on-bears",
+    "text": "I control Humility. I cast Giant Growth on my Grizzly Bears. How big is it?",
+    "expect": [
+      "Grizzly Bears is 4/4 (1/1 base"
+    ],
+    "cite": [
+      "613.4b",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "layers-humility-counters-still-count",
+    "text": "My opponent controls Humility. I have a 2/2 with two +1/+1 counters. How big is it?",
+    "expect": [
+      "a 2/2 creature is 3/3 (1/1 base"
+    ],
+    "cite": [
+      "613.4b",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "layers-magus-keeps-nonbasics-mountains",
+    "text": "I control Blood Moon and Magus of the Moon. They Wasteland my Blood Moon. Are their nonbasics still Mountains?",
+    "expect": [
+      "Wasteland's own ability is gone",
+      "Yes: Blood Moon and Magus of the Moon each make every nonbasic land a Mountain"
+    ],
+    "notExpect": [
+      "Wasteland adds {R}"
+    ],
+    "cite": [
+      "305.7",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "layers-darksteel-mutation-commander-stays-commander",
+    "text": "They cast Darksteel Mutation on my commander. Is it still my commander and can it be my commander if it dies?",
+    "expect": [
+      "0/1 legendary Insect artifact creature with indestructible and no other abilities",
+      "Yes: a commander is still your commander"
+    ],
+    "cite": [
+      "903.3",
+      "903.9a",
+      "702.12b",
+      "613.1d",
+      "613.4b"
+    ]
+  },
+  {
+    "id": "layers-opalescence-survives-wrath",
+    "text": "I have Opalescence. My opponent casts Wrath of God. Do my enchantments die?",
+    "expect": [
+      "Not Opalescence: Opalescence itself isn't a creature"
+    ],
+    "notExpect": [
+      "No: Wrath of God destroys only creatures"
+    ],
+    "cite": [
+      "613.1d"
+    ]
+  },
+  {
+    "id": "layers-opalescence-worship-dies-to-wrath",
+    "text": "I have Opalescence and Worship. My opponent casts Wrath of God. Do my enchantments die?",
+    "expect": [
+      "Yes, all but Opalescence: Worship was a creature because of Opalescence"
+    ],
+    "cite": [
+      "613.1d",
+      "701.8a"
+    ]
+  },
+  {
+    "id": "layers-urborg-first-dependency-beats-timestamp",
+    "text": "Urborg, Tomb of Yawgmoth and Blood Moon: Urborg entered first. Does timestamp matter?",
+    "expect": [
+      "No: Urborg, Tomb of Yawgmoth's effect depends on Blood Moon's (613.8a)"
+    ],
+    "cite": [
+      "613.8a",
+      "613.8b",
+      "613.7"
+    ]
+  },
+  {
+    "id": "layers-yixlid-jailer-doesnt-stop-persist",
+    "text": "I control Yixlid Jailer. Does my opponent's Kitchen Finks persist?",
+    "expect": [
+      "Yixlid Jailer doesn't stop Kitchen Finks's persist",
+      "Yes: Kitchen Finks is back on the battlefield"
+    ],
+    "cite": [
+      "603.10a",
+      "702.79a"
+    ]
+  },
+  {
+    "id": "layers-humility-counter-and-giant-growth-5-5",
+    "text": "Humility and a creature with a +1/+1 counter and Giant Growth cast on it, in that order. Final size?",
+    "expect": [
+      "a creature is 5/5 (1/1 base"
+    ],
+    "cite": [
+      "613.4b",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "layers-march-of-the-machines-kills-mox",
+    "text": "I control Mox Opal and Sol Ring. My opponent casts March of the Machines. What happens?",
+    "expect": [
+      "Mox Opal: the battlefield → your graveyard",
+      "Sol Ring is a 1/1 artifact creature"
+    ],
+    "cite": [
+      "613.1d",
+      "613.4b",
+      "704.5f"
+    ]
   }
 ]

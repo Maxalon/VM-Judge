@@ -89,6 +89,8 @@ class SituationParser(private val names: NameIndex) {
         /** The running total a bare "and 2 more" adds to: "poison counters", "life", "+1/+1 counters". */
         var lastStat: String? = null
         var lastStatWho: String? = null
+        /** "Humility entered first", "in that order": the permanents' timestamp order as said, earliest first. */
+        val enteredOrder = mutableListOf<String>()
 
         /** The single other player, when there are exactly two; with more, callers fall back to the engine's clarification. */
         fun other(p: String?): String? {
@@ -336,7 +338,7 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.players.isNotEmpty() && ctx.usesOpp && ctx.players.size >= 2) ctx.notes += "\"opponent\"/\"they\" was read as a separate player from ${ctx.players.values.joinToString(" and ")}; name the player instead if that's wrong."
         // Two "everything resolves" in a row (a counter cast, then "does it get countered?") are one resolution.
         val events = ctx.events.filterIndexed { i, e -> !(e.verb == "resolveAll" && i > 0 && ctx.events[i - 1].verb == "resolveAll") && !(e.verb == "block" && i > 0 && ctx.events[i - 1].verb == "block" && ctx.events[i - 1].obj == e.obj && ctx.events[i - 1].targets == e.targets) }
-        return Parsed(Situation(players, turnSpec, ctx.objects.values.toList(), emptyList(), events), ctx.unread, ctx.notes)
+        return Parsed(Situation(players, turnSpec, ctx.objects.values.toList(), emptyList(), events, enteredOrder = ctx.enteredOrder.distinct()), ctx.unread, ctx.notes)
     }
 
     // ---- sentence handling -----------------------------------------------------------------
@@ -1301,8 +1303,108 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** Sentence rewrites that run before anything is stripped: table talk turned into the plainer forms read below. */
-    private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
+    /**
+     * Table talk about the layer system (613): which permanent entered first, whether a land-type setter still works,
+     * whether timestamps matter, what colour something is under Painter's Servant, whether a commander stays one.
+     * Each becomes a plain clause or a marker read by [readLayerQuestions].
+     */
+    private fun layerRewrites(t: String, m: Marked): String {
         var t2 = t
+        // Each question may be one clause of several ("is my Tarmogoyf blue and does Grindstone mill the whole library"):
+        // it starts the sentence or follows a comma or "and", and ends the sentence or comes before one.
+        val pre = """(^|, |\band )"""; val post = """(?=,|$| and\b)"""
+        fun basicType(w: String): String? = (m.cards[w]?.display ?: w).lowercase().removeSuffix("s").takeIf { it in setOf("plain", "island", "swamp", "mountain", "forest") }?.let { if (it == "plain") "Plains" else it.replaceFirstChar { c -> c.uppercase() } }
+        // "Urborg, Tomb of Yawgmoth and Blood Moon: Urborg entered first" (the colon is gone by now): the pair, then the order.
+        t2 = t2.replace(Regex("""^(c\d+) and (c\d+),? ((?:c\d+) (?:entered|came in|came into play|came down|resolved|landed|was played|was cast)(?: the battlefield)? (?:first|last|earlier|later))$""", RegexOption.IGNORE_CASE), "i control $1 and $2, $3")
+        // "Humility entered first", "Opalescence came in after Humility": the timestamp order (613.7d).
+        t2 = t2.replace(Regex(pre + """(?:my |their |the )?(c\d+) (?:entered|came in|came into play|came down|resolved|landed|was played|was cast|hit the battlefield)(?: the battlefield)? (first|last|earlier|later|before|after)(?: (?:my |their |the )?(c\d+))?""" + post, RegexOption.IGNORE_CASE)) { r ->
+            "${r.groupValues[1]}order-note ${r.groupValues[2]} ${r.groupValues[3].lowercase()}${if (r.groupValues[4].isNotEmpty()) " ${r.groupValues[4]}" else ""}" }
+        t2 = t2.replace(Regex(pre + """(?:my |their |the )?(c\d+) has the (earlier|earliest|older|oldest|later|latest|newer|newest) timestamp""" + post, RegexOption.IGNORE_CASE)) { r ->
+            "${r.groupValues[1]}order-note ${r.groupValues[2]} ${if (r.groupValues[3].lowercase() in setOf("earlier", "earliest", "older", "oldest")) "first" else "last"}" }
+        // "…, in that order": the permanents entered in the order named. ("order" may have been read as a card named Order.)
+        t2 = t2.let { t0 -> Regex("""(?:,\s*|\s+)in (?:that|this|the same) (order|c\d+)$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
+            if (r.groupValues[1].lowercase() == "order" || m.cards[r.groupValues[1]]?.display?.startsWith("Order") == true) t0.substring(0, r.range.first) + ", order-note named" else t0 } ?: t0 }
+        // "Giant Growth cast on it": the spell named, cast by the speaker at that creature.
+        t2 = t2.replace(Regex(pre + """(c\d+) (?:cast|played) (?:on|at|targeting) (it|that|them|(?:my |the |their )?c\d+)""" + post, RegexOption.IGNORE_CASE), "$1i cast $2 targeting $3")
+        // "Final size?" / "end size": how big the creature last spoken of is.
+        t2 = t2.replace(Regex("""^(?:what(?:'s| is) (?:the |its )?)?(?:final|end|resulting) (?:size|power and toughness|p/t)\??$""", RegexOption.IGNORE_CASE), "how big is it")
+        // "Does my Urborg make my other lands Swamps?" ("Swamps" may have been read as the card Swamp.)
+        t2 = t2.replace(Regex(pre + """(?:does|do|will|would|is) (?:my |their |the |his |her )?(c\d+|it) (?:still )?(?:make|making|turn|turning) (?:my |all |all my |the |their |our |all of my |all the )?(?:other )?lands (?:into )?(plains|islands|swamps|mountains|forests|c\d+)""" + post, RegexOption.IGNORE_CASE)) { r ->
+            basicType(r.groupValues[3])?.let { "${r.groupValues[1]}makestype-question ${r.groupValues[2]} $it" } ?: r.value }
+        // "Are their nonbasics still Mountains?"
+        t2 = t2.replace(Regex(pre + """(?:are|is) (their|my|the|all|all the|all their|all my|his|her) (?:nonbasics?|nonbasic lands?|non-basic lands?|nonbasic lands they control) still (mountains?|c\d+)""" + post, RegexOption.IGNORE_CASE)) { r ->
+            basicType(r.groupValues[3])?.let { "${r.groupValues[1]}landtypestill-question ${if (r.groupValues[2].lowercase().let { it == "my" || it == "all my" }) "mine" else "theirs"} $it" } ?: r.value }
+        // "Does timestamp matter?", "does the timestamp order matter here?"
+        t2 = t2.replace(Regex(pre + """(?:does|do|would) (?:the )?(?:timestamps?|timestamp order|order (?:they|it) entered|order of the timestamps)(?: order)? (?:matter|make a difference|change anything)(?: here)?""" + post, RegexOption.IGNORE_CASE), "$1timestampmatters-question")
+        // "Is my Tarmogoyf blue?"
+        t2 = t2.replace(Regex(pre + """is (?:my |their |the |his |her )?(c\d+|it) (?:still )?(white|blue|black|red|green)""" + post, RegexOption.IGNORE_CASE), "$1iscolour-question $2 $3")
+        // "Does Grindstone mill the whole library?"
+        t2 = t2.replace(Regex(pre + """(?:does|will|would|can) (?:my |their |the )?(c\d+) mill (?:the |their |my |his |her |your |an? )?(?:whole|entire|full) library""" + post, RegexOption.IGNORE_CASE), "$1millall-question $2")
+        // "Is it still my commander?", "can it be my commander if it dies?"
+        t2 = t2.replace(Regex(pre + """(?:(?:is|does) (?:it|that|my commander|(?:my |the )?c\d+) (?:still )?(?:my commander|count as my commander|a commander)|(?:can|could|will|would) (?:it|that|my commander|(?:my |the )?c\d+) (?:still )?(?:be|stay|remain) (?:my |a )?commander(?: (?:if|when|after) (?:it|that) (?:dies|leaves|is exiled|gets exiled|is destroyed))?|(?:can|could) (?:it|that|my commander) (?:go|return) (?:back )?to the command zone(?: (?:if|when) (?:it|that) (?:dies|leaves|is exiled))?)""" + post, RegexOption.IGNORE_CASE), "$1commanderstill-question")
+        // "Does my opponent's Kitchen Finks persist?" with nothing yet killing it: it dies, and the question is whether it comes back.
+        t2 = t2.replace(Regex("""^(?:does|will|would) (my opponent's|their|my|the|his|her) (c\d+) (?:still )?(?:persist|undying|come back with (?:persist|undying))$""", RegexOption.IGNORE_CASE), "persistask-question $1 $2")
+        return t2
+    }
+
+    /** The markers [layerRewrites] leaves, read into the situation and into questions for the judge. */
+    private fun readLayerQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        fun idOf(c: String): String? = if (c == "it") ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[c]?.let { card -> objectIdForOrCast(card, ctx) ?: addObject(card, "me", false, ctx) }
+        Regex("""^order-note (c\d+) (first|last|earlier|later|before|after)(?: (c\d+))?$""").find(clause0)?.let { r ->
+            val a = idOf(r.groupValues[1]) ?: return@let
+            val b = r.groupValues[3].takeIf { it.isNotEmpty() }?.let { idOf(it) }
+            val order = (ctx.enteredOrder.ifEmpty { ctx.objects.values.filter { it.zone == "battlefield" }.map { it.id } }).toMutableList()
+            order.remove(a)
+            when (r.groupValues[2]) {
+                "first", "earlier" -> order.add(0, a)
+                "last", "later" -> order.add(a)
+                "before" -> order.add(b?.let { order.indexOf(it) }?.takeIf { it >= 0 } ?: 0, a)
+                "after" -> order.add(b?.let { order.indexOf(it) + 1 }?.takeIf { it > 0 } ?: order.size, a)
+            }
+            ctx.enteredOrder.clear(); ctx.enteredOrder += order
+            ctx.notes += "${ctx.objects.getValue(a).card.name} entered the battlefield ${r.groupValues[2]}${b?.let { " ${ctx.objects.getValue(it).card.name}" } ?: ""} (its timestamp, 613.7d)."
+            return true
+        }
+        if (clause0 == "order-note named") {
+            ctx.enteredOrder.clear(); ctx.enteredOrder += ctx.objects.values.filter { it.zone == "battlefield" }.map { it.id }
+            ctx.notes += "The permanents entered the battlefield in the order named (their timestamps, 613.7d)."
+            return true
+        }
+        Regex("""^makestype-question (c\d+|it) (\w+)$""").find(clause0)?.let { r ->
+            val id = idOf(r.groupValues[1]) ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "makesType:" + r.groupValues[2].removeSuffix("s").replaceFirstChar { it.uppercase() }); return true
+        }
+        Regex("""^landtypestill-question (mine|theirs) (\w+)$""").find(clause0)?.let { r ->
+            ctx.asks += EventSpec("ask", player = if (r.groupValues[1] == "mine") "me" else "opp", to = "landTypeStill:" + r.groupValues[2]); return true
+        }
+        if (clause0 == "timestampmatters-question") { ctx.asks += EventSpec("ask", player = "me", to = "timestampMatters"); return true }
+        Regex("""^iscolour-question (c\d+|it) (\w+)$""").find(clause0)?.let { r ->
+            val id = idOf(r.groupValues[1]) ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "isColour:" + r.groupValues[2]); return true
+        }
+        Regex("""^millall-question (c\d+)$""").find(clause0)?.let { r ->
+            val id = idOf(r.groupValues[1]) ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "millAll"); return true
+        }
+        if (clause0 == "commanderstill-question") {
+            val id = ctx.objects.values.lastOrNull { it.commander }?.id ?: return null
+            if (ctx.asks.none { it.obj == id && it.to == "commanderStill" }) ctx.asks += EventSpec("ask", obj = id, to = "commanderStill")
+            return true
+        }
+        Regex("""^persistask-question (my opponent's|their|my|the|his|her) (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[2]] ?: return@let
+            val who = if (r.groupValues[1] == "my") "me" else "opp"
+            val id = objectIdFor(card, ctx) ?: addObject(card, who, false, ctx)
+            // Nothing in the question kills it: it dies (the question is about what happens then), and the answer says whether it returns.
+            if (ctx.events.none { it.obj == id || it.targets.contains(id) }) { ctx.events += EventSpec("leave", obj = id, to = "graveyard"); ctx.events += EventSpec("resolveAll"); ctx.notes += "\"Does it persist?\" is read as ${card.display} dying now." }
+            ctx.asks += EventSpec("ask", obj = id, to = "comesBack"); ctx.lastMentioned = id
+            return true
+        }
+        return null
+    }
+
+    private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = layerRewrites(t, m)
         // "Which blocks best?": the blocks weighed.
         t2 = t2.replace(Regex("""^(?:which|what) (?:one )?blocks? best\??$|^(?:which|what) is (?:my|the) best block(?:er)?\??$""", RegexOption.IGNORE_CASE), "which should i block with")
         // "Can they redirect to Spellskite and does Spellskite die?": their redirect, then the fate of the new target.
@@ -5295,6 +5397,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "With no ${r.groupValues[1]} mana available, a {$sym/P} cost can only be paid with 2 life (107.4f)."
             return true
         }
+        readLayerQuestions(clause0, m, ctx)?.let { return it }
         readEarlyQuestionsC(clause0, m, ctx)?.let { return it }
         readEarlyQuestionsD(clause0, m, ctx)?.let { return it }
         if (clause0 == "devilchoice-question") {

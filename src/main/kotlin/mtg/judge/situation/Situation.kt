@@ -26,6 +26,8 @@ data class Situation(
     val stack: List<StackSpec> = emptyList(),
     val events: List<EventSpec> = emptyList(),
     val question: QuestionSpec = QuestionSpec(),
+    /** "Humility entered first": object ids in the order they entered the battlefield, earliest first (timestamps, 613.7d). */
+    val enteredOrder: List<String> = emptyList(),
 )
 
 @Serializable

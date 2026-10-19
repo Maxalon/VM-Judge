@@ -608,6 +608,18 @@ sealed interface StaticEffect {
     data class SpellsCantBeCountered(val filter: ObjFilter) : StaticEffect
     /** Mycosynth Lattice: "All permanents are artifacts in addition to their other types." (layer 4) */
     data object AllPermanentsAreArtifacts : StaticEffect
+    /** Urborg, Tomb of Yawgmoth: "Each land is a Swamp in addition to its other land types." (layer 4, 305.7's last sentence). */
+    data class LandsAlsoType(val landType: String) : StaticEffect
+    /**
+     * A type-changing static that may also set base power and toughness and take abilities away (layers 4, 6 and 7b, 613.6):
+     * Opalescence "each other non-Aura enchantment is a creature in addition to its other types and has base power and base
+     * toughness each equal to its mana value"; Darksteel Mutation "enchanted creature is an Insect artifact creature with base
+     * power and toughness 0/1 and has indestructible, and it loses all other abilities, card types, and creature types".
+     * [replaceTypes]: the new card types and creature types replace the old ones; [ptManaValue]: base P/T = mana value.
+     */
+    data class BecomesType(val filter: ObjFilter, val addTypes: Set<String>, val subtypes: Set<String> = emptySet(), val replaceTypes: Boolean = false,
+                           val ptManaValue: Boolean = false, val power: Int? = null, val toughness: Int? = null,
+                           val keywords: Set<String> = emptySet(), val loseOtherAbilities: Boolean = false) : StaticEffect
     /** Arcane Lighthouse: "creatures your opponents control lose hexproof and indestructible … until end of turn". */
     /** "LEVEL 2-6 3/3 First strike": what a leveler is while it has that many level counters (702.87b). max null = "and up". */
     data class LevelBand(val min: Int, val max: Int?, val power: Int, val toughness: Int, val keywords: Set<String>) : StaticEffect

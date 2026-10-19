@@ -798,6 +798,27 @@ object OracleParser {
             return listOf(StaticEffect.SpellsCantBeCountered(f))
         }
         if (Regex("""^All permanents are artifacts in addition to their other types\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.AllPermanentsAreArtifacts)
+        // Urborg, Tomb of Yawgmoth / Yavimaya, Cradle of Growth: every land gains a basic land type (layer 4).
+        Regex("""^each land is an? (Plains|Island|Swamp|Mountain|Forest) in addition to its other land types\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            return listOf(StaticEffect.LandsAlsoType(m.groupValues[1].lowercase().replaceFirstChar { it.uppercase() })) }
+        // Opalescence, March of the Machines: "each other non-Aura enchantment is a creature in addition to its other types and
+        // has base power and base toughness each equal to its mana value" (layers 4 and 7b).
+        Regex("""^each (other )?(?:non-?([a-z]+) )?(artifact|enchantment|land|permanent) is an? (?:(artifact|enchantment) )?creature(?: in addition to its other types)? (?:and has|with) (?:base )?power and (?:base )?toughness each equal to its mana value\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val kind = Kind.valueOf(m.groupValues[3].uppercase())
+            val non = m.groupValues[2].lowercase()
+            val nonKind = Kind.entries.firstOrNull { it.name.equals(non, true) }
+            val f = ObjFilter(setOf(kind), notKinds = setOfNotNull(nonKind), notSubtypes = if (non.isNotEmpty() && nonKind == null) listOf(non.replaceFirstChar { it.uppercase() }) else emptyList(),
+                other = m.groupValues[1].isNotEmpty(), raw = "each ${m.groupValues[1]}${if (non.isNotEmpty()) "non-${m.groupValues[2]} " else ""}${m.groupValues[3].lowercase()}")
+            return listOf(StaticEffect.BecomesType(f, setOfNotNull("Creature", m.groupValues[4].takeIf { it.isNotEmpty() }?.replaceFirstChar { it.uppercase() }), ptManaValue = true))
+        }
+        // Darksteel Mutation: "Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has
+        // indestructible, and it loses all other abilities, card types, and creature types." (layers 4, 6 and 7b)
+        Regex("""^enchanted creature is an? ((?!artifact )[a-z]+ )?(artifact )?creature with base power and toughness (\d+)/(\d+)(?: and has ([a-z ]+?))?, and it loses all other abilities, card types, and creature types\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            return listOf(StaticEffect.BecomesType(ObjFilter(setOf(Kind.CREATURE), attachedToSource = true, raw = "enchanted creature"),
+                setOfNotNull("Creature", if (m.groupValues[2].isNotEmpty()) "Artifact" else null), setOfNotNull(m.groupValues[1].trim().takeIf { it.isNotEmpty() }),
+                replaceTypes = true, power = m.groupValues[3].toInt(), toughness = m.groupValues[4].toInt(),
+                keywords = m.groupValues[5].takeIf { it.isNotEmpty() }?.split(Regex(""",? and |, """))?.map { it.trim().lowercase() }?.toSet() ?: emptySet(), loseOtherAbilities = true))
+        }
         if (Regex("""^All cards that aren't on the battlefield, spells, and permanents are colorless\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("613.1e")))
         if (Regex("""^Players may spend mana as though it were mana of any (?:color|type)\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("106.1")))
         // Mox Diamond.
