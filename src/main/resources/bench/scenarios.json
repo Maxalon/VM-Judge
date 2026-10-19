@@ -38132,5 +38132,151 @@
     "cite": [
       "701.21a"
     ]
+  },
+  {
+    "id": "sweep-blood-moon-colonnade-cannot-animate",
+    "text": "They have Blood Moon. Can my Celestial Colonnade become a creature and attack?",
+    "expect": [
+      "No: Blood Moon makes Celestial Colonnade a Mountain with none of its own abilities"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "305.7",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "sweep-humility-thalia-no-tax",
+    "text": "Humility is out. Does my Thalia still tax their spells?",
+    "expect": [
+      "No: Humility has taken away every ability of Thalia, Guardian of Thraben, so it no longer makes spells cost more."
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "613.1f",
+      "604.2"
+    ]
+  },
+  {
+    "id": "sweep-humility-spellskite-cannot-redirect",
+    "text": "Humility is out. Can my Spellskite redirect their Bolt?",
+    "expect": [
+      "No: Humility has taken away every ability of Spellskite, so it can't redirect anything."
+    ],
+    "notExpect": [
+      "Yes, if Spellskite"
+    ],
+    "cite": [
+      "613.1f",
+      "604.2"
+    ]
+  },
+  {
+    "id": "sweep-humility-finks-does-not-persist",
+    "text": "Humility is out. Does my Kitchen Finks persist when it dies?",
+    "expect": [
+      "Kitchen Finks doesn't return: it had no persist on the battlefield (Humility).",
+      "No: Kitchen Finks is in your graveyard."
+    ],
+    "notExpect": [
+      "comes back with a -1/-1 counter"
+    ],
+    "cite": [
+      "603.10a",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "sweep-march-vial-dies-to-wrath",
+    "text": "March of the Machines is out. They Wrath. Does my Aether Vial die?",
+    "expect": [
+      "Aether Vial is a 1/1 artifact creature.",
+      "Yes: Aether Vial died (it's in the graveyard)."
+    ],
+    "cite": [
+      "613.1d",
+      "613.4b",
+      "701.8a"
+    ]
+  },
+  {
+    "id": "sweep-march-mox-dies-as-zero-zero",
+    "text": "March of the Machines is out. I cast Mox Pearl. Does it die?",
+    "expect": [
+      "Mox Pearl is a 0/0 artifact creature.",
+      "Yes: Mox Pearl died (it's in the graveyard)."
+    ],
+    "cite": [
+      "704.5f",
+      "613.4b"
+    ]
+  },
+  {
+    "id": "sweep-painter-bolt-green-protection",
+    "text": "Painter's Servant naming green. I cast Bolt at their Thalia and they have protection from green on it. Does Bolt resolve?",
+    "expect": [
+      "Lightning Bolt can't target Thalia, Guardian of Thraben.",
+      "No: Lightning Bolt doesn't resolve."
+    ],
+    "notExpect": [
+      "Yes: Lightning Bolt isn't countered",
+      "deals 3 damage"
+    ],
+    "cite": [
+      "702.16b",
+      "613.1e"
+    ]
+  },
+  {
+    "id": "sweep-darksteel-mutation-thalia-no-tax",
+    "text": "Darksteel Mutation on their Thalia. Does it still tax me?",
+    "expect": [
+      "No: Darksteel Mutation has taken away every ability of Thalia, Guardian of Thraben"
+    ],
+    "cite": [
+      "613.1f",
+      "604.2"
+    ]
+  },
+  {
+    "id": "sweep-opalescence-rest-in-peace-attacks",
+    "text": "Opalescence out. Can I attack with my Rest in Peace?",
+    "expect": [
+      "Rest in Peace is a 2/2 enchantment creature.",
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "Rest in Peace can't attack"
+    ],
+    "cite": [
+      "613.1d",
+      "508.1a"
+    ]
+  },
+  {
+    "id": "sweep-opalescence-rest-in-peace-summoning-sick",
+    "text": "I control Opalescence. I cast Rest in Peace. Can I attack with it?",
+    "expect": [
+      "Rest in Peace is a 2/2 enchantment creature.",
+      "Rest in Peace can't attack (summoning sick)."
+    ],
+    "cite": [
+      "302.6",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "sweep-humility-goblin-guide-loses-haste",
+    "text": "Humility is out. I cast Goblin Guide. Can I attack with it?",
+    "expect": [
+      "Goblin Guide can't attack (summoning sick)."
+    ],
+    "cite": [
+      "302.6"
+    ]
   }
 ]

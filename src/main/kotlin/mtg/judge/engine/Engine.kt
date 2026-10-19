@@ -4608,9 +4608,12 @@ class Engine(val state: GameState) {
         // Undying and persist are read while it is still on the battlefield (603.10e).
         val hadUndying = from == Zone.BATTLEFIELD && to == Zone.GRAVEYARD && state.hasKeyword(obj, "undying")
         val hadPersist = from == Zone.BATTLEFIELD && to == Zone.GRAVEYARD && state.hasKeyword(obj, "persist")
+        // Humility: a persist or undying creature with no abilities on the battlefield has nothing to look back at (603.10a, 613.1f).
+        val noLongerKw = if (from == Zone.BATTLEFIELD && to == Zone.GRAVEYARD && !hadUndying && !hadPersist) listOf("persist", "undying").firstOrNull { obj.def.has(it) }?.let { it to printedAbilitiesGone(obj) } else null
         moveRaw(obj, to)
         trace.step(text, *rules)
         state.outcomes += "${obj.name}: ${zoneName(from, obj)} → ${zoneName(to, obj)}."
+        if (noLongerKw?.second != null) { trace.step("${obj.name} had no abilities on the battlefield (${noLongerKw.second}), and a leaves-the-battlefield ability looks back at the object as it last existed there, so it had no ${noLongerKw.first} to trigger: it stays in the graveyard.", "603.10a", "613.1f"); state.outcomes += "${obj.name} doesn't return: it had no ${noLongerKw.first} on the battlefield (${noLongerKw.second})." }
         if (from == Zone.BATTLEFIELD) {
             if (to == Zone.GRAVEYARD) { onEvent(GameEvent.Dies(obj)); undyingOrPersist(obj, hadUndying, hadPersist) } else onEvent(GameEvent.LeavesBattlefield(obj))
             if (to == Zone.GRAVEYARD) onEvent(GameEvent.PutIntoGraveyard(obj))
