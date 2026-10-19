@@ -38787,5 +38787,173 @@
     "cite": [
       "508.1a"
     ]
+  },
+  {
+    "id": "st1",
+    "text": "My opponent casts Sudden Shock targeting my Grizzly Bears. Can I tap my Llanowar Elves for mana in response? Can my Kor Firewalker's trigger happen?",
+    "expect": [
+      "split second doesn't stop triggered abilities (702.61b)",
+      "Yes: Llanowar Elves's mana ability can be activated even with Sudden Shock (split second) on the stack",
+      "You gain 1 life."
+    ],
+    "cite": [
+      "702.61b",
+      "605.3b"
+    ]
+  },
+  {
+    "id": "st2",
+    "text": "My opponent casts Thoughtseize targeting me. In response I cast Brainstorm. When Thoughtseize resolves, which cards can they take?",
+    "expect": [
+      "Brainstorm resolves first (last in, first out, 405.5), so Thoughtseize sees your hand as it is after Brainstorm",
+      "You draw 3 cards."
+    ],
+    "cite": [
+      "405.5",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "st3",
+    "text": "I cast Lightning Bolt targeting my opponent's Grizzly Bears. In response my opponent casts Ranger's Guile targeting Grizzly Bears. What happens to Lightning Bolt?",
+    "expect": [
+      "Lightning Bolt doesn't resolve (all targets illegal).",
+      "Grizzly Bears has hexproof until end of turn."
+    ],
+    "notExpect": [
+      "protection from red"
+    ],
+    "cite": [
+      "608.2b",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "st4",
+    "text": "I cast Electrolyze targeting my opponent's Llanowar Elves and my opponent. In response they bounce Llanowar Elves. Do I still draw a card and deal 1 damage to them?",
+    "expect": [
+      "Electrolyze deals 1 damage to opponent, as divided when it was cast",
+      "Electrolyze still resolves: only some of its targets are illegal",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "opponent takes 2 damage",
+      "doesn't resolve"
+    ],
+    "cite": [
+      "608.2b",
+      "601.2d"
+    ]
+  },
+  {
+    "id": "st5",
+    "text": "I have 2 mana floating in my first main phase. I move to combat. Is the mana still there?",
+    "expect": [
+      "No: the mana is gone.",
+      "empties as the main phase ends"
+    ],
+    "cite": [
+      "500.5",
+      "106.4"
+    ]
+  },
+  {
+    "id": "st6",
+    "text": "I control Thalia, Guardian of Thraben. My opponent casts Thalia, Guardian of Thraben. What happens?",
+    "expect": [
+      "Both copies of Thalia, Guardian of Thraben stay"
+    ],
+    "notExpect": [
+      "into its owner's graveyard"
+    ],
+    "cite": [
+      "704.5j"
+    ]
+  },
+  {
+    "id": "st7",
+    "text": "My opponent attacks with Grizzly Bears and Hill Giant. After they declare attackers I cast Settle the Wreckage targeting my opponent. Which creatures are exiled?",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile.",
+      "Hill Giant: the battlefield → exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "st8",
+    "text": "My opponent casts Lightning Bolt. I pass priority and they pass priority and it resolves. Can I then cast Counterspell targeting it?",
+    "expect": [
+      "No: once both players pass priority in succession, Lightning Bolt resolves"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "117.4",
+      "608.1"
+    ]
+  },
+  {
+    "id": "st9",
+    "text": "I cast Mystic Snake. My opponent casts Counterspell targeting Mystic Snake. Does Mystic Snake still counter the spell?",
+    "expect": [
+      "No: Mystic Snake was countered as a spell, so it never entered the battlefield"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "701.6a",
+      "603.6a"
+    ]
+  },
+  {
+    "id": "st10",
+    "text": "I control Glorious Anthem and Grizzly Bears. My opponent controls Humility. What is Grizzly Bears's power and toughness?",
+    "expect": [
+      "Grizzly Bears is 2/2 (1/1 base"
+    ],
+    "cite": [
+      "613.4b",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "st11",
+    "text": "I control Junun Efreet and two Swamps. It's my upkeep and its trigger resolves. Can I tap my Swamps for mana while it resolves to pay for it?",
+    "expect": [
+      "Yes: when a resolving spell or ability asks for a mana payment",
+      "You pay {B}{B}"
+    ],
+    "cite": [
+      "605.3a"
+    ]
+  },
+  {
+    "id": "st12",
+    "text": "I cast Thassa's Oracle and its trigger goes on the stack. My opponent casts Force of Will targeting the trigger. Does it work?",
+    "expect": [
+      "No: Force of Will can't be cast targeting Thassa's Oracle's triggered ability"
+    ],
+    "notExpect": [
+      "Force of Will doesn't resolve"
+    ],
+    "cite": [
+      "601.2c",
+      "733.1"
+    ]
+  },
+  {
+    "id": "st13",
+    "text": "I cast Snapcaster Mage during my opponent's turn targeting Ponder. Can I cast Ponder with flashback during my opponent's turn?",
+    "expect": [
+      "No: Ponder is a sorcery, so even with flashback it can be cast only during your main phase"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "307.1"
+    ]
   }
 ]

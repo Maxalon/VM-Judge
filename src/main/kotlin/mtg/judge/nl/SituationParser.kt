@@ -372,6 +372,8 @@ class SituationParser(private val names: NameIndex) {
         // "Does the redirect still happen?" about Spellskite: the noun, not the card Redirect.
         // "Does my Kitchen Finks persist when it dies?": it dies, then the question is whether it comes back.
         text0 = text0.replace(Regex("""(?i)\b(?:does|will) (my |their |the )?([A-Z][\w',-]*(?: [A-Za-z][\w',-]*)*?) (?:still )?(?:persist|undying|come back|return) (?:when|if|after) it (?:dies|is destroyed|gets destroyed|is killed)\?"""), { r -> "${r.groupValues[1].ifEmpty { "my " }}${r.groupValues[2]} dies. Does it persist?" })
+        // "Can I then cast Counterspell?": "then" inside a question means afterward, not a new sentence.
+        text0 = text0.replace(Regex("""(?i)\b(can|could|may) (i|we|they|he|she) then\b"""), "$1 $2 afterward")
         // "the persisted Finks": a participle, not the card Persist.
         text0 = text0.replace(Regex("""(?i)\bpersisted\b"""), "returned")
         if (Regex("""(?i)\bspellskite\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""(?i)\b(the|my|its|their) redirect\b""")) { r -> "${r.groupValues[1]} redirection" }
@@ -1528,10 +1530,75 @@ class SituationParser(private val names: NameIndex) {
         return kind?.let { "loop-question $it" } ?: t
     }
 
+    /**
+     * Stack, priority and timing table talk (117, 405, 500.5, 601, 605, 608): mana left floating between steps, passing
+     * priority, what a spell sees when it resolves after a response, and paying mid-resolution.
+     */
+    private fun stackRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('?', '.', '!').trim()
+        val ci = RegexOption.IGNORE_CASE
+        // "I have 2 mana floating in my first main phase": mana in the pool now, and the step it was made in.
+        Regex("""^(i|we|they|my opponent|the opponent) (?:have|has|'ve got|got) (\d+|one|two|three|four|five|six) (?:(white|blue|black|red|green|colorless) )?mana (?:floating|in (?:my|their|the) (?:mana )?pool)(?: (?:in|during|on) (my|their|his|her) (?:first |second |precombat |postcombat )?(main(?: phase)?|upkeep|draw step|end step|turn|combat|beginning of combat))?$""", ci).find(q)?.let { r ->
+            val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else "opp"
+            val n = number(r.groupValues[2]) ?: return@let
+            val sym = mapOf("white" to "{W}", "blue" to "{U}", "black" to "{B}", "red" to "{R}", "green" to "{G}", "colorless" to "{C}")[r.groupValues[3].lowercase()]
+            val phase = if (r.groupValues[4].isNotEmpty()) "it's ${if (r.groupValues[4].lowercase() == "my") "my" else "their"} ${r.groupValues[5].lowercase().let { if (it.startsWith("main")) "main phase" else it }}, " else ""
+            return "${phase}floatmana-question $who $n${sym?.let { " " + it.repeat(n) } ?: ""}"
+        }
+        // "Is the mana still there?" / "Do I still have the mana?" / "Does it carry over?"
+        if (Regex("""^(?:is (?:the |my |that |this )?mana still (?:there|floating|in (?:my|the) (?:mana )?pool|available|around)|do (?:i|we) still have (?:the |that |my )?(?:floating )?mana|does (?:the |my |that )?(?:floating )?mana (?:carry over|stay|stick around|last|remain)(?: (?:to|into) combat)?|can (?:i|we) still (?:use|spend) (?:the |that |my )?(?:floating )?mana|what happens to (?:the |my |that )?(?:floating )?mana)$""", ci).matches(q) && ctx.events.any { it.verb == "floatMana" })
+            return "poolnow-question"
+        // "After they declare attackers I cast Settle the Wreckage": the declaration is the attack already described.
+        Regex("""^(?:after|once|when) (?:they|my opponent|the opponent|he|she|i|we) (?:declares?|declared|have declared|has declared) (?:their |my |the )?(?:attackers|attacks?|attacking creatures)(?: step)?,? (.+)$""", ci).find(q)?.let { r ->
+            if (ctx.events.any { it.verb == "attack" }) return r.groupValues[1]
+        }
+        // "I pass priority and they pass priority and it resolves", "we both pass": all players passing in succession.
+        Regex("""^(?:i|we) pass(?: priority)?(?:,| and) (?:they|my opponent|he|she) pass(?:es)?(?: priority)?(?:,? and (?:it|the spell|c\d+) resolves)?$|^(?:we|they) both pass(?: priority)?(?:,? and (?:it|the spell|c\d+) resolves)?$""", ci).find(q)?.let { return "it resolves" }
+        // "Can I then cast Counterspell targeting it?" once that spell has resolved: there is nothing left to counter.
+        Regex("""^can (i|we|they|he|she|my opponent) (?:then |now |still |afterward |afterwards )?(?:cast|respond with|use) (c\d+)(?: (?:targeting|on|at) (?:it|that|the spell|c\d+))?(?: (?:then|now|afterward|afterwards))?$""", ci).find(q)?.let { r ->
+            val card = m.cards[r.groupValues[2]] ?: return@let
+            if (!needsSpellTarget(card)) return@let
+            val lastResolve = ctx.events.indexOfLast { it.verb == "resolveAll" }
+            val lastCast = ctx.events.indexOfLast { it.verb == "cast" }
+            if (lastCast < 0 || lastResolve < lastCast) return@let
+            return "countertoolate-question ${r.groupValues[2]}"
+        }
+        // "Does Mystic Snake still counter the spell?" after Mystic Snake itself was countered.
+        Regex("""^(?:does|will|would|did) (c\d+) (?:still |even )?(?:counter|trigger|do|draw|deal|destroy|exile|return|bounce|make|create|work)\b(?! countered)(?!s\b).*$""", ci).find(q)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            if (card.isSpellOnly) return@let
+            val slugged = slug(card.display) + ":spell"
+            if (ctx.events.none { e -> e.verb == "cast" && e.targets.any { it == slugged } && e.card?.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { needsSpellTarget(it) } == true }) return@let
+            return "etbcountered-question ${r.groupValues[1]}"
+        }
+        // "Can I tap my Swamps for mana while it resolves to pay for it?": mana abilities mid-resolution (605.3a).
+        if (Regex("""^can (?:i|we|they|he|she) (?:still )?(?:tap|use|activate) (?:my |their |the |two |both )*(?:c\d+|lands?|mana sources?|mana abilities)(?: (?:and|or) (?:my |the )?(?:c\d+|lands?))*(?: for mana)? (?:while|as|during|when|in the middle of) (?:it|the trigger|its trigger|the ability|that|the spell|c\d+(?:'s)? (?:trigger|ability)?)(?: (?:resolves|is resolving|resolution|resolving))?(?: to pay(?: for it| the cost| that)?)?$""", ci).matches(q))
+            return "manamidres-question"
+        // "Electrolyze targeting their Llanowar Elves and my opponent": a creature and a player as the one spell's two
+        // targets, put the way round the clause reader already keeps together (player first).
+        Regex("""^(.*\b(?:targeting|aimed at|at|on) )((?:my opponent's |the opponent's |their |my |his |her |the )?c\d+) and (me|them|him|her|my opponent|the opponent)$""", ci).find(q)?.let { r ->
+            if (Regex("""\bcasts?\b|\bactivates?\b""", ci).containsMatchIn(r.groupValues[1])) return "${r.groupValues[1]}${r.groupValues[3]} & ${r.groupValues[2]}"
+        }
+        // "Do I still draw a card and deal 1 damage to them?": both halves are questions about the spell's results.
+        Regex("""^(?:do|does|will|would) (?:i|we) (?:still )?(draw(?: a card| cards?)?) and (?:still )?deal (\d+ )?damage to (them|him|her|my opponent|the opponent)$""", ci).find(q)?.let { r ->
+            return "do i still draw a card, does my opponent take ${r.groupValues[2]}damage"
+        }
+        // "its trigger resolves" / "its trigger goes on the stack": the trigger the engine already plays.
+        var t2 = t.replace(Regex("""\b(its|the|c\d+'s) trigger(?:ed ability)? (?:goes on the stack|went on the stack|is put on the stack|resolves|is resolving)\b""", ci), "$1 trigger is on the stack")
+        // "What is Grizzly Bears's power and toughness?" / "what's the power and toughness of my Bears?": its size.
+        t2 = t2.replace(Regex("""^what(?:'s| is| are) (?:the )?(?:power and toughness|p/t|size) of (?:my |their |the )?(c\d+)\??$|^what(?:'s| is| are) (?:my |their |the )?(c\d+)(?:'s|') (?:power and toughness|p/t)\??$""", ci)) { r -> "how big is ${r.groupValues[1].ifEmpty { r.groupValues[2] }}" }
+        // "When Thoughtseize resolves, which cards can they take?" after a spell cast in response resolved first.
+        Regex("""^(?:when (c\d+) resolves,? )?(?:which|what) cards? (?:can|could|will|do|does) (they|he|she|my opponent) (?:take|choose|pick|make me discard)$""", ci).find(q)?.let { r ->
+            return "resolvedfirst-question ${r.groupValues[1]}".trim()
+        }
+        return t2
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = stackRewrites(t2, m, ctx)
         // "has ward 2", "with ward {2}", "ward 2 on Thalia": one spelling of the keyword and its mana cost (702.21a).
         t2 = t2.replace(Regex("""\bward (?:of )?\{?(\d+)\}?(?![/\d])""", RegexOption.IGNORE_CASE), "ward {$1}")
         // "I Bolt their creature with ward 2 and pay": the creature and its keyword first, then the spell aimed at it.
@@ -4859,8 +4926,43 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /** The markers [stackRewrites] leaves: stack, priority and timing questions, answered by StackAsks in the judge. */
+    private fun readStackQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        Regex("""^floatmana-question (me|opp) (\d+)(?: (\S+))?$""").find(clause0)?.let { r ->
+            val who = r.groupValues[1]
+            ctx.events += EventSpec("floatMana", player = who, amount = r.groupValues[2].toInt(), to = r.groupValues[3].ifEmpty { null })
+            ctx.note(who); ctx.lastActor = who; return true
+        }
+        if (clause0 == "poolnow-question") {
+            val who = ctx.events.lastOrNull { it.verb == "floatMana" }?.player ?: "me"
+            ctx.asks += EventSpec("ask", player = who, to = "poolNow"); ctx.notes += "\"Is the mana still there?\" is answered by the outcome below."; return true
+        }
+        Regex("""^countertoolate-question (c\d+)$""").find(clause0)?.let { r ->
+            val counter = m.cards[r.groupValues[1]]?.display ?: return@let
+            val spell = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name ?: return@let
+            ctx.asks += EventSpec("ask", to = "counterTooLate", card = CardRef(name = spell), source = counter); return true
+        }
+        Regex("""^etbcountered-question (c\d+)$""").find(clause0)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            ctx.asks += EventSpec("ask", to = "etbAfterCounter", card = CardRef(name = card.display, oracleId = card.oracleId), obj = slug(card.display)); return true
+        }
+        if (clause0 == "manamidres-question") { ctx.asks += EventSpec("ask", to = "manaMidResolution"); return true }
+        Regex("""^resolvedfirst-question ?(c\d+)?$""").find(clause0)?.let { r ->
+            val named = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards[it]?.display }
+            val casts = ctx.events.filter { it.verb == "cast" }
+            val discard = casts.lastOrNull { named == null || it.card?.name == named } ?: return@let
+            val caster = discard.player ?: return@let
+            val target = discard.targets.firstOrNull { it in setOf("me", "opp") } ?: ctx.other(caster) ?: return@let
+            val response = casts.drop(casts.indexOf(discard) + 1).lastOrNull { it.player == target }?.card?.name
+            if (response != null) ctx.asks += EventSpec("ask", player = target, to = "resolvedFirst", card = CardRef(name = discard.card?.name), source = response)
+            ctx.asks += EventSpec("ask", player = caster, to = "discardChoices"); ctx.note(caster); return true
+        }
+        return null
+    }
+
     /** More early questions, split out of readEarlyQuestionsB for the JVM method size limit. */
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readStackQuestions(clause0, m, ctx)?.let { return it }
         // "My opponent casts Fireball at me. X is 5.": the X of the last spell cast that has none yet (a copy spell has no X).
         Regex("""^(?:and |with )?x (?:is|was|=|equals|equal to|of) ?(\d+)$""").find(clause0.trim())?.let { r ->
             val at = ctx.events.indexOfLast { e -> e.verb == "cast" && e.amount == null && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) !in xlessCopySpells }

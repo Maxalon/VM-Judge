@@ -290,6 +290,14 @@ class Engine(val state: GameState) {
             trace.step("${state.nameOf(ref)} isn't a legal target for ${card.name}: it needs \"${spec.raw}\"${if (spec.filter.controller == Who.OPPONENT) ", and ${state.nameOf(ref)} is ${state.player(playerId).possessive} own" else ""}. A spell can't be cast without a legal target for each of its targets.", "601.2c", "115.1a")
             state.outcomes += "${card.name} can't target ${state.nameOf(ref)} (not ${withArticle(spec.raw)})."; return null
         } }
+        // "They Force of Will my Thassa's Oracle trigger": a spell that counters spells can't even be cast at an ability,
+        // which isn't a spell; the cast is illegal and undone (601.2c, 601.2e, 733.1). Stifle-style cards counter abilities.
+        for ((i, ref) in targets.withIndex()) { val spec = needed.getOrNull(i) ?: continue; val tgt = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: continue
+            if (tgt.kind == StackKind.SPELL || Kind.SPELL !in spec.filter.kinds || Kind.ABILITY in spec.filter.kinds) continue
+            trace.step("${tgt.describe} is ${if (tgt.kind == StackKind.TRIGGERED) "a triggered" else "an activated"} ability, not a spell, so it isn't a legal target for ${card.name} (\"${spec.raw}\"). A spell can't be cast without a legal target for each of its targets, so casting ${card.name} this way is illegal and is undone: it stays in its owner's hand and nothing is paid.", "601.2c", "601.2e", "733.1", "115.1a")
+            state.outcomes += "No: ${card.name} can't be cast targeting ${tgt.describe}: it counters spells, and ${if (tgt.kind == StackKind.TRIGGERED) "a triggered" else "an activated"} ability isn't a spell (601.2c). The ability resolves as normal; only something that counters abilities (Stifle, Tale's End) could stop it."
+            return null
+        }
         obj.zone = Zone.STACK
         obj.x = x
         obj.wasKicked = kicked
@@ -690,6 +698,25 @@ class Engine(val state: GameState) {
         for ((_, put) in sorted) put()
     }
 
+    /**
+     * "I have 2 mana floating in my main phase and move to combat": as each step and phase ends, unspent mana empties
+     * from every pool, a turn-based action that doesn't use the stack (500.5, 106.4, 703.4q).
+     */
+    fun emptyManaPools() {
+        val holding = state.players.filter { it.manaPool > 0 }
+        if (holding.isEmpty()) return
+        val was = state.step?.let { st -> mapOf("precombat_main" to "main phase", "postcombat_main" to "main phase", "main" to "main phase", "combat" to "combat phase", "end" to "end step").getOrElse(st) { st.replace('_', ' ') + " step" } } ?: "step"
+        for (p in holding) {
+            val text = p.poolText().ifEmpty { "${p.manaPool} mana" }
+            trace.step("As the $was ends, the unspent mana in ${p.possessive} mana pool ($text) empties. This is a turn-based action that doesn't use the stack; mana doesn't carry over from one step or phase to the next.", "500.5", "106.4", "703.4q")
+            state.outcomes += "${p.possessive.replaceFirstChar { it.uppercase() }} floating mana ($text) empties as the $was ends: mana doesn't carry over from one step or phase to the next (500.5)."
+            p.manaPool = 0; p.manaPoolSymbols.clear()
+        }
+    }
+
+    /** The spell with split second on the stack, if any (702.61a). */
+    fun splitSecondOnStack(): StackItem? = state.stack.lastOrNull { it.kind == StackKind.SPELL && it.source.def.has("split second") }
+
     /** Turn order starting with the active player (101.4); with no active player stated, the order players were named in. */
     fun apnapOrder(): List<String> {
         val order = state.players.map { it.id }
@@ -811,6 +838,8 @@ class Engine(val state: GameState) {
             }
             val made = if (boosts.isNotEmpty()) madeBoost else made0
             trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s mana ability (${ability.cost}). It's a mana ability, so it doesn't use the stack and resolves immediately: ${made ?: describeManaEffect(ability.effect)}.", "605.1a", "605.3b")
+            // Sudden Shock on the stack: split second stops spells and non-mana abilities, not mana abilities (702.61b).
+            splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but that doesn't stop mana abilities: players may still activate them (and take special actions) while it's on the stack.", "702.61b"); state.outcomes += "Yes: ${obj.name}'s mana ability can be activated even with ${ss.source.name} (split second) on the stack (702.61b)." }
             if (ability.cost.contains("{T}")) tap(obj)
             // Spellskite's {U/P} with no mana: a Phyrexian symbol is paid with 2 life instead (107.4f).
             val phyrexian = Regex("""\{[WUBRG]/P\}""").findAll(ability.cost).count()
@@ -1320,6 +1349,7 @@ class Engine(val state: GameState) {
 
     fun beginStep(step: String, activePlayer: String) {
         emptyStackFirst("the ${step.replace('_', ' ')} step")
+        emptyManaPools()
         if (step == "untap") {
             state.activePlayer = activePlayer; state.step = step; state.phase = "beginning"
             val p = state.player(activePlayer)
@@ -1487,6 +1517,7 @@ class Engine(val state: GameState) {
                 afterResolution(); return
             } else if (illegalCount > 0) {
                 trace.step("Some targets of ${item.describe} are illegal (${legal.filter { !it.second }.joinToString("; ") { whyIllegal(item, it.first) }}); it resolves but won't affect them.", "608.2b")
+                state.outcomes += "${item.describe} still resolves: only some of its targets are illegal, so it does nothing to ${legal.filter { !it.second }.joinToString(" and ") { state.nameOf(it.first) }} and everything else it says still happens."
             }
         }
         when (item.kind) {
@@ -1635,6 +1666,16 @@ class Engine(val state: GameState) {
                 for (o in group) if (o !== keep) { move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("controls", "control")} two legendary permanents named ${o.name}; ${p.subject.lowercase()} ${p.v("chooses", "choose")} one and the other is put into its owner's graveyard (the \"legend rule\", a state-based action).", "704.3", "704.5j"); changed = true }
                 state.assumptions += "${p.subject} ${p.v("keeps", "keep")} the newer ${keep.name} (704.5j lets ${p.subject.lowercase()} choose which)."
             }
+            // "I control Thalia and my opponent casts their own": the legend rule looks at one player at a time, so two
+            // players each controlling one legendary permanent with the same name keep both (704.5j).
+            state.objects.values.filter { it.isOnBattlefield() && "Legendary" in state.supertypesOf(it) }.groupBy { it.name }.values
+                .filter { g -> g.map { it.controller }.distinct().size > 1 && g.groupBy { it.controller }.values.all { it.size == 1 } }.forEach { g ->
+                    val n = g.first().name
+                    if (trace.steps.none { it.text.startsWith("The legend rule applies to each player separately") && it.text.contains(n) }) {
+                        trace.step("The legend rule applies to each player separately: it only looks at legendary permanents with the same name controlled by the same player. ${g.joinToString(" and ") { "${state.player(it.controller).subject.lowercase()} ${state.player(it.controller).v("controls", "control")} one" }} ${n}, so nothing happens and both stay on the battlefield.", "704.5j")
+                        state.outcomes += "Both copies of $n stay: the legend rule only applies to legendary permanents with the same name controlled by the same player, and each player controls one (704.5j)."
+                    }
+                }
             // +1/+1 and -1/-1 counters cancel out before anything is checked for dying (704.5q): a 2/2 with one
             // of each is a 2/2 with no counters, not a 2/2 carrying both.
             for (obj in state.objects.values.toList()) {
@@ -2452,6 +2493,8 @@ class Engine(val state: GameState) {
             return null
         }
         val item = StackItem(state.newStackId(), StackKind.TRIGGERED, obj.controller, obj, ability.effect, targets, zonesOf(targets), ability.text, modes = aimModes, causedBy = causedBy, causedAmount = causedAmount, causedObject = causedObject)
+        // Kor Firewalker seeing Sudden Shock cast: split second doesn't stop triggers, which go on the stack as usual (702.61b).
+        splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
         if (ability.effect.hasUnparsed()) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
@@ -2541,7 +2584,8 @@ class Engine(val state: GameState) {
             val need = Regex("""\{(\d+)\}""").findAll(effect.cost).sumOf { it.groupValues[1].toInt() } + Regex("""\{[WUBRGC]\}""").findAll(effect.cost).count()
             val avail = availableMana(payer)
             if (avail != null && need > 0) {
-                if (avail >= need) { state.willPay += payer.id; trace.step("${payer.subject} ${payer.v("has", "have")} $avail mana available, enough for ${effect.cost}, so ${payer.subject.lowercase()} ${payer.v("pays", "pay")} it (assumed; say otherwise if not).", "608.2g") }
+                // "Can I tap my Swamps while the trigger resolves?": a payment asked for mid-resolution lets its payer activate mana abilities right then (605.3a).
+                if (avail >= need) { state.willPay += payer.id; trace.step("${payer.subject} ${payer.v("has", "have")} $avail mana available, enough for ${effect.cost}, so ${payer.subject.lowercase()} ${payer.v("pays", "pay")} it (assumed; say otherwise if not). The mana can be made right now: a player asked for a mana payment while a spell or ability resolves may activate mana abilities (tap lands) in the middle of that resolution.", "608.2g", "605.3a") }
                 else { cantPay = avail; trace.step("${payer.subject} ${payer.v("has", "have")} only $avail mana available, not enough for ${effect.cost}, so ${payer.subject.lowercase()} can't pay.", "608.2g") }
             }
         }
@@ -2790,6 +2834,20 @@ class Engine(val state: GameState) {
                 when {
                     item.targets.isEmpty() -> state.unsupported += Unsupported(item.describe, "No targets were given to divide ${effect.amount} damage among (${effect.target.raw}).")
                     legal.isEmpty() -> trace.step("Every target is illegal now, so ${item.describe} is removed from the stack and none of the damage is dealt.", "608.2b")
+                    // Electrolyze at a 1/1 and a player, the 1/1 bounced in response: the division was locked in as it was cast
+                    // (1 each), so the player still takes just 1; the illegal target's share isn't dealt to anyone (601.2d, 608.2b).
+                    // Fireball divides "evenly" as it resolves, among the targets still legal, so it falls to the branch below.
+                    !effect.evenly && legal.size < item.targets.size && item.targets.size <= effect.amount -> {
+                        val n = item.targets.size
+                        val base = effect.amount / n; val extra = effect.amount % n
+                        val shares = item.targets.mapIndexed { i, ref -> ref to base + if (i < extra) 1 else 0 }
+                        trace.step("${item.source.name}'s ${effect.amount} damage was divided as it was cast (${shares.joinToString(", ") { (r, d) -> "$d to ${state.nameOf(r)}" }}), and that division can't change now. " +
+                            "The damage assigned to ${shares.filter { it.first !in legal }.joinToString(" and ") { state.nameOf(it.first) }}, an illegal target, isn't dealt at all; the rest of the spell still happens.", "601.2d", "608.2b")
+                        if (n > 1) state.assumptions += "${item.describe}'s ${effect.amount} damage was split as evenly as it goes among its $n targets as it was cast; the caster could have divided it another way."
+                        state.outcomes += "${item.describe} deals ${shares.filter { it.first in legal }.joinToString(" and ") { (r, d) -> "$d damage to ${state.nameOf(r)}" }}, as divided when it was cast; the damage assigned to ${shares.filter { it.first !in legal }.joinToString(" and ") { state.nameOf(it.first) }} isn't dealt."
+                        shares.filter { it.first in legal }.forEach { (ref, d) -> applyDamage(item.source.name, ref, d, item.source) }
+                        stateBasedActions()
+                    }
                     else -> {
                         val n = legal.size
                         val base = effect.amount / n; val extra = if (effect.evenly) 0 else effect.amount % n
@@ -3266,7 +3324,8 @@ class Engine(val state: GameState) {
                 for (o in all) state.outcomes += "${o.name} is ${o.power}/${o.toughness} until end of turn."
             } }
             is Effect.GainKeywords -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let {
-                val threat = item.choice ?: protectionColourChoice(item)
+                // Only "protection from the color of your choice" asks for a colour; Ranger's Guile's hexproof needs none.
+                val threat = item.choice ?: if ("protection from the color of your choice" in effect.keywords) protectionColourChoice(item) else null
                 val kws = effect.keywords.map { k -> if (k == "protection from the color of your choice") "protection from ${threat ?: run { state.clarifications += Clarification("${item.describe}'s colour", "${item.describe} grants protection from a colour of your choice; which colour? (assuming none)"); "nothing" }}" else k }
                 if (kws.toSet() != effect.keywords.toSet()) { trace.step("${state.player(item.controller).subject} ${state.player(item.controller).v("chooses", "choose")} ${item.choice ?: "no colour"}.", "608.2c"); it.tempKeywords += kws; trace.step("${it.name} gains ${kws.joinToString(" and ")} until end of turn.", "611.2a"); state.outcomes += "${it.name} has ${kws.joinToString(" and ")} until end of turn."; return@let }
                 // "until your next turn" keywords are tagged with the caster, and cleanup keeps them until that turn begins.
