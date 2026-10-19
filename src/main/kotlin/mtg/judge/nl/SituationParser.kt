@@ -1391,6 +1391,8 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex(pre + """(?:does|will|would|can) (?:my |their |the )?(c\d+) mill (?:the |their |my |his |her |your |an? )?(?:whole|entire|full) library""" + post, RegexOption.IGNORE_CASE), "$1millall-question $2")
         // "Is it still my commander?", "can it be my commander if it dies?"
         t2 = t2.replace(Regex(pre + """(?:(?:is|does) (?:it|that|my commander|(?:my |the )?c\d+) (?:still )?(?:my commander|count as my commander|a commander)|(?:can|could|will|would) (?:it|that|my commander|(?:my |the )?c\d+) (?:still )?(?:be|stay|remain) (?:my |a )?commander(?: (?:if|when|after) (?:it|that) (?:dies|leaves|is exiled|gets exiled|is destroyed))?|(?:can|could) (?:it|that|my commander) (?:go|return) (?:back )?to the command zone(?: (?:if|when) (?:it|that) (?:dies|leaves|is exiled))?)""" + post, RegexOption.IGNORE_CASE), "$1commanderstill-question")
+        // "Is the Clone a commander?": which card is asked about, so a copy of a commander gets its own answer (903.3).
+        if (t2.contains("commanderstill-question")) Regex("""\b(?:is|does|can|could|will|would) (?:my |the )?(c\d+) """).find(t)?.let { t2 = t2.replace("commanderstill-question", "commanderstill-question ${it.groupValues[1]}") }
         // "Does my opponent's Kitchen Finks persist?" with nothing yet killing it: it dies, and the question is whether it comes back.
         t2 = t2.replace(Regex("""^(?:does|will|would) (my opponent's|their|my|the|his|her) (c\d+) (?:still )?(?:persist|undying|come back with (?:persist|undying))$""", RegexOption.IGNORE_CASE), "persistask-question $1 $2")
         return t2
@@ -1435,9 +1437,10 @@ class SituationParser(private val names: NameIndex) {
             val id = idOf(r.groupValues[1]) ?: return@let
             ctx.asks += EventSpec("ask", obj = id, to = "millAll"); return true
         }
-        if (clause0 == "commanderstill-question") {
-            val id = ctx.objects.values.lastOrNull { it.commander }?.id ?: return null
+        Regex("""^commanderstill-question(?: (c\d+))?$""").find(clause0)?.let { r ->
+            val id = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { objectIdForOrCast(it, ctx) } ?: ctx.objects.values.lastOrNull { it.commander }?.id ?: return null
             if (ctx.asks.none { it.obj == id && it.to == "commanderStill" }) ctx.asks += EventSpec("ask", obj = id, to = "commanderStill")
+            if (r.groupValues[1].isNotEmpty()) ctx.lastMentioned = id   // "Is the Clone a commander? Does its damage count?"
             return true
         }
         Regex("""^persistask-question (my opponent's|their|my|the|his|her) (c\d+)$""").find(clause0)?.let { r ->
@@ -1948,7 +1951,7 @@ class SituationParser(private val names: NameIndex) {
         // "On their next upkeep they don't pay": the Pact's delayed trigger, and the choice not to pay it.
         t2 = t2.replace(Regex("""^(?:on|at the beginning of|during|in) (their|his|her|my) (?:next )?upkeep,? (they|he|she|i|we) (?:don't|do not|doesn't|does not|can't|cannot|didn't|choose not to|chooses not to|skips?) pay(?:ing)?(?: for (?:it|the pact|c\d+)| the pact| (?:\{[^}]+\})+)?$""", ic), "$1 upkeep begins and $2 don't pay")
         // "My commander has dealt 21 combat damage to my opponent over the game": commander damage already dealt.
-        t2 = t2.replace(Regex("""^(?:my commander|c\d+) (?:has )?(?:dealt|done) (\d+) combat (?:commander )?damage to (?:my opponent|the opponent|them|him|her)(?: over (?:the course of )?the game| this game| in total| so far)?$""", ic), "my opponent has been dealt $1 combat damage from the same commander over the game")
+        t2 = t2.replace(Regex("""^(?:my commander) (?:has )?(?:dealt|done) (\d+) combat (?:commander )?damage to (?:my opponent|the opponent|them|him|her)(?: over (?:the course of )?the game| this game| in total| so far)?$""", ic), "my opponent has been dealt $1 combat damage from the same commander over the game")
         // "They cast Fireball dealing 20 damage to me": the target and X of a damage spell, said by the damage.
         t2 = t2.replace(Regex("""^(.*\bcasts? (c\d+)) dealing (\d+) damage to (me|my opponent|them|him|her|(?:my |their )?c\d+)$""", ic), "$1 targeting $4 with x=$3")
         // "I control Gideon of the Trials and I have its emblem", "I have the Gideon of the Trials emblem".
@@ -2106,6 +2109,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = lkiRewrites(t2, m, ctx)
         t2 = targetRewrites(t2, m, ctx)
         t2 = zoneRewrites(t2, m, ctx)
+        t2 = commanderRewrites(t2, m, ctx)
         t2 = costRewrites(t2, m, ctx)
         t2 = winLossRewrites(t2, m, ctx)
         t2 = turnRewrites(t2, m, ctx)
@@ -6287,6 +6291,7 @@ class SituationParser(private val names: NameIndex) {
         readLkiQuestions(clause0, m, ctx)?.let { return it }
         readTargetQuestions(clause0, m, ctx)?.let { return it }
         readZoneQuestions(clause0, m, ctx)?.let { return it }
+        readCommanderQuestions(clause0, m, ctx)?.let { return it }
         readCostQuestions(clause0, m, ctx)?.let { return it }
         readWinLossQuestions(clause0, m, ctx)?.let { return it }
         readTurnQuestions(clause0, m, ctx)?.let { return it }
@@ -14096,6 +14101,157 @@ class SituationParser(private val names: NameIndex) {
         ctx.objects[id] = ObjectSpec(id, CardRef(name = "a commander"), controller = who, commander = true)
         ctx.notes += "${if (who == "me") "Your" else "Their"} commander stands in for whichever card it is, as a 2/2 legendary creature."
         return id
+    }
+
+    /**
+     * Commander-format table talk (903): the tax said with "from the command zone", partners, stolen and copied
+     * commanders, commander damage with some of it not from combat, and the questions only the format's rules answer
+     * (starting life, color identity, what can be a commander). Answers are in situation/mtg.judge.situation.CommanderAsks.kt.
+     */
+    private fun commanderRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t
+        val ic = RegexOption.IGNORE_CASE
+        val plr = """my opponent|the opponent|they|he|she|@\w+"""
+        val times = """once|twice|three times|four times|five times|\d+ times"""
+        // "I have cast my commander from the command zone twice before": the tax counts casts from there (903.8).
+        t2 = t2.replace(Regex("""\b(?:i|we)(?:'ve| have)? (?:already )?cast (it|him|her|my commander|c\d+) (?:from (?:the |my )?command zone )?($times)(?: before| already| so far| this game| from (?:the |my )?command zone)*(?=,|$| and\b| so\b)""", ic), "$1 has been cast $2")
+        // "My commander has died twice and I cast it from the command zone again": the deaths stand for the casts; the cast is the question's.
+        t2 = t2.replace(Regex("""^(my commander|c\d+) (?:has )?died ($times) and (?:i|we) (?:cast|recast|want to cast) it (?:from the command zone )?again$""", ic), "$1 died $2")
+        // "How much does it cost to cast it again?": the cost of the next cast, now.
+        t2 = t2.replace(Regex("""^(how much (?:mana )?(?:does|will|would) (?:it|my commander|c\d+) cost(?: me)?) to (?:cast|recast) (?:it|him|her|them|my commander) (?:again|now|next time|from the command zone(?: again)?)$""", ic), "$1 now")
+        // "I cast my commander from the command zone and it's countered": the commander nobody named, cast from there (903.8).
+        t2 = t2.replace(Regex("""(^|\band )(i|we|they|he|she|my opponent|the opponent) (?:cast|casts|recast|recasts) (my|their|his|her) commander from (?:the|my|their) command zone(?= and\b|,|$)""", ic)) { r ->
+            "${r.groupValues[1]}cmdcast-note ${if (r.groupValues[3].lowercase() == "my") "me" else "opp"}" }
+        // "My opponent takes control of my commander with Control Magic": the Aura, cast on it.
+        t2 = t2.replace(Regex("""^($plr) (?:takes?|took|gains?|gained|steals?|stole|has stolen) (?:control of )?(my commander|my c\d+) (?:with|using|by casting) (c\d+)$""", ic), "$1 casts $3 targeting $2")
+        // "My opponent's Clone copies my commander": the Clone, cast as a copy of it.
+        t2 = t2.replace(Regex("""^(my opponent|the opponent|their|his|her|@\w+)(?:'s)? (c\d+) (?:copies|copied|is copying|becomes a copy of|enters as a copy of) (my commander|my c\d+)$""", ic)) { r ->
+            val who = r.groupValues[1].lowercase().let { if (it in setOf("their", "his", "her")) "they" else it }
+            "$who casts ${r.groupValues[2]} copying ${r.groupValues[3]}" }
+        if (Regex("""\b(?:copying|as a copy of|copies) my commander\b""", ic).containsMatchIn(t2)) {
+            val id = commanderObject("me", ctx); ctx.lastMentioned = id
+            t2 = t2.replace(Regex("""\b(copying|as a copy of|copies) my commander\b""", ic), "$1 it")
+        }
+        // "I have Thrasios and Tymna as partners": two commanders (702.124a).
+        Regex("""^(?:i have|i'm playing|i am playing|i play|my commanders are) (c\d+) and (c\d+)(?: as (?:my )?(?:partners|partner commanders|commanders|co-commanders))?$""", ic).find(t2.trim())?.let { r ->
+            if (r.groupValues[0].contains(" as ") || r.groupValues[0].startsWith("my commanders")) return "cmdpair-note ${r.groupValues[1]} ${r.groupValues[2]}"
+        }
+        // "My commanders are Wilson and a Background": a commander and a Background chosen with it (702.124k).
+        Regex("""^my commanders are (c\d+) and an? background(?: enchantment)?$""", ic).find(t2.trim())?.let { r -> return "cmdpair-note ${r.groupValues[1]} background" }
+        // "Thrasios has dealt 11 combat damage and Tymna has dealt 10 combat damage to my opponent": the victim is each one's.
+        Regex("""^(.+? (?:has )?dealt \d+ (?:combat |commander )*damage) and (.+? (?:has )?dealt \d+ (?:combat |commander )*damage) (to (?:$plr|me|them|him|her))$""", ic).find(t2.trim())?.let { r ->
+            t2 = "${r.groupValues[1]} ${r.groupValues[3]} and ${r.groupValues[2]} ${r.groupValues[3]}" }
+        t2 = t2.replace(Regex("""\bmy (?:other|second) commander (c\d+)\b""", ic), "my commander $1")
+        // "Thrasios has dealt 11 combat damage to my opponent": a named card's combat damage to a player, said this way, is commander damage.
+        t2 = t2.replace(Regex("""(^|\band )(c\d+) (has |have )?(?:already )?(dealt|done) (\d+) combat (?:commander )?damage to""", ic), "$1my commander $2 $3$4 $5 combat damage to")
+        // "My commander has dealt 21 damage to my opponent, but 5 of it was from Fling": only combat damage counts (903.10a).
+        Regex("""^(my commander|c\d+) (?:has )?(?:dealt|done) (\d+) (?:commander )?damage to (my opponent|the opponent|them|him|her)(?: over (?:several|many|a few|\w+) turns| over the game| this game| so far)?,? but (\d+) of (?:it|that|them|this) (?:was|were|came|is) (?:from|by|with|through|via) (.+)$""", ic).find(t2.trim())?.let { r ->
+            val all = r.groupValues[2].toInt(); val other = r.groupValues[4].toInt().coerceAtMost(all)
+            val how = restore(r.groupValues[5], m)
+            ctx.asks += EventSpec("ask", to = "text:" + mtg.judge.situation.CommanderAsks.noncombatShare(all, other, how))
+            return "${r.groupValues[1]} has dealt ${all - other} combat damage to ${r.groupValues[3]}"
+        }
+        // "My opponent has taken 15 commander damage from my 7/7 commander": the damage, then the commander's size.
+        t2 = t2.replace(Regex("""\b(has|have) taken (\d+) (?:combat |commander )*damage from my (\d+)/(\d+) commander\b""", ic), "$1 taken $2 commander damage from it and my commander is a $3/$4")
+        // "If I put it in the command zone, does Chaos Warp still reveal …": the move is the owner's (903.9b), already assumed.
+        Regex("""^(?:if|when|after|once) (?:i|we) (?:put|move|send|choose to put) (?:it|my commander|c\d+) (?:in|into|to) (?:the|my) command zone,? (.+)$""", ic).find(t2.trim())?.let { r ->
+            ctx.notes += "Putting your commander into the command zone is its owner's choice, and is taken as made (903.9)."; t2 = r.groupValues[1] }
+        return commanderQuestionMarker(t2.trim(), m, ctx) ?: t2
+    }
+
+    /** Questions only the Commander rules answer, as a marker for [readCommanderQuestions]; asked as a whole sentence or as one clause of it. */
+    private fun commanderQuestionMarker(q: String, m: Marked, ctx: Ctx): String? {
+        val ic = RegexOption.IGNORE_CASE
+        if (Regex("""^(?:how much|what) (?:life|life total) (?:do|does) (?:we|you|i|players|each player|everyone|everybody) (?:start|begin) (?:with|at|on)(?: in (?:a )?(?:commander|edh)(?: game)?)?$|^what(?:'s| is) (?:the )?starting life(?: total)? (?:in|for) (?:a )?(?:commander|edh)(?: game)?$""", ic).matches(q)
+            && Regex("""commander|edh""", ic).containsMatchIn(q)) return "cmdask-question life"
+        if (Regex("""^(?:can|could|may) (?:my |a |your )?commander be an? (planeswalker|artifact|enchantment|land|instant|sorcery|background|non-?legendary creature|battle)$""", ic).matches(q))
+            return "cmdask-question type " + Regex("""be an? (.+)$""").find(q)!!.groupValues[1].replace(" ", "_")
+        if (Regex("""\b(?:when|whenever) (?:this|it|~|c\d+) dies\b.*\btrigger\b|\bdies trigger\b""", ic).containsMatchIn(q) && Regex("""command zone""", ic).containsMatchIn(q)) return "cmdask-question dies"
+        if (Regex("""^(?:does|do|will|would) (?:the |that |its )?(?:dies )?trigger (?:still )?(?:happen|trigger|work|go on the stack|resolve)$""", ic).matches(q) && ctx.asks.any { it.to?.startsWith("text:") == true && it.to.contains("700.4") }) return "cmdask-question answered"
+        Regex("""^(?:can|could|may) (?:i|we|you) mutate (?:a creature|an? \w+|c\d+) (?:on ?to|on top of|under(?:neath)?) (?:my|your) commander$""", ic).find(q)?.let { return "cmdask-question mutate" }
+        if (Regex("""^(?:is|does) the (?:merged|mutated) (?:permanent|creature) (?:still )?(?:my|a|count as my) commander$""", ic).matches(q)) return if (ctx.asks.any { it.to?.contains("903.3c") == true }) "cmdask-question answered" else "cmdask-question mutate"
+        // "I cast my commander with Fist of Suns paying WUBRG": an alternative cost, and the tax on top of it (118.9d).
+        Regex("""^(?:i|we) cast (?:my commander|(?:my commander )?(c\d+))(?: from the command zone)? (?:with|using|via|through|for) (c\d+)(?:'s alternative cost)?(?: (?:by )?paying (.+))?$""", ic).find(q)?.let { r0 ->
+            // Only a commander: "I cast Thalia with Cavern of Souls" is an ordinary cast.
+            if (r0.groupValues[1].isNotEmpty() && !r0.value.contains("commander") && m.cards[r0.groupValues[1]]?.let { c -> ctx.objects.values.any { it.commander && it.card.oracleId == c.oracleId } } != true) return@let
+            ctx.asks += EventSpec("ask", to = "text:" + mtg.judge.situation.CommanderAsks.taxOnAlternativeCost(m.cards[r0.groupValues[2]]?.display ?: "it", r0.groupValues[3].trim().ifEmpty { null })); return "cmdask-question answered" }
+        if (Regex("""^(?:does|do|will|would|is) (?:the )?commander tax (?:still )?(?:apply|count|matter|added|go up|increase)$""", ic).matches(q) && ctx.asks.any { it.to?.contains("118.9d") == true }) return "cmdask-question answered"
+        // "My commanders are Wilson and a Background. How does commander tax work for each?": each commander's own (702.124d).
+        if (Regex("""\bcommander tax\b.*\b(?:each|both|either|partners?|background|separately|together|shared?)\b|\b(?:each|both|partners?|background)\b.*\bcommander tax\b""", ic).containsMatchIn(q)) return "cmdask-question pairtax"
+        // "Does the commander tax go up?" after it was countered: what the next cast costs.
+        if (Regex("""^(?:does|do|will|would|is) (?:the |my )?(?:commander )?tax (?:still )?(?:go up|goes up|increase|increases|rise|count|apply)(?: now| next time| for (?:the )?next (?:time|cast))?$""", ic).matches(q)) return "cmdask-question taxnow"
+        // "Is the Clone a commander?", "does its combat damage count as commander damage?"
+        Regex("""^(?:is|does) (?:the |their |my |that )?(c\d+|clone|copy|token) (?:a|my|their|still a|still my|count as a|count as my) commander$""", ic).find(q)?.let { r -> return "cmdask-question is ${r.groupValues[1]}" }
+        if (Regex("""^(?:does|do|will|would) (?:its|it's|the|their|that|c\d+'s|the (?:clone|copy)'s) (?:combat )?damage(?: (?:to|on) (?:me|them|him|her|my opponent))? (?:still )?count (?:as|towards?|for) commander damage(?: (?:against|to|for) (?:me|them|him|her))?$""", ic).matches(q)) return "cmdask-question damage"
+        // "Can my deck include a card with a hybrid {W/U} symbol if my commander is mono-blue?", "Can I play Sol Ring?" with a commander named.
+        Regex("""^(?:can|could|may) (?:i|we|my deck|my (?:commander )?deck) (?:play|run|include|use|have|put) (c\d+|an? (?:card|spell|creature|land|artifact|enchantment) (?:with|that has|costing) .+?|an? (?:white|blue|black|red|green|colou?rless) (?:card|spell|creature))(?: in (?:my|the|a|this) (?:commander )?deck| in (?:it|there))?(?: if (?:my|the) commander is (c\d+|mono-?(?:white|blue|black|red|green)|colou?rless|(?:white|blue|black|red|green)(?:(?:,| and|-) ?(?:white|blue|black|red|green))*))?$""", ic).find(q)?.let { r ->
+            val namedCommander = ctx.objects.values.any { it.commander && it.card.oracleId != null }
+            if (r.groupValues[2].isEmpty() && !namedCommander && !Regex("""\bdeck\b""", ic).containsMatchIn(q)) return@let
+            return "cmdask-question identity ${r.groupValues[1].replace(' ', '_')} ${r.groupValues[2].replace(' ', '_')}".trim()
+        }
+        // "What does Command Tower produce if I have no commander?"
+        Regex("""^(?:what|which mana|what mana|what colou?rs?) (?:does|can|would|will) (c\d+) (?:produce|make|tap for|add|give)(?: me)? (?:if|when|with|in)(?: i have| there is| there's)? (?:no commander|a (?:deck|game) (?:with|without) no commander|a non-?commander (?:deck|game)|(?:a )?60[- ]card (?:deck|game))$|^(?:is|can) (c\d+) (?:a land )?(?:i can )?(?:play(?:ed)?|be played|playable) in (?:a )?(?:non-?commander|60[- ]card)(?: 60[- ]card)? (?:deck|game)$""", ic).find(q)?.let { r ->
+            return "cmdask-question nocommander ${r.groupValues[1].ifEmpty { r.groupValues[2] }}" }
+        return null
+    }
+
+    /** The markers [commanderRewrites] leaves, read into objects and asks. */
+    private fun readCommanderQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        Regex("""^cmdpair-note (c\d+) (c\d+|background)$""").find(c)?.let { r ->
+            for (ph in listOf(r.groupValues[1], r.groupValues[2])) {
+                val card = m.cards[ph] ?: continue
+                val id = objectIdFor(card, ctx) ?: addObject(card, "me", false, ctx)
+                ctx.objects[id] = ctx.objects.getValue(id).copy(commander = true)
+            }
+            ctx.lastVerb = "have"; ctx.lastOwner = "me"; ctx.note("me")
+            ctx.notes += "Read as your two commanders (702.124a): each is a commander in its own right."; return true
+        }
+        Regex("""^cmdcast-note (me|opp)$""").find(c)?.let { r ->
+            val who = r.groupValues[1]
+            val id = ctx.objects.values.lastOrNull { it.commander && it.controller == who && it.zone == "command" }?.id ?: run {
+                var cid = "commander"; var k = 2; while (ctx.objects.containsKey(cid)) cid = "commander_" + (k++)
+                ctx.objects[cid] = ObjectSpec(cid, CardRef(name = "a commander"), controller = who, commander = true, zone = "command"); cid }
+            ctx.events += EventSpec("cast", player = who, obj = id)
+            ctx.lastActor = who; ctx.lastVerb = "cast"; ctx.lastMentioned = id; ctx.note(who)
+            ctx.notes += "The commander wasn't named; it is cast from the command zone, where the tax is counted (903.8)."; return true
+        }
+        // "Where does it go, and does the commander tax go up?": the question as one clause of the sentence.
+        if (!c.startsWith("cmd")) return commanderQuestionMarker(c, m, ctx)?.let { readCommanderQuestions(it, m, ctx) }
+        val r = Regex("""^cmdask-question (\w+)(?: (\S+))?(?: (\S+))?$""").find(c) ?: return null
+        val arg = r.groupValues[2]; val arg2 = r.groupValues[3]
+        fun text(s: String) { ctx.asks += EventSpec("ask", to = "text:$s") }
+        fun objFor(ph: String): String? = when {
+            ph.matches(Regex("""c\d+""")) -> m.cards[ph]?.let { objectIdFor(it, ctx) }
+            else -> ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.objects.values.lastOrNull { o -> o.card.name?.contains(ph.replace('_', ' '), true) == true }?.id
+        }
+        when (r.groupValues[1]) {
+            "answered" -> return true
+            "life" -> text(mtg.judge.situation.CommanderAsks.startingLife())
+            "type" -> text(mtg.judge.situation.CommanderAsks.whatCanBeACommander(arg.replace('_', ' ')))
+            "dies" -> text(mtg.judge.situation.CommanderAsks.diesTrigger())
+            "mutate" -> text(mtg.judge.situation.CommanderAsks.mutateOntoCommander())
+            "pairtax" -> text(mtg.judge.situation.CommanderAsks.pairTax(ctx.objects.values.filter { it.commander }.mapNotNull { it.card.name }.filter { it != "a commander" }))
+            "taxnow" -> { val id = ctx.objects.values.lastOrNull { it.commander }?.id ?: return false; ctx.asks += EventSpec("ask", obj = id, to = "cmd:taxNow") }
+            "is" -> { val id = objFor(arg) ?: return false; ctx.asks += EventSpec("ask", obj = id, to = "cmd:isCommander") }
+            "damage" -> { val id = ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.objects.values.lastOrNull { it.commander }?.id ?: return false; ctx.asks += EventSpec("ask", obj = id, to = "cmd:damageCounts") }
+            "nocommander" -> { val card = m.cards[arg] ?: return false; ctx.asks += EventSpec("ask", to = "cmd:noCommander", card = CardRef(name = card.display, oracleId = card.oracleId)) }
+            "identity" -> {
+                // The card asked about: a named one, or one described by its symbols ("a card with a hybrid {W/U} symbol").
+                val named = m.cards[arg]
+                val symbols = if (named != null) "" else mtg.judge.situation.CommanderAsks.symbolsDescribed(arg.replace('_', ' '))
+                // The commander: named in the question, described by its colors ("mono-blue"), or the one named earlier.
+                val cmdCard = m.cards[arg2]
+                val cmdId = cmdCard?.let { objectIdFor(it, ctx) ?: addObject(it, "me", false, ctx) }?.also { ctx.objects[it] = ctx.objects.getValue(it).copy(commander = true) }
+                    ?: ctx.objects.values.lastOrNull { it.commander && it.controller == "me" }?.id
+                val cmdColours = if (cmdCard == null && arg2.isNotEmpty()) mtg.judge.situation.CommanderAsks.coloursDescribed(arg2.replace('_', ' ')) ?: return false else null
+                ctx.asks += EventSpec("ask", player = "me", obj = if (cmdColours == null) cmdId else null, to = "cmd:identity:$symbols:${cmdColours ?: ""}",
+                    card = named?.let { CardRef(name = it.display, oracleId = it.oracleId) })
+                ctx.note("me")
+            }
+            else -> return null
+        }
+        return true
     }
 
     private fun describedFrom(count: String, pt: String, trailer: String, who: String, ctx: Ctx): List<String> {

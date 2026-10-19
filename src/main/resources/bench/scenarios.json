@@ -25084,7 +25084,7 @@
     "id": "cmd-fog-vs-commander-damage",
     "text": "i attack them with my commander and they have Fog, does it count as commander damage",
     "expect": [
-      "No: no damage was dealt by the commander, and only damage actually dealt counts as commander damage — prevented damage adds nothing (704.5v, 615.1)."
+      "No: no damage was dealt by the commander, and only damage actually dealt counts as commander damage — prevented damage adds nothing (704.6c, 615.1)."
     ]
   },
   {
@@ -41889,6 +41889,242 @@
     "cite": [
       "400.3",
       "110.2"
+    ]
+  },
+  {
+    "id": "cm1",
+    "text": "I have cast my commander from the command zone twice before. How much does it cost to cast it again?",
+    "expect": [
+      "The commander tax adds {4} to its mana cost (903.8)"
+    ]
+  },
+  {
+    "id": "cm2",
+    "text": "My commander is exiled by Swords to Plowshares. Can I put it in the command zone? Do I gain life?",
+    "expect": [
+      "a commander: exile → the command zone (its owner's choice, 903.9a).",
+      "You gain 2 life."
+    ],
+    "cite": [
+      "704.6d",
+      "903.9a"
+    ]
+  },
+  {
+    "id": "cm3",
+    "text": "I cast Ephemerate on my commander. Is it still my commander?",
+    "expect": [
+      "a commander is exiled and returns as a new object",
+      "Yes: a commander is still your commander"
+    ],
+    "notExpect": [
+      "exile → the command zone"
+    ],
+    "cite": [
+      "903.3"
+    ]
+  },
+  {
+    "id": "cm4",
+    "text": "My opponent takes control of my commander with Control Magic. Is it still my commander? Does its combat damage to me count as commander damage?",
+    "expect": [
+      "another player gaining control of it doesn't change that",
+      "combat damage it deals to you, its owner, counts against you too"
+    ],
+    "cite": [
+      "903.3",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "cm5",
+    "text": "My opponent's Clone copies my commander. Is the Clone a commander? Does its combat damage count as commander damage?",
+    "expect": [
+      "No: Clone (copying a commander) isn't a commander.",
+      "doesn't count toward commander damage"
+    ],
+    "cite": [
+      "903.3",
+      "707.2"
+    ]
+  },
+  {
+    "id": "cm6",
+    "text": "I have Thrasios and Tymna as partners. Thrasios has dealt 11 combat damage and Tymna has dealt 10 combat damage to my opponent. Does my opponent lose?",
+    "expect": [
+      "No: opponent is still in the game.",
+      "11 combat damage from Thrasios, Triton Hero and 10 from Tymna the Weaver",
+      "neither has reached 21"
+    ],
+    "cite": [
+      "903.10a",
+      "702.124d"
+    ]
+  },
+  {
+    "id": "cm7",
+    "text": "Can my deck include a card with a hybrid {W/U} mana symbol if my commander is mono-blue?",
+    "expect": [
+      "No: its {W/U} hybrid symbol is both white and blue",
+      "can't be in the deck"
+    ],
+    "cite": [
+      "903.4",
+      "903.5c"
+    ]
+  },
+  {
+    "id": "cm8",
+    "text": "My commander is Kozilek, Butcher of Truth. Can I play Sol Ring? Can I play a card with a Phyrexian red mana symbol?",
+    "expect": [
+      "Yes: Sol Ring has no colored mana symbols",
+      "No: its {R/P} Phyrexian symbol is red"
+    ],
+    "notExpect": [
+      "Sol Ring enters the battlefield"
+    ],
+    "cite": [
+      "903.4c",
+      "903.5c"
+    ]
+  },
+  {
+    "id": "cm9",
+    "text": "How much life do we start with in Commander?",
+    "expect": [
+      "40. In a Commander game each player's starting life total is 40"
+    ],
+    "cite": [
+      "103.4c",
+      "903.7"
+    ]
+  },
+  {
+    "id": "cm10",
+    "text": "My commander has a when this dies trigger and I move it to the command zone. Does the trigger still happen?",
+    "expect": [
+      "Yes. \"Dies\" means put into a graveyard from the battlefield"
+    ],
+    "cite": [
+      "700.4",
+      "903.9a",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "cm11",
+    "text": "My opponent casts Chaos Warp on my commander. If I put it in the command zone, does Chaos Warp still reveal the top card of my library?",
+    "expect": [
+      "Chaos Warp: its owner (you) reveals the top card of their library",
+      "your library → the command zone"
+    ],
+    "notExpect": [
+      "opponent reveals"
+    ],
+    "cite": [
+      "903.9b"
+    ]
+  },
+  {
+    "id": "cm12",
+    "text": "I cast my commander with Fist of Suns paying WUBRG. Does the commander tax still apply?",
+    "expect": [
+      "You pay {W}{U}{B}{R}{G} plus {2} for each earlier time"
+    ],
+    "cite": [
+      "118.9d",
+      "903.8"
+    ]
+  },
+  {
+    "id": "cm13",
+    "text": "I cast my commander from the command zone and it's countered. Where does it go, and does the commander tax go up?",
+    "expect": [
+      "a commander: your graveyard → the command zone",
+      "cast from the command zone once"
+    ],
+    "cite": [
+      "704.6d",
+      "903.8",
+      "601.2i"
+    ]
+  },
+  {
+    "id": "cm14",
+    "text": "My commander has dealt 21 damage to my opponent over several turns, but 5 of it was from Fling. Does my opponent lose?",
+    "expect": [
+      "16 counts toward the 21",
+      "No: opponent is still in the game."
+    ],
+    "notExpect": [
+      "opponent loses the game"
+    ],
+    "cite": [
+      "903.10a"
+    ]
+  },
+  {
+    "id": "cm15",
+    "text": "What does Command Tower produce if I have no commander?",
+    "expect": [
+      "the ability adds no mana (903.4f)"
+    ],
+    "cite": [
+      "903.4f"
+    ]
+  },
+  {
+    "id": "cm16",
+    "text": "Can I mutate a creature onto my commander? Is the merged permanent still my commander?",
+    "expect": [
+      "the merged permanent is your commander (903.3c)"
+    ],
+    "cite": [
+      "903.3c",
+      "903.9c"
+    ]
+  },
+  {
+    "id": "cm17",
+    "text": "My commanders are Wilson, Refined Grizzly and a Background. How does commander tax work for each?",
+    "expect": [
+      "each has its own commander tax"
+    ],
+    "cite": [
+      "702.124d",
+      "702.124k"
+    ]
+  },
+  {
+    "id": "cm18",
+    "text": "Can my commander be a planeswalker?",
+    "expect": [
+      "Only if the card says it can be your commander"
+    ],
+    "cite": [
+      "903.3a",
+      "903.3"
+    ]
+  },
+  {
+    "id": "cm19",
+    "text": "My opponent is at 5 life and has taken 15 commander damage from my 7/7 commander. I attack with it and they block with a 1/1. Do they lose?",
+    "expect": [
+      "No: opponent is still in the game at 5 life.",
+      "taken 15 combat damage from a 7/7 creature"
+    ],
+    "cite": [
+      "903.10a"
+    ]
+  },
+  {
+    "id": "cm20",
+    "text": "Thrasios, Triton Hero has dealt 21 combat damage to my opponent. Does my opponent lose?",
+    "expect": [
+      "opponent loses the game (commander damage)."
+    ],
+    "cite": [
+      "903.10a"
     ]
   }
 ]

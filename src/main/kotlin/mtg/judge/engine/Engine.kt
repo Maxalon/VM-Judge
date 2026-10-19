@@ -321,6 +321,7 @@ class Engine(val state: GameState) {
             state.outcomes += "No: ${card.name} can't be cast targeting ${tgt.describe}: it counters spells, and ${if (tgt.kind == StackKind.TRIGGERED) "a triggered" else "an activated"} ability isn't a spell (601.2c). The ability resolves as normal; only something that counters abilities (Stifle, Tale's End) could stop it."
             return null
         }
+        CommanderRules.cast(obj, fromZone)   // 903.8: this cast counts toward the next one's commander tax
         obj.zone = Zone.STACK
         obj.x = x
         obj.wasKicked = kicked
@@ -1853,6 +1854,7 @@ class Engine(val state: GameState) {
                     if (host == null || !host.isOnBattlefield() || !state.isCreature(host)) { obj.attachedTo = null; trace.step("${obj.name} is no longer attached to a creature, so it becomes unattached and stays on the battlefield (state-based action).", "704.3", "704.5n"); state.outcomes += "${obj.name} stays on the battlefield, unattached."; changed = true }
                 }
             }
+            if (CommanderRules.stateBasedAction(state, { z, o -> zoneName(z, o) }) { o, z -> moveRaw(o, z) }) changed = true   // 704.6d, 903.9a
             if (playerStateBasedActions()) changed = true   // 704.5a-c, 704.6c, 104.4a, 800.4a: see WinLoss.kt
         }
     }
@@ -3155,6 +3157,7 @@ class Engine(val state: GameState) {
                 trace.step("${target.describe} is countered: it's removed from the stack and none of its effects happen" +
                     (if (target.kind == StackKind.SPELL) "; $where" else "") + ".", "701.6a")
                 state.outcomes += "${target.describe} is countered."
+                if (target.kind == StackKind.SPELL) CommanderRules.arrived(state, target.source, target.source.zone, { z, o -> zoneName(z, o) }) { o, z -> moveRaw(o, z) }   // a countered commander (903.9)
                 // "where does it go?" / "can I reanimate it?": a countered card's zone is part of the answer when it isn't the graveyard.
                 if (target.kind == StackKind.SPELL && instead != null) state.outcomes += "${target.source.name}: the stack → ${when (instead) { "exile" -> "exile (${item.source.name} exiles what it counters, so it isn't in the graveyard to reanimate)"; "hand" -> "its owner's hand"; else -> "its owner's library" }}."
                 if (target.kind == StackKind.TRIGGERED) state.outcomes += "Countering ${target.source.name}'s trigger doesn't remove the ability: it triggers again the next time its event happens (603.2)."
@@ -3792,7 +3795,9 @@ class Engine(val state: GameState) {
                 // Text with its own subject ("You choose…", "That player discards…", "Its controller may…") is quoted as the instruction it is.
                 val targetSubject = Regex("""^target (?:player|opponent)\b""", RegexOption.IGNORE_CASE).containsMatchIn(effect.text)
                 val ownSubject = targetSubject || Regex("""^(you|that player|its controller|each|the|its|their|if|search|defending player|an opponent|any player)\b""", RegexOption.IGNORE_CASE).containsMatchIn(effect.text)
-                if (ownSubject) trace.step("${item.source.name}: \"${effect.text.replace("~", item.source.name).replaceFirstChar { it.uppercase() }.trimEnd('.')}.\" (${if (targetSubject) "the targeted player carries" else "${you.subject} ${you.v("carries", "carry")}"} this out; the details aren't tracked here.)", *effect.rules.toTypedArray())
+                // Chaos Warp: "Its owner reveals …", then "If it's a permanent card, they put it onto the battlefield": the target's owner acts.
+                val carrier = CommanderRules.ownerActing(state, effect.text, item, item.targets.firstOrNull()) ?: you
+                if (ownSubject) trace.step("${item.source.name}: \"${effect.text.replace("~", item.source.name).replaceFirstChar { it.uppercase() }.trimEnd('.')}.\" (${if (targetSubject) "the targeted player carries" else "${carrier.subject} ${carrier.v("carries", "carry")}"} this out; the details aren't tracked here.)", *effect.rules.toTypedArray())
                 else trace.step("${you.subject} ${thirdPerson(effectText(effect.text, item), you)}.", *effect.rules.toTypedArray())
                 val said = if (ownSubject || you.you) effect.text.replace("~", item.source.name).replaceFirstChar { it.uppercase() } else "${you.subject} ${thirdPerson(effectText(effect.text, item), you)}"
                 if (Regex("""(?i)\bsearch(?:es)? (?:your|their|his or her) library\b""").containsMatchIn(effect.text)) searchLimitNote(searcherOf(effect.text, item, you.id), "the card it looks for")
@@ -3806,7 +3811,7 @@ class Engine(val state: GameState) {
                     val sp = state.player(searcher)
                     trace.step("${sp.subject} ${sp.v("has", "have")} no basic land card left in ${sp.possessive} library, so the search finds nothing: a player searching for a card with stated qualities may fail to find one, and the library is still shuffled.", "701.19b", "701.19a")
                     state.outcomes += "${item.source.name}: ${sp.subject} ${sp.v("searches", "search")} for a basic land card and ${sp.v("finds", "find")} nothing (none left in ${sp.possessive} library); the library is shuffled anyway."
-                } else if (!effect.text.startsWith("pay {")) state.outcomes += "${item.source.name}: ${said.trimEnd('.')} (not tracked in detail)."
+                } else if (!effect.text.startsWith("pay {")) state.outcomes += "${item.source.name}: ${said.trimEnd('.').let { t -> if (carrier !== you && t.startsWith("Its owner ")) "its owner (${carrier.subject.replaceFirstChar { it.lowercase() }}) " + t.removePrefix("Its owner ") else t }} (not tracked in detail)."
             }
             is Effect.ForAll -> applyEffectMore(effect, item)
             is Effect.ExileSelfSpell ->
@@ -5343,17 +5348,9 @@ class Engine(val state: GameState) {
             // Whatever was attached to it, or it was attached to, is checked by state-based actions (704.5m/n).
         } else if (to == Zone.GRAVEYARD) onEvent(GameEvent.PutIntoGraveyard(obj))
     
-        // A commander that went to a graveyard or exile may be put into the command zone by its owner the next time
-        // state-based actions are checked (903.9a); one that would go to hand or library may go there instead (903.9b).
-        // Its owner always wants it back, so that is assumed and said.
-        if (obj.commander && to in setOf(Zone.GRAVEYARD, Zone.EXILE, Zone.HAND, Zone.LIBRARY) && obj.zone == to) {
-            val owner = state.player(obj.owner)
-            val rule = if (to == Zone.GRAVEYARD || to == Zone.EXILE) "903.9a" else "903.9b"
-            trace.step("${obj.name} is a commander: ${if (to == Zone.GRAVEYARD || to == Zone.EXILE) "since it was put into ${zoneName(to, obj)}, ${owner.possessive.replaceFirstChar { it.lowercase() }} owner may put it into the command zone the next time state-based actions are checked" else "instead of going to ${zoneName(to, obj)}, its owner may put it into the command zone"}. Assuming ${owner.subject.lowercase()} ${owner.v("does", "do")}. Casting it from there again costs {2} more for each time it has been cast from the command zone before.", rule, "903.8")
-            moveRaw(obj, Zone.COMMAND)
-            state.assumptions += "${obj.name} is put into the command zone rather than left in ${zoneName(to, obj)} ($rule); its owner could leave it there instead."
-            state.outcomes += "${obj.name}: ${zoneName(to, obj)} → the command zone (its owner's choice, $rule)."
-        }
+        // A commander put into a graveyard or exile may go to the command zone at the next state-based action check
+        // (903.9a); one that would go to hand or library may go there instead (903.9b). See CommanderRules.kt.
+        CommanderRules.arrived(state, obj, to, { z, o -> zoneName(z, o) }) { o, z -> moveRaw(o, z) }
 }
 
     private fun afterResolution() {

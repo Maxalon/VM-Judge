@@ -1919,7 +1919,11 @@ object OracleParser {
         if (Regex("""^its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.May(Effect.Narrated("search their library for a basic land card, put it onto the battlefield tapped, then shuffle", listOf("701.23a", "701.23e")), Who.CONTROLLER_OF_TARGET)
         // "Draw three cards, then put two cards from your hand on top of your library in any order."
         Regex("""^(.+?), then (.+)$""").matchEntire(s)?.let { m ->
-            val a = parseSentence(m.groupValues[1].trimEnd('.') + "."); val b = parseSentence(m.groupValues[2].replaceFirstChar { it.uppercase() })
+            val a = parseSentence(m.groupValues[1].trimEnd('.') + "."); val b = parseSentence(m.groupValues[2].replaceFirstChar { it.uppercase() }).let { b0 ->
+                // Chaos Warp: "The owner of target permanent shuffles it into their library, then reveals the top card of their
+                // library": the second verb is still the owner's, not the caster's.
+                if (b0 is Effect.Narrated && Regex("""^the owner of target """, RegexOption.IGNORE_CASE).containsMatchIn(m.groupValues[1]) && Regex("""^[a-z]+s\b""").containsMatchIn(m.groupValues[2]))
+                    b0.copy(text = "Its owner " + m.groupValues[2].trimEnd('.')) else b0 }
             if (!a.hasUnparsed() && !b.hasUnparsed()) return Effect.Seq(listOf(a, b))
         }
         Regex("""^exile (target .+?), then return (?:that card|it|them|that creature) to the battlefield under (your|its owner's|their owner's) control\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.Blink(target(m.groupValues[1]), ownersControl = !m.groupValues[2].equals("your", true)) }
