@@ -5187,7 +5187,7 @@
       "Rules text not modeled: Artifacts and creatures your opponents control"
     ],
     "cite": [
-      "614.1c"
+      "614.1d"
     ]
   },
   {
@@ -5211,7 +5211,7 @@
       "Rules text not modeled: Creatures your opponents control enter tapped"
     ],
     "cite": [
-      "614.1c"
+      "614.1d"
     ]
   },
   {
@@ -42321,6 +42321,251 @@
     ],
     "cite": [
       "704.5q"
+    ]
+  },
+  {
+    "id": "tr1",
+    "text": "I cast Hordeling Outburst making three Goblin tokens with Impact Tremors on the battlefield. How much damage does my opponent take?",
+    "expect": [
+      "opponent takes 3 damage in all"
+    ],
+    "cite": [
+      "603.2c",
+      "603.6a"
+    ]
+  },
+  {
+    "id": "tr2",
+    "text": "I control Mentor of the Meek and create three 1/1 tokens at once. How many times does Mentor trigger?",
+    "expect": [
+      "Mentor of the Meek triggers 3 times: once for each one that entered"
+    ],
+    "notExpect": [
+      "died"
+    ],
+    "cite": [
+      "603.2c"
+    ]
+  },
+  {
+    "id": "tr3",
+    "text": "I control Vengeful Townsfolk and two Grizzly Bears. My opponent casts Wrath of God. How many times does Vengeful Townsfolk trigger?",
+    "expect": [
+      "Vengeful Townsfolk triggers once: its ability says \"one or more\""
+    ],
+    "notExpect": [
+      "triggers 2 times"
+    ],
+    "cite": [
+      "603.2c"
+    ]
+  },
+  {
+    "id": "tr4",
+    "text": "It's my upkeep. I have 40 life and control Felidar Sovereign. Its trigger goes on the stack and in response my opponent casts Lightning Bolt targeting me. Do I win?",
+    "expect": [
+      "No: You haven't won",
+      "40 or more life"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "tr5",
+    "text": "I control Ajani's Pridemate and cast Lightning Helix targeting my opponent. How many counters does Pridemate get?",
+    "expect": [
+      "Ajani's Pridemate has 1 +1/+1 counter."
+    ],
+    "notExpect": [
+      "2 +1/+1 counters"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "tr6",
+    "text": "I control two Soul Wardens. I cast Grizzly Bears. How much life do I gain?",
+    "expect": [
+      "You gain 2 life in all."
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "tr7",
+    "text": "I control Panharmonicon and Torpor Orb and cast Mulldrifter. How many cards do I draw?",
+    "expect": [
+      "You draw 0 cards in all.",
+      "doesn't trigger any abilities (Torpor Orb)"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "tr8",
+    "text": "I forgot my Dark Confidant trigger and we noticed after I drew for the turn. What happens?",
+    "expect": [
+      "Dark Confidant's ability triggered at the beginning of your upkeep whether or not anyone remembered it",
+      "tournament rules"
+    ],
+    "cite": [
+      "603.2",
+      "603.3",
+      "100.6"
+    ]
+  },
+  {
+    "id": "tr9",
+    "text": "I activate Sneak Attack putting Grizzly Bears onto the battlefield. Then I cast Ephemerate targeting Grizzly Bears. Is Grizzly Bears sacrificed at the end step?",
+    "expect": [
+      "No: Grizzly Bears left the battlefield and came back, so it is a new object"
+    ],
+    "notExpect": [
+      "Grizzly Bears is sacrificed"
+    ],
+    "cite": [
+      "603.7c",
+      "400.7"
+    ]
+  },
+  {
+    "id": "tr10",
+    "text": "I cast Sparktongue Dragon and pay {2}{R} for its trigger. Can my opponent respond before the damage is dealt?",
+    "expect": [
+      "Yes: \"When you do, it deals 3 damage to any target\" is a reflexive triggered ability",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "603.12",
+      "603.3d"
+    ]
+  },
+  {
+    "id": "tr11",
+    "text": "My opponent casts Stifle on my Dark Confidant upkeep trigger. Do I still draw for the turn?",
+    "expect": [
+      "Dark Confidant's triggered ability is countered.",
+      "Yes: you still draw for the turn."
+    ],
+    "cite": [
+      "504.1",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "tr12",
+    "text": "My Forest has Wild Growth attached. I tap the Forest for mana. Can my opponent respond before I get the extra mana?",
+    "expect": [
+      "Forest's mana ability: add {G}{G}.",
+      "No: Wild Growth's ability triggers from a mana ability"
+    ],
+    "cite": [
+      "605.1b",
+      "605.4a"
+    ]
+  },
+  {
+    "id": "tr13",
+    "text": "I control Fiend Hunter, which exiled my opponent's Grizzly Bears. My opponent casts Clone copying Fiend Hunter and exiles my Llanowar Elves. Then the Clone dies. Does Grizzly Bears come back?",
+    "expect": [
+      "Llanowar Elves: exile → the battlefield (your control), returned by Clone.",
+      "No: Grizzly Bears stays in exile."
+    ],
+    "notExpect": [
+      "Grizzly Bears: exile → the battlefield"
+    ],
+    "cite": [
+      "607.2a",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "tr14",
+    "text": "My opponent controls Blind Obedience. I cast Thragtusk. Does its enters trigger still happen?",
+    "expect": [
+      "You gain 5 life.",
+      "Yes: entering tapped only changes how Thragtusk enters"
+    ],
+    "cite": [
+      "603.6a",
+      "614.12"
+    ]
+  },
+  {
+    "id": "tr15",
+    "text": "I control Dandan and an Island. My opponent casts Stone Rain on my Island. What happens to Dandan?",
+    "expect": [
+      "Dandân is sacrificed."
+    ],
+    "cite": [
+      "603.8"
+    ]
+  },
+  {
+    "id": "tr16",
+    "text": "My Scroll Thief has double strike and attacks unblocked. How many cards do I draw?",
+    "expect": [
+      "You draw 2 cards in all."
+    ],
+    "cite": [
+      "702.4b",
+      "603.2"
+    ]
+  },
+  {
+    "id": "tr17",
+    "text": "My opponent controls Blood Artist. I control Leyline of Sanctity. My opponent's Grizzly Bears dies. Can Blood Artist's trigger target me?",
+    "expect": [
+      "No: you have hexproof (Leyline of Sanctity)",
+      "opponent loses 1 life."
+    ],
+    "notExpect": [
+      "You lose 1 life"
+    ],
+    "cite": [
+      "603.3d",
+      "702.11c"
+    ]
+  },
+  {
+    "id": "tr18",
+    "text": "My opponent casts Spell Queller, exiling my Lightning Bolt. Later Spell Queller dies. Can I cast Lightning Bolt for free? Do I have to?",
+    "expect": [
+      "Yes: when Spell Queller left the battlefield",
+      "No: it says \"may\""
+    ],
+    "cite": [
+      "607.2a",
+      "603.5"
+    ]
+  },
+  {
+    "id": "tr19",
+    "text": "My Thalia's Lancers enters while I control two Panharmonicons. How many times does it trigger?",
+    "expect": [
+      "Thalia's Lancers triggers 3 times"
+    ],
+    "notExpect": [
+      "triggers 2 times"
+    ],
+    "cite": [
+      "603.2d"
+    ]
+  },
+  {
+    "id": "tr20",
+    "text": "I control Guttersnipe and cast Lightning Bolt targeting my opponent. My opponent casts Counterspell on Lightning Bolt. Does Guttersnipe still deal 2 damage?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "Yes: Guttersnipe's ability triggered when Lightning Bolt was cast"
+    ],
+    "cite": [
+      "601.2i",
+      "603.3"
     ]
   }
 ]

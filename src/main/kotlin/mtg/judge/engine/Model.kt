@@ -81,8 +81,9 @@ sealed interface Trigger {
     data class ThisDealsDamage(val combatOnly: Boolean, val toPlayer: Boolean?) : Trigger
     /** Ophidian Eye, Curiosity: "Whenever enchanted creature deals damage to an opponent (a player)". */
     data class EnchantedDealsDamage(val combatOnly: Boolean, val toOpponent: Boolean) : Trigger
-    /** "Whenever a [filter] enters (the battlefield under your control)" incl. landfall. */
-    data class PermanentEnters(val filter: ObjFilter, val other: Boolean) : Trigger
+    /** "Whenever a [filter] enters (the battlefield under your control)" incl. landfall. [oneOrMore]: "whenever one or more
+     *  tokens you control enter" triggers once for a batch entering together, not once each (603.2c). */
+    data class PermanentEnters(val filter: ObjFilter, val other: Boolean, val oneOrMore: Boolean = false) : Trigger
     /** "Whenever you attack" / "Whenever you attack with one or more creatures". */
     data object YouAttack : Trigger
     /** Exalted: "Whenever a creature you control attacks alone". */
@@ -93,8 +94,12 @@ sealed interface Trigger {
     data object YouGainLife : Trigger
     /** Exquisite Blood: "Whenever an opponent loses life" (OPPONENT) / "Whenever a player loses life" (ANY_PLAYER). */
     data class PlayerLosesLife(val who: Who) : Trigger
-    /** "Whenever a [filter] dies". */
-    data class PermanentDies(val filter: ObjFilter, val other: Boolean) : Trigger
+    /** "Whenever a [filter] dies". [oneOrMore]: "whenever one or more other creatures you control die" (603.2c). */
+    data class PermanentDies(val filter: ObjFilter, val other: Boolean, val oneOrMore: Boolean = false) : Trigger
+    /** The trigger of a reflexive triggered ability ("When you do, ..."), created while another ability resolves (603.12). */
+    data object Reflexive : Trigger
+    /** Dandân: "When you control no Islands, sacrifice ~" — a state trigger (603.8), checked whenever the game state is. */
+    data class YouControlNo(val filter: ObjFilter, val other: Boolean) : Trigger
     /** "Whenever you draw a card". */
     data object YouDraw : Trigger
     /** "Whenever one or more land cards are put into your graveyard from anywhere" (The Gitrog Monster). */
@@ -411,7 +416,9 @@ sealed interface Effect {
     /** "Destroy all [filter]" / "Exile all …" / "~ deals N damage to each [filter]". */
     data class ForAll(val filter: ObjFilter, val action: String, val amount: Int = 0, val noRegen: Boolean = false) : Effect
     /** "You may pay [cost]. If you do, [effect]." / "You may [do X]. If you do, [effect]." */
-    data class IfYouDo(val choice: Effect, val then: Effect, val cost: String?) : Effect
+    data class IfYouDo(val choice: Effect, val then: Effect, val cost: String?,
+        /** "You may pay {2}{R}. When you do, ..." (Sparktongue Dragon): [then] is a reflexive trigger of its own (603.12), worded [reflexiveText]. */
+        val reflexive: Boolean = false, val reflexiveText: String? = null) : Effect
     /** Rite of Replication: "If this spell was kicked, create five of those tokens instead" — one effect or the other (702.33). */
     data class IfKicked(val then: Effect, val otherwise: Effect) : Effect
     /** "If you control five or more Mountains, …" — the condition is checked as the effect happens. */
@@ -446,7 +453,8 @@ sealed interface Effect {
         is Tap -> listOf(target); is Untap -> listOf(target); is TapOrUntap -> listOf(target); is Backup -> listOf(target); is Mentor -> listOf(target); is GainLifeThatMuch -> emptyList(); is Pump -> listOf(target); is PumpSameName -> listOf(target); is GainKeywords -> listOf(target); is ReflectPrevented -> emptyList()
         is ExtractNamed -> listOf(target); is SpellCantBeCountered -> listOf(target); is Transmogrify -> listOf(target); is ExileIfMvAtMostX -> listOf(target); is ReturnExiledCard -> emptyList(); is ShuffleGraveyardIntoLibrary -> emptyList(); is PutCounters -> listOfNotNull(target); is RemoveAllCounters -> listOf(target); is PutOnBottom -> listOf(target); is Attach -> listOf(target); is CreateShield -> listOfNotNull(target); is Regenerate -> listOfNotNull(target); is GainControl -> listOf(target); is Bounce -> listOfNotNull(target); is NarratedTargeted -> listOf(target); is GainLifeEqualToPower -> emptyList(); is CreateToken -> emptyList(); is CreateTokenCopy -> listOfNotNull(target); is SacrificeEach -> emptyList(); is SacrificeSource -> emptyList(); is SacrificeEnchanted -> emptyList(); is Mill -> emptyList(); is ExileGraveyard -> emptyList(); is DiscardChosen -> emptyList(); is BounceChosen -> emptyList(); is LivingWeapon -> emptyList(); is DiscardNamed -> emptyList(); is CounterThatSpell -> emptyList(); is AddManaInstead -> emptyList(); is AddManaPer -> emptyList(); is AddManaDevotion -> emptyList(); is GainLifePerSpellThisTurn -> emptyList(); is WinIfDevotionCoversLibrary -> emptyList(); is CopySpell -> listOf(target); is StormCopy -> emptyList(); is DamageDivided -> listOf(target); is Monstrosity -> emptyList(); is MoveSourceCounters -> listOf(target); is ChangeTarget -> listOf(target); is Evolve -> emptyList(); is PreventCombatToAndBy -> listOf(target); is WinIfCastBefore -> emptyList(); is SacrificeThatMany -> emptyList(); is PutFromHand -> listOfNotNull(target); is DamagePlayer -> emptyList(); is LoseLifeThatMuch -> emptyList(); is BecomeMonarch -> emptyList(); is ReturnSelfFromGraveyard -> emptyList(); is AnimateSelf -> emptyList(); is SaddleSelf -> emptyList(); is PumpSelfCount -> emptyList(); is TapAttached -> emptyList(); is DamageThatMuch -> listOf(target); is PumpAllCount -> emptyList(); is ShuffleIntoLibrary -> listOf(target); is PumpCausing -> emptyList(); is DamageCausing -> emptyList(); is DoublePower -> listOf(target); is PumpCount -> listOf(target); is LoseHalfLife -> emptyList(); is ExileUntilLeaves -> listOf(target); is SacrificeTarget -> listOf(target); is GainLifeEqualTo -> listOf(target); is FreezeUntap -> listOf(target); is RemoveCounters -> listOf(target); is Proliferate -> emptyList(); is CantLoseThisTurn -> emptyList(); is DamageLifeFloor -> emptyList(); is ExtraLandThisTurn -> emptyList(); is CoinFlip -> (onWin?.targets() ?: emptyList()) + (onLose?.targets() ?: emptyList()); is CantCastThisTurn -> emptyList(); is ForAllTargeted -> listOf(target); is SetBasePtTarget -> listOf(target); is LoseLifeEqual -> emptyList(); is DamageThatMuchTo -> emptyList()
         is May -> effect.targets(); is UnlessPays -> effect.targets(); is Seq -> effects.flatMap { it.targets() }.distinct()   // "It gets…" refers back to the same target
-        is IfYouDo -> choice.targets() + then.targets(); is IfKicked -> otherwise.targets()
+        is IfYouDo -> choice.targets() + (if (reflexive) emptyList() else then.targets());   // a reflexive trigger chooses its own targets later (603.12)
+        is IfKicked -> otherwise.targets()
         is IfCondition -> then.targets()
         is Repeat -> body.targets()
         is LoseLifeUnlessSacOrDiscard -> emptyList()
@@ -687,7 +695,9 @@ sealed interface Replacement {
     /** "If a source (you control) would deal damage …, it deals double that damage instead." */
     data class DamageMultiplier(val factor: Int, val sourceControl: Who?) : Replacement
     /** Mana Reflection / Nyxbloom Ancient ("produces twice/three times as much"), Kinnan ("add one mana of any type that permanent produced"). */
-    data class ManaBoost(val factor: Int, val plus: Int, val nonlandOnly: Boolean, val trigger: Boolean, val anyPlayer: Boolean = false, val landOnly: Boolean = false) : Replacement
+    data class ManaBoost(val factor: Int, val plus: Int, val nonlandOnly: Boolean, val trigger: Boolean, val anyPlayer: Boolean = false, val landOnly: Boolean = false,
+        /** Wild Growth: only the land it enchants, and [adds] is the mana it adds ("an additional {G}") rather than more of the same. */
+        val enchantedOnly: Boolean = false, val adds: String? = null) : Replacement
     /** "If you would gain life, you gain twice that much life instead." */
     data class LifeGainMultiplier(val factor: Int, val anyPlayer: Boolean = false) : Replacement
     /** "If an effect would place one or more counters on a permanent you control, it places twice that many instead." (Doubling Season) */

@@ -404,7 +404,17 @@ object OracleParser {
             val f = parseFilter(pw?.groupValues?.get(1) ?: m.groupValues[2], Kind.PERMANENT).let { f0 -> if (pw == null) f0 else if (pw.groupValues[3].equals("less", true)) f0.copy(maxPower = pw.groupValues[2].toInt(), raw = m.groupValues[2]) else f0.copy(minPower = pw.groupValues[2].toInt(), raw = m.groupValues[2]) }
                 .let { if (underYou && it.controller == null) it.copy(controller = Who.YOU) else it }
             if (!f.verifiable) return Trigger.Unknown(c)
-            return Trigger.PermanentEnters(f, m.groupValues[1].trim().equals("another", true))
+            return Trigger.PermanentEnters(f, m.groupValues[1].trim().equals("another", true), oneOrMore = m.groupValues[1].trim().equals("one or more", true))
+        }
+        // Vengeful Townsfolk: "one or more other creatures you control die" — one trigger for the creatures dying together (603.2c).
+        Regex("""^one or more (other )?(.+?) die$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
+            val f = parseFilter(m.groupValues[2].split(" ").joinToString(" ") { w -> singular(w) }, Kind.CREATURE)
+            if (f.verifiable) return Trigger.PermanentDies(f, m.groupValues[1].isNotEmpty(), oneOrMore = true)
+        }
+        // Dandân: "you control no Islands" — a state trigger (603.8).
+        Regex("""^you control no (other )?(.+?)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
+            val f = parseFilter(m.groupValues[2].split(" ").joinToString(" ") { w -> singular(w) }, Kind.PERMANENT).let { if (it.controller == null) it.copy(controller = Who.YOU) else it }
+            if (f.verifiable) return Trigger.YouControlNo(f, m.groupValues[1].isNotEmpty())
         }
         // "~ or another creature dies" (Blood Artist): any creature, this one included.
         Regex("""^~ or another (.+?) dies$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
@@ -631,6 +641,10 @@ object OracleParser {
         // Mana Flare: "Whenever a player taps a land for mana, that player adds one additional mana of any type that land produced."
         Regex("""^whenever a player taps a land for mana, that player adds one (?:additional )?mana of any type that land produced\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let {
             return StaticEffect.Replace(Replacement.ManaBoost(1, 1, false, trigger = true, anyPlayer = true, landOnly = true))
+        }
+        // Wild Growth, Utopia Sprawl: "Whenever enchanted land is tapped for mana, its controller adds an additional {G}." A triggered mana ability (605.1b).
+        Regex("""^whenever enchanted land is tapped for mana, its controller adds an additional ((?:\{[WUBRGC]\})+)\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            return StaticEffect.Replace(Replacement.ManaBoost(1, 0, false, trigger = true, anyPlayer = true, landOnly = true, enchantedOnly = true, adds = m.groupValues[1].uppercase()))
         }
         // Trinisphere.
         Regex("""^as long as ~ is untapped, each spell that would cost less than (three|\d+) mana to cast costs (?:three|\d+) mana to cast\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -1175,6 +1189,14 @@ object OracleParser {
                     val choice = cur.removePrefix("You may ").removePrefix("you may ").trimEnd('.')
                     val cost = payRe.matchEntire(choice)?.groupValues?.get(1)
                     out += Effect.IfYouDo(if (cost != null) Effect.Narrated("pay $cost", listOf("608.2g")) else parseSentence(choice.replaceFirstChar { it.uppercase() }), parseSentence(next.removePrefix("If you do, ").removePrefix("if you do, ").replaceFirstChar { it.uppercase() }), cost)
+                    i += 2
+                } else if (cur.startsWith("You may ", true) && next != null && next.startsWith("When you do, ", true)) {
+                    // Sparktongue Dragon: "You may pay {2}{R}. When you do, it deals 3 damage to any target." The second
+                    // sentence is a reflexive triggered ability, put on the stack on its own once the choice is made (603.12).
+                    val choice = cur.removePrefix("You may ").removePrefix("you may ").trimEnd('.')
+                    val cost = payRe.matchEntire(choice)?.groupValues?.get(1)
+                    val then = next.substring("When you do, ".length).replace(Regex("""^(?:it|this creature|this permanent) (?=deals|gets|gains)""", RegexOption.IGNORE_CASE), "~ ").replaceFirstChar { it.uppercase() }
+                    out += Effect.IfYouDo(if (cost != null) Effect.Narrated("pay $cost", listOf("608.2g")) else parseSentence(choice.replaceFirstChar { it.uppercase() }), parseSentence(then), cost, reflexive = true, reflexiveText = next.trimEnd('.'))
                     i += 2
                 } else if (Regex("""^Spell mastery — If there are two or more instant and/or sorcery cards in your graveyard, ~ deals (\d+) damage instead\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.lastOrNull() is Effect.Damage) {
                     val n = Regex("""(\d+) damage""").find(cur)!!.groupValues[1].toInt()

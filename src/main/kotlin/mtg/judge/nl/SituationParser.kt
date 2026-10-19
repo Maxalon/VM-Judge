@@ -2107,6 +2107,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = counterRewrites(t2, m, ctx)
+        t2 = triggerRewrites(t2, m, ctx)
         t2 = lkiRewrites(t2, m, ctx)
         t2 = targetRewrites(t2, m, ctx)
         t2 = zoneRewrites(t2, m, ctx)
@@ -5990,6 +5991,112 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** The markers [stackRewrites] leaves: stack, priority and timing questions, answered by StackAsks in the judge. */
+    // ---- triggered abilities in depth (603, 605.1b, 607): see situation/TriggerAsks.kt ----
+
+    /** Table talk about triggers, put in words the clause reader knows or turned into this track's question markers. */
+    private fun triggerRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('?', '.', '!').trim()
+        val ci = RegexOption.IGNORE_CASE
+        val who = """(?:i|we|they|he|she|my opponent|the opponent)"""
+        // "My opponent casts Stifle on my Dark Confidant upkeep trigger": the upkeep, the trigger, then the spell aimed at it.
+        Regex("""^($who casts? c\d+) (?:on|targeting|at|against) (my|their|his|her|the) (c\d+)(?:'s)? upkeep trigger(?:ed ability)?$""", ci).find(q)?.let { r ->
+            return "it's ${if (r.groupValues[2].lowercase() == "my") "my" else "their"} upkeep and ${r.groupValues[3]} triggers and ${r.groupValues[1]} targeting the trigger"
+        }
+        // "I forgot my Dark Confidant trigger and we noticed after I drew for the turn": a trigger nobody put on the stack.
+        Regex("""^$who (?:forgot|forget|missed|miss|didn't remember|did not remember|never put)(?: about| to put| to resolve| to do)? (?:my|their|his|her|the) (c\d+)(?:'s)? (?:\w+ )?trigger(?:ed ability)?\b.*$""", ci).find(q)?.let { r -> return "missedtrigger-question ${r.groupValues[1]}" }
+        // "Is Grizzly Bears sacrificed at the end step?" after Sneak Attack and a blink: what the delayed trigger refers to.
+        Regex("""^(?:is|will|would|does) (?:my |the |their )?(c\d+|it) (?:still )?(?:be |get |gets )?sacrificed(?: at (?:the )?(?:beginning of (?:the )?)?(?:next )?(?:end step|end of (?:the )?turn))?$""", ci).find(q)?.let { r ->
+            if (ctx.events.none { it.verb == "activate" || it.verb == "cast" }) return@let
+            return "delayedsac-question ${r.groupValues[1]}"
+        }
+        // "Can my opponent respond before I get the extra mana?" after tapping an enchanted land: a triggered mana ability.
+        if (Regex("""^can (?:my opponent|the opponent|they|he|she|anyone|anybody) respond (?:before|in between|between|to)\b.*\bmana\b.*$""", ci).matches(q) && ctx.events.any { it.verb == "activate" && it.to == "mana" })
+            return "manatrigger-question"
+        // "Can my opponent respond before the damage is dealt?" after a "when you do" payment: the reflexive trigger.
+        if (Regex("""^can (?:my opponent|the opponent|they|he|she|anyone|anybody) respond (?:before|to) (?:the )?(?:damage(?: is dealt| happens)?|reflexive trigger|second trigger|"?when you do"? trigger)$""", ci).matches(q) && ctx.events.any { it.verb == "cast" || it.verb == "enter" })
+            return "reflexive-question"
+        // "Can I cast Lightning Bolt for free?" once Spell Queller has left: its linked leave ability, not a cast now.
+        Regex("""^can (?:i|we|they|he|she|my opponent) (?:still |then |now )?cast (?:my |the |their |his |her )?(c\d+|it|that spell|the spell) (?:for free|without paying (?:its|the) mana cost)(?: now| then| later| afterward| afterwards)?$""", ci).find(q)?.let { r ->
+            if (ctx.objects.values.none { it.card.name == "Spell Queller" }) return@let
+            return "freecast-question ${r.groupValues[1]}"
+        }
+        if (Regex("""^(?:do|must) (?:i|we|they) (?:have to|need to)?(?: cast it| do it| cast that| cast the spell)?$|^is (?:it|that|casting it) (?:optional|mandatory|required)$""", ci).matches(q) && ctx.asks.lastOrNull()?.to == "tr:freeCast")
+            return "freecastmust-question"
+        // "Does Guttersnipe still deal 2 damage?" after the spell it triggered on was countered.
+        Regex("""^(?:does|will|would|did) (?:my |their |the )?(c\d+)(?:'s (?:trigger|ability|triggered ability))? (?:still )?(?:trigger|deal \d+ damage|deal (?:its )?damage|happen|resolve|work)(?: to (?:them|him|her|my opponent|the opponent|me|each opponent))?$""", ci).find(q)?.let { r ->
+            val o = m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) }?.let { ctx.objects[it] } ?: return@let
+            if (o.zone != "battlefield" || ctx.events.none { e -> e.verb == "cast" && e.targets.any { it.endsWith(":spell") } }) return@let
+            return "casttrig-question ${r.groupValues[1]}"
+        }
+        // "Does its enters trigger still happen?" after it entered tapped.
+        Regex("""^(?:does|will|would|did) (?:its|the|(?:my |their |the )?(c\d+)'s) (?:"?when (?:this|it|~|this creature) enters"?|enters(?:-the-battlefield)?|etb|enter) (?:trigger|ability|triggered ability) (?:still )?(?:trigger|happen|work|go on the stack|resolve)$""", ci).find(q)?.let { r ->
+            if (ctx.events.none { it.verb == "cast" || it.verb == "enter" } && !Regex("""\benters? tapped\b""").containsMatchIn(ctx.fullText.lowercase())) return@let
+            return "etbstill-question ${r.groupValues[1].ifEmpty { "it" }}"
+        }
+        // "Can Blood Artist's trigger target me?"
+        Regex("""^can (?:my opponent's |their |the |his |her |my )?(c\d+)(?:'s)? (?:trigger|ability|triggered ability) (?:still )?target (me|us|them|him|her|my opponent)$""", ci).find(q)?.let { r -> return "trigtarget-question ${r.groupValues[1]} ${if (r.groupValues[2] in setOf("me", "us")) "mine" else "theirs"}" }
+        // "Do I still draw for the turn?" after the upkeep trigger was countered.
+        Regex("""^(?:do|will|would|did) ($who) still (?:get to )?draw (?:a card )?for (?:the|my|their|his|her) turn$""", ci).find(q)?.let { r ->
+            if (ctx.events.none { e -> e.verb == "cast" && e.targets.any { it.endsWith(":trigger") } }) return@let
+            return "drawstill-question ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "mine" else "theirs"}"
+        }
+        // "Does Grizzly Bears come back?" with two exilers of the same name about (Fiend Hunter and a Clone of it): linked abilities.
+        Regex("""^(?:does|will|would|did) (?:my |their |the |his |her )?(c\d+) (?:come back|return|get returned)(?: to the battlefield)?$""", ci).find(q)?.let { r ->
+            if (ctx.events.none { it.verb == "quelled" } || ctx.events.none { it.verb == "cast" && it.to?.startsWith("copy:") == true }) return@let
+            return "linked-question ${r.groupValues[1]}"
+        }
+        // "How many times does it trigger?": said before the generic readers split it at "does".
+        Regex("""^how many times (?:does|did|will|would) (?:my |their |the |his |her )?(c\d+|it|that|its ability|the ability|that ability)(?:'s (?:ability|trigger))? trigger$""", ci).find(q)?.let { r ->
+            return "trigcount-question ${r.groupValues[1].takeIf { it.startsWith("c") } ?: "it"}"
+        }
+        // "I control Fiend Hunter, which exiled my opponent's Grizzly Bears": the exiler on the battlefield, holding that card.
+        Regex("""^(?:i|we) (?:control|have) (c\d+),? (?:which|that) (?:exiled|is holding|has exiled) (my opponent's|their|his|her|the opponent's|my) (c\d+)$""", ci).find(q)?.let { r ->
+            return "exiledwith-question ${r.groupValues[1]} ${r.groupValues[3]} ${if (r.groupValues[2].lowercase() == "my") "mine" else "theirs"}"
+        }
+        // "My opponent casts Clone copying Fiend Hunter and exiles my Llanowar Elves": the target of the copied enters ability.
+        Regex("""^($who casts? c\d+ copying (?:my |their |the |his |her )?c\d+),? (?:and )?(?:exiles?|exiling|targeting|targets) ((?:my|their|his|her|the) c\d+)$""", ci).find(q)?.let { r -> return "${r.groupValues[1]} targeting ${r.groupValues[2]}" }
+        return t
+    }
+
+    /** This track's question markers (see [triggerRewrites]) and "how many times does it trigger?". */
+    private fun readTriggerQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        fun cardRef(ph: String) = m.cards[ph]?.let { CardRef(name = it.display, oracleId = it.oracleId) }
+        fun objOf(ph: String): String? = if (ph.startsWith("c")) m.cards[ph]?.let { objectIdFor(it, ctx) } else ctx.lastMentioned?.takeIf { it in ctx.objects }
+        Regex("""^missedtrigger-question (c\d+)$""").find(c)?.let { r -> ctx.asks += EventSpec("ask", to = "tr:missed", card = cardRef(r.groupValues[1]) ?: return@let); return true }
+        Regex("""^delayedsac-question (c\d+|it)$""").find(c)?.let { r -> ctx.asks += EventSpec("ask", to = "tr:delayedSac", obj = objOf(r.groupValues[1]) ?: return@let); return true }
+        if (c == "manatrigger-question") { ctx.asks += EventSpec("ask", to = "tr:manaTrigger"); return true }
+        if (c == "reflexive-question") { ctx.asks += EventSpec("ask", to = "tr:reflexive"); return true }
+        Regex("""^freecast-question (\S+)$""").find(c)?.let { r ->
+            ctx.asks += EventSpec("ask", player = "me", to = "tr:freeCast", card = if (r.groupValues[1].startsWith("c")) cardRef(r.groupValues[1]) else null); return true
+        }
+        if (c == "freecastmust-question") { ctx.asks += EventSpec("ask", player = "me", to = "tr:freeCastMust"); return true }
+        Regex("""^casttrig-question (c\d+)$""").find(c)?.let { r -> ctx.asks += EventSpec("ask", to = "tr:castTrigger", obj = objOf(r.groupValues[1]) ?: return@let); return true }
+        Regex("""^etbstill-question (c\d+|it)$""").find(c)?.let { r -> ctx.asks += EventSpec("ask", to = "tr:etbStill", obj = objOf(r.groupValues[1]) ?: ctx.objects.keys.lastOrNull() ?: return@let); return true }
+        fun side(w: String) = if (w == "mine") "me" else pronounPlayer(ctx, "their")
+        Regex("""^trigtarget-question (c\d+) (mine|theirs)$""").find(c)?.let { r -> ctx.asks += EventSpec("ask", to = "tr:canTarget", obj = objOf(r.groupValues[1]) ?: return@let, player = side(r.groupValues[2])); return true }
+        Regex("""^drawstill-question (mine|theirs)$""").find(c)?.let { r -> ctx.asks += EventSpec("ask", to = "tr:drawStill", player = side(r.groupValues[2 - 1])); return true }
+        Regex("""^exiledwith-question (c\d+) (c\d+) (mine|theirs)$""").find(c)?.let { r ->
+            val ex = m.cards[r.groupValues[1]] ?: return@let; val held = m.cards[r.groupValues[2]] ?: return@let
+            val owner = if (r.groupValues[3] == "mine") "me" else pronounPlayer(ctx, "their")
+            val exId = objectIdFor(ex, ctx) ?: addObject(ex, "me", false, ctx)
+            val heldId = addObject(held, owner, false, ctx, zone = "exile", allowDuplicate = true)
+            ctx.events += EventSpec("quelled", obj = exId, targets = listOf(heldId)); ctx.note(owner)
+            ctx.notes += "${ex.display} is read as on the battlefield with ${held.display} exiled by its enters ability."; ctx.lastMentioned = exId; return true
+        }
+        // "How many times does Mentor of the Meek trigger?" / "how many times does it trigger?": counted once everything has resolved.
+        Regex("""^linked-question (c\d+)$""").find(c)?.let { r ->
+            val held = m.cards[r.groupValues[1]] ?: return@let
+            val id = ctx.events.filter { it.verb == "quelled" }.flatMap { it.targets }.firstOrNull { ctx.objects[it]?.card?.name == held.display } ?: objectIdFor(held, ctx) ?: return@let
+            ctx.asks += EventSpec("ask", to = "tr:linked", obj = id); return true
+        }
+        Regex("""^trigcount-question (c\d+|it)$""").find(c)?.let { r ->
+            val id = objOf(r.groupValues[1]) ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "tr:triggerCount"); return true
+        }
+        return null
+    }
+
     private fun readStackQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         Regex("""^floatmana-question (me|opp) (\d+)(?: (\S+))?$""").find(clause0)?.let { r ->
             val who = r.groupValues[1]
@@ -6382,6 +6489,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readCounterQuestions(clause0, m, ctx)?.let { return it }
+        readTriggerQuestions(clause0, m, ctx)?.let { return it }
         readLkiQuestions(clause0, m, ctx)?.let { return it }
         readTargetQuestions(clause0, m, ctx)?.let { return it }
         readZoneQuestions(clause0, m, ctx)?.let { return it }

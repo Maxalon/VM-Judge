@@ -965,6 +965,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         val who = e.player?.let { state.players.firstOrNull { p -> p.id == it }?.let { p -> if (p.you) "you" else p.name } ?: it }
         WinLossAsks.describe(e, who)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
+        if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
         TargetAsks.describe(e, state, who)?.let { return it }
         if (e.verb == "ask") CounterAsks.describe(e, state)?.let { return it }
         val tg = if (e.targets.isEmpty()) "" else " targeting " + e.targets.joinToString(" and ") { runCatching { state.nameOf(parseRef(it, state)) }.getOrDefault(it) }
@@ -2250,6 +2251,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("tg:") == true) return TargetAsks.answer(e, state, engine, curEvents) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("cmd:") == true) return CommanderAsks.answer(e, state) { oid, n -> oid?.let { cards.byOracleId(it) } ?: n?.let { cards.resolve(it).best?.card } }
                 if (e.to?.startsWith("ct:") == true) return CounterAsks.answer(e, state, engine)
+                if (e.to?.startsWith("tr:") == true) return TriggerAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {
