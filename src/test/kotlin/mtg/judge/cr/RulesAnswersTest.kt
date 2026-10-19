@@ -99,6 +99,9 @@ class RulesAnswersTest {
         "I steal their commander with Control Magic and attack them with it, is it commander damage" to "903.10a",
         "my attacker's blocker dies before damage, does it trample over" to "702.19d",
         "my creature is blocked and I bounce the blocker, do I hit them" to "509.1h",
+        "How do I demonstrate a loop at a tournament?" to "732.2a",
+        "How do I shortcut a loop?" to "732.2b",
+        "Is a mandatory loop a draw?" to "732.4",
     )
 
     @Test

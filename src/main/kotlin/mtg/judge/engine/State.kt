@@ -11,6 +11,8 @@ class Player(val id: String, val name: String, var life: Int?) {
     var protectedFromEverything = false
     /** Veil of Summer: colours this player has hexproof from until end of turn. */
     val hexproofFrom = mutableSetOf<Char>()
+    /** Life gained minus life lost in this situation, kept even when the life total itself was never said (a loop that drains it). */
+    var lifeLedger = 0
     var drew = 0
     /** Cards drawn this turn, for "can't draw more than one card each turn" (Narset). */
     var drewThisTurn = 0
@@ -250,6 +252,18 @@ class GameState(
     var activePlayerStated: Boolean = false,
 ) {
     val trace = Trace()
+    /** A loop of mandatory actions repeated with no way to stop it: the game is a draw (104.4b, 732.4). */
+    var gameDrawn = false
+    /** Choices made among several legal options while resolving (an Aura choosing what to enchant): a loop with one isn't mandatory. */
+    var choicesMade = 0
+    /** What a mandatory loop found while resolving the stack did, in a sentence, for a question about the loop. */
+    var mandatoryLoop: String? = null
+    /**
+     * Who a trigger with an unnamed target aims at, by the name of the card it comes from: "obj:<card name>" or
+     * "player:<id>". A loop is described once and repeated, and each time round the trigger's source is a new object
+     * (400.7), so the choice is kept by name ("the token's untap targets Pestermite", "Redcap shoots the opponent").
+     */
+    val triggerAim = mutableMapOf<String, String>()
     var combatDamageDealt = false
     /** The question is whether a spell can be paid for ("they have one Mountain … can they?"): then even a single described land is the whole mana base. */
     var describedLandsAreTheBase = false

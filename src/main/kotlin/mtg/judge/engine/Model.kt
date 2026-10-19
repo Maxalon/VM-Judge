@@ -89,6 +89,8 @@ sealed interface Trigger {
     data class AttackWithNOrMore(val n: Int, val filter: ObjFilter?) : Trigger
     /** "Whenever you gain life". */
     data object YouGainLife : Trigger
+    /** Exquisite Blood: "Whenever an opponent loses life" (OPPONENT) / "Whenever a player loses life" (ANY_PLAYER). */
+    data class PlayerLosesLife(val who: Who) : Trigger
     /** "Whenever a [filter] dies". */
     data class PermanentDies(val filter: ObjFilter, val other: Boolean) : Trigger
     /** "Whenever you draw a card". */
@@ -145,7 +147,9 @@ sealed interface Effect {
     /** [countBy]: "draw a card for each creature you control". */
     data class Draw(val who: Who, val count: Int, val x: Boolean = false, val countBy: CountExpr? = null) : Effect
     /** `x` = the amount is X, chosen when the spell is cast (107.3a). */
-    data class Damage(val amount: Int, val target: TargetSpec, val x: Boolean = false, val kickedAmount: Int? = null, val sacrificedPower: Boolean = false, val masteryAmount: Int? = null) : Effect
+    data class Damage(val amount: Int, val target: TargetSpec, val x: Boolean = false, val kickedAmount: Int? = null, val sacrificedPower: Boolean = false, val masteryAmount: Int? = null,
+                      /** Murderous Redcap: "it deals damage equal to its power", its power as the ability resolves (or last known, 608.2h). */
+                      val selfPower: Boolean = false) : Effect
     /** "Proliferate" (701.34a): assumed to choose everything of yours and your opponents' poison counters. */
     data object Proliferate : Effect
     /** "Exile all attacking creatures target player controls": an action on everything matching, among a target player's permanents. */
@@ -195,7 +199,8 @@ sealed interface Effect {
     /** Aetherflux Reservoir: "you gain N life for each spell you've cast this turn". */
     data class GainLifePerSpellThisTurn(val who: Who, val per: Int) : Effect
     /** "Target player mills N cards" (701.17a). */
-    data class Mill(val who: Who, val count: Int) : Effect
+    /** [repeatShareColour]: Grindstone, "If two cards that share a color were milled this way, repeat this process." */
+    data class Mill(val who: Who, val count: Int, val repeatShareColour: Boolean = false) : Effect
     /** Nykthos: "Choose a color. Add an amount of mana of that color equal to your devotion to that color." */
     data object AddManaDevotion : Effect
     /** Gaea's Cradle, Cabal Coffers: "Add {G} for each creature you control." */
@@ -240,6 +245,8 @@ sealed interface Effect {
     data class LoseLifeUnlessSacOrDiscard(val who: Who, val amount: Int, val filter: ObjFilter?, val discard: Boolean) : Effect
     /** "Sacrifice this permanent" (evoke's trigger, "sacrifice ~"). */
     object SacrificeSource : Effect
+    /** Animate Dead: "When ~ leaves the battlefield, that creature's controller sacrifices it" — the creature it was attached to. */
+    data object SacrificeEnchanted : Effect
     /** "That player sacrifices that many permanents" (Phyrexian Obliterator): as many as the causing amount, their choice. */
     data class SacrificeThatMany(val who: Who, val filter: ObjFilter) : Effect
     /** "Put a creature card from your hand onto the battlefield" (Aether Vial: with mana value equal to its charge counters). */
@@ -305,6 +312,10 @@ sealed interface Effect {
     data class GainLifeEqualToToughness(val who: Who) : Effect
     /** "Target opponent loses that much life" after "whenever you gain life": the amount of the causing event. */
     data class LoseLifeThatMuch(val who: Who) : Effect
+    /** Exquisite Blood: "you gain that much life" — the amount of the event that triggered it. */
+    data class GainLifeThatMuch(val who: Who) : Effect
+    /** Pestermite: "tap or untap target permanent" — one target, the choice made as it resolves. */
+    data class TapOrUntap(val target: TargetSpec) : Effect
     /** "Target player loses life equal to the number of cards in their hand." */
     data class LoseLifeEqual(val who: Who, val count: CountExpr) : Effect
     /** Palace Sentinels: "you become the monarch" (725). [who] is the player who takes the crown. */
@@ -405,8 +416,8 @@ sealed interface Effect {
     /** Every target specification this effect (recursively) needs, in order. */
     fun targets(): List<TargetSpec> = when (this) {
         is Damage -> listOf(target); is Counter -> listOf(target); is ExileSpell -> listOf(target); is Destroy -> listOf(target); is Exile -> listOf(target); is ExileTwo -> listOf(target, target); is Blink -> listOf(target); is RedirectToSelf -> listOf(target); is Fight -> listOf(mine, theirs); is DealsPowerTo -> listOf(mine, theirs)
-        is Tap -> listOf(target); is Untap -> listOf(target); is Pump -> listOf(target); is PumpSameName -> listOf(target); is GainKeywords -> listOf(target); is ReflectPrevented -> emptyList()
-        is ExtractNamed -> listOf(target); is SpellCantBeCountered -> listOf(target); is Transmogrify -> listOf(target); is ExileIfMvAtMostX -> listOf(target); is ReturnExiledCard -> emptyList(); is ShuffleGraveyardIntoLibrary -> emptyList(); is PutCounters -> listOfNotNull(target); is RemoveAllCounters -> listOf(target); is PutOnBottom -> listOf(target); is Attach -> listOf(target); is CreateShield -> listOfNotNull(target); is Regenerate -> listOfNotNull(target); is GainControl -> listOf(target); is Bounce -> listOfNotNull(target); is NarratedTargeted -> listOf(target); is GainLifeEqualToPower -> emptyList(); is CreateToken -> emptyList(); is CreateTokenCopy -> listOfNotNull(target); is SacrificeEach -> emptyList(); is SacrificeSource -> emptyList(); is Mill -> emptyList(); is ExileGraveyard -> emptyList(); is DiscardChosen -> emptyList(); is BounceChosen -> emptyList(); is LivingWeapon -> emptyList(); is DiscardNamed -> emptyList(); is CounterThatSpell -> emptyList(); is AddManaInstead -> emptyList(); is AddManaPer -> emptyList(); is AddManaDevotion -> emptyList(); is GainLifePerSpellThisTurn -> emptyList(); is WinIfDevotionCoversLibrary -> emptyList(); is CopySpell -> listOf(target); is StormCopy -> emptyList(); is DamageDivided -> listOf(target); is Monstrosity -> emptyList(); is MoveSourceCounters -> listOf(target); is ChangeTarget -> listOf(target); is Evolve -> emptyList(); is PreventCombatToAndBy -> listOf(target); is WinIfCastBefore -> emptyList(); is SacrificeThatMany -> emptyList(); is PutFromHand -> listOfNotNull(target); is DamagePlayer -> emptyList(); is LoseLifeThatMuch -> emptyList(); is BecomeMonarch -> emptyList(); is ReturnSelfFromGraveyard -> emptyList(); is AnimateSelf -> emptyList(); is SaddleSelf -> emptyList(); is PumpSelfCount -> emptyList(); is TapAttached -> emptyList(); is DamageThatMuch -> listOf(target); is PumpAllCount -> emptyList(); is ShuffleIntoLibrary -> listOf(target); is PumpCausing -> emptyList(); is DamageCausing -> emptyList(); is DoublePower -> listOf(target); is PumpCount -> listOf(target); is LoseHalfLife -> emptyList(); is ExileUntilLeaves -> listOf(target); is SacrificeTarget -> listOf(target); is GainLifeEqualTo -> listOf(target); is FreezeUntap -> listOf(target); is RemoveCounters -> listOf(target); is Proliferate -> emptyList(); is CantLoseThisTurn -> emptyList(); is DamageLifeFloor -> emptyList(); is ExtraLandThisTurn -> emptyList(); is CoinFlip -> (onWin?.targets() ?: emptyList()) + (onLose?.targets() ?: emptyList()); is CantCastThisTurn -> emptyList(); is ForAllTargeted -> listOf(target); is SetBasePtTarget -> listOf(target); is LoseLifeEqual -> emptyList(); is DamageThatMuchTo -> emptyList()
+        is Tap -> listOf(target); is Untap -> listOf(target); is TapOrUntap -> listOf(target); is GainLifeThatMuch -> emptyList(); is Pump -> listOf(target); is PumpSameName -> listOf(target); is GainKeywords -> listOf(target); is ReflectPrevented -> emptyList()
+        is ExtractNamed -> listOf(target); is SpellCantBeCountered -> listOf(target); is Transmogrify -> listOf(target); is ExileIfMvAtMostX -> listOf(target); is ReturnExiledCard -> emptyList(); is ShuffleGraveyardIntoLibrary -> emptyList(); is PutCounters -> listOfNotNull(target); is RemoveAllCounters -> listOf(target); is PutOnBottom -> listOf(target); is Attach -> listOf(target); is CreateShield -> listOfNotNull(target); is Regenerate -> listOfNotNull(target); is GainControl -> listOf(target); is Bounce -> listOfNotNull(target); is NarratedTargeted -> listOf(target); is GainLifeEqualToPower -> emptyList(); is CreateToken -> emptyList(); is CreateTokenCopy -> listOfNotNull(target); is SacrificeEach -> emptyList(); is SacrificeSource -> emptyList(); is SacrificeEnchanted -> emptyList(); is Mill -> emptyList(); is ExileGraveyard -> emptyList(); is DiscardChosen -> emptyList(); is BounceChosen -> emptyList(); is LivingWeapon -> emptyList(); is DiscardNamed -> emptyList(); is CounterThatSpell -> emptyList(); is AddManaInstead -> emptyList(); is AddManaPer -> emptyList(); is AddManaDevotion -> emptyList(); is GainLifePerSpellThisTurn -> emptyList(); is WinIfDevotionCoversLibrary -> emptyList(); is CopySpell -> listOf(target); is StormCopy -> emptyList(); is DamageDivided -> listOf(target); is Monstrosity -> emptyList(); is MoveSourceCounters -> listOf(target); is ChangeTarget -> listOf(target); is Evolve -> emptyList(); is PreventCombatToAndBy -> listOf(target); is WinIfCastBefore -> emptyList(); is SacrificeThatMany -> emptyList(); is PutFromHand -> listOfNotNull(target); is DamagePlayer -> emptyList(); is LoseLifeThatMuch -> emptyList(); is BecomeMonarch -> emptyList(); is ReturnSelfFromGraveyard -> emptyList(); is AnimateSelf -> emptyList(); is SaddleSelf -> emptyList(); is PumpSelfCount -> emptyList(); is TapAttached -> emptyList(); is DamageThatMuch -> listOf(target); is PumpAllCount -> emptyList(); is ShuffleIntoLibrary -> listOf(target); is PumpCausing -> emptyList(); is DamageCausing -> emptyList(); is DoublePower -> listOf(target); is PumpCount -> listOf(target); is LoseHalfLife -> emptyList(); is ExileUntilLeaves -> listOf(target); is SacrificeTarget -> listOf(target); is GainLifeEqualTo -> listOf(target); is FreezeUntap -> listOf(target); is RemoveCounters -> listOf(target); is Proliferate -> emptyList(); is CantLoseThisTurn -> emptyList(); is DamageLifeFloor -> emptyList(); is ExtraLandThisTurn -> emptyList(); is CoinFlip -> (onWin?.targets() ?: emptyList()) + (onLose?.targets() ?: emptyList()); is CantCastThisTurn -> emptyList(); is ForAllTargeted -> listOf(target); is SetBasePtTarget -> listOf(target); is LoseLifeEqual -> emptyList(); is DamageThatMuchTo -> emptyList()
         is May -> effect.targets(); is UnlessPays -> effect.targets(); is Seq -> effects.flatMap { it.targets() }.distinct()   // "It gets…" refers back to the same target
         is IfYouDo -> choice.targets() + then.targets(); is IfKicked -> otherwise.targets()
         is IfCondition -> then.targets()
