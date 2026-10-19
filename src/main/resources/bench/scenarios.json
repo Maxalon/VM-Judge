@@ -39421,5 +39421,751 @@
       "704.5a",
       "613.1b"
     ]
+  },
+  {
+    "id": "kw1-ninjutsu-ninja-damages-and-draws",
+    "text": "My unblocked 1/1 is attacking. I ninjutsu Ninja of the Deep Hours. Does the Ninja deal damage and do I draw?",
+    "expect": [
+      "a 1/1 creature: the battlefield → your hand.",
+      "Ninja of the Deep Hours enters the battlefield.",
+      "opponent takes 2 damage.",
+      "You draw 1 card."
+    ],
+    "cite": [
+      "702.49a",
+      "702.49c",
+      "508.4"
+    ]
+  },
+  {
+    "id": "kw1-ninjutsu-ninja-is-not-blocked",
+    "text": "My unblocked 1/1 is attacking. I ninjutsu Ninja of the Deep Hours. Is the Ninja blocked?",
+    "expect": [
+      "No: Ninja of the Deep Hours was put onto the battlefield attacking after blockers had been declared, so it was never declared as an attacker and nobody could block it"
+    ],
+    "cite": [
+      "508.4d",
+      "702.49c"
+    ]
+  },
+  {
+    "id": "kw2-rebound-staggershock-next-upkeep",
+    "text": "I cast Staggershock from my hand. What happens to it after it resolves, and next turn?",
+    "expect": [
+      "Staggershock is exiled as it resolves (rebound): you may cast it for free from exile at the beginning of your next upkeep (702.88a).",
+      "At the beginning of your upkeep, you cast Staggershock from exile without paying its mana cost (rebound).",
+      "opponent takes 2 damage. (×2)",
+      "it was cast from exile, not from hand, so rebound doesn't exile it again"
+    ],
+    "cite": [
+      "702.88a",
+      "702.88b"
+    ]
+  },
+  {
+    "id": "kw2-rebound-ephemerate-is-exiled",
+    "text": "I cast Ephemerate on my Mulldrifter. Where does Ephemerate go?",
+    "expect": [
+      "Ephemerate is exiled as it resolves (rebound)"
+    ],
+    "cite": [
+      "702.88a"
+    ]
+  },
+  {
+    "id": "kw3-plot-slickshot-later-turn",
+    "text": "I plot Slickshot Show-Off on my turn. When can I cast it?",
+    "expect": [
+      "Slickshot Show-Off is plotted: exiled for {1}{R}.",
+      "on any later turn of yours, not this one (702.170d)."
+    ],
+    "cite": [
+      "702.170a",
+      "702.170b",
+      "702.170d"
+    ]
+  },
+  {
+    "id": "kw3-plot-in-combat-refused",
+    "text": "I plot Slickshot Show-Off during combat. Does that work?",
+    "expect": [
+      "No: Slickshot Show-Off can't be plotted now. Plot works only in your main phase with an empty stack (702.170a)."
+    ],
+    "cite": [
+      "702.170a",
+      "116.2"
+    ]
+  },
+  {
+    "id": "kw4-splice-glacial-ray-on-lava-spike",
+    "text": "I cast Lava Spike and splice Glacial Ray onto it. What does it do and where does Glacial Ray go?",
+    "expect": [
+      "Lava Spike gains Glacial Ray's text for {1}{R} more; Glacial Ray stays in your hand",
+      "opponent takes 3 damage.",
+      "opponent takes 2 damage.",
+      "loses the added text once it leaves the stack"
+    ],
+    "cite": [
+      "702.47a",
+      "702.47c",
+      "702.47e"
+    ]
+  },
+  {
+    "id": "kw4-splice-arcane-only",
+    "text": "I cast Lightning Bolt and splice Glacial Ray onto it. What happens?",
+    "expect": [
+      "Glacial Ray can't be spliced onto Lightning Bolt: splice onto Arcane works only on Arcane spells (702.47a)."
+    ],
+    "cite": [
+      "702.47a"
+    ]
+  },
+  {
+    "id": "kw5-entwine-tooth-and-nail-both-modes",
+    "text": "I cast Tooth and Nail with entwine. Do I get both modes?",
+    "expect": [
+      "Tooth and Nail is cast with entwine: both modes, for {2} more ({9} in all).",
+      "Yes: with the entwine cost paid, Tooth and Nail does both modes, in the order written on the card"
+    ],
+    "cite": [
+      "702.42a",
+      "702.42b"
+    ]
+  },
+  {
+    "id": "kw6-buyback-capsize-returns-to-hand",
+    "text": "I cast Capsize with buyback targeting their Grizzly Bears. Where does it go?",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's hand.",
+      "Capsize returns to your hand (buyback, 702.27a)."
+    ],
+    "cite": [
+      "702.27a"
+    ]
+  },
+  {
+    "id": "kw6-buyback-countered-goes-to-graveyard",
+    "text": "I cast Capsize with buyback targeting their Grizzly Bears and they counter it with Counterspell. Where does Capsize go?",
+    "expect": [
+      "Capsize is countered.",
+      "Capsize goes to your graveyard instead of the hand: buyback returns the spell to hand only if it resolves (702.27a)."
+    ],
+    "cite": [
+      "702.27a"
+    ]
+  },
+  {
+    "id": "kw7-suspend-ancestral-vision",
+    "text": "I suspend Ancestral Vision. When does it resolve?",
+    "expect": [
+      "Ancestral Vision is exiled with 4 time counters for {U} instead of being cast.",
+      "4 upkeeps from now"
+    ],
+    "cite": [
+      "702.62a",
+      "116.2"
+    ]
+  },
+  {
+    "id": "kw9-miracle-terminus-first-draw",
+    "text": "I draw Terminus as my first draw of the turn. Can I cast it for W?",
+    "expect": [
+      "Yes: Terminus was the first card you drew this turn, so you reveal it and may cast it for the miracle cost {W} when the trigger resolves (702.94a)."
+    ],
+    "cite": [
+      "702.94a",
+      "702.94b",
+      "603.11"
+    ]
+  },
+  {
+    "id": "kw9-miracle-second-draw-no",
+    "text": "I draw Terminus as my second draw of the turn. Can I cast it for W?",
+    "expect": [
+      "No: miracle works only for the first card you draw each turn, and Terminus is the second"
+    ],
+    "cite": [
+      "702.94a"
+    ]
+  },
+  {
+    "id": "kw10-dredge-grave-troll",
+    "text": "I have Golgari Grave-Troll in my graveyard and would draw a card. Can I dredge instead?",
+    "expect": [
+      "You mill 6 cards.",
+      "Yes: instead of drawing, you mill 6 cards and Golgari Grave-Troll returns from the graveyard to your hand; no card is drawn (702.52a)."
+    ],
+    "cite": [
+      "702.52a",
+      "701.13a"
+    ]
+  },
+  {
+    "id": "kw10-dredge-needs-the-library",
+    "text": "I have Golgari Grave-Troll in my graveyard and 4 cards in my library and would draw a card. Can I dredge instead?",
+    "expect": [
+      "No: Golgari Grave-Troll can't be dredged; dredge 6 needs at least 6 cards in the library and you have only 4 (702.52b)."
+    ],
+    "cite": [
+      "702.52b"
+    ]
+  },
+  {
+    "id": "kw11-madness-rootwalla-to-mongrel",
+    "text": "I discard Basking Rootwalla to Wild Mongrel. Can I cast it?",
+    "expect": [
+      "Basking Rootwalla: your hand → exile.",
+      "Basking Rootwalla is exiled instead of going to the graveyard (madness): you may cast it for {0}",
+      "Yes: Basking Rootwalla is cast from exile for its madness cost {0} (702.35a)."
+    ],
+    "cite": [
+      "702.35a",
+      "702.35b",
+      "701.9a"
+    ]
+  },
+  {
+    "id": "kw12-morph-akroma-face-down",
+    "text": "I cast Akroma, Angel of Fury face down as a morph. What is it?",
+    "expect": [
+      "Akroma, Angel of Fury is cast face down for {3}: a 2/2 colourless creature spell with no name, no types but creature, no mana cost (mana value 0).",
+      "a face-down creature enters the battlefield.",
+      "It's a face-down 2/2 colourless creature"
+    ],
+    "cite": [
+      "702.37a",
+      "702.37c",
+      "708.4",
+      "708.2"
+    ]
+  },
+  {
+    "id": "kw12-morph-turned-face-up",
+    "text": "I cast Akroma, Angel of Fury face down as a morph and then turn it face up.",
+    "expect": [
+      "Akroma, Angel of Fury is turned face up for {3}{R}{R}{R}: 6/6 again",
+      "didn't enter the battlefield, so its enters abilities don't trigger (708.8)"
+    ],
+    "cite": [
+      "702.37e",
+      "116.2b",
+      "708.8"
+    ]
+  },
+  {
+    "id": "kw12-disguise-ward-two",
+    "text": "I cast Boltbender with disguise. What is it?",
+    "expect": [
+      "Boltbender is cast face down for {3}",
+      "and ward {2}"
+    ],
+    "cite": [
+      "702.168a",
+      "702.168b",
+      "708.2"
+    ]
+  },
+  {
+    "id": "kw13-foretell-saw-it-coming-not-same-turn",
+    "text": "I foretell Saw It Coming on turn 2. Can I cast it on turn 2?",
+    "expect": [
+      "Saw It Coming is foretold: exiled face down for {2}.",
+      "No, not this turn: a foretold card can be cast only after the turn it was foretold has ended, for its foretell cost (702.143a)."
+    ],
+    "cite": [
+      "702.143a",
+      "702.143b"
+    ]
+  },
+  {
+    "id": "kw13-foretell-then-later-turn",
+    "text": "I foretell Saw It Coming on turn 2. Can I cast it on turn 3?",
+    "expect": [
+      "Yes: Saw It Coming was foretold on turn 2, so on turn 3 it can be cast for its foretell cost (702.143a)."
+    ],
+    "cite": [
+      "702.143a"
+    ]
+  },
+  {
+    "id": "kw14-adventure-stomp-then-giant",
+    "text": "I cast Stomp. Where does Bonecrusher Giant go, and can I cast it later?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "Bonecrusher Giant goes to exile instead of the graveyard. Yes: you may cast it as the creature from exile on a later turn (715.3d), but not as the Adventure again."
+    ],
+    "cite": [
+      "715.3",
+      "715.3b",
+      "715.3d"
+    ]
+  },
+  {
+    "id": "kw14-adventure-giant-from-exile",
+    "text": "I cast Stomp. Later I cast Bonecrusher Giant from exile.",
+    "expect": [
+      "Bonecrusher Giant goes to exile instead of the graveyard.",
+      "Bonecrusher Giant enters the battlefield."
+    ],
+    "cite": [
+      "715.3d"
+    ]
+  },
+  {
+    "id": "kw15-mutate-gemrazer-onto-non-human",
+    "text": "I mutate Gemrazer onto my non-Human creature. What is the result?",
+    "expect": [
+      "Gemrazer mutates onto a 2/2 creature: one creature, Gemrazer (4/4, was 2/2), with the abilities of both cards (702.140c, 702.140e).",
+      "isn't summoning sick again"
+    ],
+    "cite": [
+      "702.140a",
+      "702.140c",
+      "702.140e",
+      "730.2a"
+    ]
+  },
+  {
+    "id": "kw15-mutate-needs-non-human",
+    "text": "I mutate Gemrazer onto my Thalia, Guardian of Thraben. What happens?",
+    "expect": [
+      "No: Gemrazer can't mutate onto Thalia, Guardian of Thraben; mutate needs a non-Human creature with the same owner (702.140a)."
+    ],
+    "cite": [
+      "702.140a"
+    ]
+  },
+  {
+    "id": "kw16-escape-uro-not-sacrificed",
+    "text": "I cast Uro with escape. Does it get sacrificed?",
+    "expect": [
+      "Uro, Titan of Nature's Wrath is cast from the graveyard for its escape cost {G}{G}{U}{U}, exiling 5 other cards",
+      "No: Uro, Titan of Nature's Wrath is not sacrificed.",
+      "You gain 3 life.",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "is sacrificed (it didn't escape)"
+    ],
+    "cite": [
+      "702.138a",
+      "702.138b"
+    ]
+  },
+  {
+    "id": "kw16-uro-cast-normally-is-sacrificed",
+    "text": "I cast Uro. Does it get sacrificed?",
+    "expect": [
+      "Uro, Titan of Nature's Wrath is sacrificed (it didn't escape).",
+      "You gain 3 life."
+    ],
+    "cite": [
+      "702.138b",
+      "701.21a"
+    ]
+  },
+  {
+    "id": "kw2-rebound-waits-in-exile",
+    "text": "I cast Staggershock from my hand. Where does it go after it resolves?",
+    "expect": [
+      "Staggershock is exiled as it resolves (rebound)"
+    ],
+    "cite": [
+      "702.88a"
+    ]
+  },
+  {
+    "id": "kw17-surveil-thought-erasure",
+    "text": "I cast Thought Erasure. What does surveil do?",
+    "expect": [
+      "You surveil 1: you may put the top card of your library into the graveyard and keep the rest on top (701.25a)"
+    ],
+    "cite": [
+      "701.25a"
+    ]
+  },
+  {
+    "id": "kw18-investigate-hard-evidence",
+    "text": "I cast Hard Evidence. What do I get?",
+    "expect": [
+      "You get a Crab token.",
+      "You get a Clue token."
+    ],
+    "cite": [
+      "701.16a"
+    ]
+  },
+  {
+    "id": "kw18-investigate-tireless-tracker-landfall",
+    "text": "I control Tireless Tracker and play a Forest. What happens?",
+    "expect": [
+      "Forest enters the battlefield.",
+      "You get a Clue token."
+    ],
+    "cite": [
+      "701.16a",
+      "603.2"
+    ]
+  },
+  {
+    "id": "kw19-convoke-chord-of-calling",
+    "text": "I cast Chord of Calling for X=3 with convoke, tapping three creatures. How much do I pay?",
+    "expect": [
+      "Chord of Calling costs 6 with X = 3; tapping 3 creatures to convoke pays for 3 of it, so you pay 3 in mana (702.51a)."
+    ],
+    "cite": [
+      "702.51a",
+      "702.51b",
+      "302.6"
+    ]
+  },
+  {
+    "id": "kw20-delve-treasure-cruise",
+    "text": "I cast Treasure Cruise delving away four cards from my graveyard. How much do I pay?",
+    "expect": [
+      "Treasure Cruise costs {7}{U} (8 mana); delving 4 cards out of the graveyard pays for 4 of the generic mana, so you pay {3}{U} (4 mana) (702.66a)."
+    ],
+    "cite": [
+      "702.66a",
+      "702.66b"
+    ]
+  },
+  {
+    "id": "kw21-prowess-swiftspear-bolt",
+    "text": "I control Monastery Swiftspear and cast Lightning Bolt. What happens?",
+    "expect": [
+      "Monastery Swiftspear is 2/3 until end of turn.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "702.108a"
+    ]
+  },
+  {
+    "id": "kw21-prowess-ignores-creature-spells",
+    "text": "I control Monastery Swiftspear and cast Grizzly Bears. Does Swiftspear get bigger?",
+    "expect": [
+      "Grizzly Bears enters the battlefield."
+    ],
+    "notExpect": [
+      "Monastery Swiftspear is 2/3"
+    ]
+  },
+  {
+    "id": "kw22-afflict-merciless-eternal-blocked",
+    "text": "I attack with Merciless Eternal and they block it with a 2/2. What does afflict do?",
+    "expect": [
+      "opponent loses 2 life.",
+      "Afflict N: whenever this creature becomes blocked, the defending player loses N life."
+    ],
+    "cite": [
+      "702.130a"
+    ]
+  },
+  {
+    "id": "kw23-undying-with-counter-stays-dead",
+    "text": "Geralf's Messenger with a +1/+1 counter dies. Does it come back?",
+    "expect": [
+      "Geralf's Messenger doesn't come back: it had 1 +1/+1 counter when it died, so undying doesn't return it."
+    ],
+    "cite": [
+      "702.93a"
+    ]
+  },
+  {
+    "id": "kw23-undying-no-counter-returns",
+    "text": "Geralf's Messenger dies. Does it come back?",
+    "expect": [
+      "Geralf's Messenger comes back with a +1/+1 counter (undying)"
+    ],
+    "cite": [
+      "702.93a"
+    ]
+  },
+  {
+    "id": "kw23-persist-with-minus-counter-stays-dead",
+    "text": "Kitchen Finks with a -1/-1 counter dies. Does it come back?",
+    "expect": [
+      "Kitchen Finks doesn't come back: it had 1 -1/-1 counter when it died, so persist doesn't return it."
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "kw24-evoke-shriekmaw-both-triggers",
+    "text": "I evoke Shriekmaw targeting their Grizzly Bears. What happens?",
+    "expect": [
+      "Shriekmaw is sacrificed.",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "702.74a"
+    ]
+  },
+  {
+    "id": "kw25-multikicker-chalice-two",
+    "text": "I cast Everflowing Chalice with multikicker twice. How many charge counters?",
+    "expect": [
+      "Everflowing Chalice enters with 2 charge counters (kicked 2 times)."
+    ],
+    "cite": [
+      "702.33c",
+      "702.33d"
+    ]
+  },
+  {
+    "id": "kw25-multikicker-chalice-none",
+    "text": "I cast Everflowing Chalice. How many charge counters?",
+    "expect": [
+      "Everflowing Chalice enters the battlefield."
+    ]
+  },
+  {
+    "id": "kw26-cycling-lonely-sandbar",
+    "text": "I cycle Lonely Sandbar. What happens?",
+    "expect": [
+      "Lonely Sandbar: your hand → your graveyard.",
+      "You draw 1 card.",
+      "Lonely Sandbar is cycled: it goes to your graveyard as a cost and you draw a card when the ability resolves (702.29a)."
+    ],
+    "cite": [
+      "702.29a",
+      "701.9a"
+    ]
+  },
+  {
+    "id": "kw27-equip-is-sorcery-speed",
+    "text": "Can I equip Bonesplitter during combat?",
+    "expect": [
+      "No. Equip is an activated ability that can be activated only as a sorcery"
+    ],
+    "cite": [
+      "702.6a"
+    ]
+  },
+  {
+    "id": "kw28-unearth-vithian-stinger-end-step",
+    "text": "I unearth Vithian Stinger. What happens at end of turn?",
+    "expect": [
+      "Vithian Stinger returns from the graveyard with haste.",
+      "Vithian Stinger is exiled at the beginning of the end step (unearth, 702.84a)."
+    ],
+    "cite": [
+      "702.84a",
+      "603.7"
+    ]
+  },
+  {
+    "id": "kw29-hideaway-windbrisk-heights",
+    "text": "I play Windbrisk Heights. What happens?",
+    "expect": [
+      "Windbrisk Heights: you look at the top 4 cards, exile one face down and put the other 3 on the bottom in a random order (hideaway, 702.75a)"
+    ],
+    "cite": [
+      "702.75a"
+    ]
+  },
+  {
+    "id": "kw30-companion-lurrus",
+    "text": "Can I cast my companion Lurrus of the Dream-Den from the sideboard?",
+    "expect": [
+      "Lurrus of the Dream-Den is a companion.",
+      "pay {3} and put it into your hand"
+    ],
+    "cite": [
+      "702.139a",
+      "116.2g"
+    ]
+  },
+  {
+    "id": "kw18-investigate-crack-clue-with-tracker",
+    "text": "I control Tireless Tracker and a Clue token. I crack the Clue. What happens?",
+    "expect": [
+      "Tireless Tracker has 1 +1/+1 counter.",
+      "You draw 1 card."
+    ],
+    "cite": [
+      "701.21a",
+      "122.1a"
+    ]
+  },
+  {
+    "id": "kw25-multikicker-two-kicks",
+    "text": "I cast Everflowing Chalice with two kicks. How many charge counters?",
+    "expect": [
+      "Everflowing Chalice enters with 2 charge counters (kicked 2 times)."
+    ],
+    "cite": [
+      "702.33c"
+    ]
+  },
+  {
+    "id": "kw20-delve-how-many-unsaid",
+    "text": "I cast Treasure Cruise with delve. How does delve work?",
+    "expect": [
+      "Treasure Cruise has delve: each card exiled from your graveyard pays for {1} of its generic mana, up to 7 here",
+      "only {U}"
+    ],
+    "cite": [
+      "702.66a",
+      "702.66b"
+    ]
+  },
+  {
+    "id": "kw19-convoke-summoning-sick-creatures",
+    "text": "I cast Chord of Calling with convoke. Can I tap summoning-sick creatures?",
+    "expect": [
+      "Yes: tapping a creature for convoke isn't activating a {T} ability of that creature"
+    ],
+    "cite": [
+      "702.51a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "kw2-rebound-cast-it-again",
+    "text": "I cast Staggershock from my hand. Do I get to cast it again?",
+    "expect": [
+      "At the beginning of your upkeep, you cast Staggershock from exile without paying its mana cost (rebound).",
+      "it was cast from exile, not from hand"
+    ],
+    "cite": [
+      "702.88a"
+    ]
+  },
+  {
+    "id": "kw22-exert-khenra-scrapper",
+    "text": "Khenra Scrapper attacks and I exert it. How big is it? Does it untap next turn?",
+    "expect": [
+      "Khenra Scrapper is 4/3 until end of turn.",
+      "opponent takes 4 damage.",
+      "Khenra Scrapper stays tapped: it was exerted, so it doesn't untap during this untap step (701.43a)."
+    ],
+    "cite": [
+      "701.43a",
+      "701.43d"
+    ]
+  },
+  {
+    "id": "kw22-afflict-khenra-scrapper-has-none",
+    "text": "Khenra Scrapper attacks. What does afflict do?",
+    "expect": [
+      "Khenra Scrapper doesn't have afflict (its keywords: Menace, Exert).",
+      "Afflict N: whenever this creature becomes blocked, the defending player loses N life."
+    ],
+    "cite": [
+      "702.130a"
+    ]
+  },
+  {
+    "id": "kw14-adventure-murderous-rider-swift-end",
+    "text": "I cast Murderous Rider's Swift End on their Grizzly Bears. Where does Murderous Rider go, and can I cast it later?",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's graveyard.",
+      "Murderous Rider goes to exile instead of the graveyard. Yes: you may cast it as the creature from exile on a later turn (715.3d)"
+    ],
+    "cite": [
+      "715.3b",
+      "715.3d"
+    ]
+  },
+  {
+    "id": "kw2-rebound-not-from-hand-no-rebound",
+    "text": "I cast Staggershock from my graveyard. What happens to it after it resolves?",
+    "expect": [
+      "Staggershock goes to your graveyard and doesn't rebound: rebound works only if the spell was cast from your hand (702.88a)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "kw30-companion-how-does-it-work",
+    "text": "How does a companion work?",
+    "expect": [
+      "pay {3} and put it into your hand, a special action that doesn't use the stack"
+    ],
+    "cite": [
+      "702.139a"
+    ]
+  },
+  {
+    "id": "kw5-entwine-tooth-and-nail-second-mode-read",
+    "text": "I cast Tooth and Nail with entwine. Does it put creatures onto the battlefield too?",
+    "expect": [
+      "Tooth and Nail: Put up to two creature cards from your hand onto the battlefield"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.42b"
+    ]
+  },
+  {
+    "id": "kw31-dash-heelcutter-returns-to-hand",
+    "text": "I cast Goblin Heelcutter with dash. What happens at end of turn?",
+    "expect": [
+      "Goblin Heelcutter is cast for its dash cost {2}{R}: it has haste",
+      "Goblin Heelcutter returns to its owner's hand at the beginning of the end step (dash, 702.109a)."
+    ],
+    "cite": [
+      "702.109a",
+      "603.7"
+    ]
+  },
+  {
+    "id": "kw32-jump-start-radical-idea-exiled",
+    "text": "I jump-start Radical Idea. What happens to it?",
+    "expect": [
+      "You discard 1 card.",
+      "Radical Idea is exiled (jump-start, 702.133a)."
+    ],
+    "cite": [
+      "702.133a"
+    ]
+  },
+  {
+    "id": "kw6-splice-verb-form",
+    "text": "I splice Glacial Ray onto Lava Spike. What happens?",
+    "expect": [
+      "Lava Spike gains Glacial Ray's text for {1}{R} more",
+      "opponent takes 3 damage.",
+      "opponent takes 2 damage."
+    ],
+    "cite": [
+      "702.47a"
+    ]
+  },
+  {
+    "id": "kw10-dredge-about-to-draw",
+    "text": "Golgari Grave-Troll is in my graveyard. I'm about to draw. Can I dredge?",
+    "expect": [
+      "Yes: instead of drawing, you mill 6 cards and Golgari Grave-Troll returns from the graveyard to your hand; no card is drawn (702.52a)."
+    ],
+    "cite": [
+      "702.52a"
+    ]
+  },
+  {
+    "id": "kw16-escape-uro-escapes",
+    "text": "Uro escapes. Is it sacrificed?",
+    "expect": [
+      "No: Uro, Titan of Nature's Wrath is not sacrificed."
+    ],
+    "cite": [
+      "702.138b"
+    ]
+  },
+  {
+    "id": "kw15-mutate-for-its-mutate-cost",
+    "text": "I cast Gemrazer for its mutate cost onto my Grizzly Bears. What happens?",
+    "expect": [
+      "Gemrazer mutates onto Grizzly Bears: one creature, Gemrazer (4/4, was 2/2)"
+    ],
+    "cite": [
+      "702.140a",
+      "702.140c"
+    ]
   }
 ]

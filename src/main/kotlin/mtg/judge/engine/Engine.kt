@@ -17,8 +17,10 @@ class Engine(val state: GameState) {
     fun cast(playerId: String, card: CardDef, targets: List<Ref>, objectId: String? = null, modes: List<Int> = emptyList(), overload: Boolean = false, x: Int? = null, kicked: Boolean = false, evoked: Boolean = false, flashback: Boolean = false, choice: String? = null, payLife: Int? = null, alternative: Boolean = false): StackItem? {
         val player = state.player(playerId)
         val obj = objectId?.let { state.objects[it] } ?: state.add(GameObject(objectId ?: freshObjectId(card.name), card, Zone.HAND, playerId))
+        obj.kwf.castFrom = if (flashback) Zone.GRAVEYARD else obj.zone   // rebound looks at where the spell was cast from (702.88a)
+        obj.kwf.escaped = obj.kwf.escapeIntent && obj.kwf.castFrom == Zone.GRAVEYARD; val escapeCast = obj.kwf.escapeIntent || obj.kwf.jumpIntent; obj.kwf.escapeIntent = false; obj.kwf.jumpStarted = obj.kwf.jumpIntent; obj.kwf.jumpIntent = false   // escape (702.138b)
         // "I cast Lightning Bolt from my graveyard": only with permission (Yawgmoth's Will) or the card's own flashback.
-        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback")) {
+        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback") && !escapeCast) {
             trace.step("${card.name} is in ${player.possessive} graveyard, and nothing lets ${player.subject.lowercase()} cast it from there: a spell can be cast only from where a rule or effect allows, normally the hand (601.3, 601.2a). Yawgmoth's Will or a flashback cost would let it be cast from the graveyard.", "601.3", "601.2a")
             state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard (nothing allows it)."; return null
         }
@@ -122,7 +124,7 @@ class Engine(val state: GameState) {
             taxes.filter { it.second.perOtherSpellThisTurn }.forEach { (o, t) -> trace.step("${o.name}: ${player.subject.lowercase()} ${player.v("has", "have")} cast $earlier other spell${if (earlier == 1) "" else "s"} this turn, so ${card.name} costs {${t.amount * earlier}} more.", "601.2f") }
             val tax = taxes.sumOf { if (it.second.perOtherSpellThisTurn) it.second.amount * earlier else it.second.amount } + commanderTax
             obj.taxesAtCast = taxes.map { it.first.name to (if (it.second.perOtherSpellThisTurn) it.second.amount * earlier else it.second.amount) }
-            var cost = card.manaValue.toInt() + (x ?: 0) * maxOf(0, Regex("""\{X\}""").findAll(card.manaCost ?: "").count() - 1) + tax
+            var cost = card.manaValue.toInt() + (x ?: 0) * maxOf(0, Regex("""\{X\}""").findAll(card.manaCost ?: "").count() - 1) + tax + obj.kwf.extraCost
             // Kicked: the kicker cost is an additional cost paid with the spell (702.33b).
             if (kicked) Regex("""(?i)\bkicker\s+((?:\{[^}]+\})+)""").find(card.oracleText)?.let { k ->
                 val kmv = Regex("""\{([^}]+)\}""").findAll(k.groupValues[1]).sumOf { s -> s.groupValues[1].toIntOrNull() ?: if (s.groupValues[1].equals("X", true)) (x ?: 0) else 1 }
@@ -522,6 +524,7 @@ class Engine(val state: GameState) {
         if (o.controller != playerId) { trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${o.name}, so ${p.subject.lowercase()} can't sacrifice it.", "701.21a"); state.outcomes += "${o.name} can't be sacrificed by ${p.subject.lowercase()} (${p.subject.lowercase()} ${p.v("doesn't", "don't")} control it)."; return }
         o.lkiPower = o.power; state.lastSacrificed = o
         move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${o.name}: it goes from the battlefield to its owner's graveyard. Sacrificing isn't destroying, so indestructible and regeneration don't help.", "701.21a")
+        onEvent(GameEvent.Sacrificed(o, playerId))
         stateBasedActions()
     }
 
@@ -1077,6 +1080,15 @@ class Engine(val state: GameState) {
         val p = state.player(playerId)
         if (obj.zone != Zone.HAND) { trace.step("${obj.name} isn't in ${p.possessive} hand, so it can't be discarded.", "701.9a"); state.outcomes += "${obj.name} can't be discarded (it isn't in ${p.possessive} hand)."; return }
         if (discardReplaced(obj, p)) return
+        // Madness (702.35a): the card is discarded but exiled instead of going to the graveyard, and its owner may cast it for the madness cost.
+        if (obj.def.has("madness") && keywordCostText(obj.def, "madness") != null) {
+            val cost = keywordCostText(obj.def, "madness")
+            p.handSize = p.handSize?.minus(1)?.coerceAtLeast(0)
+            move(obj, Zone.EXILE, "${p.subject} ${p.v("discards", "discard")} ${obj.name}. It has madness, so it is discarded but exiled instead of being put into ${p.possessive} graveyard; then its madness trigger goes on the stack: when it resolves, ${p.subject.lowercase()} may cast ${obj.name} by paying $cost rather than its mana cost, and if ${p.subject.lowercase()} ${p.v("doesn't", "don't")}, it is put into ${p.possessive} graveyard.", "701.9a", "702.35a")
+            obj.kwf.madness = true
+            state.outcomes += "${obj.name} is exiled instead of going to the graveyard (madness): ${p.subject.lowercase()} may cast it for $cost, or else it goes to the graveyard (702.35a)."
+            return
+        }
         move(obj, Zone.GRAVEYARD, "${p.subject} ${p.v("discards", "discard")} ${obj.name}: it goes from ${p.possessive} hand to ${p.possessive} graveyard.", "701.9a")
         p.handSize = p.handSize?.minus(1)?.coerceAtLeast(0)
         graveyardAbilityNote(obj)
@@ -1253,6 +1265,16 @@ class Engine(val state: GameState) {
         heldTriggers { try { for (id in objectIds) leave(id, to) } finally { leavingTogether = emptySet() } }
     }
 
+    /** Exert (701.43a, 701.43d): the attacker won't untap during its controller's next untap step, and its linked "when you do" ability triggers. */
+    fun exertObject(o: GameObject) {
+        o.skipNextUntap = true; o.kwf.exerted = true
+        trace.step("${state.player(o.controller).subject} ${state.player(o.controller).v("exerts", "exert")} ${o.name} as it attacks, an optional cost of attacking: it won't untap during ${state.player(o.controller).possessive} next untap step.", "701.43a", "701.43d", "508.1g")
+        onEvent(GameEvent.Exerted(o))
+    }
+
+    /** A card was cycled (702.29c): abilities that trigger on cycling see it. */
+    fun cycledEvent(o: GameObject) = onEvent(GameEvent.Cycled(o))
+
     fun leave(objectId: String, to: Zone) {
         val obj = state.obj(objectId)
         move(obj, to, "${obj.name} is put into ${zoneName(to, obj)}.", "400.7")
@@ -1325,12 +1347,12 @@ class Engine(val state: GameState) {
             if (chosen == null) { trace.step("${obj.name}'s ability costs \"Sacrifice ${sc.groupValues[0].removePrefix("Sacrifice ").removeSuffix(":")}\" and ${state.player(playerId).subject.lowercase()} ${state.player(playerId).v("controls", "control")} no such permanent to sacrifice, so it can't be activated.", "602.2b", "701.21a"); state.outcomes += "${obj.name}'s ability can't be activated (nothing to sacrifice)."; return false }
             if (!chosen.isOnBattlefield() || chosen.controller != playerId) { trace.step("${chosen.name} isn't a permanent ${state.player(playerId).subject.lowercase()} ${state.player(playerId).v("controls", "control")}, so it can't be sacrificed to ${obj.name}.", "701.21a"); return false }
             chosen.lkiPower = chosen.power; state.lastSacrificed = chosen
-            move(chosen, Zone.GRAVEYARD, "${state.player(playerId).subject} ${state.player(playerId).v("sacrifices", "sacrifice")} ${chosen.name} as the cost of ${obj.name}'s ability. Costs are paid as the ability is activated, so the sacrifice can't be responded to.", "701.21a", "602.2b", "601.2h")
+            move(chosen, Zone.GRAVEYARD, "${state.player(playerId).subject} ${state.player(playerId).v("sacrifices", "sacrifice")} ${chosen.name} as the cost of ${obj.name}'s ability. Costs are paid as the ability is activated, so the sacrifice can't be responded to.", "701.21a", "602.2b", "601.2h"); onEvent(GameEvent.Sacrificed(chosen, playerId))
         }
         if (Regex("""(?i)\bsacrifice (?:~|this\b|${Regex.escape(obj.name)}\b)""").containsMatchIn(ability.cost)) {
             if (!obj.isOnBattlefield()) { trace.step("${obj.name} isn't on the battlefield, so it can't be sacrificed to pay the cost.", "602.2b", "701.21a"); return false }
             obj.lkiPower = obj.power; state.lastSacrificed = obj
-            move(obj, Zone.GRAVEYARD, "${state.player(playerId).subject} ${state.player(playerId).v("sacrifices", "sacrifice")} ${obj.name} as the cost. Costs are paid as the ability is activated, so once it's on the stack the ability resolves even if something is done in response: the sacrifice can't be responded to.", "701.21a", "602.2b", "601.2h", "113.7a")
+            move(obj, Zone.GRAVEYARD, "${state.player(playerId).subject} ${state.player(playerId).v("sacrifices", "sacrifice")} ${obj.name} as the cost. Costs are paid as the ability is activated, so once it's on the stack the ability resolves even if something is done in response: the sacrifice can't be responded to.", "701.21a", "602.2b", "601.2h", "113.7a"); onEvent(GameEvent.Sacrificed(obj, playerId))
         }
         return true
     }
@@ -1384,7 +1406,9 @@ class Engine(val state: GameState) {
             }
             // "It doesn't untap during its controller's next untap step": this is that step, so it stays tapped and the effect is spent.
             val frozen = (mine - held.toSet()).filter { it.skipNextUntap && it.tapped == true }
-            for (o in frozen) { o.skipNextUntap = false; trace.step("${o.name} doesn't untap: an effect said it doesn't untap during this untap step.", "502.3", "611.2a"); state.outcomes += "${o.name} stays tapped (it doesn't untap this untap step)." }
+            for (o in frozen) { o.skipNextUntap = false
+                if (o.kwf.exerted) { o.kwf.exerted = false; trace.step("${o.name} was exerted, so it doesn't untap during this untap step (its controller's next one); it untaps normally in the untap step after this.", "701.43a", "502.3"); state.outcomes += "${o.name} stays tapped: it was exerted, so it doesn't untap during this untap step (701.43a)." }
+                else { trace.step("${o.name} doesn't untap: an effect said it doesn't untap during this untap step.", "502.3", "611.2a"); state.outcomes += "${o.name} stays tapped (it doesn't untap this untap step)." } }
             val wereTapped = (mine - held.toSet() - frozen.toSet()).filter { it.tapped == true }
             (mine - held.toSet() - frozen.toSet()).forEach { it.tapped = false; it.summoningSick = false; it.attacking = null; it.blocking = null; it.alsoBlocking.clear() }
             for (o in wereTapped) state.outcomes += "${o.name} untaps."
@@ -1468,6 +1492,8 @@ class Engine(val state: GameState) {
             }
         } }
         onEvent(GameEvent.StepBegins(step, activePlayer))
+        if (step == "upkeep") keywordUpkeep(activePlayer)   // rebound's delayed trigger, suspend's time counters
+        if (step == "end") keywordEndStep(activePlayer)   // unearth's delayed exile
         // 725.2: the monarch's end-step draw is an inherent ability with no source, so it isn't on any permanent.
         if (step == "end") state.monarch?.let { mid ->
             if (mid == activePlayer) {
@@ -1532,17 +1558,21 @@ class Engine(val state: GameState) {
                 if (def.isInstantOrSorcery) {
                     if (item.targetsUnknown) trace.step("${def.name} resolves, but its target was never stated, so what it does to it isn't shown.", "608.2c")
                     else item.effect?.let { applyEffect(it, item) } ?: if (!Generic.isGeneric(def)) state.unsupported.add(Unsupported(def.name, "The spell has no modeled effect.")) else Unit
+                    val kwZone = keywordResolutionZone(item)   // buyback and rebound decide where the spell goes (702.27a, 702.88a)
                     val exilesItself = effectContains(item.effect) { it is Effect.ExileSelfSpell }
                     val willExile = item.source.owner in state.exileInsteadThisTurn && !item.source.token && !item.flashback && !exilesItself
                     // Leyline of the Void, Rest in Peace: the spell would go to a graveyard, so it's exiled instead (614.1a).
                     val keeper = if (!item.flashback && !exilesItself && !willExile && !item.source.token) graveyardReplacement(item.source, Zone.STACK)?.takeIf { it.zone == Zone.EXILE && it.source != null } else null
-                    item.source.zone = if (item.flashback || exilesItself || willExile || keeper != null) Zone.EXILE else Zone.GRAVEYARD
+                    item.source.zone = if (kwZone != null) kwZone else if (item.flashback || exilesItself || willExile || keeper != null) Zone.EXILE else Zone.GRAVEYARD
                     if (keeper != null) { trace.step("${def.name} finishes resolving and would be put into its owner's graveyard, but ${keeper.by} says a card that would be put into that graveyard from anywhere is exiled instead, so it's exiled. It can't be flashed back from exile.", "608.2n", "614.1a"); state.outcomes += "${def.name}: the stack → exile instead of the graveyard (${keeper.by}, 614.1a)." }
                     if (willExile) { trace.step("${def.name} finishes resolving and would go to its owner's graveyard, but this turn a card that would be put into that graveyard is exiled instead (Yawgmoth's Will), so it's exiled.", "608.2n", "614.1a"); state.outcomes += "${def.name}: the stack → exile (exiled instead of going to the graveyard this turn)." }
-                    if (item.source.token) trace.step("The copy of ${def.name} finishes resolving; a copy of a spell ceases to exist once it leaves the stack.", "608.2c", "707.10a")
+                    if (kwZone != null && !item.source.token) keywordResolutionNote(item, kwZone)
+                    else if (item.source.token) trace.step("The copy of ${def.name} finishes resolving; a copy of a spell ceases to exist once it leaves the stack.", "608.2c", "707.10a")
                     else if (exilesItself && !item.flashback) { state.outcomes += "${def.name}: the stack → exile (it exiles itself)." }
                     else if (item.flashback) { trace.step("${def.name} was cast with flashback, so it is exiled instead of going to its owner's graveyard; it can't be cast again.", "702.34a", "608.2n"); state.outcomes += "${def.name} is exiled (flashback)." }
                     else if (keeper == null) trace.step("${def.name} finishes resolving and is put into its owner's graveyard.", "608.2c", "608.2n")
+                } else if (item.source.kwf.mutateTarget != null && resolveMutating(item)) {
+                    // merged with its target instead of entering the battlefield (702.140c)
                 } else {
                     item.source.zone = Zone.BATTLEFIELD; item.source.tapped = false; item.source.summoningSick = state.isCreature(item.source); item.source.timestamp = state.tick()
                     if (def.isAura) {
@@ -1590,6 +1620,31 @@ class Engine(val state: GameState) {
             }
         }
         afterResolution()
+    }
+
+    /** Mutate (702.140): a mutating creature spell resolves by merging with its target, if that is still legal; false means it resolves as an ordinary creature spell. */
+    private fun resolveMutating(item: StackItem): Boolean {
+        val spell = item.source; val p = state.player(item.controller)
+        val target = spell.kwf.mutateTarget?.let { state.objects[it] }; spell.kwf.mutateTarget = null
+        val legal = target != null && target.isOnBattlefield() && state.isCreature(target) && "Human" !in state.subtypesOf(target) && target.owner == spell.owner
+        if (!legal || target == null) {
+            trace.step("${spell.name}'s target is no longer a legal one (a non-Human creature with the same owner on the battlefield), so as it begins resolving it stops being a mutating creature spell and resolves as an ordinary creature spell, entering the battlefield under ${p.possessive} control.", "702.140b")
+            state.outcomes += "${spell.name} stops being a mutating spell and enters the battlefield as a separate creature (702.140b)."
+            return false
+        }
+        val cardUnder = spell.kwf.mutateUnder
+        val top = if (cardUnder) target.def else spell.printedDef
+        val bottom = if (cardUnder) spell.printedDef else target.def
+        val merged = top.copy(abilities = top.abilities + bottom.abilities.filter { a -> top.abilities.none { it.text == a.text } }, keywords = top.keywords + bottom.keywords,
+            oracleText = top.oracleText + "\n" + bottom.oracleText)
+        val before = state.describePt(target)
+        target.kwf.mergedDefs += spell.printedDef; target.kwf.merged += spell.name
+        target.def = merged; spell.zone = Zone.BATTLEFIELD
+        state.objects.remove(spell.id)
+        trace.step("${spell.name} resolves as a mutating creature spell and its target ${target.printedDef.name} is legal, so ${spell.name} doesn't enter the battlefield: it merges with ${target.printedDef.name}, put ${if (cardUnder) "under" else "on top of"} it, and they become one object, a mutated permanent. A merged permanent has only the characteristics of its topmost card (here ${top.name}: ${top.typeLine}, ${top.power ?: "?"}/${top.toughness ?: "?"}) but has all the abilities of each card that represents it. It's the same object ${target.printedDef.name} was (it hasn't just entered the battlefield and isn't summoning sick again).", "702.140c", "702.140e", "730.2a", "730.2c")
+        state.outcomes += "${spell.name} mutates onto ${target.printedDef.name}: one creature, ${top.name} (${state.describePt(target)}, was $before), with the abilities of both cards (702.140c, 702.140e)."
+        onEvent(GameEvent.Mutated(target))
+        return true
     }
 
     fun resolveAll() {
@@ -2106,6 +2161,12 @@ class Engine(val state: GameState) {
         data class BecomesTarget(val obj: GameObject, val by: String, val sourceId: String) : GameEvent
         data class BecomesTapped(val obj: GameObject) : GameEvent
         data class BecomesMonstrous(val obj: GameObject) : GameEvent
+        /** A mutating creature spell merged with [obj] (702.140d). */
+        data class Mutated(val obj: GameObject) : GameEvent
+        /** [obj] was exerted as it attacked (701.43). */
+        data class Exerted(val obj: GameObject) : GameEvent
+        /** [obj] was sacrificed by [playerId] (701.21a). */
+        data class Sacrificed(val obj: GameObject, val playerId: String) : GameEvent
         /** A copy of a spell was put on the stack; a copy isn't cast, so only magecraft-style triggers see it. */
         data class SpellCopied(val item: StackItem) : GameEvent
         data class Cycled(val obj: GameObject) : GameEvent
@@ -2213,6 +2274,9 @@ class Engine(val state: GameState) {
                 is GameEvent.Blocks -> "${event.obj.name} blocking"
                 is GameEvent.BecomesUnblocked -> "${event.obj.name} attacking and not being blocked"
                 is GameEvent.BecomesMonstrous -> "${event.obj.name} becoming monstrous"
+                is GameEvent.Mutated -> "${event.obj.name} mutating"
+                is GameEvent.Exerted -> "${event.obj.name} being exerted"
+                is GameEvent.Sacrificed -> "${event.obj.name} being sacrificed"
                 is GameEvent.SpellCopied -> "a copy of ${event.item.source.name} being put on the stack"
                 is GameEvent.BecomesTarget -> "${event.obj.name} becoming the target of a spell or ability"
                 is GameEvent.BecomesTapped -> "${event.obj.name} becoming tapped"
@@ -2306,6 +2370,9 @@ class Engine(val state: GameState) {
         Trigger.ThisBlocks -> event is GameEvent.Blocks && event.obj === obj
         Trigger.ThisAttacksUnblocked -> event is GameEvent.BecomesUnblocked && event.obj === obj
         Trigger.ThisBecomesMonstrous -> event is GameEvent.BecomesMonstrous && event.obj === obj
+        Trigger.ThisMutates -> event is GameEvent.Mutated && event.obj === obj
+        Trigger.ThisExerts -> event is GameEvent.Exerted && event.obj === obj
+        is Trigger.YouSacrifice -> event is GameEvent.Sacrificed && event.playerId == obj.controller && onBf() && matchesLki(trigger.filter, event.obj, obj.controller, obj)
         is Trigger.ThisBecomesTarget -> event is GameEvent.BecomesTarget && event.obj === obj &&
             (!trigger.opponentsOnly || event.by != obj.controller) &&
             // "for the first time each turn": only the first one counts, and the count is kept per permanent.
@@ -3108,6 +3175,31 @@ class Engine(val state: GameState) {
                     state.outcomes += "${who.subject} ${who.v("gets", "get")} ${withArticle(def.name)}."
                     onEvent(GameEvent.EntersBattlefield(t))
                 }
+            }
+            is Effect.SacrificeUnlessEscaped -> {
+                val o = item.source; val p = state.player(o.controller)
+                if (o.kwf.escaped) {
+                    trace.step("${o.name}'s enters ability says to sacrifice it unless it escaped. It was cast from ${p.possessive} graveyard with its escape ability, so it escaped, and it isn't sacrificed.", "702.138b", "603.4")
+                    state.outcomes += "No: ${o.name} is not sacrificed. It was cast from the graveyard with escape, so it escaped, and its enters ability says to sacrifice it only unless it escaped (702.138b)."
+                } else if (!o.isOnBattlefield()) trace.step("${o.name} is no longer on the battlefield, so there's nothing to sacrifice.", "701.21a")
+                else {
+                    trace.step("${o.name}'s enters ability says to sacrifice it unless it escaped, and it wasn't cast with escape, so ${p.subject.lowercase()} ${p.v("sacrifices", "sacrifice")} it.", "702.138b", "701.21a")
+                    move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${o.name}: it goes to its owner's graveyard.", "701.21a"); state.outcomes += "${o.name} is sacrificed (it didn't escape)."
+                }
+            }
+            is Effect.Hideaway -> {
+                val p = state.player(item.controller); val n = effect.n
+                trace.step("${item.source.name}'s hideaway ability: ${p.subject.lowercase()} ${p.v("looks", "look")} at the top $n cards of ${p.possessive} library, exiles one of them face down, and puts the rest on the bottom of ${p.possessive} library in a random order. ${p.subject} may look at the exiled card for as long as it stays in exile.", "702.75a")
+                state.outcomes += "${item.source.name}: ${p.subject.lowercase()} ${p.v("looks", "look")} at the top $n cards, exile${if (p.you) "" else "s"} one face down and put${if (p.you) "" else "s"} the other ${n - 1} on the bottom in a random order (hideaway, 702.75a); which card depends on ${p.possessive} library."
+            }
+            is Effect.Investigate -> {
+                trace.step("${item.source.name} investigates: its controller creates a Clue token, an artifact with \"{2}, Sacrifice this token: Draw a card.\"", "701.16a")
+                applyEffect(Effect.CreateToken(Who.YOU, 1, "Clue token"), item)
+            }
+            is Effect.Surveil -> {
+                val p = state.player(item.controller)
+                trace.step("${p.subject} ${p.v("surveils", "surveil")} ${effect.n}: ${p.subject.lowercase()} ${p.v("looks", "look")} at the top ${if (effect.n == 1) "card" else "${effect.n} cards"} of ${p.possessive} library, then ${p.v("puts", "put")} any number of ${if (effect.n == 1) "it" else "them"} into ${p.possessive} graveyard and the rest back on top in any order. Surveil is a choice about what's on top, not a draw, so nothing is drawn.", "701.25a")
+                state.outcomes += "${p.subject} ${p.v("surveils", "surveil")} ${effect.n}: ${p.subject.lowercase()} may put the top ${if (effect.n == 1) "card" else "${effect.n} cards"} of ${p.possessive} library into the graveyard and keep the rest on top (701.25a); which it is depends on ${p.possessive} library."
             }
             is Effect.SacrificeSource -> {
                 val o = item.source; val p = state.player(o.controller)
@@ -4318,6 +4410,12 @@ class Engine(val state: GameState) {
                 else if (e.onlyIf != null && !state.conditionHolds(e.onlyIf, o)) trace.step("${o.name} enters tapped only if ${state.describeCondition(e.onlyIf)}, which isn't so, so it enters untapped.", "614.1c", "614.12")
                 else { o.tapped = true; trace.step("${o.name} enters tapped (a replacement effect on how it enters${if (e.unless != null) "; its condition isn't met" else if (e.onlyIf != null) "; its condition is met" else ""}).", "614.1c", "614.12") }
             }
+            is StaticEffect.EntersWithKickCounters -> {
+                val n = if (o.wasKicked) maxOf(o.kwf.kicks, 1) else 0
+                if (n > 0) o.counters[e.kind] = (o.counters[e.kind] ?: 0) + countersPlaced(o, n, e.kind)
+                trace.step("${o.name} was kicked $n time${if (n == 1) "" else "s"}, so it enters with $n ${e.kind} counter${if (n == 1) "" else "s"} on it (one for each time it was kicked).", "702.33c", "702.33d", "614.1c")
+                state.outcomes += "${o.name} enters with $n ${e.kind} counter${if (n == 1) "" else "s"} (kicked $n time${if (n == 1) "" else "s"})."
+            }
             is StaticEffect.EntersWithCounters -> if (e.onlyIfKicked && !o.wasKicked) {
                 trace.step("${o.name} wasn't kicked, so it enters with no ${e.kind} counters.", "614.1c", "702.33d")
             } else if (e.onlyIfOpponentDamaged && state.opponentsOf(o.controller).none { it.damagedThisTurn }) {
@@ -4361,6 +4459,19 @@ class Engine(val state: GameState) {
 
     private fun moveRaw(obj: GameObject, to: Zone) {
         if (to == Zone.BATTLEFIELD && obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
+        // A merged permanent that leaves: each card that made it up goes to the new zone as its own object (730.3).
+        if (obj.kwf.mergedDefs.isNotEmpty() && obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD) {
+            val extra = obj.kwf.mergedDefs.toList(); obj.kwf.mergedDefs.clear(); obj.kwf.merged.clear(); obj.def = obj.printedDef
+            for (d in extra) { val o2 = state.add(GameObject(freshObjectId(d.name), d, to, obj.owner, obj.owner)); o2.timestamp = state.tick() }
+            trace.step("${obj.printedDef.name} was a merged permanent, so each card that represented it (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) goes to ${zoneName(to, obj)} separately.", "730.3", "400.7")
+            state.outcomes += "Both cards of the merged creature (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) go to ${zoneName(to, obj)}."
+        }
+        // A face-down permanent or spell that goes anywhere but the battlefield is revealed as it goes (708.9), and is the card again.
+        if (obj.kwf.faceDown && to != Zone.BATTLEFIELD) {
+            trace.step("${obj.printedDef.name} was face down; its owner reveals it as it goes to ${zoneName(to, obj)}, and in every zone but the battlefield it is just the card ${obj.printedDef.name}.", "708.9")
+            state.outcomes += "The face-down creature is revealed: it was ${obj.printedDef.name} (708.9)."
+            obj.def = obj.printedDef; obj.kwf.faceDown = false
+        }
         if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.def !== obj.printedDef) {
             trace.step("${obj.printedDef.name} was a copy of ${obj.def.name}; the copy effect ends as it leaves the battlefield, so in its new zone it is ${obj.printedDef.name} again, a new object with no memory of what it was.", "400.7", "707.2")
             state.outcomes += if (obj.transformed) "${obj.def.name} turns back to its front face, ${obj.printedDef.name}, as it leaves the battlefield (712.8)." else "${obj.printedDef.name} stops being a copy of ${obj.def.name} as it leaves the battlefield."
@@ -5097,7 +5208,13 @@ class Engine(val state: GameState) {
         }
     }
 
-    private fun move(obj: GameObject, to: Zone, text: String, vararg rules: String) {
+    private fun move(obj: GameObject, to0: Zone, text0: String, vararg rules0: String) {
+        // Unearth (702.84a): if it would leave the battlefield, it is exiled instead of going anywhere else.
+        val unearthed = obj.kwf.unearthed && obj.zone == Zone.BATTLEFIELD && to0 != Zone.EXILE
+        val to = if (unearthed) Zone.EXILE else to0
+        val text = if (unearthed) "$text0 But ${obj.name} was unearthed: if it would leave the battlefield, it is exiled instead of being put anywhere else, so it's exiled." else text0
+        val rules = if (unearthed) arrayOf(*rules0, "702.84a", "614.1a") else rules0
+        if (unearthed) obj.kwf.unearthed = false
         if (to == Zone.GRAVEYARD) graveyardReplacement(obj, obj.zone)?.let { r ->
             val from = obj.zone
             trace.step("$text But ${r.by} replaces that: instead of going to the graveyard, ${obj.name} is put into ${zoneName(r.zone, obj)}. The graveyard event never happens, so nothing triggers on it.", *rules, "614.1a", "614.6")
@@ -5191,7 +5308,7 @@ class Engine(val state: GameState) {
         return null
     }
 
-    private val keywordTriggerRules = mapOf("Exalted" to "702.83a", "Prowess" to "702.108a", "Ward" to "702.21a", "Exploit" to "702.110a", "Mobilize" to "702.181a")
+    private val keywordTriggerRules = mapOf("Afflict" to "702.130a", "Hideaway" to "702.75a", "Exalted" to "702.83a", "Prowess" to "702.108a", "Ward" to "702.21a", "Exploit" to "702.110a", "Mobilize" to "702.181a")
 
     private val castingKeywordRules = mapOf("kicker" to "702.33a", "flashback" to "702.34a", "madness" to "702.35a", "convoke" to "702.51a", "affinity" to "702.41a", "suspend" to "702.62a", "morph" to "702.37a", "improvise" to "702.126a", "cumulative upkeep" to "702.24a", "devoid" to "702.114a", "changeling" to "702.73a", "partner" to "702.124a", "evoke" to "702.74a", "echo" to "702.30a", "foretell" to "702.143a", "cascade" to "702.85a", "bestow" to "702.103a", "disguise" to "702.168a", "escape" to "702.138a", "mutate" to "702.140a", "companion" to "702.139a", "split second" to "702.61a", "buyback" to "702.27a", "overload" to "702.96a", "surge" to "702.117a", "emerge" to "702.119a", "spectacle" to "702.137a", "jump-start" to "702.133a", "retrace" to "702.81a", "delve" to "702.66a", "prototype" to "702.160a", "casualty" to "702.153a", "offspring" to "702.175a", "gift" to "702.174a", "impending" to "702.176a", "harmonize" to "702.180a")
     private val castingKeywordNotes = mapOf("kicker" to "its controller may pay the kicker cost as an additional cost while casting", "flashback" to "it may be cast from the graveyard for its flashback cost, then is exiled", "madness" to "it may be cast for its madness cost as it's discarded", "convoke" to "creatures may be tapped to help pay for it", "affinity" to "it costs less for each matching permanent", "suspend" to "it may be exiled with time counters instead of cast", "morph" to "it may be cast face down as a 2/2 for {3}", "improvise" to "artifacts may be tapped to help pay for it", "cumulative upkeep" to "at the beginning of its controller's upkeep an age counter is added and the cost paid per counter or it's sacrificed", "devoid" to "it is colorless", "changeling" to "it is every creature type", "partner" to "a deck can have two commanders with partner", "evoke" to "it may be cast for its evoke cost, then sacrificed when it enters", "echo" to "at the beginning of its controller's next upkeep they pay the echo cost or sacrifice it", "foretell" to "it may have been exiled face down for {2} earlier and cast later for its foretell cost", "cascade" to "when cast, exile cards from the top of the library until a cheaper nonland card is found and it may be cast free", "bestow" to "it may be cast as an Aura for its bestow cost", "disguise" to "it may be cast face down as a 2/2 with ward {2} for {3}", "escape" to "it may be cast from the graveyard by paying its escape cost", "mutate" to "it may be cast for its mutate cost to merge with a non-Human creature", "companion" to "it may start outside the game and be put into hand for {3}", "split second" to "while it's on the stack players can't cast spells or activate non-mana abilities", "buyback" to "its buyback cost may be paid to return it to hand as it resolves", "overload" to "it may be cast for its overload cost, changing 'target' to 'each'", "surge" to "it costs its surge cost if another spell was cast this turn", "emerge" to "it may be cast by sacrificing a creature for a reduced cost", "spectacle" to "it may be cast for its spectacle cost if an opponent lost life this turn", "jump-start" to "it may be cast from the graveyard by discarding a card", "retrace" to "it may be cast from the graveyard by discarding a land", "delve" to "cards may be exiled from the graveyard to pay generic mana", "prototype" to "it may be cast smaller for its prototype cost", "casualty" to "a creature may be sacrificed as it's cast to copy it", "offspring" to "its offspring cost may be paid to create a 1/1 token copy", "gift" to "a gift may be promised to an opponent as it's cast", "impending" to "it may be cast for its impending cost as a non-creature with time counters", "harmonize" to "it may be cast from the graveyard, tapping a creature to reduce the cost")
@@ -5463,6 +5580,7 @@ class Engine(val state: GameState) {
     private fun objOf(ref: Ref): GameObject? = (ref as? Ref.Obj)?.let { state.objects[it.id] }
     private fun describeTargets(targets: List<Ref>) = if (targets.isEmpty()) "" else " targeting " + targets.joinToString(" and ") { state.nameOf(it) }
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
+        is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"
         is Effect.Damage -> if (effect.selfPower) "deal damage equal to its power to ${effect.target.raw}" else "deal ${effect.amount} damage to ${effect.target.raw}"
         is Effect.Exploit -> "sacrifice a creature (exploit)"; is Effect.Backup -> "put ${effect.count} +1/+1 counter${if (effect.count == 1) "" else "s"} on ${effect.target.raw} (backup)"; is Effect.Mentor -> "put a +1/+1 counter on ${effect.target.raw}"

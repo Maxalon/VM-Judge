@@ -105,7 +105,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             "ur dragon" to "the ur dragon", "dockside" to "dockside extortionist", "thoracle" to "thassa s oracle", "thassa s oracle" to "thassa s oracle",
             "consult" to "demonic consultation", "pact" to "demonic pact", "tim" to "prodigal sorcerer", "sad robot" to "solemn simulacrum", "solemn" to "solemn simulacrum",
             "esper sentinel" to "esper sentinel", "sentinel" to "esper sentinel", "mystic remora" to "mystic remora", "remora" to "mystic remora",
-            "fierce guardianship" to "fierce guardianship", "deflecting swat" to "deflecting swat", "swat" to "deflecting swat",
+            "uro" to "uro titan of nature s wrath", "fierce guardianship" to "fierce guardianship", "deflecting swat" to "deflecting swat", "swat" to "deflecting swat",
         )
 
         /** Everyday words: a card name made only of these is not read as a card ("The End", "Wear", "Attacking"). */

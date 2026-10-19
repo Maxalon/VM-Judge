@@ -81,6 +81,8 @@ class GameObject(
     /** Whether the spell that became this permanent was kicked (702.33d): "if this was kicked, it enters with …". */
     var wasKicked: Boolean = false,
 ) {
+    /** Keyword bookkeeping (buyback, rebound, plot, suspend...), see Keywords.kt. */
+    val kwf = KeywordFlags()
     /** Until-end-of-turn power/toughness modifications from resolved effects (611.2a). */
     val pumps = mutableListOf<Pair<Int, Int>>()
     /** An until-end-of-turn "base power and toughness N/N" (layer 7b, 613.4b); applied before counters and pumps. */

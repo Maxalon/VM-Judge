@@ -88,6 +88,17 @@ class SituationParser(private val names: NameIndex) {
         var lastOwner: String = "me"
         var lastMentioned: String? = null          // object id, or "cast:<slug>" for a spell just cast
         val castCards = mutableListOf<String>()     // display names of cards cast so far
+        /** A keyword said with a cast ("with buyback", "splice Glacial Ray onto it") waiting for the cast event to carry it, with its argument. */
+        var kwPending: String? = null
+        var kwArg: String? = null
+        /** A keyword was just used, so the questions that follow are about what it did. */
+        var kwActive = false
+        /** A rebound card was cast, so a question about where it goes is about rebound. */
+        var kwRebound = false
+        /** An Adventure half was cast, so "I cast it from exile" is the creature half. */
+        var kwAdventure = false
+        /** A spell was cast with delve or convoke, so "how much do I pay?" has the reduced cost for its answer. */
+        var kwCost = false
         var lastCastEntry: NameIndex.Entry? = null  // the card behind lastMentioned's "cast:<slug>", for acting on it once it resolves
         var explicitResolve = false
         /** The running total a bare "and 2 more" adds to: "poison counters", "life", "+1/+1 counters". */
@@ -1775,6 +1786,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = stackRewrites(t2, m, ctx)
         t2 = combatRewrites(t2, m, ctx)
         t2 = replacementRewrites(t2, m, ctx)
+        t2 = keywordRewrites(t2, m, ctx)
         // "has ward 2", "with ward {2}", "ward 2 on Thalia": one spelling of the keyword and its mana cost (702.21a).
         t2 = t2.replace(Regex("""\bward (?:of )?\{?(\d+)\}?(?![/\d])""", RegexOption.IGNORE_CASE), "ward {$1}")
         // "I Bolt their creature with ward 2 and pay": the creature and its keyword first, then the spell aimed at it.
@@ -4209,7 +4221,9 @@ class SituationParser(private val names: NameIndex) {
             .replace(Regex("""\bwith ($kwPhrase(?:(?:,|,? and) $kwPhrase)*) with ((?:an? |one |two |three |\d+ )?[+-]\d+/[+-]\d+ counters?)"""), "with $1 and $2")
             // "activate its monstrosity" / "activate its ability": the permanent is the thing being activated.
             .replace(Regex("""\b(activates?|activating|uses?|using) (?:its|his|her|their) (?:monstrosity|ability)\b"""), "$1 it")
+        val evBefore = ctx.events.size
         val read = readClause0(clauseIn, m, ctx)
+        tagKeywordCast(evBefore, ctx)
         // "I am at 20 life and cast Toxic Deluge": the first player named in the situation is the one acting until
         // someone else acts. Without this the cast fell to a default and became the opponent's. Set after the
         // clause is read, so a rule that works out the actor itself still has the last word.
@@ -5136,6 +5150,250 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- keyword abilities and keyword actions (buyback, plot, foretell, rebound ...), see KeywordRulings.kt ----
+
+    /** Cards whose names are keyword words ("Suspend", "Plot"): "I suspend Ancestral Vision" is the keyword, not two cards. */
+    private val keywordCardNames = mapOf("suspend" to "suspends", "plot" to "plots", "foretell" to "foretells", "dredge" to "dredges", "unearth" to "unearths",
+        "cycling" to "cycles", "rebound" to "rebounds", "morph" to "morphs", "companion" to "companions", "afflict" to "afflicts")
+    /** Keywords that decorate a cast ("I cast Capsize with buyback"): the cast is read as usual and tagged. */
+    private val castKeywordRe = Regex("""\s*\b(?:(?:and|but) )?(?:with|using|via|paying|and pays?|plus|for) (?:its |the |their |my )?(buyback|entwine)(?: cost)?(?: paid)?\b|\s*\b(buyback|entwine)d?\b""")
+
+    private fun keywordRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t.trim()
+        val who = """(i|we|they|he|she|my opponent|the opponent|opponent)"""
+        fun whoId(w: String) = when (w) { "i", "we" -> "me"; "they", "he", "she", "my opponent", "the opponent", "opponent" -> pronounPlayer(ctx, w); else -> "me" }
+        // "My unblocked 1/1 is attacking": the attack, with nobody blocking it (ninjutsu waits for exactly that).
+        Regex("""^(?:my|our) unblocked (\d+/\d+)(?: creature)? (?:is|was) attacking$""").find(t2)?.let { r -> t2 = "i attack with a ${r.groupValues[1]} unblocked" }
+        // "I suspend Ancestral Vision", "can I dredge instead": Suspend and Dredge are cards too, so the index read the keyword as a card.
+        t2 = Regex("""\b((?:what does|what is|what's|how does|how do|what do)) (c\d+)\b""").replace(t2) { r ->
+            val d = m.cards[r.groupValues[2]]?.display?.lowercase()
+            if (d != null && d in keywordCardNames.keys) "${r.groupValues[1]} $d" else r.value
+        }
+        t2 = Regex("""\b((?:i|we|they|he|she|my opponent|the opponent|(?:can|could|may|should|do|will|would|did) (?:i|we|they))) (c\d+)\b""").replace(t2) { r ->
+            val d = m.cards[r.groupValues[2]]?.display?.lowercase()
+            if (d != null && d in keywordCardNames.keys) "${r.groupValues[1]} $d" else r.value
+        }
+        // "I suspend Ancestral Vision with four time counters": the counters are the card's own suspend number.
+        t2 = t2.replace(Regex("""^((?:i|we|they) suspends? c\d+) (?:with|for) (?:\w+|\d+) time counters?(?: on it)?$"""), "$1")
+        // "I cast Lava Spike and splice Glacial Ray onto it": the cast runs as usual with the spliced card named on it.
+        Regex("""^(.*?)(?:,? and |,? |\s+)(?:splic(?:e|es|ing)) (c\d+) onto (?:it|that|that spell|the spell)\b(.*)$""").find(t2)?.let { r ->
+            val card = m.cards[r.groupValues[2]] ?: return@let
+            ctx.kwPending = "splice"; ctx.kwArg = card.display
+            t2 = (r.groupValues[1] + r.groupValues[3]).trim()
+        }
+        Regex("""^(.*?)\b(?:i |we |they )?splic(?:e|es) (c\d+) onto (c\d+)\b(.*)$""").find(t2)?.let { r ->
+            val card = m.cards[r.groupValues[2]] ?: return@let
+            ctx.kwPending = "splice"; ctx.kwArg = card.display
+            t2 = (r.groupValues[1] + "cast " + r.groupValues[3] + r.groupValues[4]).replace(Regex("""^(?:i |we |they )?cast"""), "i cast").trim()
+        }
+        // "I cast Capsize without buyback": nothing extra is paid.
+        t2 = t2.replace(Regex("""\s*\b(?:without|no|not using|but not) (?:its |the )?(?:buyback|entwine|multikicker|kicker|delve|convoke)(?: cost)?\b"""), "")
+        // "I cast X with buyback / with entwine / entwined"
+        if (Regex("""\b(?:casts?|plays?|casting)\b""").containsMatchIn(t2) && ctx.kwPending == null) castKeywordRe.find(t2)?.let { r ->
+            ctx.kwPending = (r.groupValues[1].ifEmpty { r.groupValues[2] }); ctx.kwArg = null
+            t2 = t2.replaceFirst(castKeywordRe, "").trim()
+        }
+        // Delve and convoke: "with delve exiling four cards", "delving away 4 cards", "with convoke, tapping three creatures".
+        val numW = mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10, "a" to 1, "an" to 1)
+        fun numOf(w: String?) = w?.let { numW[it] ?: it.toIntOrNull() }
+        if (Regex("""\b(?:casts?|plays?|casting)\b""").containsMatchIn(t2) && ctx.kwPending == null) {
+            Regex("""\s*,?\s*\b(?:(?:with|using|and|by) )?(?:delv(?:e|ing|es))(?: (?:away|out|by exiling|exiling|and exile|exile|for|up to|exiled))?(?: (\w+) cards?)?(?: from (?:my|the|your) graveyard)?\b|\s*,?\s*\bexiling (\w+) cards? (?:from (?:my|the|your) graveyard )?(?:with|to) delve\b""").find(t2)?.let { r ->
+                val n = numOf(r.groupValues[1].ifEmpty { r.groupValues[2] }) ?: 0
+                ctx.kwPending = "delve"; ctx.kwArg = n.toString(); t2 = t2.replaceFirst(r.value, " ").trim()
+            }
+            if (ctx.kwPending == null) Regex("""\s*,?\s*\b(?:(?:with|using|and|by) )?(?:convok(?:e|ing|es))(?:,? (?:and )?(?:by )?(?:tapping|tapped|taps?|with|using) (\w+) (?:untapped |of my )?creatures?)?|\s*,?\s*\b(?:tapping|taps?) (\w+) creatures? (?:to|for) convoke\b""").find(t2)?.let { r ->
+                val n = numOf(r.groupValues[1].ifEmpty { r.groupValues[2] }) ?: 0
+                ctx.kwPending = "convoke"; ctx.kwArg = n.toString(); t2 = t2.replaceFirst(r.value, " ").trim()
+            }
+        }
+        // Dash and jump-start: "I cast Goblin Heelcutter with dash", "I dash in Heelcutter", "I jump-start Radical Idea".
+        Regex("""^(?:then )?$who (dash(?:es)?(?: in)?|jump-?starts?) (c\d+)(.*)$""").find(t2)?.let { r ->
+            ctx.kwPending = if (r.groupValues[2].startsWith("dash")) "dash" else "jumpstart"; t2 = "${r.groupValues[1]} cast ${r.groupValues[3]}${r.groupValues[4]}".trim()
+        }
+        Regex("""^(?:then )?$who (?:casts?|plays?) (c\d+)(?: from (?:my|the) graveyard)? (?:with|using|via|for|by) (?:its )?(dash|jump-?start)(?: cost)?(.*)$""").find(t2)?.let { r ->
+            ctx.kwPending = if (r.groupValues[3].startsWith("dash")) "dash" else "jumpstart"; t2 = "${r.groupValues[1]} cast ${r.groupValues[2]}${r.groupValues[4]}".trim()
+        }
+        // Escape: "I cast Uro with escape", "I escape Uro".
+        Regex("""^(?:then )?$who (?:casts?|plays?) (c\d+)(?: from (?:my|the) graveyard)? (?:with|using|via|through|by|for) (?:its )?escape(?: cost)?(.*)$""").find(t2)?.let { r ->
+            ctx.kwPending = "escape"; t2 = "${r.groupValues[1]} cast ${r.groupValues[2]}${r.groupValues[3]}".trim()
+        }
+        Regex("""^(?:then )?(c\d+) escapes?(.*)$""").find(t2)?.let { r -> ctx.kwPending = "escape"; t2 = "i cast ${r.groupValues[1]}${r.groupValues[2]}".trim() }
+        Regex("""^(?:then )?$who escapes? (c\d+)(.*)$""").find(t2)?.let { r -> ctx.kwPending = "escape"; t2 = "${r.groupValues[1]} cast ${r.groupValues[2]}${r.groupValues[3]}".trim() }
+        // Morph and disguise: "I cast Akroma face down as a morph", "I cast Boltbender face down for 3".
+        Regex("""^(?:then )?$who (?:casts?|plays?) (c\d+)((?: face[- ]?down)(?: as an? (?:morph|disguise|2/2(?: creature)?|face[- ]?down creature))?(?: for (?:\{?3\}?|three))?|(?: as an? (?:morph|disguise|face[- ]?down creature))|(?: (?:with|using|via|for) (?:its )?(?:mega)?(?:morph|disguise)(?: cost)?))(.*)$""").find(t2)?.let { r ->
+            ctx.kwPending = "morph"; t2 = "${r.groupValues[1]} cast ${r.groupValues[2]}${r.groupValues[4]}".trim()
+            // "... face down and then turn it face up": the second half is turning it face up.
+            Regex("""(?:,? and then |,? and |, then |,? then )(?:i )?(?:turn|flip|turns|flips|unmorph|unmorphs)(?: (?:it|that|the morph|the creature))?(?: face[- ]?up| over)?$""").find(t2)?.let { tu -> t2 = t2.removeRange(tu.range).trim() + ", kwx turnup ${whoId(r.groupValues[1])} none" }
+        }
+        // Mutate: "I mutate Gemrazer onto my non-Human creature" is a cast of the card for its mutate cost, aimed at the creature.
+        Regex("""^(?:then )?$who (?:casts?|plays?) (c\d+) (?:for|using|with|via|by paying) (?:its )?mutate(?: cost)? (onto|on top of|over|on|under|beneath|below) (.*)$""").find(t2)?.let { r -> t2 = "${r.groupValues[1]} mutate ${r.groupValues[2]} ${r.groupValues[3]} ${r.groupValues[4]}" }
+        Regex("""^(?:then )?$who mutates? (c\d+) (onto|on top of|over|on|under|beneath|below) (?:(?:my|their|an?|the) )?(.*)$""").find(t2)?.let { r ->
+            val under = r.groupValues[3] in setOf("under", "beneath", "below")
+            var tgt = r.groupValues[4].trim()
+            if (!Regex("""^c\d+\b""").containsMatchIn(tgt)) {
+                val human = Regex("""(?<!non-)(?<!non )\bhuman\b""").containsMatchIn(tgt)
+                ctx.notes += "\"$tgt\" is read as a ${if (human) "2/2 Human creature" else "2/2 non-Human creature"} of yours (its size wasn't given)."
+                tgt = if (human) "a 2/2 human creature" else "a 2/2 creature"
+            }
+            ctx.kwPending = "mutate"; ctx.kwArg = if (under) "under" else "top"
+            t2 = "${r.groupValues[1]} cast ${r.groupValues[2]} targeting my ${tgt.removePrefix("a ").removePrefix("my ")}"
+        }
+        // "with two kicks", "paying the kicker cost three times", "kicker payments": the number of times it was kicked.
+        if (Regex("""\b(?:casts?|plays?|casting)\b""").containsMatchIn(t2) && ctx.kwPending == null) Regex("""\s*\b(?:(?:with|and|paying|using|for) )?(\w+) (?:kicks|kicker payments|multikicker payments|kicker costs)\b|\s*\b(?:paying|pays|paid|with) (?:the |its )?(?:multi-?)?kicker(?: cost)? (\w+) times\b""").find(t2)?.let { r ->
+            val n = numOf(r.groupValues[1].ifEmpty { r.groupValues[2] })
+            if (n != null) { ctx.kwPending = "multikicker"; ctx.kwArg = n.toString(); t2 = t2.replaceFirst(r.value, " ").trim() }
+        }
+        // Multikicker: "with multikicker twice", "kicked twice", "kicked 3 times".
+        if (Regex("""\b(?:casts?|plays?|casting)\b""").containsMatchIn(t2) && ctx.kwPending == null) Regex("""\s*\b(?:(?:with|and|paying|using) (?:the )?)?(?:multi-?kick(?:er|ed)|kicked)(?: paid)?(?: (twice|three times|four times|five times|once|(\d+) times|one time|two times|(\d+) times))?\b""").find(t2)?.let { r ->
+            val rep = r.groupValues[1]
+            val n = when { rep.isEmpty() -> null; rep == "twice" || rep == "two times" -> 2; rep == "three times" -> 3; rep == "four times" -> 4; rep == "five times" -> 5; rep == "once" || rep == "one time" -> 1; else -> r.groupValues[2].ifEmpty { r.groupValues[3] }.toIntOrNull() }
+            if (n != null && Regex("""multi-?kick""").containsMatchIn(r.value) || (n != null && n > 1)) { ctx.kwPending = "multikicker"; ctx.kwArg = (n ?: 1).toString(); t2 = t2.replaceFirst(r.value, "").trim() }
+        }
+        // "I entwine Tooth and Nail", "I buy back Capsize": the cast, with the keyword.
+        Regex("""^(?:then )?$who (entwines?|buys? back|casts?) (c\d+)( with)? (?:its |the )?(entwine|buyback)(.*)$""").find(t2)?.let { r -> if (r.groupValues[2].startsWith("cast") && r.groupValues[4].isNotEmpty()) return@let }
+        Regex("""^(?:then )?$who (entwines?|buys? back) (c\d+)(.*)$""").find(t2)?.let { r ->
+            ctx.kwPending = if (r.groupValues[2].startsWith("entwine")) "entwine" else "buyback"; t2 = "${r.groupValues[1]} cast ${r.groupValues[3]}${r.groupValues[4]}".trim()
+        }
+        // Keyword actions: "I plot Slickshot Show-Off", "I foretell Saw It Coming on turn 2".
+        Regex("""^(?:then )?$who (plot|plots|plotted|foretell|foretells|foretold)(?: out)? (?:the |my |a |an )?(c\d+|it)\b(.*)$""").find(t2)?.let { r ->
+            val kw = if (r.groupValues[2].startsWith("plot")) "plot" else "foretell"
+            val turn = Regex("""\bon turn (\d+)\b""").find(r.groupValues[4])?.groupValues?.get(1)?.toIntOrNull()
+            if (turn != null) ctx.turnNumber = turn
+            val bad = if (Regex("""\b(?:in combat|during combat|at instant speed|in response|at end of turn|on (?:their|your|the opponent's) turn|during (?:their|your) turn|with .* on the stack)\b""").containsMatchIn(r.groupValues[4])) " badtiming" else ""
+            t2 = "kwx $kw ${whoId(r.groupValues[1])} ${r.groupValues[3]}$bad"
+        }
+        // "I crack the Clue": the token's own ability, {2} and sacrifice it, to draw a card (Tireless Tracker watches for the sacrifice).
+        Regex("""^(?:then )?$who (?:cracks?|pops?|sacrifices?|uses?|activates?|cashes in|pays? (?:\{?2\}?|two)(?: mana)? (?:and|to) (?:crack|sacrifice|activate)) (?:the |a |my |that |one of my )?(clue)(?: token)?(?: .*)?$""").find(t2)?.let { r -> t2 = "kwtoken ${whoId(r.groupValues[1])} ${r.groupValues[2]}" }
+        // Exert: "I attack with Khenra Scrapper and exert it", "Khenra Scrapper attacks and I exert it".
+        Regex("""^(.*?\b(?:attacks?|attacking|attack with [^,]+?))(?:,? and |,? then |, |,? )(?:(?:i|we) )?(?:exerts?|exerted|exerting)(?: it| that| them| the creature)?(?:\s+(?:as it attacks|when it attacks))?$""").find(t2)?.let { r ->
+            t2 = r.groupValues[1] + ", kwx exert me none"
+        }
+        Regex("""^(?:then |and )?(?:(?:i|we) )?(?:exerts?|exerted|exerting)(?: it| that| them| the creature)?$""").find(t2)?.let { t2 = "kwx exert me none" }
+        Regex("""^(?:then )?$who unearths? (?:the |my )?(c\d+)\b.*$""").find(t2)?.let { r -> t2 = "kwx unearth ${whoId(r.groupValues[1])} ${r.groupValues[2]}" }
+        Regex("""^(?:then )?$who cycles? (c\d+)(?: away)?$""").find(t2)?.let { r -> if (m.cards[r.groupValues[2]]?.let { Regex("""(?i)cycling""").containsMatchIn(it.keywords) } == true) t2 = "kwx cycle ${whoId(r.groupValues[1])} ${r.groupValues[2]}" }
+        // Dredge: "I dredge Golgari Grave-Troll", "can I dredge instead?" after "I would draw a card".
+        if (Regex("""(?:,? and |,? |^)(?:i |we |they )?(?:i'm about to|we're about to|i'm going to|we're going to|would|will|am about to|'m about to|am going to|'m going to|are about to) draw(?: (?:a|my|the next) card(?: for the turn| in my draw step)?)?$""").containsMatchIn(t2)) {
+            t2 = t2.replace(Regex("""(?:,? and |,? |^)(?:i |we |they )?(?:i'm about to|we're about to|i'm going to|we're going to|would|will|am about to|'m about to|am going to|'m going to|are about to) draw(?: (?:a|my|the next) card(?: for the turn| in my draw step)?)?$"""), "").trim()
+            ctx.notes += "\"would draw a card\": the draw this is about is the one a dredge ability can replace (702.52a)."
+            if (t2.isEmpty()) t2 = "kwdrawnote"
+        }
+        Regex("""^(?:and |so |then )?(?:(?:can|could|may|do) (?:i|we) |(?:i|we) (?:will |can |could |might |want to |would like to |choose to |decide to )?)dredge(?: it| that| (c\d+))?(?: instead| back)?(?: (?:to|and) .*)?$""").find(t2)?.let { t2 = "kwdredge" }
+        // Miracle: "I draw Terminus as my first draw of the turn", "my first draw this turn is Terminus".
+        Regex("""^(?:then )?$who draws? (c\d+)(?: as| for| with| in|, which is)? ?(?:my |our |their )?(first|second|third|fourth)?(?: draw| card)?(?: (?:of|this|for|each) (?:the |my |our )?turn|(?: in| during) (?:my |the |their )?draw step)?$""").find(t2)?.let { r ->
+            val e = m.cards[r.groupValues[2]]
+            if (e != null && Regex("""(?i)\bmiracle\b""").containsMatchIn(e.keywords)) t2 = "kwx miracle ${whoId(r.groupValues[1])} ${r.groupValues[2]} ${r.groupValues[3].ifEmpty { "first" }}"
+        }
+        Regex("""^(?:my |our )(first|second|third) (?:draw|card)(?: of the turn| this turn| for the turn)? (?:is|was) (c\d+)$""").find(t2)?.let { r -> t2 = "kwx miracle me ${r.groupValues[2]} ${r.groupValues[1]}" }
+        Regex("""^(c\d+) (?:is|was) (?:the |my |our )?(first|second|third|fourth)(?: card)?(?: (?:that )?(?:i|we) (?:drew|draw|have drawn|'ve drawn)| drawn| draw)?(?: this turn| for the turn| of the turn| today)?$""").find(t2)?.let { r ->
+            if (m.cards[r.groupValues[1]]?.let { Regex("""(?i)\bmiracle\b""").containsMatchIn(it.keywords) } == true) t2 = "kwx miracle me ${r.groupValues[1]} ${r.groupValues[2]}"
+        }
+        Regex("""^(?:i|we) (?:just )?(?:drew|draw) (c\d+),? (?:which is |it's |that's |and it's |as )(?:my |our |the )?(first|second|third|fourth)(?: card| draw)?(?: (?:i|we) (?:drew|draw))?(?: this turn| for the turn| of the turn)?$""").find(t2)?.let { r ->
+            if (m.cards[r.groupValues[1]]?.let { Regex("""(?i)\bmiracle\b""").containsMatchIn(it.keywords) } == true) t2 = "kwx miracle me ${r.groupValues[1]} ${r.groupValues[2]}"
+        }
+        // Madness: after a discard of a madness card, "can I cast it?" / "I cast it for its madness cost" is the madness trigger.
+        ctx.events.lastOrNull { it.verb == "discard" }?.let { d ->
+            val disc = d.obj?.let { id -> ctx.objects[id]?.card?.name }?.let { names.lookup(Names.normalize(it)) }
+            if (disc != null && Regex("""(?i)\bmadness\b""").containsMatchIn(disc.keywords) && ctx.events.lastOrNull()?.verb == "discard")
+                Regex("""^(?:and |so |then )?(?:(?:can|could|may) (?:i|we) |(?:i|we) (?:can |could |will |may |do )?)cast (?:it|that|c\d+)(?: (?:for|with|using|via) (?:its |the )?(?:madness(?: cost)?|\{?0\}?|free|nothing|no mana))?$""").matchEntire(t2)?.let { t2 = "kwmadness" }
+        }
+        if (ctx.kwAdventure) Regex("""^(?:then |later |and )?$who (?:casts?|plays?) (c\d+)(?: from exile)?(?: later| next turn| afterwards| as the creature)?$""").matchEntire(t2)?.let { r -> if (m.cards[r.groupValues[2]]?.let { names.fullNameOf(it.oracleId) }?.contains(" // ") == true) t2 = "kwx castadventure ${whoId(r.groupValues[1])} ${r.groupValues[2]}" }
+        // Turning a morph face up.
+        if (ctx.faceDownSeen || ctx.events.any { it.verb == "cast" && it.to == "kw:morph" }) Regex("""^(?:then |and then |and )?(?:(i|we|they) )?(?:turns?|flips?|unmorphs?|pays? (?:the |its )?(?:morph|disguise|megamorph) cost)(?: (?:it|that|the (?:morph|creature)|my morph|my creature|c\d+))?(?: (?:face[- ]?up|over|up|to turn it face up))?$""").find(t2)?.let { r -> t2 = "kwx turnup ${whoId(r.groupValues[1].ifEmpty { "i" })} none" }
+        // Companion: a text answer from the rules.
+        if (Regex("""\bcompanion\b""").containsMatchIn(t2) && m.cards.values.any { Regex("""(?i)\bcompanion\b""").containsMatchIn(it.keywords) }) {
+            if (Regex("""^(?:what|how|when|can|does|do|is|where)\b""").containsMatchIn(t2) || t2.contains("?")) t2 = "kwcompanion"
+        }
+        // "How much do I pay?" after a spell cast with delve or convoke: the cost the cast already worked out, not the printed one.
+        if (ctx.kwCost) Regex("""^(?:and |so |then )?(?:can|could|may) (?:i|we) (?:still )?(?:tap|convoke with|use) (?:my )?(?:summoning[- ]sick|freshly[- ]cast|just[- ]cast|just[- ]played|new|that just came in|that came in this turn)(?: creatures?)?(?: (?:to|for) (?:convoke|pay))?$|^(?:and |so |then )?(?:does|will|do) (?:summoning sickness|summoning-sickness) (?:matter|apply|stop (?:me|it)|stop convoke)$""").matchEntire(t2)?.let { t2 = "kwq sick" }
+        if (ctx.kwCost) Regex("""^(?:and |so |then )?(?:can|could|may) (?:i|we) (?:tap|use) (?:my )?(?:creatures?|them)(?: for| to make| as) mana$|^(?:and |so |then )?(?:is|does) (?:convoke|tapping a creature for convoke|that) (?:make|produce|count as|use) mana$""").matchEntire(t2)?.let { t2 = "kwq mana" }
+        if (ctx.kwCost) Regex("""^(?:and |so |then )?(?:how much(?: mana)? (?:do|did|would|will) (?:i|we) (?:pay|spend)(?: in all| in total| then| for it| for that)?|how much(?: mana)? (?:does|did|will|would) (?:it|that|the spell|c\d+) (?:cost|end up costing)(?: me| us)?(?: in all| in total| then)?|what(?:'s| is| does) (?:the )?(?:total )?cost|what does (?:it|that) cost(?: me)?|how much is (?:it|that))$""").matchEntire(t2)?.let { t2 = "kwq cost" }
+        // Questions asked after a keyword was used: one marker, answered from where the game ended up.
+        // A rebound card cast without any keyword said: only the questions about where it goes and what happens next turn are about rebound.
+        val reboundQ = ctx.kwRebound && Regex("""^(?:and |so |then )?(?:what happens(?: to (?:it|that|the card|c\d+))?(?: (?:after|when|once) (?:it|that) resolves)?(?:,? and (?:then )?(?:what (?:happens )?)?(?:(?:on|at|during|in) )?(?:my )?next (?:turn|upkeep))?|where does (?:it|that|c\d+) go(?: (?:after|when) (?:it|that) resolves)?|(?:do|can|will|may) (?:i|we) (?:get to |still )?(?:cast|play|use) (?:it|that|c\d+) again(?: (?:next turn|later|at my next upkeep|for free|at my upkeep))?|when (?:can|do|will) (?:i|we) (?:get to )?cast (?:it|that) again|what happens (?:on|at|during|in) (?:my )?next (?:turn|upkeep)|does (?:it|that|c\d+) rebound|what does rebound do)$""").matches(t2)
+        if (ctx.kwActive || reboundQ) Regex("""^(?:and |so |then )?(when|where|what|can|could|may|does|do|will|would|is|are|how|why|did)\b.*$""").find(t2)?.let { r ->
+            val kind = when (r.groupValues[1]) { "can", "could", "may" -> "can"; "when" -> "when"; "where" -> "where"; "what" -> "what"; else -> "does" }
+            val next = if (Regex("""\bnext (?:turn|upkeep)|following turn|my next\b""").containsMatchIn(t2) || (reboundQ && Regex("""\bagain\b""").containsMatchIn(t2))) " nextturn" else ""
+            val endStep = if (Regex("""\b(?:end of (?:the )?turn|end step|at the end|when the turn ends)\b""").containsMatchIn(t2)) " endstep" else ""
+            val onTurn = Regex("""\bturn (\d+)\b""").find(t2)?.groupValues?.get(1)?.let { " turn$it" } ?: ""
+            t2 = "kwq $kind$next$endStep$onTurn"
+        }
+        return t2
+    }
+
+    /** Reads the markers keywordRewrites left: "kwx plot me c1" (a keyword action) and "kwq can" (a question about what a keyword did). */
+    private fun readKeywordMarkers(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        Regex("""^kwx (\w+) (\w+) (c\d+|it|none)(?: (.*))?$""").find(clause0)?.let { r ->
+            val kw = r.groupValues[1]; val who = r.groupValues[2]
+            if (kw == "exert") {
+                val att = ctx.events.lastOrNull { it.verb == "attack" }?.obj ?: ctx.lastMentioned
+                ctx.events += EventSpec("kw", player = who, obj = att, to = "exert"); ctx.lastActor = who; ctx.lastVerb = "kw"; return true
+            }
+            val card = if (r.groupValues[3] == "it") ctx.lastMentioned?.let { id -> ctx.objects[id]?.card?.name }?.let { n -> names.lookup(Names.normalize(n)) } else m.cards[r.groupValues[3]]
+            if (card == null && r.groupValues[3] != "none") return null
+            val zone = when (kw) { "dredge", "unearth", "escape" -> "graveyard"; "miracle" -> "library"; else -> "hand" }
+            val id = card?.let { addObject(it, who, false, ctx, zone = zone) }
+            if (kw == "castadventure" || kw == "turnup") ctx.events += EventSpec("resolveAll")
+            ctx.events += EventSpec("kw", player = who, obj = id, to = kw, source = r.groupValues[4].trim().ifEmpty { null })
+            if (kw == "castadventure" || kw == "turnup") ctx.events += EventSpec("resolveAll")
+            ctx.lastActor = who; ctx.lastVerb = "kw"; if (id != null) ctx.lastMentioned = id; ctx.note(who)
+            // The questions that follow are about the keyword, except for cycling whose "do I draw?" the ordinary answer gives.
+            ctx.kwActive = kw != "cycle"
+            return true
+        }
+        Regex("""^kwtoken (\w+) (\w+)$""").find(clause0)?.let { r ->
+            val who = r.groupValues[1]; val kind = r.groupValues[2]
+            val tok = ctx.objects.values.lastOrNull { it.token && it.card.name?.lowercase()?.startsWith(kind) == true && it.controller == who }
+                ?: run { var id = "${kind}_token"; var k = 2; while (ctx.objects.containsKey(id)) id = "${kind}_token_${k++}"
+                    ctx.objects[id] = ObjectSpec(id, CardRef(name = "$kind token"), controller = who, token = true)
+                    ctx.notes += "A $kind token wasn't described; assuming ${if (who == "me") "you have" else "they have"} one."; ctx.objects.getValue(id) }
+            ctx.events += EventSpec("activate", player = who, obj = tok.id); ctx.events += EventSpec("resolveAll")
+            ctx.lastActor = who; ctx.lastVerb = "activate"; ctx.lastMentioned = tok.id; ctx.note(who)
+            return true
+        }
+        if (clause0 == "kwdrawnote") return true
+        if (clause0 == "kwdredge") {
+            val gy = ctx.objects.values.lastOrNull { o -> o.zone == "graveyard" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.let { Regex("""(?i)\bdredge\b""").containsMatchIn(it.keywords) } } == true } ?: return null
+            ctx.events += EventSpec("kw", player = gy.controller, obj = gy.id, to = "dredge"); ctx.lastActor = gy.controller; ctx.lastMentioned = gy.id; ctx.kwActive = true
+            ctx.asks += EventSpec("ask", player = gy.controller, to = "kw:can")
+            return true
+        }
+        if (clause0 == "kwcompanion") {
+            val comp = m.cards.values.firstOrNull { Regex("""(?i)\bcompanion\b""").containsMatchIn(it.keywords) } ?: return null
+            ctx.asks += EventSpec("ask", to = "text:${comp.display} is a companion. A companion starts outside the game: before the game you may reveal it if your starting deck meets its condition (103.2b), and then once during the game, any time you have priority and the stack is empty during a main phase of your turn, you may pay {3} and put it into your hand. That is a special action that doesn't use the stack (702.139a, 116.2g); once it is in your hand it is an ordinary card you cast normally, and it stays in the game (702.139c).")
+            return true
+        }
+        if (clause0 == "kwmadness") {
+            ctx.events += EventSpec("kw", player = ctx.lastActor ?: "me", to = "madnesscast"); ctx.lastVerb = "kw"; ctx.kwActive = true
+            ctx.asks += EventSpec("ask", player = ctx.lastActor ?: "me", to = "kw:can"); return true
+        }
+        Regex("""^kwq (\w+)( nextturn)?( endstep)?(?: turn(\d+))?$""").find(clause0)?.let { r ->
+            ctx.events += EventSpec("resolveAll")
+            if (r.groupValues[2].isNotEmpty()) ctx.events += EventSpec("kw", player = ctx.lastActor ?: "me", to = "nextturn")
+            if (r.groupValues[3].isNotEmpty()) ctx.events += EventSpec("step", player = ctx.lastActor ?: "me", to = "end")
+            ctx.asks += EventSpec("ask", player = ctx.lastActor ?: "me", to = "kw:${r.groupValues[1]}", amount = r.groupValues[4].toIntOrNull())
+            ctx.notes += "\"${restore(clause0, m)}\" is answered by the outcome below."
+            return true
+        }
+        return null
+    }
+
+    /** After a clause that cast something: the keyword said with it ("with buyback") goes on that cast, and a cast of a rebound card starts the keyword's questions. */
+    private fun tagKeywordCast(fromEvent: Int, ctx: Ctx) {
+        val pending = ctx.kwPending
+        for (i in fromEvent until ctx.events.size) {
+            val e = ctx.events[i]
+            if (e.verb != "cast") continue
+            val entry = e.card?.name?.let { names.lookup(Names.normalize(it)) }
+            if (pending != null && e.to == null) {
+                ctx.events[i] = e.copy(to = "kw:" + pending + (if (pending != "splice" && (ctx.kwArg != null || pending == "multikicker")) ":" + (ctx.kwArg ?: "1") else ""), source = if (pending == "splice") ctx.kwArg else e.source)
+                ctx.kwPending = null; ctx.kwArg = null; ctx.kwActive = pending !in setOf("delve", "convoke", "jumpstart"); if (pending in setOf("delve", "convoke")) ctx.kwCost = true
+            } else if (pending == null && e.to == null && entry != null && e.card?.name != null && names.fullNameOf(entry.oracleId)?.let { full -> Regex("""(?i)adventure""").containsMatchIn(entry.typeLine) && full.contains(" // ") && (e.card.name.equals(full.substringAfter(" // "), true) || e.card.name.equals(full, true)) } == true) {
+                // "I cast Stomp": the Adventure half of Bonecrusher Giant.
+                ctx.events[i] = e.copy(to = "kw:adventure"); ctx.kwActive = true; ctx.kwAdventure = true
+            } else if (entry != null && Regex("""(?i)\brebound\b""").containsMatchIn(entry.keywords)) ctx.kwRebound = true
+        }
+    }
+
     /** More early questions, split out of readEarlyQuestionsB for the JVM method size limit. */
     /** The question markers [combatRewrites] leaves: combat rulings answered from the rules or asked of the result. */
     private fun readCombatQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
@@ -5195,6 +5453,7 @@ class SituationParser(private val names: NameIndex) {
         readStackQuestions(clause0, m, ctx)?.let { return it }
         readCombatQuestions(clause0, m, ctx)?.let { return it }
         replacementQuestions(clause0, m, ctx)?.let { return it }
+        readKeywordMarkers(clause0, m, ctx)?.let { return it }
         // "My opponent casts Fireball at me. X is 5.": the X of the last spell cast that has none yet (a copy spell has no X).
         Regex("""^(?:and |with )?x (?:is|was|=|equals|equal to|of) ?(\d+)$""").find(clause0.trim())?.let { r ->
             val at = ctx.events.indexOfLast { e -> e.verb == "cast" && e.amount == null && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) !in xlessCopySpells }
@@ -6522,6 +6781,44 @@ class SituationParser(private val names: NameIndex) {
             // is the activation itself, read elsewhere, so summoning sickness and the mana made are shown.
             if (ctx.events.none { e -> e.verb == "cast" && e.player != ctx.objects.getValue(id).controller && id in e.targets }) return@let
             ctx.asks += EventSpec("ask", obj = id, to = "tapAbility"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "What does afflict do?" and the other keywords this track models: the rule in its own words.
+        Regex("""^(?:what does|what's|what is|how does|how do) (?:an? |the )?(companion|afflict|exert|rebound|delve|convoke|buyback|entwine|unearth|evoke|hideaway|dredge|madness|miracle|persist|undying|surveil|investigate|ninjutsu|morph|disguise|foretell|plot|splice|escape|mutate|cycling|equip)(?: do| work| mean|s)?$""").find(clause0)?.let { r ->
+            val (text, rule) = when (r.groupValues[1]) {
+                "companion" -> "Companion: a companion starts outside the game. Before the game you may reveal it if your starting deck meets its condition (103.2b); once during the game, any time you have priority and the stack is empty during a main phase of your turn, you may pay {3} and put it into your hand, a special action that doesn't use the stack. After that it's an ordinary card in your hand." to "702.139a"
+                "exert" -> "Exert: a creature with an exert ability may be exerted as it attacks, an optional cost of attacking; an exerted permanent doesn't untap during its controller's next untap step, and its linked \"when you do\" ability triggers as it's declared as an attacker." to "701.43a"
+                "afflict" -> "Afflict N: whenever this creature becomes blocked, the defending player loses N life. It triggers when the creature becomes blocked, whether or not the blocker survives, and the life loss isn't damage." to "702.130a"
+                "rebound" -> "Rebound: if the spell was cast from your hand, it's exiled as it resolves instead of going to the graveyard, and at the beginning of your next upkeep you may cast it from exile without paying its mana cost. Cast from anywhere else, it goes to the graveyard as usual." to "702.88a"
+                "delve" -> "Delve: for each generic mana in the spell's total cost, you may exile a card from your graveyard rather than pay that mana. It can't pay for coloured mana and isn't an additional or alternative cost." to "702.66a"
+                "convoke" -> "Convoke: for each coloured mana in the spell's total cost you may tap an untapped creature of that colour you control rather than pay it, and for each generic mana you may tap any untapped creature you control. A creature tapped this way doesn't need to have been under your control since the turn began." to "702.51a"
+                "buyback" -> "Buyback: you may pay the buyback cost as an additional cost as you cast the spell; if you did, it's put into its owner's hand instead of the graveyard as it resolves (but if it's countered or doesn't resolve, it goes to the graveyard)." to "702.27a"
+                "entwine" -> "Entwine: on a modal spell, you may pay the entwine cost as an additional cost to choose all its modes instead of just one; they happen in the order written." to "702.42a"
+                "unearth" -> "Unearth: pay the cost and return the card from your graveyard to the battlefield, as a sorcery. It gains haste, it's exiled at the beginning of the next end step, and if it would leave the battlefield it's exiled instead." to "702.84a"
+                "evoke" -> "Evoke: you may cast the creature for its evoke cost instead of its mana cost; when it enters, its controller sacrifices it. Its enters ability and the sacrifice both trigger, and you choose the order they go on the stack." to "702.74a"
+                "hideaway" -> "Hideaway N: when the permanent enters, look at the top N cards of your library, exile one face down, and put the rest on the bottom in a random order." to "702.75a"
+                "dredge" -> "Dredge N: while the card is in your graveyard, if you would draw a card and have at least N cards in your library, you may mill N cards instead and return the card to your hand." to "702.52a"
+                "madness" -> "Madness: if you discard the card, you discard it but exile it instead of putting it into your graveyard, and then you may cast it for its madness cost; if you don't, it goes to your graveyard." to "702.35a"
+                "miracle" -> "Miracle: if the card is the first card you've drawn this turn, you may reveal it as you draw it; when you do, you may cast it by paying its miracle cost rather than its mana cost." to "702.94a"
+                "persist" -> "Persist: when the permanent is put into a graveyard from the battlefield, if it had no -1/-1 counters on it, it returns to the battlefield under its owner's control with a -1/-1 counter on it." to "702.79a"
+                "undying" -> "Undying: when the permanent is put into a graveyard from the battlefield, if it had no +1/+1 counters on it, it returns to the battlefield under its owner's control with a +1/+1 counter on it." to "702.93a"
+                "surveil" -> "Surveil N: look at the top N cards of your library, then put any number of them into your graveyard and the rest back on top in any order." to "701.25a"
+                "investigate" -> "Investigate: create a Clue token, an artifact with \"{2}, Sacrifice this token: Draw a card.\"" to "701.16a"
+                "ninjutsu" -> "Ninjutsu: pay the cost, reveal the card from your hand and return an unblocked attacking creature you control to its owner's hand; the ninja is put onto the battlefield tapped and attacking the same player or planeswalker." to "702.49a"
+                "morph", "disguise" -> "Morph and disguise: you may cast the card face down as a 2/2 creature with no name, types, text or mana cost (disguise gives it ward {2}) for {3}, and turn it face up any time you have priority by paying its morph or disguise cost, a special action that doesn't use the stack." to if (r.groupValues[1] == "morph") "702.37a" else "702.168a"
+                "foretell" -> "Foretell: during your turn you may pay {2} and exile the card from your hand face down; on a later turn you may cast it for its foretell cost." to "702.143a"
+                "plot" -> "Plot: as a sorcery-speed special action you may pay the plot cost and exile the card from your hand; on a later turn of yours you may cast it from exile without paying its mana cost, as a sorcery." to "702.170a"
+                "splice" -> "Splice onto [quality]: as you cast a spell of that quality you may reveal the card from your hand and pay its splice cost; the spell gains the card's rules text, and the card stays in your hand." to "702.47a"
+                "escape" -> "Escape: you may cast the card from your graveyard by paying its escape cost, which includes exiling other cards from the graveyard, rather than its mana cost." to "702.138a"
+                "mutate" -> "Mutate: you may cast the creature for its mutate cost, targeting a non-Human creature you own; if the target is still legal as it resolves, the spell merges with it (on top or underneath) into one creature with the top card's characteristics and the abilities of both." to "702.140a"
+                "cycling" -> "Cycling: pay the cost and discard the card from your hand to draw a card. It's an activated ability, so the card is never cast." to "702.29a"
+                else -> "Equip: pay the cost to attach the Equipment to a creature you control, only at sorcery speed (your main phase, empty stack)." to "702.6a"
+            }
+            // "Khenra Scrapper attacks. What does afflict do?": the creature has no such ability, and that is the answer first.
+            val kwWord = r.groupValues[1]
+            val lacking = ctx.objects.values.filter { !it.token }.mapNotNull { o -> o.card.name?.let { n -> names.lookup(Names.normalize(n)) } }.filter { it.isCard && !it.isSpellOnly }
+            val honest = if (lacking.isNotEmpty() && lacking.none { Regex("""(?i)\b${Regex.escape(kwWord)}\b""").containsMatchIn(it.keywords) || Regex("""(?i)\b${Regex.escape(kwWord)}\b""").containsMatchIn(it.display) } && kwWord !in setOf("equip", "cycling", "surveil", "investigate", "ninjutsu", "companion"))
+                lacking.last().let { c -> "${c.display} doesn't have $kwWord${c.keywords.replace(Regex("""[\[\]"]"""), "").replace(",", ", ").takeIf { it.isNotBlank() }?.let { k -> " (its keywords: $k)" } ?: ""}. In general: " } else ""
+            ctx.asks += EventSpec("ask", to = "text:$honest$text ($rule)"); return true
         }
         // "I cast Bloodbraid Elf. What does cascade do?": the keyword, in the rules' words, alongside the situation.
         Regex("""^(?:what does|what's|what is|how does) (cascade|storm|prowess|menace|deathtouch|lifelink|trample|first strike|flash|hexproof|indestructible|vigilance|haste|flying|reach|defender|infect|split second)(?: do| work| mean)?$""").find(clause0)?.let { r ->

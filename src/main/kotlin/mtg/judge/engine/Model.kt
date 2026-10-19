@@ -130,6 +130,12 @@ sealed interface Trigger {
     data class ThisBecomesTarget(val opponentsOnly: Boolean = false, val firstEachTurn: Boolean = false) : Trigger
     /** "When ~ becomes monstrous" (701.31a). */
     data object ThisBecomesMonstrous : Trigger
+    /** Gemrazer: "Whenever this creature mutates" (702.140d): a spell merged with it. */
+    data object ThisMutates : Trigger
+    /** Khenra Scrapper, Glorybringer: "You may exert ~ as it attacks. When you do, ..." (701.43d): the linked ability of an exerted attacker. */
+    data object ThisExerts : Trigger
+    /** Tireless Tracker: "Whenever you sacrifice a Clue" (701.21a): a permanent matching [filter] was sacrificed by its controller. */
+    data class YouSacrifice(val filter: ObjFilter) : Trigger
     /** "Whenever ~ becomes tapped". */
     data object ThisBecomesTapped : Trigger
     /** "When you cycle ~". */
@@ -244,6 +250,14 @@ sealed interface Effect {
     data class DiscardChosen(val who: Who, val filter: ObjFilter?, val what: String) : Effect
     /** Kor Skyfisher, Whitemane Lion: "Return a permanent you control to its owner's hand." Not targeted — the controller chooses on resolution. */
     data class BounceChosen(val filter: ObjFilter, val what: String) : Effect
+    /** Uro: "sacrifice it unless it escaped" (702.138b). */
+    data object SacrificeUnlessEscaped : Effect
+    /** Hideaway N (702.75a): look at the top N cards, exile one face down, put the rest on the bottom in a random order. */
+    data class Hideaway(val n: Int) : Effect
+    /** Investigate (701.16a): create a Clue token. */
+    data object Investigate : Effect
+    /** Surveil N (701.25a): look at the top N cards of your library, put any number into your graveyard, the rest back on top. */
+    data class Surveil(val n: Int) : Effect
     /** Living weapon (702.92a): create a 0/0 Germ, then attach this Equipment to it. */
     data object LivingWeapon : Effect
     /** Anger of the Gods: "If a creature dealt damage this way would die this turn, exile it instead." */
@@ -434,7 +448,7 @@ sealed interface Effect {
         is LoseLifeUnlessSacOrDiscard -> emptyList()
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is Exploit, is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
-        is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
+        is Investigate, is Surveil, is SacrificeUnlessEscaped, is Hideaway, is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
     }
 
     fun hasUnparsed(): Boolean = when (this) {
@@ -520,6 +534,8 @@ sealed interface StaticEffect {
     data class EntersWithCounters(val kind: String, val count: Int?, val per: CountExpr? = null, val onlyIfKicked: Boolean = false,
         /** Bloodthirst (702.54a): only if an opponent was dealt damage this turn. */
         val onlyIfOpponentDamaged: Boolean = false) : StaticEffect
+    /** Everflowing Chalice: "~ enters with a charge counter on it for each time it was kicked" (702.33c, 702.33d). */
+    data class EntersWithKickCounters(val kind: String) : StaticEffect
     /** "You may have ~ enter as a copy of any creature on the battlefield." (Clone, 706.2). [except] is the card's own rider, kept as text. */
     data class EntersAsCopy(val filter: ObjFilter, val tapped: Boolean, val except: String?) : StaticEffect
     /** "~ can't block" / "~ can't attack" / "~ can't be countered" / "~ can't be blocked". */
