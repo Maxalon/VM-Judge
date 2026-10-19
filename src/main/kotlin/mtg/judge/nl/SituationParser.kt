@@ -1685,12 +1685,96 @@ class SituationParser(private val names: NameIndex) {
         return t2
     }
 
+    /**
+     * Replacement and prevention effects said the way players say them (614, 615, 616).
+     * "Their Blood Artist dies to Wrath of God along with my creatures": the board, then the Wrath that kills them.
+     */
+    private fun replacementRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('.')
+        fun re(s: String) = Regex(s, RegexOption.IGNORE_CASE)
+        re("""^(my|my opponent's|their|his|her|the opponent's) (c\d+) (?:dies|is destroyed|gets destroyed|gets wiped|is killed) (?:to|by|from) (?:a |an |my |their |his |her |my opponent's )?(c\d+)(?:,? (?:along with|together with|with|and so do|as do) (my|their|his|her|my opponent's|all the other|the other|all) creatures)?$""").find(q)?.let { r ->
+            val wrath = m.cards[r.groupValues[3]] ?: return@let
+            if (!wrath.typeLine.contains("Sorcery") && !wrath.typeLine.contains("Instant")) return@let
+            val mine = r.groupValues[1].lowercase() == "my"
+            val owner = if (mine) "i control" else "my opponent controls"
+            val others = r.groupValues[4].lowercase()
+            // "along with my creatures": an unnamed creature stands for them, so the answer says what happens to one.
+            val alsoMine = others == "my" && !mine
+            val alsoTheirs = others in setOf("their", "his", "her", "my opponent's") && mine
+            val caster = if (mine) "my opponent casts" else "i cast"
+            ctx.notes += "Who cast ${wrath.display} wasn't said; it is read as cast by ${if (mine) "your opponent" else "you"}. It doesn't change what happens."
+            return "$owner ${r.groupValues[2]}${if (alsoMine) " and i control a creature" else if (alsoTheirs) " and my opponent controls a creature" else ""}, $caster ${r.groupValues[3]}"
+        }
+        // "My opponent casts Lightning Bolt at my 2/2 that has protection from red": the creature and its keyword first, then the spell aimed at it.
+        re("""^(my opponent|the opponent|opponent|@\w+) (casts? c\d+(?: (?:on|at|targeting))?) (my|their|his|her|my opponent's) (\d+/\d+)(?: creature)? (?:that has|that's got|which has|with|that have) ($kwPhrase(?:(?:,|,? and) $kwPhrase)*)(.*)$""").find(q)?.let { r ->
+            return "${r.groupValues[3]} ${r.groupValues[4]} has ${r.groupValues[5]}, ${r.groupValues[1]} ${r.groupValues[2]} it${r.groupValues[6]}"
+        }
+        // "My opponent has a damage prevention shield preventing the next 3 damage": a shield already made (615.7), from a Healing Salve or the like.
+        re("""^(my opponent|the opponent|they|he|she|i|we) (?:has|have|got|'ve got|'s got) (?:a |an )?(?:damage )?(?:prevention )?shield (?:preventing|that prevents|which prevents|that will prevent|to prevent|for|of) (?:the next )?(\d+)(?: damage)?(?: (?:that would be dealt to (?:them|him|her|me|us)|this turn))*$""").find(q)?.let { r ->
+            return "preventshield-question ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "mine" else "theirs"} ${r.groupValues[2]}"
+        }
+        // "I cast Thoughtseize against an opponent with Leyline of Sanctity in play": their permanent, then the spell aimed at them.
+        re("""^(i|we) (cast|play) (c\d+) (?:against|at|on|targeting|vs\.?|versus) (?:an|my|the|our) opponent (?:with|who has|who controls|that has|who's got|who got) (?:a |an )?(c\d+)(?: (?:in play|on the battlefield|out|on board|on the board|down))?$""").find(q)?.let { r ->
+            return "my opponent controls ${r.groupValues[4]}, ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} targeting my opponent"
+        }
+        // "I'm at -3 with Phyrexian Unlife. I take 2 damage from Shock": an opponent's damage spell, aimed at the speaker.
+        re("""^(i|we) (?:take|took|am dealt|get dealt|get hit for|'m dealt) (\d+) damage from (?:a |an |their |my opponent's |the opponent's )?(c\d+)\??$""").find(q)?.let { r ->
+            val card = m.cards[r.groupValues[3]] ?: return@let
+            if (!card.typeLine.contains("Instant") && !card.typeLine.contains("Sorcery")) return@let
+            ctx.notes += "\"${r.groupValues[2]} damage from ${card.display}\" is read as an opponent casting ${card.display} at you; it deals what its own text says."
+            return "my opponent casts ${r.groupValues[3]} targeting me"
+        }
+        // "My permanents are phased out by Teferi's Protection": the spell that did it, played out, so they are phased out (702.26b).
+        re("""^(?:all (?:of )?)?(my|our|their|his|her|my opponent's) (?:permanents|creatures|stuff|board|whole board|things)(?: are| is| have been| has been| got| get)? phased out(?: (?:by|from|with|thanks to|because of|via) (?:my |our |their |his |her |a )?(c\d+))?$""").find(q)?.let { r ->
+            val spell = r.groupValues[2].ifEmpty { null }?.let { m.cards[it] } ?: return@let
+            if (!spell.typeLine.contains("Instant") && !spell.typeLine.contains("Sorcery")) return@let
+            val mine = r.groupValues[1].lowercase() in setOf("my", "our")
+            val who = if (mine) "me" else "opp"
+            val has = ctx.objects.values.any { it.controller == who && it.zone == "battlefield" }
+            ctx.notes += "Read as ${if (mine) "you" else "your opponent"} having cast ${spell.display} earlier, so ${if (mine) "your" else "their"} permanents are phased out."
+            return "${if (has) "" else if (mine) "i control a creature, " else "my opponent controls a creature, "}${if (mine) "i cast" else "my opponent casts"} ${r.groupValues[2]}"
+        }
+        // "My Thalia's Lancers would enter; they control Hushbringer": "would enter" is the entering being asked about.
+        re("""^(my|their|his|her|my opponent's) (c\d+) (?:would|is about to|is going to|will) enter(?: the battlefield)?$""").find(q)?.let { r -> return "${r.groupValues[1]} ${r.groupValues[2]} enters" }
+        // "I reanimate a creature with Reanimate" (Containment Priest's case): the spell cast at a creature card in the graveyard.
+        re("""^(i|we|my opponent|they) (?:reanimates?|returns?|brings? back|gets? back) (?:a creature(?: card)?|(?:my |their |a )?(c\d+))(?: (?:card )?from (?:my|their|the|a) graveyard)? (?:with|using|via) (?:a |my |their )?(c\d+)$""").find(q)?.let { r ->
+            val spell = m.cards[r.groupValues[3]] ?: return@let
+            if (!spell.typeLine.contains("Instant") && !spell.typeLine.contains("Sorcery")) return@let
+            val whose = if (r.groupValues[1].lowercase() in setOf("i", "we")) "my" else "their"
+            val verb = if (r.groupValues[1].lowercase() in setOf("i", "we")) "cast" else "casts"
+            return "${r.groupValues[1]} $verb ${r.groupValues[3]} targeting ${r.groupValues[2].ifEmpty { "a creature card in $whose graveyard" }}"
+        }
+        // "Zealous Conscripts gains control of my Platinum Angel": its enters ability did it; the Conscripts is on the battlefield and the control change happens.
+        re("""^(?:(my opponent's|their|his|her|my) )?(c\d+) (?:gains?|gained|takes?|took|steals?|stole) control of (my|their|his|her|my opponent's) (c\d+)$""").find(q)?.let { r ->
+            val taker = if (r.groupValues[3].lowercase() == "my") "my opponent" else "i"
+            return "$taker ${if (taker == "i") "control" else "controls"} ${r.groupValues[2]}, $taker ${if (taker == "i") "gain" else "gains"} control of ${r.groupValues[4]}"
+        }
+        // "I have Drannith Magistrate; can my opponent cast their commander from the command zone?" with no commander named.
+        re("""^(?:so |then )?(?:can|could|may|is) (my opponent|the opponent|they|he|she|i|we)(?: allowed to| able to)? (?:still )?cast (?:their|his|her|my|our|a) commander(?: (?:from|out of) the command zone)?(?: (?:now|anymore|at all))?\??$""").find(q)?.let { r ->
+            return "cmdcast-question ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "mine" else "theirs"}"
+        }
+        return t
+    }
+
+    /** The question markers [replacementRewrites] makes. */
+    private fun replacementQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        Regex("""^preventshield-question (mine|theirs) (\d+)$""").find(clause0.trim())?.let { r ->
+            ctx.events += EventSpec("preventshield", player = if (r.groupValues[1] == "mine") "me" else "opp", amount = r.groupValues[2].toInt()); return true
+        }
+        Regex("""^cmdcast-question (mine|theirs)$""").find(clause0.trim())?.let { r ->
+            val mine = r.groupValues[1] == "mine"
+            ctx.asks += EventSpec("ask", player = if (mine) "me" else "opp", to = "castAllowed", card = CardRef(name = if (mine) "your commander" else "their commander")); return true
+        }
+        return null
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = stackRewrites(t2, m, ctx)
         t2 = combatRewrites(t2, m, ctx)
+        t2 = replacementRewrites(t2, m, ctx)
         // "has ward 2", "with ward {2}", "ward 2 on Thalia": one spelling of the keyword and its mana cost (702.21a).
         t2 = t2.replace(Regex("""\bward (?:of )?\{?(\d+)\}?(?![/\d])""", RegexOption.IGNORE_CASE), "ward {$1}")
         // "I Bolt their creature with ward 2 and pay": the creature and its keyword first, then the spell aimed at it.
@@ -5110,6 +5194,7 @@ class SituationParser(private val names: NameIndex) {
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readStackQuestions(clause0, m, ctx)?.let { return it }
         readCombatQuestions(clause0, m, ctx)?.let { return it }
+        replacementQuestions(clause0, m, ctx)?.let { return it }
         // "My opponent casts Fireball at me. X is 5.": the X of the last spell cast that has none yet (a copy spell has no X).
         Regex("""^(?:and |with )?x (?:is|was|=|equals|equal to|of) ?(\d+)$""").find(clause0.trim())?.let { r ->
             val at = ctx.events.indexOfLast { e -> e.verb == "cast" && e.amount == null && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) !in xlessCopySpells }

@@ -533,6 +533,8 @@ sealed interface StaticEffect {
     data object CantLose : StaticEffect
     /** Phyrexian Unlife: "You don't lose the game for having 0 or less life." */
     data object NoLossAtZeroLife : StaticEffect
+    /** Phyrexian Unlife: "As long as you have 0 or less life, all damage is dealt to you as though its source had infect." */
+    data object DamageAsInfectAtZeroLife : StaticEffect
     /** "~ can block an additional creature each combat": checked by its words as blockers are declared. */
     data object CanBlockMore : StaticEffect
     /** "~ can't be blocked by more than one creature": at most [n] blockers. */

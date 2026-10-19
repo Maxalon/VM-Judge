@@ -753,6 +753,7 @@ object OracleParser {
         }
         Regex("""^you can't lose the game and your opponents can't win the game\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.CantLose) }
         Regex("""^you don't lose the game for having 0 or less life\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NoLossAtZeroLife) }
+        Regex("""^as long as you have 0 or less life, all damage is dealt to you as though its source had infect\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.DamageAsInfectAtZeroLife) }
         Regex("""^nonbasic lands are mountains\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NonbasicLandsAreMountains) }
         // "Creatures without flying can't attack" (Moat), "Non-Eye creatures you control can't block": a filter
         // and a restriction, the same shape the engine already checks for enchanted creatures.

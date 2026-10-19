@@ -2144,10 +2144,11 @@
     "text": "My opponent casts Rest in Peace. Then my Grizzly Bears dies. Does my Blood Artist trigger?",
     "expect": [
       "Grizzly Bears: the battlefield → exile (replaced by Rest in Peace)",
-      "No: Blood Artist's ability didn't trigger"
+      "No: Grizzly Bears was put into exile instead of the graveyard (Rest in Peace), so it never died and Blood Artist's ability doesn't trigger"
     ],
     "cite": [
-      "614.1a"
+      "614.1a",
+      "700.4"
     ]
   },
   {
@@ -7061,13 +7062,15 @@
     "id": "doubling-season-then-hardened-scales",
     "text": "I control Doubling Season and Hardened Scales and a creature enters with two +1/+1 counters. How many counters does it get?",
     "expect": [
-      "4 +1/+1 counters are put on a creature instead of 2",
-      "5 +1/+1 counters are put on a creature instead of 4",
-      "enters the battlefield with 5 +1/+1 counters"
+      "3 +1/+1 counters are put on a creature instead of 2",
+      "6 +1/+1 counters are put on a creature instead of 3",
+      "Doubling Season then Hardened Scales gives 5",
+      "enters the battlefield with 6 +1/+1 counters"
     ],
     "notExpect": [],
     "cite": [
-      "614.6"
+      "614.6",
+      "616.1"
     ]
   },
   {
@@ -39179,6 +39182,244 @@
     "cite": [
       "510.4",
       "702.7b"
+    ]
+  },
+  {
+    "id": "rp1",
+    "text": "Humility is on the battlefield. I cast Clone copying my opponent's Grizzly Bears. What is Clone?",
+    "expect": [
+      "Clone doesn't copy anything: Humility takes its abilities away as it enters",
+      "Clone is 1/1"
+    ],
+    "notExpect": [
+      "a copy of Grizzly Bears"
+    ],
+    "cite": [
+      "614.12",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "rp2",
+    "text": "I control Doubling Season and Hardened Scales. I cast Walking Ballista for X=2. How many counters does it enter with?",
+    "expect": [
+      "Hardened Scales then Doubling Season gives 6; Doubling Season then Hardened Scales gives 5",
+      "Walking Ballista enters with 6 +1/+1 counters"
+    ],
+    "cite": [
+      "616.1",
+      "616.1e",
+      "614.1c"
+    ]
+  },
+  {
+    "id": "rp3",
+    "text": "I control Rest in Peace. My opponent's Blood Artist dies to Wrath of God along with my creatures. Does Blood Artist trigger?",
+    "expect": [
+      "Blood Artist: the battlefield → exile (replaced by Rest in Peace)",
+      "so they never died and Blood Artist's ability doesn't trigger"
+    ],
+    "notExpect": [
+      "Yes: Blood Artist"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6",
+      "700.4"
+    ]
+  },
+  {
+    "id": "rp4",
+    "text": "I control Panharmonicon and Strionic Resonator. My Mulldrifter enters. How many cards can I draw?",
+    "expect": [
+      "You draw 4 cards in all.",
+      "up to 6 in all"
+    ],
+    "cite": [
+      "603.2d",
+      "707.10"
+    ]
+  },
+  {
+    "id": "rp5",
+    "text": "I control Panharmonicon and Strionic Resonator. My Mulldrifter enters. I activate Strionic Resonator targeting the trigger. How many cards do I draw?",
+    "expect": [
+      "A copy of Mulldrifter's triggered ability is put on the stack.",
+      "You draw 6 cards in all."
+    ],
+    "notExpect": [
+      "Mulldrifter enters the battlefield. (×2)",
+      "A copy of Mulldrifter is put"
+    ],
+    "cite": [
+      "707.10",
+      "603.2d"
+    ]
+  },
+  {
+    "id": "rp6",
+    "text": "Blood Moon is on the battlefield. My opponent plays Urza's Saga. What happens?",
+    "expect": [
+      "Urza's Saga is a Mountain with no abilities (Blood Moon).",
+      "Urza's Saga stays on the battlefield"
+    ],
+    "notExpect": [
+      "sacrifices Urza's Saga"
+    ],
+    "cite": [
+      "714.3a",
+      "714.4",
+      "305.7"
+    ]
+  },
+  {
+    "id": "rp7",
+    "text": "My opponent casts Lightning Bolt at my 2/2 that has protection from red. Does it die?",
+    "expect": [
+      "Lightning Bolt can't target a 2/2 creature with protection from red.",
+      "is still on the battlefield"
+    ],
+    "notExpect": [
+      "You take 3 damage"
+    ],
+    "cite": [
+      "702.16b"
+    ]
+  },
+  {
+    "id": "rp8",
+    "text": "I control Furnace of Rath. My opponent has a damage prevention shield preventing the next 3 damage. I Bolt them. How much do they take?",
+    "expect": [
+      "preventing first leaves 0 damage, doubling first leaves 3",
+      "No: opponent takes no damage."
+    ],
+    "notExpect": [
+      "takes 6 damage"
+    ],
+    "cite": [
+      "616.1",
+      "615.7"
+    ]
+  },
+  {
+    "id": "rp9",
+    "text": "My opponent controls Anafenza, the Foremost. My Solemn Simulacrum dies. Do I draw?",
+    "expect": [
+      "Solemn Simulacrum: the battlefield → exile (replaced by Anafenza, the Foremost).",
+      "so it never died and Solemn Simulacrum's dies ability has nothing to trigger on"
+    ],
+    "cite": [
+      "614.1a",
+      "700.4"
+    ]
+  },
+  {
+    "id": "rp10",
+    "text": "I cast Thoughtseize against an opponent with Leyline of Sanctity in play.",
+    "expect": [
+      "Thoughtseize can't target opponent."
+    ],
+    "notExpect": [
+      "discards"
+    ],
+    "cite": [
+      "702.11c"
+    ]
+  },
+  {
+    "id": "rp11",
+    "text": "My Phyrexian Unlife is out and I'm at -3 life. I take 2 damage from Shock. Do I lose?",
+    "expect": [
+      "You have 2 poison counters.",
+      "No: You are still in the game at -3 life."
+    ],
+    "notExpect": [
+      "You lose 2 life"
+    ],
+    "cite": [
+      "702.90b",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "rp12",
+    "text": "My permanents are phased out by Teferi's Protection. My opponent casts Wrath of God. Do my creatures die?",
+    "expect": [
+      "Wrath of God affects nothing",
+      "is phased out"
+    ],
+    "notExpect": [
+      "→ your graveyard"
+    ],
+    "cite": [
+      "702.26b"
+    ]
+  },
+  {
+    "id": "rp13",
+    "text": "My Thalia's Lancers would enter; my opponent controls Hushbringer. Does Lancers' ETB trigger?",
+    "expect": [
+      "No: Hushbringer stops it."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "rp14",
+    "text": "I have Drannith Magistrate; can my opponent cast their commander from the command zone?",
+    "expect": [
+      "No: opponent can't cast their commander from the command zone while Drannith Magistrate is on the battlefield"
+    ],
+    "notExpect": [
+      "Nothing changes."
+    ],
+    "cite": [
+      "903.8",
+      "101.2"
+    ]
+  },
+  {
+    "id": "rp15",
+    "text": "Yixlid Jailer is out; can I flashback Deep Analysis?",
+    "expect": [
+      "Deep Analysis can't be cast from your graveyard: under Yixlid Jailer it has no flashback"
+    ],
+    "notExpect": [
+      "You draw 2 cards"
+    ],
+    "cite": [
+      "613.1f",
+      "702.34a"
+    ]
+  },
+  {
+    "id": "rp16",
+    "text": "My opponent controls Containment Priest. I reanimate a creature with Reanimate.",
+    "expect": [
+      "a creature: your graveyard → exile (replaced by Containment Priest)."
+    ],
+    "notExpect": [
+      "enters the battlefield"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6"
+    ]
+  },
+  {
+    "id": "rp17",
+    "text": "Zealous Conscripts gains control of my Platinum Angel; I'm at 0 life. Do I lose?",
+    "expect": [
+      "opponent controls Platinum Angel.",
+      "Yes: You have lost the game."
+    ],
+    "notExpect": [
+      "still in the game"
+    ],
+    "cite": [
+      "704.5a",
+      "613.1b"
     ]
   }
 ]

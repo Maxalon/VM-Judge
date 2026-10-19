@@ -20,6 +20,7 @@ import mtg.judge.engine.TargetSpec
 import mtg.judge.engine.StaticAbility
 import mtg.judge.engine.StaticEffect
 import mtg.judge.engine.Zone
+import mtg.judge.engine.Trigger
 import mtg.judge.oracle.OracleParser
 
 /** Turns a [Situation] into a game state, runs its events through the [Engine], and renders an [Answer]. */
@@ -505,6 +506,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             }
             "blink" -> { val o = state.obj(e.obj ?: throw JudgeException("blink needs an object")); engine.blinkObject(o, e.player ?: o.controller) }
             "reanimate" -> { val o = state.obj(e.obj ?: throw JudgeException("reanimate needs an object")); engine.reanimateObject(o, e.player ?: o.owner) }
+            // "My opponent has a shield preventing the next 3 damage": a prevention shield already made (615.7).
+            "preventshield" -> { val pl = state.player(e.player ?: throw JudgeException("preventshield needs a player")); val n = e.amount ?: 1
+                state.shields += mtg.judge.engine.Shield(mtg.judge.engine.Replacement.PreventDamage(n, null, null, false, null), null, pl.id, n, "the stated prevention effect")
+                state.trace.step("${pl.subject} ${pl.v("has", "have")} a prevention shield: the next $n damage that would be dealt to ${pl.subject.lowercase().let { if (it == "you") "you" else "them" }} this turn is prevented.", "615.7") }
             "regenerate" -> { val o = state.obj(e.obj ?: throw JudgeException("regenerate needs an object")); state.shields += mtg.judge.engine.Shield(mtg.judge.engine.Replacement.Regenerate, o.id, null, 1, "a regeneration effect") }
             // "Can I kill my opponent at 40?" / "can I kill it?": what the asker controls or holds that deals damage is aimed at it.
             "kill" -> {
@@ -636,6 +641,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "aim" -> { val n = e.card?.name ?: throw JudgeException("aim needs a card"); state.triggerAim[n] = e.to ?: throw JudgeException("aim needs a target") }
             "ask" -> {
                 if (answerLayerAsk(e, state, engine)) return
+                if (answerReplacementAsk(e, state)) return
                 if (applyAskEarly(e, state, engine, targets)) return
                 val o = generateSequence(state.obj(e.obj ?: throw JudgeException("ask needs an object"))) { it.successor?.let { id -> state.objects[id] } }.last()
                 // "does my Serra Angel still have flying?": whether it has that keyword once everything is done,
@@ -671,6 +677,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             state.trace.steps.any { it.text.startsWith("${o.name}'s ability triggers") || it.text.startsWith("${o.name}'s evoke ability triggers") } -> "Yes: ${o.name}'s ability triggered." + (state.objects.values.firstOrNull { l -> l.isOnBattlefield() && l.controller != o.controller && l.def.oracleText.contains("You have hexproof", ignoreCase = true) }?.takeIf { o.def.abilities.filterIsInstance<TriggeredAbility>().all { a -> a.effect.targets().isEmpty() && !Regex("""(?i)\btarget\b""").containsMatchIn(a.text) } }?.let { l -> " ${l.name} on the other side changes nothing: the trigger doesn't target anyone, and hexproof only stops targeting (702.11a)." } ?: "")
                             muted != null -> "No: $muted stops it. ${o.name} entering doesn't cause any ability to trigger, its own included."
                             stripped != null -> "No: ${o.name} has no abilities under $stripped, so there is nothing to trigger."
+                            diesReplacedAnswer(o, state) != null -> diesReplacedAnswer(o, state)!!.let { (why, ans) -> state.trace.step(why, "614.6", "700.4"); ans }
                             else -> "No: ${o.name}'s ability didn't trigger (nothing that happened matched its trigger condition)."
                         }
                     }
@@ -839,7 +846,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 } else engine.enter(objId, e.to)
             }
             // "My opponent gains control of my creature": a control change with no card behind it.
-            "gaincontrol" -> engine.gainControl(e.player ?: throw JudgeException("gainControl needs a player"), e.obj ?: throw JudgeException("gainControl needs an object"), e.to == "eot")
+            // "Zealous Conscripts takes my Platinum Angel; I'm at 0 life": with the stack empty, state-based actions are checked next (704.3).
+            "gaincontrol" -> { engine.gainControl(e.player ?: throw JudgeException("gainControl needs a player"), e.obj ?: throw JudgeException("gainControl needs an object"), e.to == "eot"); if (state.stack.isEmpty()) engine.stateBasedActions() }
             // "I lose the flip": the coin flip a card asks for, said rather than randomised (705.2).
             "flip" -> state.coinFlips += (e.to ?: "lose").lowercase()
             // "They have no basics left": a search for a basic land card finds nothing in that library.
@@ -962,6 +970,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "transform" -> "${state.objects[e.obj]?.name ?: e.obj} transforms"
             "blink" -> "${state.objects[e.obj]?.name ?: e.obj} is exiled and returned to the battlefield"
             "reanimate" -> "${state.objects[e.obj]?.name ?: e.obj} is put from the graveyard onto the battlefield"
+            "preventshield" -> "${who ?: "the player"} ${if (who == "you") "have" else "has"} a shield preventing the next ${e.amount ?: 1} damage"
             "regenerate" -> "${state.objects[e.obj]?.name ?: e.obj} has a regeneration shield"
             "save" -> "${who ?: "you"} ${if (who == null || who == "you") "try" else "tries"} to save ${state.objects[e.obj]?.name ?: e.obj}"
             "kill" -> "${who ?: "you"} ${if (who == null || who == "you") "try" else "tries"} to kill ${e.targets.firstOrNull()?.let { t -> state.objects[t]?.name ?: state.players.firstOrNull { p -> p.id == t }?.name ?: t } ?: "?"}"
@@ -2045,9 +2054,11 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to == "playerDraw" || e.to == "drawCount") {
                     val p = state.player(e.player ?: throw JudgeException("ask needs a player"))
                     // "how many cards do I draw?" is a count, not a yes or no.
-                    if (e.to == "drawCount") { state.outcomes += "${p.subject} ${p.v("draws", "draw")} ${p.drew} card${if (p.drew == 1) "" else "s"} in all${if (p.drew == 0 && p.drewFromEmpty) " (the library is empty)" else ""}."; return true }
+                    if (e.to == "drawCount") { state.outcomes += "${p.subject} ${p.v("draws", "draw")} ${p.drew} card${if (p.drew == 1) "" else "s"} in all${if (p.drew == 0 && p.drewFromEmpty) " (the library is empty)" else ""}."; triggerCopierUnused(p, state); return true }
                     state.outcomes += if (p.drew > 0) "Yes: ${p.subject} ${p.v("draws", "draw")} ${p.drew} card${if (p.drew == 1) "" else "s"} in all."
                         else "No: ${p.subject} ${p.v("doesn't", "don't")} draw${if (p.drewFromEmpty) " (the library is empty)" else ""}." +
+                            // Solemn Simulacrum under Anafenza: it was exiled instead of dying, so its "when this dies, you may draw" never triggered.
+                            (state.objects.values.firstNotNullOfOrNull { o -> diesReplacedAnswer(o, state)?.takeIf { o.controller == p.id } }?.let { (why, _) -> state.trace.step(why, "614.6", "700.4"); " " + why } ?: "") +
                             // Goblin Guide: a revealed land put into the hand isn't a draw (121.1).
                             (if (state.trace.steps.any { it.text.contains("into their hand") || it.text.contains("into your hand") } || state.outcomes.any { it.contains("puts it into their hand") }) " A card an effect puts into the hand (Goblin Guide's revealed land, for instance) isn't drawn: drawing is specifically taking the top card of the library (121.1)." else "")
                     return true
@@ -2309,6 +2320,65 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             }
             return OracleParser.parse(card.oracleId, card.name, card.typeLine, card.manaCost, card.manaValue, card.colors, card.power, card.toughness, keywords, card.oracleText, card.loyalty).copy(defense = card.defense?.toIntOrNull())
         }
+    }
+
+    /**
+     * "I control Rest in Peace. Their Blood Artist dies to Wrath of God: does it trigger?": every creature was exiled
+     * instead (614.1a). A replaced event never happens (614.6), so nothing "died" (700.4) and a dies trigger, Blood
+     * Artist's or persist's, has nothing to trigger on. Null when no death was replaced or [o] has no dies trigger.
+     */
+    private fun diesReplacedAnswer(o: GameObject, state: GameState): Pair<String, String>? {
+        val diesTrigger = o.def.abilities.filterIsInstance<TriggeredAbility>().any { it.trigger is Trigger.ThisDies || it.trigger is Trigger.PermanentDies || it.trigger is Trigger.ThisToGraveyardAnywhere }
+        if (!diesTrigger) return null
+        val replaced = state.outcomes.mapNotNull { Regex("""^(.+): the battlefield → (exile|[^(]*library|[^(]*hand) \(replaced by (.+)\)\.$""").find(it) }
+        if (replaced.isEmpty()) return null
+        val anyDies = o.def.abilities.filterIsInstance<TriggeredAbility>().any { it.trigger is Trigger.PermanentDies }
+        if (!anyDies && replaced.none { it.groupValues[1] == o.name }) return null
+        val names = replaced.map { it.groupValues[1] }.distinct(); val by = replaced.map { it.groupValues[3] }.distinct().joinToString(" and ")
+        val they = if (names.size == 1) "it" else "they"
+        val list = if (names.size == 1) names[0] else names.dropLast(1).joinToString(", ") + " and " + names.last()
+        return "$by replaced the trip to the graveyard for $list. A replaced event never happens, and \"dies\" means \"is put into a graveyard from the battlefield\", so ${if (names.size == 1) "it never" else "none of them"} died and ${o.name}'s dies ability has nothing to trigger on." to
+            "No: $list ${if (names.size == 1) "was" else "were"} put into ${replaced.first().groupValues[2]} instead of the graveyard ($by), so $they never died and ${o.name}'s ability doesn't trigger (614.6, 700.4)."
+    }
+
+    /**
+     * "Panharmonicon and Strionic Resonator out, my Mulldrifter enters: how many cards can I draw?": the two triggers
+     * draw 4, and an untapped Resonator that nobody said was used can copy one of them on the stack for 2 more (707.10).
+     */
+    private fun triggerCopierUnused(p: Player, state: GameState) {
+        val copier = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.controller == p.id && o.tapped != true &&
+            o.abilities.filterIsInstance<ActivatedAbility>().any { it.effect is Effect.CopySpell && it.text.contains("triggered ability", true) } &&
+            state.trace.steps.none { it.text.contains("activate ${o.name}'s ability") } } ?: return
+        var resolving: String? = null; val drawn = mutableListOf<Int>()
+        for (st in state.trace.steps) {
+            Regex("""^All players pass priority; (.+) \(top of the stack\) starts to resolve""").find(st.text)?.let { resolving = it.groupValues[1] }
+            Regex("""^${Regex.escape(p.subject)} draws? (\d+) cards?""").find(st.text)?.let { if (resolving?.contains("triggered ability") == true) drawn += it.groupValues[1].toInt() }
+        }
+        val most = drawn.maxOrNull() ?: return
+        val cost = copier.abilities.filterIsInstance<ActivatedAbility>().first { it.effect is Effect.CopySpell }.cost
+        state.trace.step("${copier.name} wasn't used. Activated ($cost) while one of those triggered abilities is on the stack, it puts a copy of it on the stack, which resolves too.", "707.10", "602.2")
+        state.outcomes += "With ${copier.name} ($cost) ${p.subject.lowercase()} can copy one of those triggers while it's on the stack for $most more card${if (most == 1) "" else "s"}: up to ${p.drew + most} in all (707.10)."
+    }
+
+    /**
+     * "I have Drannith Magistrate; can my opponent cast their commander?" with no commander named: a commander may be
+     * cast from the command zone (903.8), and a "can't cast spells from anywhere other than their hands" effect beats
+     * that permission (101.2).
+     */
+    private fun answerReplacementAsk(e: EventSpec, state: GameState): Boolean {
+        if (e.to != "castAllowed" || e.card?.oracleId != null || e.card?.name?.endsWith(" commander") != true) return false
+        val p = state.player(e.player ?: return false)
+        val lock = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }
+            .any { x -> x is StaticEffect.CantCastFromZone && "command" in x.zones && (!x.opponentsOnly || o.controller != p.id) } }
+        if (lock != null) {
+            state.trace.step("A commander may be cast from the command zone, but ${lock.name} says ${if (lock.controller == p.id) "players" else "${state.player(lock.controller).possessive} opponents"} can't cast spells from anywhere other than their hands; the \"can't\" wins over the permission.", "903.8", "101.2")
+            val their = if (p.you) "your" else "their"
+            state.outcomes += "No: ${p.subject} can't cast $their commander from the command zone while ${lock.name} is on the battlefield (101.2). It can still be cast from $their hand if it gets there."
+        } else {
+            state.trace.step("A player may cast a commander they own from the command zone, paying {2} more for each earlier time they did so; nothing on the battlefield stops it.", "903.8")
+            state.outcomes += "Yes: ${p.subject} can cast ${if (p.you) "your" else "their"} commander from the command zone (with the commander tax, 903.8)."
+        }
+        return true
     }
 }
 

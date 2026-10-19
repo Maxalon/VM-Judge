@@ -27,6 +27,12 @@ class Engine(val state: GameState) {
             trace.step("${cage.name} says players can't cast spells from graveyards or libraries, so ${card.name} can't be cast from ${player.possessive} graveyard${if (flashback) ", flashback or not: flashback only gives permission to cast from the graveyard, and the Cage takes that permission away" else ""}.", "601.3", "702.34a")
             state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard (${cage.name})."; return null
         }
+        // "Yixlid Jailer is out; can I flash back Deep Analysis?": flashback is an ability of the card in the graveyard,
+        // and the Jailer takes it away (613.1f), so nothing lets it be cast from there (601.3, 702.34a).
+        if (obj.zone == Zone.GRAVEYARD && playerId !in state.castFromGraveyard && "flashback" !in obj.tempKeywords) graveyardAbilitiesGone()?.let { jailer ->
+            trace.step("${jailer.name} says cards in graveyards lose all abilities, so ${card.name} has no flashback while it's in ${player.possessive} graveyard; flashback is what would let it be cast from there, so it can't be cast.", "613.1f", "702.34a", "601.3")
+            state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard: under ${jailer.name} it has no flashback (cards in graveyards lose all abilities)."; return null
+        }
         state.stack.firstOrNull { it.kind == StackKind.SPELL && it.source.def.has("split second") }?.let { ss ->
             trace.step("${ss.source.name} has split second and is on the stack, so players can't cast spells or activate abilities that aren't mana abilities. ${card.name} can't be cast now.", "702.61a")
             state.outcomes += "${card.name} can't be cast while ${ss.source.name} is on the stack (split second)."; return null
@@ -1755,7 +1761,7 @@ class Engine(val state: GameState) {
                 // Phyrexian Unlife: 0 or less life isn't a loss while it's out.
                 val unlife = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == p.id && it.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.NoLossAtZeroLife } }
                 if (unlife != null && life != null && life <= 0 && !p.lost && state.outcomes.none { it.contains("${unlife.name} keeps") }) { trace.step("${p.subject} ${p.v("has", "have")} $life life, but ${unlife.name} says ${p.subject.lowercase()} ${p.v("doesn't", "don't")} lose the game for having 0 or less life, so the state-based action doesn't apply. From here damage is dealt to ${p.subject.lowercase()} as though its source had infect: poison counters instead of life loss.", "704.5a"); state.outcomes += "${p.subject} ${p.v("stays", "stay")} in the game at $life life: ${unlife.name} keeps ${p.subject.lowercase()} from losing for having 0 or less life. Further damage gives ${p.subject.lowercase()} poison counters instead (10 poison loses, 704.5c)." }
-                if (life != null && life <= 0 && !p.lost && unlife == null) { p.lost = true; trace.step("${p.subject} ${p.v("has", "have")} $life life and ${p.v("loses", "lose")} the game (state-based action).", "704.3", "704.5a"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} the game."; changed = true }
+                if (life != null && life <= 0 && !p.lost && unlife == null) { p.lost = true; trace.step("${p.subject} ${p.v("has", "have")} $life life and ${p.v("loses", "lose")} the game (state-based action).${state.objects.values.firstOrNull { it.isOnBattlefield() && it.owner == p.id && it.controller != p.id && it.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.CantLose } }?.let { a -> " ${a.name} is now controlled by ${state.player(a.controller).subject.lowercase()}, and its \"you can't lose\" means its controller, so it no longer protects ${p.subject.lowercase()}." } ?: ""}", "704.3", "704.5a"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} the game."; changed = true }
             }
         }
     }
@@ -2167,7 +2173,7 @@ class Engine(val state: GameState) {
             val extra = triggered.filter { (obj, _) -> doublerFor(obj.controller) != null }
             if (extra.isNotEmpty()) {
                 val src = doublerFor(extra[0].first.controller)!!
-                trace.step("${src.name} makes ${extra.joinToString(" and ") { it.first.name + "'s ability" }} trigger an additional time.", "603.2")
+                trace.step("${src.name} makes ${extra.joinToString(" and ") { it.first.name + "'s ability" }} trigger an additional time.", "603.2", "603.2d")
                 triggered += extra
             }
         }
@@ -4078,6 +4084,16 @@ class Engine(val state: GameState) {
         val target = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: (ref as? Ref.Obj)?.let { r -> state.stack.firstOrNull { it.source.id == r.id } }
         if (target == null) { trace.step("${state.nameOf(ref)} is no longer on the stack, so there's nothing to copy.", "707.10"); return }
         val you = state.player(item.controller)
+        // Strionic Resonator on Mulldrifter's enters trigger: the copy is another triggered ability from the same
+        // source, not a copy of the Mulldrifter card (707.10); it resolves like the original and then ceases to exist.
+        if (target.kind != StackKind.SPELL) {
+            val what = "${target.source.name}'s ${if (target.kind == StackKind.TRIGGERED) "triggered" else "activated"} ability"
+            val copy = StackItem(state.newStackId(), target.kind, item.controller, target.source, target.effect, target.targets, zonesOf(target.targets), target.text, target.modes, x = target.x)
+            state.stack += copy
+            trace.step("${you.subject} ${you.v("puts", "put")} a copy of $what on the stack, above ${item.describe}. It copies the ability and every choice made for it (targets, modes, X), and resolves just like the original.", "707.10")
+            state.outcomes += "A copy of $what is put on the stack."
+            return
+        }
         val copyObj = state.add(GameObject(freshObjectId(target.source.name + " copy"), target.source.def, Zone.STACK, item.controller, token = true))
         // 707.10c: new targets may be chosen. Assume they stay unless the copy would hit its new controller, who then aims it at the opponent.
         var targets = target.targets
@@ -4124,6 +4140,22 @@ class Engine(val state: GameState) {
                 else "The copy keeps the original's division of its $total damage among its $n targets; only which targets it has may change, not how the damage is divided."
         }
         onEvent(GameEvent.SpellCopied(copy))
+    }
+
+    /**
+     * "Humility is out. I cast Clone copying their Bears": which replacement effects modify how a permanent enters is
+     * read off the permanent as it would exist on the battlefield, continuous effects that already exist included
+     * (614.12). Humility would take Clone's abilities away there (613.1f), so Clone has no "enter as a copy" ability to
+     * apply: it copies nothing and is a 1/1 Clone. The same goes for "enters with counters" (Walking Ballista) and
+     * "enters tapped". Blood Moon's own case (lands) is said further down.
+     */
+    private fun entersAbilitiesGone(o: GameObject) {
+        val lost = state.abilitiesLostOn(o)?.first ?: return
+        val entering = o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filter { it is StaticEffect.EntersAsCopy || it is StaticEffect.EntersWithCounters || it is StaticEffect.EntersTapped }
+        if (entering.isEmpty()) return
+        val what = entering.map { when (it) { is StaticEffect.EntersAsCopy -> "enter as a copy"; is StaticEffect.EntersWithCounters -> "enter with counters"; else -> "enter tapped" } }.distinct().joinToString(" or ")
+        trace.step("${lost.name} would take ${o.name}'s abilities away once it is on the battlefield, and that is what decides which replacement effects apply as it enters. So ${o.name} has no ability to $what: ${if (entering.any { it is StaticEffect.EntersAsCopy }) "it doesn't copy anything and enters as ${o.name} itself" else "that doesn't happen"}.", "614.12", "613.1f")
+        state.outcomes += "${o.name} ${if (entering.any { it is StaticEffect.EntersAsCopy }) "doesn't copy anything" else "doesn't $what"}: ${lost.name} takes its abilities away as it enters, so its own \"$what\" ability never applies (614.12)."
     }
 
     private fun applyEntersAsCopy(o: GameObject, choice: String?) {
@@ -4228,10 +4260,13 @@ class Engine(val state: GameState) {
     }
 
     private fun applyEntersReplacements(o: GameObject, choice: String? = null) {
+        entersAbilitiesGone(o)
         applyEntersAsCopy(o, choice)
         val startingLoyalty = o.def.loyalty
         if ("Saga" in o.def.subtypes && o.def.abilities.any { it is TriggeredAbility && it.trigger is Trigger.Chapter } && (o.counters["lore"] ?: 0) == 0) {
-            o.counters["lore"] = 1; trace.step("${o.name} is a Saga, so it enters with a lore counter on it; its chapter I ability triggers.", "714.3a", "714.2"); state.outcomes += "${o.name} enters with 1 lore counter."
+            // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (714.3a), not its rules text (305.7), but the chapter abilities are gone.
+            val gone = state.abilitiesGone(o)
+            o.counters["lore"] = 1; trace.step("${o.name} is a Saga, so it enters with a lore counter on it; ${if (gone != null) "it has no chapter abilities under ${gone.name}, so nothing triggers" else "its chapter I ability triggers"}.", "714.3a", "714.2"); state.outcomes += "${o.name} enters with 1 lore counter."
             onEvent(GameEvent.LoreCounter(o, 1))
         }
         // Mox Diamond: it enters only if a land card is discarded as it would enter.
@@ -4501,7 +4536,17 @@ class Engine(val state: GameState) {
             state.outcomes += "${prevention.joinToString(" and ") { it.first }} can't prevent $sourceName's damage (${qb.name})."
             prevention = emptyList()
         }
-        if (doublers.isNotEmpty() && prevention.isNotEmpty()) trace.step("Both a damage-doubling replacement effect and a prevention effect apply; the affected player chooses the order (616.1). Assuming the prevention is applied first, which is best for the affected player.", "616.1", "616.1e")
+        // "Furnace of Rath, and they have a shield preventing the next 3: I Bolt them": the affected player or the
+        // affected object's controller orders them (616.1). Prevent 3 then double is 0; double then prevent 3 is 3.
+        if (doublers.isNotEmpty() && prevention.isNotEmpty()) {
+            val chooser = (target as? Ref.Player)?.let { state.player(it.id) } ?: (target as? Ref.Obj)?.let { state.objects[it.id] }?.let { state.player(it.controller) }
+            val f = doublers.fold(1) { acc, d -> acc * d.second.factor }
+            val shieldN = prevention.sumOf { (_, p) -> when (p) { is Replacement.PreventDamage -> p.amount ?: Int.MAX_VALUE / 4; is Shield -> if ((p.replacement as Replacement.PreventDamage).amount == null) Int.MAX_VALUE / 4 else p.remaining ?: 0; else -> 0 } }
+            val preventFirst = maxOf(0, amount - shieldN) * f; val doubleFirst = maxOf(0, amount * f - shieldN)
+            val who = chooser?.let { "${it.subject.lowercase()} (the affected ${if (target is Ref.Player) "player" else "permanent's controller"})" } ?: "the affected player"
+            trace.step("${doublers.joinToString(" and ") { it.first.name }} and ${prevention.joinToString(" and ") { it.first }} both apply to this damage, so $who ${if (chooser?.you == true) "choose" else "chooses"} the order (616.1): prevention first, ${if (preventFirst == 0) "nothing is left to double: 0 damage" else "$preventFirst damage"}; ${doublers.first().first.name} first, ${amount * f} damage of which ${minOf(shieldN, amount * f)} is prevented: $doubleFirst damage. The prevention goes first, for $preventFirst.", "616.1", "616.1e", "616.1f")
+            if (preventFirst != doubleFirst) state.outcomes += "${chooser?.subject ?: "The affected player"} ${if (chooser?.you == true) "choose" else "chooses"} the order of the replacement and prevention effects (616.1): preventing first leaves $preventFirst damage, doubling first leaves $doubleFirst; prevention first is chosen, so $preventFirst damage is dealt."
+        }
         // Comeuppance / Deflecting Palm: what a shield prevented is dealt back by the shield's own source (its ruling:
         // the spell is the source of the new damage, so it isn't combat damage and the original source's abilities don't apply).
         val reflections = mutableListOf<() -> Unit>()
@@ -4531,7 +4576,10 @@ class Engine(val state: GameState) {
                 }
             }
         }
-        val infect = source?.has("infect") == true; val wither = source?.has("wither") == true
+        // Phyrexian Unlife at -3 life, Shocked: the 2 damage is dealt as though Shock had infect, so 2 poison counters (702.90b).
+        val unlifeInfect = (target as? Ref.Player)?.let { tp -> state.player(tp.id).takeIf { (it.life ?: 1) <= 0 } }?.let { p -> state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == p.id && it.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.DamageAsInfectAtZeroLife } } }
+        if (unlifeInfect != null && source?.has("infect") != true && amount > 0) { val p = state.player((target as Ref.Player).id); trace.step("${p.subject} ${p.v("has", "have")} ${p.life} life, so ${unlifeInfect.name} has the $amount damage from $sourceName dealt as though $sourceName had infect: poison counters instead of life loss.", "702.90b") }
+        val infect = source?.has("infect") == true || unlifeInfect != null; val wither = source?.has("wither") == true
         // Angel's Grace: damage that would take the player under the floor is replaced by just enough to reach it
         // (614.1b). Infect deals poison counters rather than life loss, so the floor doesn't touch it.
         // Worship: while its controller has a creature, damage can't take them below 1.
@@ -4559,7 +4607,7 @@ class Engine(val state: GameState) {
         when (target) {
             is Ref.Player -> { val p = state.player(target.id)
                 if (amount > 0) p.damagedThisTurn = true
-                if (infect) { p.poison += amount; trace.step("$sourceName has infect, so instead of losing life ${if (p.you) "you get" else p.name + " gets"} $amount poison counter${if (amount > 1) "s" else ""} (${p.poison} total).", "702.90b", "120.3b"); poisonLine(p) }
+                if (infect) { p.poison += amount; trace.step("$sourceName ${if (unlifeInfect != null && source?.has("infect") != true) "is treated as having infect" else "has infect"}, so instead of losing life ${if (p.you) "you get" else p.name + " gets"} $amount poison counter${if (amount > 1) "s" else ""} (${p.poison} total).", "702.90b", "120.3b"); poisonLine(p) }
                 else { p.life = p.life?.minus(amount); trace.step("$sourceName deals $amount damage to ${if (p.you) "you" else p.name}, ${if (p.you) "and you lose" else "who loses"} $amount life${p.life?.let { " ($it)" } ?: ""}.", "120.3a"); state.outcomes += "${p.subject} ${p.v("takes", "take")} $amount damage."; lifeLost(p, amount) }
                 val toxic = source?.takeIf { inCombatDamage }?.let { src -> Regex("""\bToxic (\d+)""").findAll(src.rulesText).sumOf { it.groupValues[1].toInt() } } ?: 0
                 if (source?.commander == true && inCombatDamage) { val total = (p.commanderDamage[source.id] ?: 0) + amount; p.commanderDamage[source.id] = total; trace.step("${source.name} is a commander: ${if (p.you) "you have" else p.name + " has"} now been dealt $total combat damage by it this game (21 or more loses the game).", "903.10a"); state.outcomes += "${p.subject} ${p.v("has", "have")} taken $total commander damage from ${source.name}." }
@@ -4607,13 +4655,36 @@ class Engine(val state: GameState) {
         var out = n; counterStopper = null
         state.objects.values.filter { it.isOnBattlefield() }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }.filter { it.anyPlayer || src.controller == o.controller }.map { src to it } }
             .forEach { (src, m) -> if (m.factor == 0 && (m.kind == null || m.kind.equals(kind, true))) { counterStopper = src.name; trace.step("${src.name} says ${m.kind?.let { "$it counters" } ?: "counters"} can't be put on ${o.name}, so the $out $kind counter${if (out == 1) "" else "s"} ${if (out == 1) "isn't" else "aren't"} placed.", "614.1a", "122.1"); out = 0 } }
-        state.objects.values.filter { false }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }.map { src to it } }
-            .forEach { (src, m) -> trace.step("${src.name} replaces the counter placement: ${out * m.factor} $kind counters are put on ${o.name} instead of $out.", "614.1a", "614.6"); out *= m.factor }
-        if (out > 0) state.objects.values.filter { it.isOnBattlefield() && it.controller == o.controller }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }.filter { it.factor > 1 }.map { src to it } }
-            .forEach { (src, m) -> trace.step("${src.name} replaces the counter placement: ${out * m.factor} $kind counters are put on ${o.name} instead of $out.", "614.1a", "614.6"); out *= m.factor }
-        // Hardened Scales: one more of that kind, however many were coming.
-        if (out > 0) state.objects.values.filter { it.isOnBattlefield() && it.controller == o.controller }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }.filter { it.extra > 0 && (it.kind == null || it.kind.equals(kind, true)) }.map { src to it } }
-            .forEach { (src, m) -> trace.step("${src.name} replaces the counter placement: ${out + m.extra} $kind counters are put on ${o.name} instead of $out.", "614.1a", "614.6"); out += m.extra }
+        if (out > 0) out = orderedCounterReplacements(o, out, kind)
+        return out
+    }
+
+    /**
+     * Doubling Season and Hardened Scales on one Walking Ballista: each is a replacement effect on the same event, so the
+     * affected permanent's controller picks which applies first and then the next (616.1, 616.1e, 616.1f). Scales then
+     * Season makes X=2 into 6; Season then Scales makes 5. The controller is taken to choose the most (the fewest for
+     * -1/-1 counters on their own permanent), and the other orders are said.
+     */
+    private fun orderedCounterReplacements(o: GameObject, n: Int, kind: String): Int {
+        val mods = state.objects.values.filter { it.isOnBattlefield() && it.controller == o.controller }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }
+            .filter { (it.factor > 1 || it.extra > 0) && (it.kind == null || it.kind.equals(kind, true)) }.map { src to it } }
+        fun apply(x: Int, m: Replacement.CounterMultiplier) = if (m.factor > 1) x * m.factor else x + m.extra
+        fun perms(l: List<Pair<GameObject, Replacement.CounterMultiplier>>): List<List<Pair<GameObject, Replacement.CounterMultiplier>>> = if (l.size <= 1) listOf(l) else l.indices.flatMap { i -> perms(l.filterIndexed { j, _ -> j != i }).map { listOf(l[i]) + it } }
+        // Multipliers before adders was the old fixed order; it stays the order said when the order makes no difference.
+        val orders = if (mods.size in 2..4) perms(mods.sortedBy { if (it.second.factor > 1) 0 else 1 }) else listOf(mods)
+        val results = orders.map { ord -> ord to ord.fold(n) { x, (_, m) -> apply(x, m) } }
+        val fewer = kind.startsWith("-")
+        val best = (if (fewer) results.minByOrNull { it.second } else results.maxByOrNull { it.second }) ?: return n
+        val distinct = results.distinctBy { it.second }
+        if (distinct.size > 1) {
+            val owner = state.player(o.controller)
+            val said = results.distinctBy { r -> r.first.map { it.first.name } }.sortedByDescending { if (fewer) -it.second else it.second }
+                .joinToString("; ") { (ord, v) -> ord.joinToString(" then ") { it.first.name } + " gives $v" }
+            trace.step("${best.first.joinToString(" and ") { it.first.name }} both modify the same counter placement, so ${o.name}'s controller (${owner.subject.lowercase()}) chooses the order they apply in, one at a time: $said. ${owner.subject} ${owner.v("picks", "pick")} ${best.first.joinToString(" then ") { it.first.name }} for ${best.second}.", "616.1", "616.1e", "616.1f")
+            state.outcomes += "${o.name}'s controller chooses the order of ${best.first.joinToString(" and ") { it.first.name }} (616.1): $said. Best is ${best.second} $kind counters."
+        }
+        var out = n
+        for ((src, m) in best.first) { val next = apply(out, m); trace.step("${src.name} replaces the counter placement: $next $kind counters are put on ${o.name} instead of $out.", "614.1a", "614.6"); out = next }
         return out
     }
 
