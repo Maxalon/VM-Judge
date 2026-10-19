@@ -17388,7 +17388,7 @@
     "id": "menace-vs-one-blocker-question",
     "text": "I have a creature with menace. My opponent has one untapped creature. Can they block it?",
     "expect": [
-      "No: a creature with menace has menace and can't be blocked except by two or more creatures, and a creature is the only creature that could block it (702.110b)."
+      "No: a creature with menace has menace and can't be blocked except by two or more creatures, and a creature is the only creature that could block it (702.111b)."
     ],
     "notExpect": [
       "Yes"
@@ -38954,6 +38954,231 @@
     ],
     "cite": [
       "307.1"
+    ]
+  },
+  {
+    "id": "cb1",
+    "text": "My 2/2 double strike attacks and is blocked by a 1/1. Does the double striker deal damage to the player?",
+    "expect": [
+      "No: a 2/2 creature with double strike dealt no damage to opponent"
+    ],
+    "notExpect": [],
+    "cite": [
+      "509.1h",
+      "702.4b"
+    ]
+  },
+  {
+    "id": "cb2",
+    "text": "My opponent's 3/3 menace attacks. Can I block with one 5/5?",
+    "expect": [
+      "No: a 3/3 creature with menace has menace and can't be blocked except by two or more creatures, and a 5/5 creature is the only one that could (702.111b)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "cb3",
+    "text": "My opponent attacks my planeswalker with a 3/3. My planeswalker has 4 loyalty. Does it die?",
+    "expect": [
+      "a planeswalker has 1 loyalty.",
+      "No: a planeswalker is still on the battlefield."
+    ],
+    "notExpect": [
+      "You take 3 damage."
+    ],
+    "cite": [
+      "306.8",
+      "120.3c"
+    ]
+  },
+  {
+    "id": "cb4",
+    "text": "I attack Invasion of Gobakhan with a 3/3. What happens?",
+    "expect": [
+      "Invasion of Gobakhan has 0 defense.",
+      "Invasion of Gobakhan is defeated: you exile it and cast it transformed for free, so Lightshield Array is on the battlefield."
+    ],
+    "notExpect": [],
+    "cite": [
+      "310.6",
+      "120.3h",
+      "310.12b",
+      "712.11a",
+      "310.9b"
+    ]
+  },
+  {
+    "id": "cb5",
+    "text": "My 2/2 lifelink and my 3/3 lifelink both deal combat damage. How much life do I gain?",
+    "expect": [
+      "You gain 5 life in all."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.15b",
+      "510.2"
+    ]
+  },
+  {
+    "id": "cb6",
+    "text": "My creature with two instances of lifelink deals 3 damage. Do I gain 6?",
+    "expect": [
+      "No: you gain 3 life in all, not 6.",
+      "Multiple instances of lifelink on the same object are redundant (702.15f)"
+    ],
+    "notExpect": [
+      "You gain 6 life"
+    ],
+    "cite": [
+      "702.15f",
+      "702.15b"
+    ]
+  },
+  {
+    "id": "cb7",
+    "text": "My 2/2 infect hits my opponent. What happens?",
+    "expect": [
+      "opponent has 2 poison counters."
+    ],
+    "notExpect": [
+      "opponent takes 2 damage."
+    ],
+    "cite": [
+      "702.90b"
+    ]
+  },
+  {
+    "id": "cb8",
+    "text": "My opponent's 4/4 wither is blocked by my 4/4. What happens to my creature?",
+    "expect": [
+      "a 4/4 creature has 4 -1/-1 counter(s).",
+      "Yes: a 4/4 creature died"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.80a",
+      "704.5f"
+    ]
+  },
+  {
+    "id": "cb9",
+    "text": "My 1/1 with protection from green blocks a 5/5 green trample. How much damage goes through?",
+    "expect": [
+      "Damage to a 1/1 creature with protection from green from a 5/5 green creature with trample is prevented (protection).",
+      "Yes: you take 4 damage in all."
+    ],
+    "notExpect": [
+      "a 1/1 creature with protection from green: the battlefield"
+    ],
+    "cite": [
+      "702.19b",
+      "702.16e"
+    ]
+  },
+  {
+    "id": "cb10",
+    "text": "My 2/2 blocks a 2/2 and I regenerate my blocker. Does it survive? Is it still blocking?",
+    "expect": [
+      "a 2/2 creature regenerates.",
+      "Yes: your 2/2 creature is still on the battlefield.",
+      "No: regenerating a 2/2 creature tapped it, removed all damage from it and removed it from combat (701.19a), so it's no longer blocking."
+    ],
+    "notExpect": [],
+    "cite": [
+      "701.19a",
+      "509.1h"
+    ]
+  },
+  {
+    "id": "cb11",
+    "text": "My 3/3 flanking attacks and a 2/2 without flanking blocks it. Does the blocker die?",
+    "expect": [
+      "a 2/2 creature is 1/1 until end of turn.",
+      "Yes: a 2/2 creature died"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.25a"
+    ]
+  },
+  {
+    "id": "cb12",
+    "text": "My creature that must be blocked if able attacks. My opponent's creature has protection from the attacking creature's color. Does it have to block?",
+    "expect": [
+      "No. Protection from a colour means a creature of that colour can't be blocked by it at all (702.16f)"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.16f",
+      "509.1c"
+    ]
+  },
+  {
+    "id": "cb13",
+    "text": "My 0/4 wall blocks a 2/2 first strike. During the first strike damage step I cast Giant Growth on the wall. Does the wall deal damage?",
+    "expect": [
+      "a 0/4 wall creature is 3/7 until end of turn.",
+      "Yes: a 0/4 wall creature deals 3 damage to a 2/2 creature with first strike in the regular combat damage step."
+    ],
+    "notExpect": [],
+    "cite": [
+      "510.4",
+      "702.7b",
+      "510.1a"
+    ]
+  },
+  {
+    "id": "cb14",
+    "text": "My opponent attacks with a 5/5. I block with two 2/2s. Can my opponent assign all 5 damage to one blocker?",
+    "expect": [
+      "Yes. When two or more creatures block it, a 5/5 creature's controller divides its combat damage among them as they choose (510.1c)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "cb15",
+    "text": "My 2/2 with toxic 2 attacks and isn't blocked. What happens?",
+    "expect": [
+      "opponent takes 2 damage.",
+      "opponent has 2 poison counters."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.164c"
+    ]
+  },
+  {
+    "id": "cb16",
+    "text": "I attack my opponent's Invasion of Gobakhan with a 3/3.",
+    "expect": [
+      "You can't attack Invasion of Gobakhan: you are its protector (310.9b)."
+    ],
+    "notExpect": [
+      "Invasion of Gobakhan is defeated"
+    ],
+    "cite": [
+      "310.9b"
+    ]
+  },
+  {
+    "id": "cb17",
+    "text": "My 2/2 first strike blocks their 2/2. After first strike damage, my opponent casts Giant Growth on their creature. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → opponent's graveyard.",
+      "Giant Growth can't be cast: a 2/2 creature is already in the graveyard."
+    ],
+    "notExpect": [
+      "5/5 until end of turn"
+    ],
+    "cite": [
+      "510.4",
+      "702.7b"
     ]
   }
 ]

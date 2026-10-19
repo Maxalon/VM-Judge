@@ -1650,6 +1650,8 @@ class Engine(val state: GameState) {
         var changed = true; var rounds = 0
         while (changed && rounds++ < 10) {
             changed = false
+            // 310.12b, 704.5v-w: a defeated Siege's ability, and battles left with no defense.
+            if (Battles.check(state) { o, z, t, r -> move(o, z, t, *r) }) changed = true
             // 714.4: a Saga with lore counters at or past its last chapter, and no chapter ability of its on the stack, is sacrificed.
             for (saga in state.objects.values.filter { it.isOnBattlefield() && "Saga" in it.def.subtypes }) {
                 if (underMoon(saga)) continue   // no chapter abilities, so 714.4 never applies
@@ -1780,7 +1782,7 @@ class Engine(val state: GameState) {
         if (cant(a, "attack")) { trace.step(if (a.has("cant-attack") || a.tempKeywords.any { it.startsWith("cant-attack@") }) "${a.name} can't attack: an effect says it can't attack${if (a.tempKeywords.any { it.startsWith("cant-attack@") }) " until its caster's next turn" else " this turn"}." else "${a.name} can't attack (a rules text says so${cantSource(a, "attack")?.let { ": $it" } ?: ""}).", "508.1c"); state.outcomes += "${a.name} can't attack."; return }
         if (a.tapped == true) { trace.step("${a.name} is tapped, so it can't be declared as an attacker.", "508.1a"); state.outcomes += "${a.name} can't attack (tapped)."; return }
         if (a.summoningSick == true && !a.has("haste")) { trace.step("${a.name} came under ${p.possessive} control this turn and doesn't have haste, so it can't attack (\"summoning sickness\").", "508.1a", "302.6"); state.outcomes += "${a.name} can't attack (summoning sick)."; return }
-        (defender as? Ref.Obj)?.let { d -> val o = state.objects[d.id]; if (o == null || !o.isOnBattlefield() || !("Planeswalker" in state.typesOf(o) || "Battle" in state.typesOf(o))) { trace.step("${state.nameOf(defender)} isn't a player, planeswalker or battle, so it can't be attacked.", "506.3"); return } else if (o.controller == playerId) { trace.step("${o.name} is ${p.possessive} own permanent; only an opponent's planeswalker or a battle can be attacked.", "506.2", "508.1b"); return } }
+        (defender as? Ref.Obj)?.let { d -> val o = state.objects[d.id]; if (o == null || !o.isOnBattlefield() || !("Planeswalker" in state.typesOf(o) || "Battle" in state.typesOf(o))) { trace.step("${state.nameOf(defender)} isn't a player, planeswalker or battle, so it can't be attacked.", "506.3"); return } else if (o.controller != playerId && "Siege" in state.subtypesOf(o) && state.players.size == 2) { trace.step("${o.name} is ${state.player(o.controller).possessive} Siege, and with two players its protector is ${p.subject.lowercase()}: a battle's protector can never attack it.", "310.12a", "310.9b"); state.outcomes += "${p.subject} can't attack ${o.name}: ${p.subject.lowercase()} ${p.v("is", "are")} its protector (310.9b)."; return } else if (o.controller == playerId && "Siege" in state.subtypesOf(o)) { trace.step("${o.name} is ${p.possessive} own Siege, protected by an opponent, and a Siege can be attacked by its own controller.", "310.9b", "508.1b") } else if (o.controller == playerId) { trace.step("${o.name} is ${p.possessive} own permanent; only an opponent's planeswalker or a battle can be attacked.", "506.2", "508.1b"); return } }
         // Propaganda / Ghostly Prison: attacking that player costs mana per attacker.
         val defendingPlayer = when (defender) { is Ref.Player -> defender.id; is Ref.Obj -> state.objects[defender.id]?.controller; else -> null }
         // Two taxes are one cost to pay: paying the first and then failing the second spent mana for nothing.
@@ -1932,6 +1934,29 @@ class Engine(val state: GameState) {
     }
 
     /** The combat damage step (510), including a first-strike step when needed (510.4). */
+    /**
+     * Only the first combat damage step (510.4): "my 0/4 wall blocks a 2/2 first striker; during the first-strike damage
+     * step I cast Giant Growth on the wall". Players get priority after it, and the regular step comes when combat
+     * damage is next dealt ([combatDamage]). With no first or double strike in combat there is no such step.
+     */
+    fun firstStrikeDamage() {
+        val attackers = state.objects.values.filter { it.attacking != null && it.isOnBattlefield() }
+        val strikers = (attackers + attackers.flatMap { blockersOf(it) }).filter { it.has("first strike") || it.has("double strike") }
+        if (attackers.isEmpty() || strikers.isEmpty() || state.firstStrikers != null || state.combatDamageDealt) {
+            if (strikers.isEmpty() && attackers.isNotEmpty()) trace.step("No attacking or blocking creature has first strike or double strike, so there is no first-strike combat damage step; all combat damage is dealt in one step.", "510.4")
+            return
+        }
+        state.step = "combat_damage"
+        for (a in attackers) if (a.has("menace")) {
+            val bs = blockersOf(a)
+            if (bs.size == 1) { trace.step("${a.name} has menace and can't be blocked except by two or more creatures; blocking it with only ${bs[0].name} isn't a legal block, so ${a.name} is unblocked.", "702.111b", "509.1a"); bs[0].blocking = null; a.wasBlocked = false }
+        }
+        trace.step("At least one creature has first strike or double strike, so there is an extra combat damage step in which only those creatures deal damage.", "510.4", "702.7b")
+        dealCombatDamage(attackers) { it.has("first strike") || it.has("double strike") }
+        state.firstStrikers = strikers.map { it.id }.toSet()
+        trace.step("After the first-strike combat damage step, the active player receives priority; spells cast now come before the regular combat damage step.", "510.3", "510.4")
+    }
+
     fun combatDamage() {
         // "They attack with Death's Shadow at 2 life. I Bolt them in response": a player who has lost has left the game (104.3a), and combat damage is never dealt.
         fun reallyLost(p: Player) = p.lost && p.id !in state.cantLoseThisTurn && state.objects.values.none { it.isOnBattlefield() && it.controller == p.id && it.abilities.filterIsInstance<StaticAbility>().flatMap { e -> e.effects }.any { e -> e is StaticEffect.CantLose } }
@@ -1956,12 +1981,23 @@ class Engine(val state: GameState) {
             trace.step("Triggers that check for an unblocked attacker go on the stack in the declare blockers step, so they resolve before the combat damage step.", "509.1h", "117.4")
             resolveAll()
         }
+        // "During the first-strike damage step I cast Giant Growth on my wall": that step already happened (firstStrikeDamage),
+        // so only the regular step is left. Who deals damage in it was fixed as the first step began (702.7b, 702.7c).
+        val struck = state.firstStrikers
+        if (struck != null) {
+            trace.step("Then the regular combat damage step: creatures that had neither first strike nor double strike as the first combat damage step began, plus any that have double strike now, deal damage.", "510.4", "702.7b")
+            dealCombatDamage(attackers) { it.id !in struck || it.has("double strike") }
+            state.combatDamageDealt = true
+            trace.step("The active player receives priority.", "510.3")
+            return
+        }
         val strikers = (attackers + attackers.flatMap { blockersOf(it) }).filter { it.has("first strike") || it.has("double strike") }
         if (strikers.isNotEmpty()) {
             trace.step("At least one creature has first strike or double strike, so there is an extra combat damage step in which only those creatures deal damage.", "510.4", "702.7b")
             dealCombatDamage(attackers) { it.has("first strike") || it.has("double strike") }
+            val ids = strikers.map { it.id }.toSet()
             trace.step("Then the regular combat damage step: creatures without first strike, plus any with double strike, deal damage.", "510.4", "702.4b")
-            dealCombatDamage(attackers.filter { it.isOnBattlefield() && it.attacking != null }) { !it.has("first strike") || it.has("double strike") }
+            dealCombatDamage(attackers.filter { it.isOnBattlefield() && it.attacking != null }) { it.id !in ids || it.has("double strike") }
         } else {
             dealCombatDamage(attackers) { true }
         }
@@ -1994,7 +2030,7 @@ class Engine(val state: GameState) {
                     val b = blockers[0]
                     val lethal = if (a.has("deathtouch")) 1 else maxOf(0, (b.toughness ?: 0) - b.damage)
                     if (a.has("trample") && power > lethal) {
-                        trace.step("${a.name} has trample: it assigns lethal damage ($lethal${if (a.has("deathtouch")) ", any amount is lethal with deathtouch" else ""}) to ${b.name} and the remaining ${power - lethal} to ${state.nameOf(a.attacking!!)}.", "510.1c", "702.19b", *(if (a.has("deathtouch")) arrayOf("702.2c") else emptyArray()))
+                        trace.step("${a.name} has trample: it assigns lethal damage ($lethal${if (a.has("deathtouch")) ", any amount is lethal with deathtouch" else ""}) to ${b.name} and the remaining ${power - lethal} to ${state.nameOf(a.attacking!!)}.${if (protectionHit(state.protections(b), qualitiesOf(a), a.controller) != null) " Lethal damage is judged without regard to effects that change the damage actually dealt, so this counts even though ${b.name}'s protection will prevent it." else ""}", "510.1c", "702.19b", *(if (a.has("deathtouch")) arrayOf("702.2c") else emptyArray()))
                         hits += Hit(a, Ref.Obj(b.id), lethal); hits += Hit(a, a.attacking!!, power - lethal)
                     } else { trace.step("${a.name} is blocked by ${b.name} and assigns all $power damage to it.", "510.1c"); hits += Hit(a, Ref.Obj(b.id), power) }
                 } else {
@@ -3036,7 +3072,9 @@ class Engine(val state: GameState) {
                     trace.step("${o.name} has ${effect.unlessCausingHas} too, so ${item.source.name}'s ${effect.unlessCausingHas} does nothing to it.", "702.25a")
                 } else if (o == null || !o.isOnBattlefield()) trace.step("The creature that caused the trigger isn't on the battlefield, so nothing gets the bonus.", "611.2c")
                 else {
-                    if (effect.power != 0 || effect.toughness != 0) { o.pumps += effect.power to effect.toughness; trace.step("${o.name} gets ${signed(effect.power)}/${signed(effect.toughness)} until end of turn; it's now ${o.power}/${o.toughness}.", "611.2a"); state.outcomes += "${o.name} is ${o.power}/${o.toughness} until end of turn." }
+                    // "My 3/3 flanking is blocked by a 2/2": the blocker without flanking gets -1/-1 before damage.
+                    val flank = if (effect.unlessCausingHas == "flanking") arrayOf("702.25a") else emptyArray()
+                    if (effect.power != 0 || effect.toughness != 0) { o.pumps += effect.power to effect.toughness; trace.step("${o.name} gets ${signed(effect.power)}/${signed(effect.toughness)} until end of turn${if (flank.isNotEmpty()) " (flanking: it blocked a creature with flanking and has none itself)" else ""}; it's now ${o.power}/${o.toughness}.", "611.2a", *flank); state.outcomes += "${o.name} is ${o.power}/${o.toughness} until end of turn." }
                     if (effect.keywords.isNotEmpty()) { o.tempKeywords += effect.keywords; trace.step("${o.name} gains ${effect.keywords.joinToString(" and ")} until end of turn.", "611.2a"); state.outcomes += "${o.name} has ${effect.keywords.joinToString(" and ")} until end of turn." }
                 }
             }
@@ -4530,7 +4568,8 @@ class Engine(val state: GameState) {
                 // 702.2b is about damage, not only combat damage: a fight or a ping from a deathtouch source is
                 // just as lethal. Without this a deathtouch creature won a fight it should have traded.
                 if (amount > 0 && "Planeswalker" !in state.typesOf(o) && source?.has("deathtouch") == true) o.dealtDeathtouchDamage = true
-                if ("Planeswalker" in state.typesOf(o)) { val before = o.counters["loyalty"] ?: 0; o.counters["loyalty"] = maxOf(0, before - amount); trace.step("$sourceName deals $amount damage to ${o.name}, so $amount loyalty counters are removed from it (${o.counters["loyalty"]} left).", "306.8", "120.3c"); state.outcomes += "${o.name} has ${o.counters["loyalty"]} loyalty." }
+                if (Battles.isBattle(state, o)) Battles.damage(state, o, amount, sourceName)
+                else if ("Planeswalker" in state.typesOf(o)) { val before = o.counters["loyalty"] ?: 0; o.counters["loyalty"] = maxOf(0, before - amount); trace.step("$sourceName deals $amount damage to ${o.name}, so $amount loyalty counters are removed from it (${o.counters["loyalty"]} left).", "306.8", "120.3c"); state.outcomes += "${o.name} has ${o.counters["loyalty"]} loyalty." }
                 else if (infect || wither) { o.counters["-1/-1"] = (o.counters["-1/-1"] ?: 0) + amount; trace.step("$sourceName has ${if (infect) "infect" else "wither"}, so the $amount damage to ${o.name} is dealt as $amount -1/-1 counter${if (amount > 1) "s" else ""}; it's now ${o.power}/${o.toughness}.", if (infect) "702.90c" else "702.80a", "120.3d"); state.outcomes += "${o.name} has ${o.counters["-1/-1"]} -1/-1 counter(s)." }
                 else {
                     o.damage += amount

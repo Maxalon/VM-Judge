@@ -24,6 +24,8 @@ class SituationParser(private val names: NameIndex) {
     data class Parsed(val situation: Situation, val unread: List<String>, val notes: List<String>)
 
     private class Ctx {
+        /** The whole question as asked, for a sentence whose reading depends on a later one ("… My planeswalker has 4 loyalty."). */
+        var fullText = ""
         /** Creatures the asker called "blockers" before anything was attacking: matched up at the end. */
         val pendingBlockers = mutableMapOf<String, MutableList<String>>()
         val objects = LinkedHashMap<String, ObjectSpec>()
@@ -137,6 +139,7 @@ class SituationParser(private val names: NameIndex) {
 
     fun parse(text: String): Parsed {
         val ctx = Ctx()
+        ctx.fullText = text
         // "Can my opponent use the Top?" once Sensei's Divining Top has been named: the capitalised short form is the card.
         // "a spell that says exile target creature, then return it to the battlefield": one spell text, so "then" is no sentence break here.
         val text1 = text.replace(Regex("""(that says exile target creature),? then (return it to the battlefield)""", RegexOption.IGNORE_CASE), "$1 then_$2")
@@ -1594,11 +1597,100 @@ class SituationParser(private val names: NameIndex) {
         return t2
     }
 
+    /**
+     * Combat table talk said the short way. "My 2/2 infect hits my opponent": it attacked and wasn't blocked.
+     * "My 2/2 lifelink and my 3/3 lifelink both deal combat damage": both attacked unblocked. "A creature with two
+     * instances of lifelink": one lifelink, and the question of why the second adds nothing. "Can I block with one
+     * 5/5?" against menace, "my blocker" regenerated, "a 5/5 green trample", "a 2/2 without flanking", "they attack
+     * my planeswalker" when its loyalty is said, "I attack Invasion of Gobakhan" (a Siege, so it's the attacker's own).
+     */
+    private fun combatRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val io = RegexOption.IGNORE_CASE
+        var t2 = t.trim()
+        val poss = """(?:my|their|his|her|my opponent's|the opponent's|an opponent's)"""
+        val foeWord = """(?:me|my opponent|the opponent|them|him|her|opponent|the player|the defending player)"""
+        val combatKw = """(?:flying|trample|lifelink|deathtouch|first strike|double strike|menace|vigilance|haste|reach|infect|wither|flanking|indestructible|hexproof|defender)"""
+        // "a 2/2 without flanking", "a 3/3 with no abilities": nothing to give it.
+        t2 = t2.replace(Regex("""\b(\d+/\d+(?: creature)?) (?:without|with no) $combatKw\b""", io), "$1")
+        // "a 5/5 green trample": the colour is part of the creature, the keyword its ability (protection asks the colour).
+        t2 = t2.replace(Regex("""\b(\d+/\d+) ((?:white|blue|black|red|green)(?: and (?:white|blue|black|red|green))?) (?:creature )?(?:with )?($combatKw(?:(?:,| and) $combatKw)*)\b""", io)) { r -> "${r.groupValues[1]} ${r.groupValues[2].replace(" and ", " ")} creature with ${r.groupValues[3].replace(" and ", ", ")}" }
+        // "two instances of lifelink": one is enough; the second is redundant (702.15f and its like), said in the answer.
+        Regex("""\b(?:2|3|4|two|three|multiple|several|many) instances of ($combatKw)\b""", io).find(t2)?.let { r ->
+            t2 = t2.replaceRange(r.range, r.groupValues[1].lowercase()) + ", kwinstances-question ${r.groupValues[1].lowercase().replace(' ', '_')}"
+        }
+        // "my creature with lifelink deals 3 damage (to my opponent)": combat damage from an unblocked attacker of that power.
+        t2 = t2.replace(Regex("""^my creature with ($combatKw(?:(?:,| and) $combatKw)*) deals (\d+) (?:combat )?damage(?: to (?:my opponent|the opponent|them|the player))?(?=,|$)""", io)) { r ->
+            val n = r.groupValues[2]; ctx.notes += "\"Deals $n damage\" is read as an unblocked $n-power attacker dealing combat damage to your opponent."
+            "my $n/$n creature with ${r.groupValues[1]} attacks my opponent and isn't blocked"
+        }
+        // "My 2/2 infect hits my opponent": it attacked and wasn't blocked.
+        t2 = t2.replace(Regex("""^($poss (?:\d+/\d+|creature)(?: (?:creature )?(?:with )?$combatKw(?:(?:,| and) $combatKw)*)?) (?:hits|connects with|connects against|deals combat damage to|gets through to|goes unblocked against) ($foeWord)$""", io), "$1 attacks $2 and isn't blocked")
+        // "My 2/2 lifelink and my 3/3 lifelink both deal combat damage": both attack, unblocked; the damage is simultaneous.
+        Regex("""^($poss) (\d+/\d+(?: [a-z ]+?)?) and (?:my|their|his|her) (\d+/\d+(?: [a-z ]+?)?) (?:both |each |all )?(?:deal combat damage|hit|connect|attack and (?:aren't|are not|go) (?:blocked|unblocked)|attack unblocked|go unblocked)(?: (?:to )?$foeWord)?$""", io).find(t2)?.let { r ->
+            val mine = r.groupValues[1].lowercase() == "my"
+            t2 = "${if (mine) "i attack" else "my opponent attacks"} with a ${r.groupValues[2]} and a ${r.groupValues[3]} and they aren't blocked"
+        }
+        // "Can I block with one 5/5?" (against menace): that one creature, asked whether it can block alone.
+        Regex("""^can (i|we|they|he|she|my opponent) block(?: it| that| them| the attacker)? with (?:just |only )?(?:one|a single|a|an|my|their|the) (\d+/\d+|c\d+)(?: creature)?(?: alone| by itself| on its own)?$""", io).find(t2)?.let { r ->
+            val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else ctx.other("me") ?: "opp"
+            val w = r.groupValues[2]
+            val have = if (who == "me") "i have" else "my opponent has"
+            val existing = ctx.objects.values.any { o -> o.controller == who && (o.card.name ?: "").startsWith("a $w") }
+            t2 = if (w.startsWith("c")) "$have $w, can it block" else if (existing) "can ${if (who == "me") "my" else "their"} $w block it" else "$have a $w, can it block"
+        }
+        // "I regenerate my blocker": the shield goes on that creature, the actor's own.
+        t2 = t2.replace(Regex("""\bregenerates? (?:my|our|their|his|her) (?:blocker|blocking creature|attacker|attacking creature|creature|guy|\d+/\d+)\b""", io), "regenerates it")
+            .replace(Regex("""^(i|we|they|he|she|my opponent) regenerates it\b""", io)) { r -> if (r.groupValues[1].lowercase() in setOf("i", "we", "they")) "${r.groupValues[1]} regenerate it" else r.value }
+        // "Is it still blocking?" after it regenerated: whether it's still in combat.
+        if (Regex("""^(?:is|does) (?:it|that|my (?:blocker|creature|\d+/\d+)|their (?:blocker|creature|\d+/\d+)) still (?:blocking|block|in combat|attacking)(?: anything| it)?\??$""", io).matches(t2)) t2 = "combatstill-question"
+        // "Can my opponent assign all 5 damage to one blocker?": the division is free (510.1c).
+        if (Regex("""^can (?:i|we|they|he|she|my opponent|the attacker's controller|the attacking player) (?:assign|put|deal|give) (?:all (?:\d+|of its|of the|its|the)?|all)? ?(?:combat )?damage (?:to|on) (?:one|a single|just one|only one|one of the|the first) (?:blocker|creature|of (?:the|my|their) blockers|of them)\??$""", io).matches(t2)) t2 = "assignall-question"
+        // "They attack my planeswalker with a 3/3. My planeswalker has 4 loyalty.": the planeswalker with that loyalty, attacked.
+        Regex("""^(.*\battacks?) (my|their|his|her) planeswalker with (.+)$""", io).find(t2)?.let { r ->
+            val loyalty = Regex("""\b(\d+) loyalty\b|\bloyalty (?:of )?(\d+)\b""", io).find(ctx.fullText)?.let { it.groupValues[1].ifEmpty { it.groupValues[2] } } ?: return@let
+            val owner = r.groupValues[2].lowercase()
+            val pre = if (owner == "my") "i control" else "my opponent controls"
+            t2 = "$pre a planeswalker with $loyalty loyalty, ${r.groupValues[1]} it with ${r.groupValues[3]}"
+        }
+        // "I attack Invasion of Gobakhan with a 3/3": a Siege is attacked by its own controller (310.9b), so it's mine.
+        Regex("""^(i|we) (?:attack|swing at) (c\d+) with (.+)$""", io).find(t2)?.let { r ->
+            if (m.cards[r.groupValues[2]]?.typeLine?.contains("Battle") != true) return@let
+            if (ctx.objects.values.none { o -> o.card.name == m.cards[r.groupValues[2]]?.display }) t2 = "i control ${r.groupValues[2]}, i attack ${r.groupValues[2]} with ${r.groupValues[3]}"
+        }
+        // "My 0/4 wall blocks a 2/2 first striker": a creature named by its size and type, then its block.
+        Regex("""^(my|their|his|her|my opponent's) (\d+/\d+) ([a-z]+) (blocks? .+)$""", io).find(t2)?.let { r ->
+            val kind = r.groupValues[3].lowercase()
+            if (kind == "creature" || kind == "token" || !Regex("""^$creatureKinds$""").matches(kind) || Regex("""^$combatKw$""").matches(kind)) return@let
+            t2 = "${if (r.groupValues[1].lowercase() == "my") "i have" else "my opponent has"} a ${r.groupValues[2]} $kind, it ${r.groupValues[4]}"
+        }
+        // "What happens to my creature?" once it has blocked or been blocked: whether it survives the combat.
+        Regex("""^what happens to (my|their|the) (creature|blocker|attacker|\d+/\d+)\??$""", io).find(t2)?.let { r ->
+            if (ctx.events.none { it.verb == "block" }) return@let
+            t2 = "does ${r.groupValues[1]} ${r.groupValues[2]} die"
+        }
+        // "Does the double striker deal damage to the player?": the attacker, and the player it was attacking.
+        Regex("""^(?:does|did|will|would) (?:the |my |their )?(?:double striker|first striker|trampler|attacker|attacking creature|it|that creature) (?:still )?(?:deal|do) (?:any )?(?:combat )?damage to (?:the player|the defending player|that player|them|my opponent|the opponent|me)( (?:again|at all|this turn))?\??$""", io).find(t2)?.let { r ->
+            val atk = ctx.events.lastOrNull { it.verb == "attack" } ?: return@let
+            t2 = "does it deal damage to ${if (atk.player == "me") "my opponent" else "me"}${r.groupValues[1]}"
+        }
+        // "Does the wall deal damage?": whether, and when, that creature dealt its combat damage.
+        if (Regex("""^(?:does|will|would|did) (?:the|my|their|that) (?:\d+/\d+ )?[a-z]+ (?:still )?deal (?:any )?(?:combat )?damage\??$""", io).matches(t2) && ctx.events.any { it.verb == "block" }) t2 = "dealsdamage-question " + t2.split(' ')[2].lowercase().let { w -> if (Regex("""^\d+/\d+$""").matches(w)) w + " " + t2.split(' ')[3].lowercase() else w }
+        // "During the first-strike damage step I cast Giant Growth on my wall": that step's damage first, then the spell.
+        val fsStep = """(?:during|after|in) (?:the )?first[- ]strike (?:combat )?damage(?: step)?(?: is dealt)?"""
+        t2 = t2.replace(Regex("""^$fsStep,? (.+)$""", io), "firststrike-step, $1").replace(Regex("""^(.+?),? $fsStep$""", io), "firststrike-step, $1")
+        // "My creature that must be blocked if able attacks. Their creature has protection from its colour. Does it have to block?"
+        if (Regex("""^(?:my|i attack with (?:a|my)) creature (?:that|which) (?:must be blocked|has to be blocked|all creatures able to block (?:it )?(?:must )?(?:do so|block it))(?: if able)? ?(?:attacks)?$""", io).matches(t2)) t2 = "lure-note"
+        if (Regex("""^(?:my opponent's|their|the opponent's) creature has protection from (?:the attacking creature's|its|my creature's|that creature's|the attacker's) colou?r$""", io).matches(t2)) t2 = "lureprot-question"
+        if (t2 == t.trim()) return t
+        return t2
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = stackRewrites(t2, m, ctx)
+        t2 = combatRewrites(t2, m, ctx)
         // "has ward 2", "with ward {2}", "ward 2 on Thalia": one spelling of the keyword and its mana cost (702.21a).
         t2 = t2.replace(Regex("""\bward (?:of )?\{?(\d+)\}?(?![/\d])""", RegexOption.IGNORE_CASE), "ward {$1}")
         // "I Bolt their creature with ward 2 and pay": the creature and its keyword first, then the spell aimed at it.
@@ -4961,8 +5053,63 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** More early questions, split out of readEarlyQuestionsB for the JVM method size limit. */
+    /** The question markers [combatRewrites] leaves: combat rulings answered from the rules or asked of the result. */
+    private fun readCombatQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        // "a creature with two instances of lifelink": redundant, so one lifelink's worth of life.
+        Regex("""^kwinstances-question (\w+)$""").find(clause0)?.let { r ->
+            val kw = r.groupValues[1].replace('_', ' ')
+            val rule = mapOf("deathtouch" to "702.2f", "defender" to "702.3c", "double strike" to "702.4e", "first strike" to "702.7d", "flying" to "702.9c", "haste" to "702.10d",
+                "indestructible" to "702.12c", "lifelink" to "702.15f", "reach" to "702.17c", "trample" to "702.19g", "vigilance" to "702.20c", "wither" to "702.80d", "infect" to "702.90f", "menace" to "702.111c")[kw]
+            ctx.asks += EventSpec("ask", to = "text:" + when {
+                kw == "flanking" -> "Each instance counts: if a creature has multiple instances of flanking, each triggers separately (702.25b), so a blocker without flanking gets -1/-1 for each."
+                rule != null -> "Multiple instances of $kw on the same object are redundant ($rule): the creature works exactly as if it had $kw once." + (if (kw == "lifelink") " Its damage gains its controller that much life once, not twice (702.15b)." else "")
+                else -> "Multiple instances of $kw each work separately unless the rules say they are redundant."
+            })
+            return true
+        }
+        // "Does the wall deal damage?" (see combatRewrites): the creature in combat with that word in its name.
+        Regex("""^dealsdamage-question (.+)$""").find(clause0)?.let { r ->
+            val w = r.groupValues[1]
+            val inCombat = ctx.events.filter { it.verb == "block" || it.verb == "attack" }.mapNotNull { it.obj }
+            val id = inCombat.lastOrNull { id -> ctx.objects[id]?.card?.name?.let { n -> Regex("""\b${Regex.escape(w)}\b""").containsMatchIn(n) } == true } ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "combat:dealtDamage"); return true
+        }
+        if (clause0 == "firststrike-step") { ctx.events += EventSpec("firstStrikeDamage"); return true }
+        // "my creature that must be blocked if able attacks": read with the protection that answers the question.
+        if (clause0 == "lure-note") return true
+        if (clause0 == "lureprot-question") {
+            ctx.asks += EventSpec("ask", to = "text:No. Protection from a colour means a creature of that colour can't be blocked by it at all (702.16f), and a requirement such as \"must be blocked if able\" only asks for the most requirements that can be obeyed without breaking any restriction (509.1c). Blocking would break the protection restriction, so that creature doesn't have to block, and can't. Any other untapped creature of theirs able to block it still must.")
+            return true
+        }
+        if (Regex("""^(?:does|do) (?:it|that creature|their creature|they) (?:have|need) to block(?: it)?$""").matches(clause0) && ctx.asks.any { it.to?.contains("702.16f") == true && it.to.contains("509.1c") }) return true
+        // "Can my opponent assign all 5 damage to one blocker?"
+        if (clause0 == "assignall-question") {
+            val atk = ctx.events.lastOrNull { it.verb == "attack" && it.obj != null && ctx.events.any { b -> b.verb == "block" && it.obj in b.targets } }?.obj
+            val blockers = ctx.events.filter { it.verb == "block" && atk != null && atk in it.targets }.mapNotNull { it.obj }.distinct()
+            val name = atk?.let { ctx.objects[it]?.card?.name } ?: "the attacking creature"
+            val trample = name.contains("trample")
+            ctx.asks += EventSpec("ask", to = "text:" + (if (blockers.size == 1) "Yes, it has to: with exactly one creature blocking it, $name assigns all its combat damage to that creature (510.1c)."
+                else "Yes. When two or more creatures block it, $name's controller divides its combat damage among them as they choose (510.1c). There is no damage assignment order and no need to assign lethal damage to one blocker before the next, so all of it may go to one blocker and none to the other." +
+                    (if (trample) " Trample only adds a condition for damage to the player: every blocker must be assigned lethal damage first (702.19b)." else "")))
+            return true
+        }
+        // "Is it still blocking?" after it regenerated.
+        if (clause0 == "combatstill-question") {
+            val id = ctx.events.lastOrNull { it.verb == "regenerate" }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return false
+            ctx.asks += EventSpec("ask", obj = id, to = "combat:stillInCombat"); return true
+        }
+        // "My planeswalker has 4 loyalty" after the attack on it was read: that planeswalker, not a second one.
+        Regex("""^(my|their|his|her|my opponent's) planeswalker (?:has|is at|has got) (\d+) loyalty(?: counters)?(?: on it)?$""").find(clause0)?.let { r ->
+            val who = if (r.groupValues[1] == "my") "me" else ctx.other("me") ?: "opp"
+            val pw = ctx.objects.values.lastOrNull { it.controller == who && it.zone == "battlefield" && it.card.name?.startsWith("a planeswalker") == true } ?: return@let
+            ctx.objects[pw.id] = pw.copy(counters = pw.counters + ("loyalty" to r.groupValues[2].toInt())); return true
+        }
+        return null
+    }
+
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readStackQuestions(clause0, m, ctx)?.let { return it }
+        readCombatQuestions(clause0, m, ctx)?.let { return it }
         // "My opponent casts Fireball at me. X is 5.": the X of the last spell cast that has none yet (a copy spell has no X).
         Regex("""^(?:and |with )?x (?:is|was|=|equals|equal to|of) ?(\d+)$""").find(clause0.trim())?.let { r ->
             val at = ctx.events.indexOfLast { e -> e.verb == "cast" && e.amount == null && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) !in xlessCopySpells }
@@ -7635,7 +7782,9 @@ class SituationParser(private val names: NameIndex) {
                     val kws = (Regex("""$kwNouns|flying|trample|deathtouch|lifelink|first strike|double strike|menace|vigilance|indestructible|infect|wither""").findAll(trailer)
                         .map { k -> k.value.removeSuffix("s").replace("flier", "flying").replace("flyer", "flying").replace("trampler", "trample") }.toList()
                         + r.groupValues[8].split(Regex(""",| and | & """)).map { it.trim() }.filter { it.isNotEmpty() }).distinct().joinToString(", ")
-                    val kind = Regex("""$creatureKinds""").find(trailer)?.value ?: "creature"
+                    // "blocks a 5/5 green creature with trample": the colour is kept, since protection from green asks it.
+                    val colour = Regex("""\b(?:white|blue|black|red|green)\b""").findAll(trailer).joinToString("") { it.value + " " }
+                    val kind = colour + (Regex("""$creatureKinds""").find(trailer)?.value ?: "creature")
                     val pt = r.groupValues[6].takeIf { Regex("""^\d+/\d+$""").matches(it) } ?: ""
                     ctx.objects.values.lastOrNull { it.controller == foe && it.zone == "battlefield" && isCreatureName(it.card.name) && (pt.isEmpty() || (it.card.name ?: "").startsWith("a $pt")) }?.id
                         ?: describedCreatures("a ", pt, kind, foe, ctx, kws).firstOrNull() ?: return@let
@@ -12620,11 +12769,11 @@ class SituationParser(private val names: NameIndex) {
     /** Keyword words that are also card names ("Lifelink", "Flying"); in a keyword list they mean the keyword. */
     private val keywordWords = setOf("flying", "trample", "deathtouch", "lifelink", "haste", "vigilance", "reach", "menace", "hexproof", "indestructible", "infect", "defender", "flash", "shroud", "intimidate", "fear", "wither", "changeling", "banding", "horsemanship", "shadow", "persist", "undying", "exalted", "prowess")
     /** Keywords an asker can state on a permanent ("has flying", "with protection from black"). */
-    private val kwPhrase = """(?:ward \{\d+\}|hexproof|indestructible|flying|trample|lifelink|deathtouch|haste|vigilance|reach|menace|shroud|unblockable|first strike|double strike|infect|wither|defender|flash|regenerate|regeneration|prowess|exalted|persist|undying|protection from \w+)"""
+    private val kwPhrase = """(?:ward \{\d+\}|hexproof|indestructible|flying|trample|lifelink|deathtouch|haste|vigilance|reach|menace|shroud|unblockable|first strike|double strike|infect|wither|flanking|toxic \d+|defender|flash|regenerate|regeneration|prowess|exalted|persist|undying|protection from \w+)"""
     /** Keywords an asker can put in front of the kind: "a 2/2 indestructible creature", "my flying blocker". */
     private val keywordAdjectives = setOf("flying", "trample", "deathtouch", "lifelink", "haste", "vigilance", "reach", "menace",
         "hexproof", "indestructible", "infect", "wither", "defender", "shroud", "unblockable", "first strike", "double strike")
-    private val kwNouns = """(?:fliers?|flyers?|flying|tramplers?|trample|deathtouchers?|deathtouch|lifelinkers?|lifelink|first strikers?|first strike|double strikers?|double strike|haste|vigilance|reach|menace|hexproof|indestructible|infect)"""
+    private val kwNouns = """(?:fliers?|flyers?|flying|tramplers?|trample|deathtouchers?|deathtouch|lifelinkers?|lifelink|first strikers?|first strike|double strikers?|double strike|haste|vigilance|reach|menace|hexproof|indestructible|infect|wither|flanking)"""
     private val creatureKinds = """(?:artifact|enchantment|legendary|creatures?|walls?|goblins?|elves|elf|zombies?|soldiers?|spirits?|angels?|dragons?|humans?|vampires?|beasts?|birds?|cats?|dogs?|wolves|wolf|knights?|warriors?|wizards?|merfolk|dinosaurs?|hydras?|demons?|elementals?|insects?|rats?|snakes?|thopters?|servos?|saprolings?|squirrels?|bears?|giants?|orcs?|slivers?|faeries|faerie|treefolk|horrors?|constructs?|golems?)"""
     private val singularKind = mapOf("elves" to "elf", "wolves" to "wolf", "faeries" to "faerie")
 

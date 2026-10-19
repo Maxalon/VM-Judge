@@ -263,6 +263,12 @@ class GameState(
     var activePlayerStated: Boolean = false,
 ) {
     val trace = Trace()
+    /** Battles (310.12b): the back face of a transforming card, which only the card database knows (set by the judge),
+     *  and the Sieges whose last defense counter was removed and whose ability hasn't resolved yet. */
+    var backFaceOf: ((CardDef) -> CardDef?)? = null
+    val siegesDefeated: MutableSet<String> = mutableSetOf()
+    /** Creatures that had first strike or double strike as the first combat damage step began, once it has (702.7b). */
+    var firstStrikers: Set<String>? = null
     /** A loop of mandatory actions repeated with no way to stop it: the game is a draw (104.4b, 732.4). */
     var gameDrawn = false
     /** Choices made among several legal options while resolving (an Aura choosing what to enchant): a loop with one isn't mandatory. */

@@ -710,6 +710,8 @@ data class CardDef(
     val changeling: Boolean = false,
     /** Printed loyalty for planeswalkers (306.5a). */
     val loyalty: Int? = null,
+    /** Printed defense for battles (310.4a). */
+    val defense: Int? = null,
 ) {
     val isPlaneswalker get() = "Planeswalker" in types
     val isAura get() = "Aura" in subtypes
