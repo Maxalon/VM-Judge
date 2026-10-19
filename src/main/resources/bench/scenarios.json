@@ -41374,5 +41374,252 @@
     "cite": [
       "603.10a"
     ]
+  },
+  {
+    "id": "tg1",
+    "text": "I cast Swords to Plowshares on my own creature with hexproof. Is that legal?",
+    "expect": [
+      "Yes: Swords to Plowshares can target a creature with hexproof. Hexproof only stops spells and abilities your opponents control (702.11b)"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.11b",
+      "601.2c"
+    ]
+  },
+  {
+    "id": "tg2",
+    "text": "I control Grizzly Bears and Spellskite. My opponent casts Doom Blade targeting Grizzly Bears. In response I give it hexproof. Then I activate Spellskite targeting Doom Blade. Can Spellskite redirect a spell whose target is already illegal?",
+    "expect": [
+      "Yes: changing a target asks only that the new target be legal (115.7a, 115.7b).",
+      "Doom Blade now targets Spellskite instead of Grizzly Bears."
+    ],
+    "notExpect": [],
+    "cite": [
+      "115.7a",
+      "115.7b",
+      "611.2a"
+    ]
+  },
+  {
+    "id": "tg3",
+    "text": "I cast Electrolyze. Can I pick the same creature twice?",
+    "expect": [
+      "No: Electrolyze says \"target\" only once",
+      "choose that creature as its only target"
+    ],
+    "notExpect": [],
+    "cite": [
+      "115.3",
+      "601.2c",
+      "601.2d"
+    ]
+  },
+  {
+    "id": "tg4",
+    "text": "I cast Cryptic Command choosing counter target spell and draw a card, but there is no spell on the stack. Can I pick that mode?",
+    "expect": [
+      "No: Cryptic Command can't be cast choosing \"Counter target spell\""
+    ],
+    "notExpect": [
+      "You draw 1 card"
+    ],
+    "cite": [
+      "700.2a",
+      "115.5"
+    ]
+  },
+  {
+    "id": "tg5",
+    "text": "My opponent controls Grizzly Bears. I cast Kolaghan's Command choosing 2 damage to Grizzly Bears and target player discards a card. They bounce Grizzly Bears in response. Does the discard still happen?",
+    "expect": [
+      "Kolaghan's Command still resolves: only some of its targets are illegal",
+      "opponent discards"
+    ],
+    "notExpect": [],
+    "cite": [
+      "608.2b",
+      "700.2a"
+    ]
+  },
+  {
+    "id": "tg6",
+    "text": "I cast Fire // Ice. Can I cast both halves? What's its mana value in my graveyard?",
+    "expect": [
+      "No: you cast one half of Fire // Ice",
+      "{1}{R} + {1}{U} = 4"
+    ],
+    "notExpect": [],
+    "cite": [
+      "709.3",
+      "709.4b",
+      "202.3d"
+    ]
+  },
+  {
+    "id": "tg7",
+    "text": "I cast Pacifism on their creature. They give it protection from white in response. What happens to Pacifism?",
+    "expect": [
+      "Pacifism doesn't resolve (all targets illegal).",
+      "Pacifism never enters the battlefield"
+    ],
+    "notExpect": [
+      "Pacifism enters the battlefield."
+    ],
+    "cite": [
+      "608.2b",
+      "608.3b",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "tg8",
+    "text": "I cast Pacifism on their creature. It resolves. Then they give it protection from white. What happens to Pacifism?",
+    "expect": [
+      "Pacifism: the battlefield → your graveyard."
+    ],
+    "notExpect": [],
+    "cite": [
+      "704.5m",
+      "702.16c"
+    ]
+  },
+  {
+    "id": "tg9",
+    "text": "My Equipment is attached to my creature. My opponent takes control of the creature with Act of Treason. Does the Equipment stay attached? Can I re-equip?",
+    "expect": [
+      "Yes, the Equipment stays attached",
+      "You can move it, but only your way"
+    ],
+    "notExpect": [],
+    "cite": [
+      "301.5d",
+      "702.6a"
+    ]
+  },
+  {
+    "id": "tg10",
+    "text": "My opponent casts Doom Blade on my creature. I respond by giving it protection from black. What happens?",
+    "expect": [
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "608.2b",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "tg11",
+    "text": "I cast Fireball with X=6 targeting two creatures. One gets exiled in response. How is the damage divided?",
+    "expect": [
+      "all 6 damage goes to the one left",
+      "a creature has 6 damage marked."
+    ],
+    "notExpect": [],
+    "cite": [
+      "608.2b",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "tg12",
+    "text": "My opponent controls a creature with ward 2. I cast Lightning Bolt targeting it. In response I copy my Lightning Bolt with Reverberate. Does ward trigger for the copy?",
+    "expect": [
+      "Yes: the copy is created with the warded creature as its target"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.21a",
+      "707.10"
+    ]
+  },
+  {
+    "id": "tg13",
+    "text": "I cast Mind Control on my opponent's creature. They respond by giving it hexproof. Does Mind Control go to the graveyard?",
+    "expect": [
+      "Yes: Mind Control's only target became illegal"
+    ],
+    "notExpect": [
+      "You control a creature"
+    ],
+    "cite": [
+      "608.3b",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "tg14",
+    "text": "Can I target my own creature with Murderous Cut?",
+    "expect": [
+      "Yes: Murderous Cut can target a creature"
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.2c",
+      "115.1a"
+    ]
+  },
+  {
+    "id": "tg15",
+    "text": "My opponent attacks with a creature with hexproof. I cast Settle the Wreckage. Is it exiled?",
+    "expect": [
+      "hexproof doesn't help: Settle the Wreckage targets only the player",
+      "a creature with hexproof: the battlefield → exile."
+    ],
+    "notExpect": [],
+    "cite": [
+      "115.10a",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "tg16",
+    "text": "I cast Wrath of God. Does it kill creatures with hexproof and indestructible?",
+    "expect": [
+      "a creature with hexproof: the battlefield → opponent's graveyard.",
+      "a creature with indestructible is indestructible and isn't destroyed."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.11b",
+      "702.12b"
+    ]
+  },
+  {
+    "id": "tg17",
+    "text": "My opponent controls Grizzly Bears. I cast a spell that says destroy target creature you don't control on their Grizzly Bears. In response I gain control of it. What happens?",
+    "expect": [
+      "doesn't resolve (all targets illegal)"
+    ],
+    "notExpect": [
+      "Grizzly Bears: the battlefield"
+    ],
+    "cite": [
+      "608.2b"
+    ]
+  },
+  {
+    "id": "tg18",
+    "text": "I target my opponent's creature with ward 2 with Lightning Bolt and don't pay. Is Bolt countered?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.21a"
+    ]
+  },
+  {
+    "id": "tg19",
+    "text": "My opponent casts Doom Blade on my creature, in response I give it hexproof. What happens?",
+    "expect": [
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "608.2b",
+      "702.11b"
+    ]
   }
 ]

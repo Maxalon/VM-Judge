@@ -2104,6 +2104,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = lkiRewrites(t2, m, ctx)
+        t2 = targetRewrites(t2, m, ctx)
         t2 = costRewrites(t2, m, ctx)
         t2 = winLossRewrites(t2, m, ctx)
         t2 = turnRewrites(t2, m, ctx)
@@ -5580,6 +5581,142 @@ class SituationParser(private val names: NameIndex) {
         return true
     }
 
+    // ---- targets, modes and choices made on casting (115, 601.2c, 608.2b, 700.2, 709), see TargetAsks.kt ----
+
+    /** The players' words for a keyword given in response, as the event carries it. */
+    private val tgKw = """(hexproof|shroud|indestructible|protection from (?:white|blue|black|red|green))"""
+
+    private fun targetRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t
+        val ci = RegexOption.IGNORE_CASE
+        // "on my own creature": the same creature as "my creature".
+        t2 = t2.replace(Regex("""\b(on|targeting|at) (my|their) own (creature|c\d+|\d+/\d+)\b""", ci), "$1 $2 $3")
+        val q = t2.trim().trimEnd('?', '.', '!').trim()
+        // "Is that legal?" / "Can I do that?" after a spell was aimed at something: the cast's targets are checked.
+        if (Regex("""^is (?:that|it|this) (?:legal|a legal target)$""", ci).matches(q) && ctx.events.any { it.verb == "cast" }) return "tglegal-question"
+        // "Can I target my own creature with Murderous Cut?": the cast, and whether the target is legal.
+        Regex("""^can (i|we) (?:still )?target ((?:my|their|my opponent's|the) (?:own )?(?:creature|c\d+|\d+/\d+(?: creature)?)|it|that|c\d+) with (?:my |our )?(?:own )?(c\d+)$""", ci).find(q)?.let { r ->
+            if (m.cards[r.groupValues[3]]?.isSpellOnly != true) return@let
+            return "${r.groupValues[1]} cast ${r.groupValues[3]} targeting ${r.groupValues[2].replace(" own ", " ")}, tglegal-question"
+        }
+        // "In response I give it hexproof", "they respond by giving it protection from white": the keyword is gained while
+        // the spell waits on the stack, so its target is checked again as it resolves (608.2b). A permanent of the
+        // actor's that grants it (Mother of Runes) is read by its own activation instead; a stand-in "removal spell"
+        // keeps the answer it has always had.
+        Regex("""^(?:then,? |after that,? |later,? )?(?:in response,? )?(i|we|they|he|she|my opponent|the opponent) (?:respond(?:s|ed)? by giving|respond(?:s|ed)?,? giving|give|gives|gave|grant|grants) (it|that|that creature|the creature|my creature|their creature|(?:my |their |the )?c\d+) $tgKw(?: until end of turn)?(?: in response(?: to (?:it|that|c\d+))?)?$""", ci).find(q)?.let { r ->
+            val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return@let
+            if (cast.card?.oracleId == null) return@let
+            // "It resolves. Then they give it protection from white": after the Aura is on the battlefield, not in response.
+            if (ctx.events.lastOrNull()?.verb == "resolveAll" && Regex("""\brespon""").containsMatchIn(q)) return@let
+            val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else "foe"
+            val kw = r.groupValues[3].lowercase()
+            val aim = cast.targets.firstOrNull { it in ctx.objects } ?: return@let
+            if (kw.startsWith("protection") && ctx.objects.values.any { it.controller == (if (who == "me") "me" else ctx.other("me")) && it.id != aim && it.zone == "battlefield" && it.card.oracleId != null }) return@let
+            return "tggrant-question $who ${kw.replace(' ', '_')} $aim"
+        }
+        // "My opponent casts Doom Blade on my creature, in response I give it hexproof": the same, in the cast's own sentence.
+        Regex("""^(.*\bcasts? (c\d+) (?:on|targeting|at) .+?),? (?:and |but )?in response,? (i|we|they|he|she|my opponent) (?:give|gives|gave|grant|grants) (?:it|that creature|the creature) $tgKw(?: until end of turn)?$""", ci).find(q)?.let { r ->
+            if (m.cards[r.groupValues[2]] == null) return@let
+            val who = if (r.groupValues[3].lowercase() in setOf("i", "we")) "me" else "foe"
+            if (r.groupValues[4].startsWith("protection") && ctx.objects.values.any { it.controller == (if (who == "me") "me" else ctx.other("me")) && it.zone == "battlefield" && it.card.oracleId != null }) return@let
+            return "${r.groupValues[1]}, tggrant-question $who ${r.groupValues[4].lowercase().replace(' ', '_')} -"
+        }
+        // "Can I pick the same creature twice?" (Electrolyze): how many times the card says "target".
+        if (Regex("""^can (?:i|we) (?:pick|choose|target|select) (?:the same|one) (?:creature|target|player|permanent|thing|one|object)(?: as (?:both|two|its two) targets| twice| two times| for both(?: targets)?| more than once)$""", ci).matches(q)) return "tgsametwice-question"
+        // "…, but there is no spell on the stack. Can I pick that mode?" (Cryptic Command): a mode needing a target nobody could pick.
+        t2 = t2.replace(Regex(""",? (?:but|and) there (?:is|are|'s) (?:no|nothing)(?: other)?(?: spells?| spell or ability)?(?: on the stack| to counter| to target)\b""", ci), ", tgnothingonstack-question")
+        if (Regex("""^(?:but )?there (?:is|are|'s) (?:no|nothing)(?: other)?(?: spells?| spell or ability)?(?: on the stack| to counter| to target)$""", ci).matches(q)) return "tgnothingonstack-question"
+        if (Regex("""^can (?:i|we) (?:still )?(?:pick|choose|select|take) (?:that|this|the|those) (?:mode|option|modes|options)$""", ci).matches(q)) return "tgmode-question"
+        // "choosing 2 damage to Grizzly Bears and target player discards a card" (Kolaghan's Command): the two modes, then their targets.
+        Regex("""\bchoosing (.+?) (?:to|on|at) ((?:their |my |the |my opponent's )?c\d+) and target (?:player|opponent) (discard|draw|lose|gain|sacrifice|mill)s? (.+)$""", ci).find(t2)?.let { r ->
+            t2 = t2.substring(0, r.range.first) + "choosing ${r.groupValues[1]} & ${r.groupValues[3]} ${r.groupValues[4]} targeting ${r.groupValues[2]} & my opponent"
+        }
+        Regex("""\bchoosing target (?:player|opponent) (discard|draw|lose|gain|sacrifice|mill)s? (.+?) and (.+?) (?:to|on|at) ((?:their |my |the |my opponent's )?c\d+)$""", ci).find(t2)?.let { r ->
+            t2 = t2.substring(0, r.range.first) + "choosing ${r.groupValues[3]} & ${r.groupValues[1]} ${r.groupValues[2]} targeting ${r.groupValues[4]} & my opponent"
+        }
+        // "One gets exiled in response" (Fireball at two creatures): the first target leaves before the spell resolves.
+        Regex("""^(?:then )?one(?: of them| of the (?:creatures|targets))? (?:gets|is|was|got) (exiled|destroyed|bounced|sacrificed|returned to (?:its|their) owner's hand)(?: in response)?$""", ci).find(q)?.let { r ->
+            val zone = when { r.groupValues[1].startsWith("exile") -> "exile"; r.groupValues[1].startsWith("destroy") || r.groupValues[1].startsWith("sacrific") -> "graveyard"; else -> "hand" }
+            return "tgoneleaves-question $zone"
+        }
+        if (Regex("""^how (?:is|does|will) (?:the |its )?damage (?:get )?(?:divided|split)(?: up)?(?: now)?$""", ci).matches(q)) return "tgdivided-question"
+        // "I target their creature with ward 2 with Lightning Bolt": the spell cast at it.
+        Regex("""^(i|we|they|he|she|my opponent) targets? ((?:my opponent's|their|my|the opponent's) (?:creature|\d+/\d+(?: creature)?)) with (ward (?:\{\d+\}|\d+)) with (c\d+)\b(.*)$""", ci).find(q)?.let { r ->
+            return "${r.groupValues[1]} cast ${r.groupValues[4]} targeting ${r.groupValues[2]} with ${r.groupValues[3]}${r.groupValues[5]}"
+        }
+        // "Does ward trigger for the copy?": the copy is created with the warded creature as its target.
+        if (Regex("""^(?:does|will|would) (?:the )?ward (?:trigger|ability trigger|trigger again) (?:for|on|off) (?:the|that|a) copy$""", ci).matches(q)) return "tgwardcopy-question"
+        // "Does Wrath of God kill creatures with hexproof and indestructible?": one of each, on the other side of the caster.
+        Regex("""^(?:does|will|would) (?:it|c\d+) (?:kill|destroy|hit|get|deal with) (?:creatures|a creature|my creatures|their creatures) with $tgKw(?: (?:and|or) (?:with )?$tgKw)?$""", ci).find(q)?.let { r ->
+            val caster = ctx.events.lastOrNull { it.verb == "cast" }?.player ?: return@let
+            val side = if (caster == "me") "my opponent controls" else "i control"
+            return "$side " + listOf(r.groupValues[1], r.groupValues[2]).filter { it.isNotEmpty() }.joinToString(" and ") { "a creature with $it" } + ", which die"
+        }
+        // "My Equipment is attached to my creature. My opponent takes control of the creature with Act of Treason."
+        if (Regex("""^(?:i have an? |my )?@?equipment (?:is )?(?:attached to|equipped to|on) (?:my|a) creature$|^my creature (?:is )?equipped(?: with (?:an? |my )?@?equipment)?$""", ci).matches(q)) { ctx.notes += "An Equipment of yours on a creature of yours: the question below is answered from the rules for Equipment."; return "i control a creature, tgequipnote-question" }
+        t2 = t2.replace(Regex("""\b(takes?|took|gains?|gained) control of ((?:the|my|their) (?:creature|c\d+|\d+/\d+)) with (?:an? |the |their )?(c\d+)\b""", ci), "steals $2 with $3")
+        if (Regex("""^(?:does|will) (?:the |my )?@?equipment (?:stay|remain|still stay) (?:attached|on (?:it|the creature)|equipped)$|^can (?:i|we) (?:re-?equip|move (?:the |my )?@?equipment|equip (?:it|the @?equipment) (?:again|back|to (?:something|another creature|my creature)))(?: (?:it|the equipment))?(?: back)?$""", ci).matches(q)) return "tgequipsteal-question"
+        // "Can I cast both halves? What's its mana value in my graveyard?" (Fire // Ice).
+        if (m.cards.values.any { it.display.contains(" // ") } || ctx.castCards.any { it.contains(" // ") } || ctx.lastCastEntry?.display?.contains(" // ") == true) {
+            if (Regex("""^can (?:i|we) (?:cast|use|play) both (?:halves|sides|parts|halfs)(?: (?:at once|together|of it))?$""", ci).matches(q)) return "tgsplit-question"
+            if (Regex("""^what(?:'s| is) (?:its|the|c\d+'s|the card's) (?:mana value|cmc|converted mana cost|mv)(?: (?:in|when it's in|once it's in) (?:my|the|a) graveyard| in my hand| in my library)?$""", ci).matches(q)) return "tgsplit-question"
+        }
+        // "Can Spellskite redirect a spell whose target is already illegal?"
+        Regex("""^can (c\d+) (?:still )?(?:redirect|deflect|take|steal) (?:a spell|it|that|the spell|c\d+) (?:whose|with a|that has an?) (?:only )?target (?:is |that's |that is )?(?:already |now )?illegal$""", ci).find(q)?.let { r -> return "tgredirect-question ${r.groupValues[1]}" }
+        // "Does Mind Control go to the graveyard?": where the card is once everything has resolved.
+        Regex("""^(?:does|will|would|did) (c\d+) (?:still )?(?:go|get put|end up|get sent) (?:to|in|into) (?:the|its owner's|my|their|his|her) graveyard$""", ci).find(q)?.let { r -> if (m.cards[r.groupValues[1]]?.isSpellOnly == false) return "tgwhere-question ${r.groupValues[1]}" }
+        return t2
+    }
+
+    /** The markers [targetRewrites] leaves, answered by TargetAsks in the judge. */
+    private fun readTargetQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        if (!c.startsWith("tg") || !Regex("""^tg[a-z]+-question\b""").containsMatchIn(c)) return null
+        val lastCast = ctx.events.lastOrNull { it.verb == "cast" }
+        fun ask(label: String, card: String? = lastCast?.card?.name) { ctx.asks += EventSpec("ask", to = "tg:$label", card = card?.let { CardRef(name = it) }, player = lastCast?.player) }
+        when {
+            c == "tglegal-question" -> { if (lastCast == null) return false; ask("legal"); ctx.notes += "Whether ${lastCast.card?.name ?: "the spell"} can target that is answered by the outcome below." }
+            c.startsWith("tggrant-question ") -> {
+                val (who0, kw, aim0) = c.removePrefix("tggrant-question ").split(' ').let { Triple(it[0], it[1].replace('_', ' '), it[2]) }
+                val who = if (who0 == "me") "me" else pronounPlayer(ctx, "they")
+                val aim = if (aim0 != "-") aim0 else lastCast?.takeIf { it.card?.oracleId != null }?.targets?.firstOrNull { it in ctx.objects } ?: return false
+                ctx.events += EventSpec("tgGrant", player = who, obj = aim, to = kw); ctx.note(who); ctx.lastActor = who; ctx.lastMentioned = aim
+            }
+            c == "tgsametwice-question" -> {
+                if (lastCast == null) return false
+                // The cast was said only to ask about its targets; played out with one invented, it answered something else.
+                if (lastCast.targets.isEmpty()) ctx.events.remove(lastCast)
+                ask("sameTwice")
+            }
+            // Said outright, so a mode that needs a spell to target is checked against an empty stack (700.2a).
+            c == "tgnothingonstack-question" -> { ctx.notes += "Nothing else is on the stack, as said."; val at = lastCast?.let { ctx.events.indexOf(it) } ?: -1; ctx.events.add(if (at >= 0) at else ctx.events.size, EventSpec("tgEmptyStack")) }
+            c == "tgmode-question" -> { if (lastCast == null || (lastCast.modes.isEmpty() && lastCast.to?.startsWith("mode:") != true)) return false; ctx.notes += "\"Can I pick that mode?\" is answered by the outcome below." }
+            c.startsWith("tgoneleaves-question ") -> {
+                val cast = lastCast ?: return false
+                val aim = cast.targets.firstOrNull { it in ctx.objects } ?: return false
+                ctx.events += EventSpec("leave", obj = aim, to = c.substringAfterLast(' '))
+                ctx.notes += "\"One\" of ${cast.card?.name ?: "the spell"}'s targets is read as the first one, ${ctx.objects[aim]?.card?.name ?: aim}."
+            }
+            c == "tgdivided-question" -> { if (lastCast == null) return false; ask("divided") }
+            c == "tgwardcopy-question" -> ask("wardCopy")
+            c == "tgequipnote-question" -> {}
+            c == "tgequipsteal-question" -> { if (ctx.asks.none { it.to == "tg:equipSteal" }) ask("equipSteal", ctx.events.lastOrNull { it.verb == "cast" && it.player != "me" }?.card?.name) }
+            c == "tgsplit-question" -> {
+                val split = m.cards.values.firstOrNull { it.display.contains(" // ") }?.let { CardRef(name = it.display, oracleId = it.oracleId) }
+                    ?: ctx.lastCastEntry?.takeIf { it.display.contains(" // ") }?.let { CardRef(name = it.display, oracleId = it.oracleId) }
+                    ?: ctx.castCards.lastOrNull { it.contains(" // ") }?.let { CardRef(name = it) } ?: return false
+                // "I cast Fire // Ice. Can I cast both halves?": the cast is the question, not a half chosen to play out.
+                ctx.events.removeAll { it.verb == "cast" && it.card?.name == split.name && it.modes.isEmpty() && it.to == null }
+                if (ctx.events.lastOrNull()?.verb == "resolveAll" && ctx.events.none { it.verb == "cast" }) ctx.events.removeAt(ctx.events.size - 1)
+                if (ctx.asks.none { it.to == "tg:split" }) ctx.asks += EventSpec("ask", to = "tg:split", card = split)
+            }
+            c.startsWith("tgredirect-question ") -> ask("redirect", m.cards[c.substringAfterLast(' ')]?.display)
+            c.startsWith("tgwhere-question ") -> ask("where", m.cards[c.substringAfterLast(' ')]?.display)
+            else -> return null
+        }
+        return true
+    }
+
     /** The markers [stackRewrites] leaves: stack, priority and timing questions, answered by StackAsks in the judge. */
     private fun readStackQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         Regex("""^floatmana-question (me|opp) (\d+)(?: (\S+))?$""").find(clause0)?.let { r ->
@@ -5973,6 +6110,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readLkiQuestions(clause0, m, ctx)?.let { return it }
+        readTargetQuestions(clause0, m, ctx)?.let { return it }
         readCostQuestions(clause0, m, ctx)?.let { return it }
         readWinLossQuestions(clause0, m, ctx)?.let { return it }
         readTurnQuestions(clause0, m, ctx)?.let { return it }

@@ -313,6 +313,8 @@ class GameState(
     val turns = TurnPlan()
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */
     val combatDamageMuted = mutableSetOf<String>()
+    /** "… but there is no spell on the stack": said outright, so a mode needing a spell to target can be ruled out (700.2a). */
+    var stackSaidEmpty = false
     /** Spells cast this turn, per player (storm counts, Aetherflux Reservoir). */
     val spellsThisTurn = mutableMapOf<String, Int>()
     /** Attackers whose "attacks and isn't blocked" trigger has already been put on the stack this combat. */

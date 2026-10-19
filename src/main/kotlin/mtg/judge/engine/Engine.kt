@@ -364,6 +364,15 @@ class Engine(val state: GameState) {
             else modes
         } else modes
         val modeEffect = modal?.let { m -> modes.mapNotNull { i -> m.modes.getOrNull(i - 1) }.let { if (it.isEmpty()) null else Effect.Seq(it) } }
+        // "Cryptic Command choosing counter target spell and draw, with no spell on the stack": a mode that needs a
+        // spell or ability to target, with none on the stack but the spell itself (115.5), can't be chosen (700.2a).
+        if (modal != null && targets.isEmpty() && state.stackSaidEmpty) modes.firstOrNull { i -> modal.modes.getOrNull(i - 1)?.targets()?.any { spec -> spec.filter.kinds.isNotEmpty() && spec.filter.kinds.all { it == Kind.SPELL || it == Kind.ABILITY } &&
+                state.stack.none { st -> filterMatches(spec.filter, Ref.Stack(st.id), playerId) } } == true }?.let { i ->
+            val text = modal.modeTexts.getOrNull(i - 1)?.replace("~", card.name) ?: "mode $i"
+            trace.step("\"$text\" needs a target on the stack, and there is none: ${if (state.stack.isEmpty()) "the stack is empty" else "nothing on the stack fits"}, and ${card.name} can't target itself. A mode that would be illegal because its targets can't be chosen can't be chosen, so ${card.name} can't be cast with that mode.", "700.2a", "601.2c", "115.5")
+            state.outcomes += "No: ${card.name} can't be cast choosing \"$text\": with no ${modal.modes[i - 1].targets().first().raw} on the stack for it to target, that mode can't be chosen (700.2a, 601.2c). Choose modes that have legal targets instead."
+            return null
+        }
         // A chosen mode needs a target nobody named: the one legal target is taken, as for any other spell.
         if (modeEffect != null && targets.isEmpty() && modeEffect.targets().size == 1) {
             inferTarget(card.name, modeEffect.targets()[0], playerId, harmful = isHarmful(modeEffect), source = obj, beneficial = isBeneficial(modeEffect))?.takeIf { it.isNotEmpty() }?.let { targets = it }
@@ -1559,8 +1568,11 @@ class Engine(val state: GameState) {
                 // Protection or hexproof gained in response: the rule that makes the target illegal is cited with 608.2b.
                 val why = legal.filter { !it.second }.mapNotNull { (it.first as? Ref.Obj)?.let { r -> if (state.objects[r.id]?.zone == item.targetZones[r.id]) targetingProblem(item.source, item.controller, r)?.second else null } }.distinct()
                 trace.step("${item.describe}'s target${if (item.targets.size > 1) "s are" else " is"} no longer legal (${legal.joinToString("; ") { whyIllegal(item, it.first) }}), so it doesn't resolve and is removed from the stack" +
-                    (if (item.kind == StackKind.SPELL) " and put into its owner's graveyard" else "") + ".", *(listOf("608.2b") + why).toTypedArray())
+                    (if (item.kind == StackKind.SPELL) " and put into its owner's graveyard" else "") + ".", *(listOf("608.2b") + (if (item.kind == StackKind.SPELL && !item.source.def.isInstantOrSorcery) listOf("608.3b") else emptyList()) + why).toTypedArray())
                 state.outcomes += "${item.describe} doesn't resolve (all targets illegal)." + (if (state.outcomes.none { it.contains("fizzl") }) " Players call this fizzling." else "")
+                // "I cast Pacifism; they give the creature protection from white in response": a permanent spell whose
+                // target is illegal never enters the battlefield, so an Aura goes to the graveyard from the stack.
+                if (item.kind == StackKind.SPELL && !item.source.def.isInstantOrSorcery && !item.source.kwf.bestowed) state.outcomes += "${item.source.name} never enters the battlefield: ${if (item.source.def.isAura) "an Aura spell" else "a permanent spell"} whose target is illegal doesn't resolve and goes from the stack to its owner's graveyard (608.3b)."
                 // "they cast a 3/3 and I Bolt it before it resolves": a creature spell isn't a creature yet.
                 if (item.kind == StackKind.SPELL) legal.filter { !it.second }.mapNotNull { (it.first as? Ref.Obj)?.let { r -> state.objects[r.id] } }.filter { it.zone == Zone.STACK }.forEach { t ->
                     state.outcomes += "${item.describe} can't target ${t.name} while it's still a spell on the stack: a creature spell isn't a creature until it resolves. Aim it at ${t.name} once it has entered the battlefield, or counter the spell instead."
@@ -1822,6 +1834,11 @@ class Engine(val state: GameState) {
                     // Animate Dead: once its card is back on the battlefield, it enchants "creature put onto the battlefield with ~".
                     val legal = host != null && host.isOnBattlefield() && (enchant == null || state.matches(enchant, host, obj.controller, obj) || (enchant.inGraveyard && state.hasCreatureType(host)))
                     if (!legal && obj.kwf.bestowed) { GapMech.bestowedFallsOff(state, obj); changed = true }
+                    // "Pacifism is on their creature, then they give it protection from white": it can't be enchanted by a white Aura.
+                    else if (legal && host != null && !obj.kwf.bestowed && protectionHit(state.protections(host), qualitiesOf(obj), obj.controller) != null) {
+                        val q = protectionHit(state.protections(host), qualitiesOf(obj), obj.controller)!!
+                        move(obj, Zone.GRAVEYARD, "${host.name} has protection from ${protectionName(q)}, so it can't be enchanted by ${obj.name}; ${obj.name} is put into its owner's graveyard (state-based action).", "704.3", "704.5m", "702.16c"); changed = true
+                    }
                     else if (!legal) { move(obj, Zone.GRAVEYARD, "${obj.name} is ${if (host == null || !host.isOnBattlefield()) "no longer attached to anything" else "attached to something it can't enchant"}, so it's put into its owner's graveyard (state-based action).", "704.3", "704.5m"); changed = true }
                 } else if (obj.def.isEquipment && obj.attachedTo != null) {
                     if (host == null || !host.isOnBattlefield() || !state.isCreature(host)) { obj.attachedTo = null; trace.step("${obj.name} is no longer attached to a creature, so it becomes unattached and stays on the battlefield (state-based action).", "704.3", "704.5n"); state.outcomes += "${obj.name} stays on the battlefield, unattached."; changed = true }
@@ -2906,6 +2923,11 @@ class Engine(val state: GameState) {
                 val affected = state.objects.values.filter { it.controller == pid && state.matches(effect.filter, it, pid) }
                 item.lastCount = affected.size
                 if (affected.isEmpty()) trace.step("${state.nameOf(ref)} ${if (state.player(pid).you) "control" else "controls"} no ${effect.filter.raw}, so nothing happens.")
+                // "Settle the Wreckage; one attacker has hexproof": only the player is a target, so hexproof on the creatures doesn't matter.
+                affected.filter { state.hasKeyword(it, "hexproof") || state.hasKeyword(it, "shroud") }.takeIf { it.isNotEmpty() }?.let { shy ->
+                    trace.step("${shy.joinToString(" and ") { it.name }} ${if (shy.size == 1) "has" else "have"} ${if (state.hasKeyword(shy[0], "hexproof")) "hexproof" else "shroud"}, but ${item.source.name} targets only ${state.nameOf(ref)}; the ${effect.filter.raw} it affects aren't its targets, so ${if (shy.size == 1) "it is" else "they are"} affected all the same.", "115.10a", if (state.hasKeyword(shy[0], "hexproof")) "702.11b" else "702.18a")
+                    state.outcomes += "${shy.joinToString(" and ") { it.name }}'s ${if (state.hasKeyword(shy[0], "hexproof")) "hexproof" else "shroud"} doesn't help: ${item.source.name} targets only the player."
+                }
                 if (affected.size > 1 && effect.action in setOf("destroy", "exile", "bounce")) leavingTogether = affected.map { it.id }.toSet()
                 heldTriggers { try { for (o in affected) when (effect.action) {
                     "destroy" -> destroy(o, "${o.name} is destroyed.", "701.8a")
@@ -2987,7 +3009,8 @@ class Engine(val state: GameState) {
                             trace.step("The division is chosen as ${item.describe} is cast, and each target must be assigned at least 1 damage, so $n targets can't share ${effect.amount} damage.", "601.2d")
                         } else {
                             // "Fireball with X=5 at me": one target takes it all; there is nothing to divide.
-                            if (n == 1) trace.step("${item.source.name} has a single target, so all ${effect.amount} damage goes to ${state.nameOf(legal[0])}; there is nothing to divide.", "601.2d")
+                            if (n == 1 && effect.evenly && item.targets.size > 1) trace.step("${item.source.name} divides its damage as it resolves, evenly among only the targets still legal; ${item.targets.size - 1} of its ${item.targets.size} targets ${if (item.targets.size == 2) "is" else "are"} illegal now, so all ${effect.amount} damage goes to ${state.nameOf(legal[0])}.", "608.2b", "608.2c")
+                            else if (n == 1) trace.step("${item.source.name} has a single target, so all ${effect.amount} damage goes to ${state.nameOf(legal[0])}; there is nothing to divide.", "601.2d")
                             else if (!effect.evenly) trace.step("${item.source.name} deals ${effect.amount} damage divided among ${legal.joinToString(" and ") { state.nameOf(it) }}. The division was chosen as it was cast, each target assigned at least 1, and it can't be changed now.", "601.2d", "119.4")
                             if (n > 1) state.assumptions += if (item.source.def.oracleText.contains("divided evenly", true)) "${item.describe}'s ${effect.amount} damage is divided evenly among the $n targets named (${legal.joinToString(" and ") { state.nameOf(it) }}), rounded down, as its own text requires."
                                 else "${item.describe}'s ${effect.amount} damage is split as evenly as it goes among the $n targets named (${legal.joinToString(" and ") { state.nameOf(it) }}); the caster could have divided it any other way as it was cast."
@@ -3100,6 +3123,8 @@ class Engine(val state: GameState) {
                 val idx = target.targets.indices.firstOrNull { i -> val spec = specs.getOrNull(i) ?: specs.firstOrNull(); spec != null && filterMatches(spec.filter, Ref.Obj(me.id), target.controller) && targetingProblem(target.source, target.controller, Ref.Obj(me.id)) == null && target.targets[i] != Ref.Obj(me.id) }
                 if (idx == null) { trace.step("${me.name} isn't a legal target for ${target.describe}${specs.firstOrNull()?.let { " (\"${it.raw}\")" } ?: ""}, so its target can't be changed to ${me.name}; the ability does nothing.", "115.7", "115.3"); state.outcomes += "${target.describe}'s target isn't changed (${me.name} isn't a legal target for it)."; return@forEachLegalTarget }
                 val was = state.nameOf(target.targets[idx])
+                // "They Doom Blade my creature, I give it hexproof, then Spellskite it": only the new target has to be legal.
+                if (!isTargetLegal(target, target.targets[idx])) trace.step("${target.describe}'s current target, $was, is already illegal (${whyIllegal(target, target.targets[idx])}). That doesn't stop the change: changing a target requires only that the new target be legal.", "115.7a", "115.7b")
                 target.targets = target.targets.toMutableList().also { it[idx] = Ref.Obj(me.id) }; target.targetZones[me.id]?.let { } 
                 trace.step("${target.describe}'s target is changed from $was to ${me.name}: ${me.name} is a legal target for it, so the change is made.", "115.7", "115.3")
                 state.outcomes += "${target.describe} now targets ${me.name} instead of $was."
@@ -3942,7 +3967,7 @@ class Engine(val state: GameState) {
                 // "I control a 2/2 with hexproof. Wrath.": hexproof and shroud only stop targeting, and this doesn't target.
                 if (effect.action in setOf("destroy", "exile", "bounce", "tuck", "sacrifice")) affected.filter { state.hasKeyword(it, "hexproof") || state.hasKeyword(it, "shroud") }.takeIf { it.isNotEmpty() }?.let { shy ->
                     val kw = if (state.hasKeyword(shy[0], "hexproof")) "hexproof" else "shroud"
-                    trace.step("${shy.joinToString(" and ") { it.name }} ${if (shy.size == 1) "has" else "have"} $kw, but ${item.source.name} doesn't target: it affects each ${effect.filter.raw}, and $kw only stops spells and abilities from targeting.", if (kw == "hexproof") "702.11b" else "702.18b", "115.1")
+                    trace.step("${shy.joinToString(" and ") { it.name }} ${if (shy.size == 1) "has" else "have"} $kw, but ${item.source.name} doesn't target: it affects each ${effect.filter.raw}, and $kw only stops spells and abilities from targeting.", if (kw == "hexproof") "702.11b" else "702.18a", "115.1")
                     state.outcomes += "${shy.joinToString(" and ") { it.name }}'${if (shy.size == 1 && !shy[0].name.endsWith("s")) "s" else ""} $kw doesn't help: ${item.source.name} doesn't target anything."
                 }
                 // "Mother gives Thalia pro white. Wrath.": protection stops targeting, damage, enchanting and blocking; a sweeper does none of those.
@@ -4253,6 +4278,12 @@ class Engine(val state: GameState) {
             trace.step("How ${target.source.name} divides its damage among its targets was decided as it was cast${if (divided.evenly) " (here its own text fixes it: evenly, rounded down)" else ""}, and the copy keeps that division too; with new targets the copy still has $n targets and the same $total damage to divide.", "707.2", "601.2d")
             state.outcomes += if (divided.evenly) "The copy splits its $total damage the same way: evenly among its $n targets, rounded down (${total / n} each), as ${target.source.name}'s own text requires; only which targets it has may change."
                 else "The copy keeps the original's division of its $total damage among its $n targets; only which targets it has may change, not how the damage is divided."
+        }
+        // "I copy my Bolt aimed at their ward creature": the copy is put on the stack targeting it, so the creature
+        // becomes the target of a spell an opponent controls once more.
+        if (copy.targets.any { r -> r is Ref.Obj && state.objects[r.id]?.let { o -> o.isOnBattlefield() && o.controller != copy.controller && state.wardCost(o) != null } == true }) {
+            trace.step("The copy is created with ${copy.targets.joinToString(" and ") { state.nameOf(it) }} as its target, so that permanent becomes the target of a spell an opponent controls again: \"becomes the target\" happens for a copy as it's created, not only for a cast spell.", "702.21a", "707.10")
+            wardTriggers(copy)
         }
         onEvent(GameEvent.SpellCopied(copy))
     }
