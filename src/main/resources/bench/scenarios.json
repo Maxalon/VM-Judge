@@ -38505,5 +38505,287 @@
     "cite": [
       "732.1b"
     ]
+  },
+  {
+    "id": "sweep-blood-moon-colonnade-cannot-animate",
+    "text": "They have Blood Moon. Can my Celestial Colonnade become a creature and attack?",
+    "expect": [
+      "No: Blood Moon makes Celestial Colonnade a Mountain with none of its own abilities"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "305.7",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "sweep-humility-thalia-no-tax",
+    "text": "Humility is out. Does my Thalia still tax their spells?",
+    "expect": [
+      "No: Humility has taken away every ability of Thalia, Guardian of Thraben, so it no longer makes spells cost more."
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "613.1f",
+      "604.2"
+    ]
+  },
+  {
+    "id": "sweep-humility-spellskite-cannot-redirect",
+    "text": "Humility is out. Can my Spellskite redirect their Bolt?",
+    "expect": [
+      "No: Humility has taken away every ability of Spellskite, so it can't redirect anything."
+    ],
+    "notExpect": [
+      "Yes, if Spellskite"
+    ],
+    "cite": [
+      "613.1f",
+      "604.2"
+    ]
+  },
+  {
+    "id": "sweep-humility-finks-does-not-persist",
+    "text": "Humility is out. Does my Kitchen Finks persist when it dies?",
+    "expect": [
+      "Kitchen Finks doesn't return: it had no persist on the battlefield (Humility).",
+      "No: Kitchen Finks is in your graveyard."
+    ],
+    "notExpect": [
+      "comes back with a -1/-1 counter"
+    ],
+    "cite": [
+      "603.10a",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "sweep-march-vial-dies-to-wrath",
+    "text": "March of the Machines is out. They Wrath. Does my Aether Vial die?",
+    "expect": [
+      "Aether Vial is a 1/1 artifact creature.",
+      "Yes: Aether Vial died (it's in the graveyard)."
+    ],
+    "cite": [
+      "613.1d",
+      "613.4b",
+      "701.8a"
+    ]
+  },
+  {
+    "id": "sweep-march-mox-dies-as-zero-zero",
+    "text": "March of the Machines is out. I cast Mox Pearl. Does it die?",
+    "expect": [
+      "Mox Pearl is a 0/0 artifact creature.",
+      "Yes: Mox Pearl died (it's in the graveyard)."
+    ],
+    "cite": [
+      "704.5f",
+      "613.4b"
+    ]
+  },
+  {
+    "id": "sweep-painter-bolt-green-protection",
+    "text": "Painter's Servant naming green. I cast Bolt at their Thalia and they have protection from green on it. Does Bolt resolve?",
+    "expect": [
+      "Lightning Bolt can't target Thalia, Guardian of Thraben.",
+      "No: Lightning Bolt doesn't resolve."
+    ],
+    "notExpect": [
+      "Yes: Lightning Bolt isn't countered",
+      "deals 3 damage"
+    ],
+    "cite": [
+      "702.16b",
+      "613.1e"
+    ]
+  },
+  {
+    "id": "sweep-darksteel-mutation-thalia-no-tax",
+    "text": "Darksteel Mutation on their Thalia. Does it still tax me?",
+    "expect": [
+      "No: Darksteel Mutation has taken away every ability of Thalia, Guardian of Thraben"
+    ],
+    "cite": [
+      "613.1f",
+      "604.2"
+    ]
+  },
+  {
+    "id": "sweep-opalescence-rest-in-peace-attacks",
+    "text": "Opalescence out. Can I attack with my Rest in Peace?",
+    "expect": [
+      "Rest in Peace is a 2/2 enchantment creature.",
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "Rest in Peace can't attack"
+    ],
+    "cite": [
+      "613.1d",
+      "508.1a"
+    ]
+  },
+  {
+    "id": "sweep-opalescence-rest-in-peace-summoning-sick",
+    "text": "I control Opalescence. I cast Rest in Peace. Can I attack with it?",
+    "expect": [
+      "Rest in Peace is a 2/2 enchantment creature.",
+      "Rest in Peace can't attack (summoning sick)."
+    ],
+    "cite": [
+      "302.6",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "sweep-humility-goblin-guide-loses-haste",
+    "text": "Humility is out. I cast Goblin Guide. Can I attack with it?",
+    "expect": [
+      "Goblin Guide can't attack (summoning sick)."
+    ],
+    "cite": [
+      "302.6"
+    ]
+  },
+  {
+    "id": "kw-extort-bolt-drain",
+    "text": "I have Syndic of Tithes and cast Lightning Bolt at their face, paying for extort. How much life does the opponent lose in all?",
+    "expect": [
+      "opponent loses 1 life.",
+      "You gain 1 life.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "702.101a",
+      "608.2d"
+    ]
+  },
+  {
+    "id": "kw-extort-two-syndics-trigger-twice",
+    "text": "I control two Syndic of Tithes. I cast Lightning Bolt at the opponent and pay for both extorts. How much life does the opponent have?",
+    "expect": [
+      "opponent loses 1 life. (×2)",
+      "You gain 1 life. (×2)"
+    ],
+    "cite": [
+      "702.101a"
+    ]
+  },
+  {
+    "id": "kw-extort-declined-no-drain",
+    "text": "I control Syndic of Tithes and cast Lightning Bolt at the opponent, and I don't pay for extort. How much life do I gain?",
+    "expect": [
+      "You don't pay {W/B}: nothing more happens.",
+      "No: you gain no life here."
+    ],
+    "notExpect": [
+      "You gain 1 life."
+    ],
+    "cite": [
+      "608.2d"
+    ]
+  },
+  {
+    "id": "kw-exploit-fell-stinger-draws",
+    "text": "I have a Grizzly Bears and a Llanowar Elves. I cast Fell Stinger and exploit the Grizzly Bears, targeting the opponent. How much life does the opponent have?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "opponent draws 2 cards.",
+      "opponent loses 2 life."
+    ],
+    "notExpect": [
+      "Llanowar Elves: the battlefield"
+    ],
+    "cite": [
+      "702.110a",
+      "702.110b"
+    ]
+  },
+  {
+    "id": "kw-exploit-nothing-else-to-sacrifice",
+    "text": "I cast Fell Stinger with no other creatures. Do I draw?",
+    "expect": [
+      "Fell Stinger exploits nothing: there is no other creature to sacrifice.",
+      "No: You don't draw."
+    ],
+    "cite": [
+      "702.110a"
+    ]
+  },
+  {
+    "id": "kw-bloodthirst-after-bolt",
+    "text": "I cast Lightning Bolt at the opponent's face, then I cast Carnage Wurm. How big is Carnage Wurm?",
+    "expect": [
+      "Carnage Wurm enters with 3 +1/+1 counters (bloodthirst); it's 9/9.",
+      "Carnage Wurm is 9/9 (6/6 base, 3 +1/+1 counters)."
+    ],
+    "cite": [
+      "702.54a",
+      "120.3a"
+    ]
+  },
+  {
+    "id": "kw-bloodthirst-nobody-hurt",
+    "text": "I cast Carnage Wurm. How big is it?",
+    "expect": [
+      "Carnage Wurm enters with no counters: no opponent was dealt damage this turn (bloodthirst).",
+      "Carnage Wurm is 6/6."
+    ],
+    "cite": [
+      "702.54a"
+    ]
+  },
+  {
+    "id": "kw-backup-hexproof-to-bears",
+    "text": "I have a Grizzly Bears. I cast Saiba Cryptomancer targeting the Grizzly Bears. Does the Grizzly Bears have hexproof?",
+    "expect": [
+      "Grizzly Bears has 1 +1/+1 counter.",
+      "Grizzly Bears gains Hexproof until end of turn.",
+      "Yes: Grizzly Bears has hexproof."
+    ],
+    "cite": [
+      "702.165a"
+    ]
+  },
+  {
+    "id": "kw-backup-on-itself-gains-nothing",
+    "text": "I cast Saiba Cryptomancer with no other creatures. How big is it?",
+    "expect": [
+      "Saiba Cryptomancer has 1 +1/+1 counter.",
+      "Saiba Cryptomancer is 1/2 (0/1 base, 1 +1/+1 counter)."
+    ],
+    "cite": [
+      "702.165a"
+    ]
+  },
+  {
+    "id": "kw-mentor-counter-on-lesser-attacker",
+    "text": "I attack with Barging Sergeant and my Grizzly Bears. How much damage does the opponent take?",
+    "expect": [
+      "Grizzly Bears has 1 +1/+1 counter.",
+      "opponent takes 4 damage.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "702.134a"
+    ]
+  },
+  {
+    "id": "kw-mentor-equal-power-no-target",
+    "text": "I attack with Barging Sergeant and a 4/4 creature. Does the 4/4 get a counter?",
+    "expect": [
+      "opponent takes 4 damage. (×2)"
+    ],
+    "notExpect": [
+      "has 1 +1/+1 counter"
+    ],
+    "cite": [
+      "508.1a"
+    ]
   }
 ]

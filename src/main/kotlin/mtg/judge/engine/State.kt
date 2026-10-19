@@ -14,6 +14,8 @@ class Player(val id: String, val name: String, var life: Int?) {
     /** Life gained minus life lost in this situation, kept even when the life total itself was never said (a loop that drains it). */
     var lifeLedger = 0
     var drew = 0
+    /** Dealt damage this turn (Bloodthirst, 702.54a); cleared in the cleanup step. */
+    var damagedThisTurn = false
     /** Cards drawn this turn, for "can't draw more than one card each turn" (Narset). */
     var drewThisTurn = 0
     var lost = false
@@ -143,6 +145,10 @@ class GameObject(
     val power: Int? get() = state?.powerOf(this) ?: def.power?.let { it + pumps.sumOf { p -> p.first } + (counters["+1/+1"] ?: 0) - (counters["-1/-1"] ?: 0) }
     val toughness: Int? get() = state?.toughnessOf(this) ?: def.toughness?.let { it + pumps.sumOf { p -> p.second } + (counters["+1/+1"] ?: 0) - (counters["-1/-1"] ?: 0) }
     fun has(keyword: String): Boolean = state?.hasKeyword(this, keyword) ?: (def.has(keyword) || keyword.lowercase() in tempKeywords)
+    /** The abilities it has right now: the printed ones unless Humility, Darksteel Mutation or Blood Moon took them away (613.1f, 305.7). Copiable values and "card named" questions read [def] instead. */
+    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else def.abilities
+    /** The rules text it has right now: empty while its abilities are gone (613.1f). */
+    val rulesText: String get() = if (state?.abilitiesGone(this) != null) "" else def.oracleText
     val name get() = def.name
     fun isOnBattlefield() = zone == Zone.BATTLEFIELD && !phasedOut
     override fun toString() = "$name [$id]"
@@ -423,7 +429,7 @@ class GameState(
         Condition.YourTurn -> activePlayer == src.controller
         Condition.NotYourTurn -> activePlayer != null && activePlayer != src.controller
         Condition.ExiledWasCreature -> lastExiledDef?.isCreature == true
-        Condition.LandEnteredThisTurn -> (landsPlayed[src.controller] ?: 0) > 0 || objects.values.any { it.isOnBattlefield() && it.controller == src.controller && "Land" in it.def.types && it.enteredFrom != null }
+        Condition.LandEnteredThisTurn -> (landsPlayed[src.controller] ?: 0) > 0 || objects.values.any { it.isOnBattlefield() && it.controller == src.controller && "Land" in typesOf(it) && it.enteredFrom != null }
         is Condition.ControlsMatching -> objects.values.count { it !== src && matches(c.filter, it, src.controller, src) || (it === src && matches(c.filter, it, src.controller, src)) } >= c.atLeast
         is Condition.GraveyardAtLeast -> {
             val cards = objects.values.filter { it.zone == Zone.GRAVEYARD && it.controller == src.controller && !it.token }
@@ -550,7 +556,7 @@ class GameState(
     }
 
     /** Ward cost on an object, if any ("Ward {2}", "Ward—Pay 3 life"). */
-    fun wardCost(obj: GameObject): String? = obj.def.abilities.filterIsInstance<StaticAbility>().firstNotNullOfOrNull { a ->
+    fun wardCost(obj: GameObject): String? = obj.abilities.filterIsInstance<StaticAbility>().firstNotNullOfOrNull { a ->
         Regex("""^Ward(?:\s*[—-]\s*|\s+)(.+?)\.?$""", RegexOption.IGNORE_CASE).find(a.text)?.groupValues?.get(1)
     // A ward granted for the turn (an animated creature-land, say) counts the same as a printed one.
     } ?: obj.tempKeywords.firstNotNullOfOrNull { k -> Regex("""^ward(?:\s*[—-]\s*|\s+)(.+)$""", RegexOption.IGNORE_CASE).find(k)?.groupValues?.get(1) }

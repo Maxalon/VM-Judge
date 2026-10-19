@@ -370,6 +370,8 @@ class SituationParser(private val names: NameIndex) {
         var text0 = text00
         if (Regex("""(?i)\bdark confidant\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""\bBob\b"""), "Dark Confidant")
         // "Does the redirect still happen?" about Spellskite: the noun, not the card Redirect.
+        // "Does my Kitchen Finks persist when it dies?": it dies, then the question is whether it comes back.
+        text0 = text0.replace(Regex("""(?i)\b(?:does|will) (my |their |the )?([A-Z][\w',-]*(?: [A-Za-z][\w',-]*)*?) (?:still )?(?:persist|undying|come back|return) (?:when|if|after) it (?:dies|is destroyed|gets destroyed|is killed)\?"""), { r -> "${r.groupValues[1].ifEmpty { "my " }}${r.groupValues[2]} dies. Does it persist?" })
         // "the persisted Finks": a participle, not the card Persist.
         text0 = text0.replace(Regex("""(?i)\bpersisted\b"""), "returned")
         if (Regex("""(?i)\bspellskite\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""(?i)\b(the|my|its|their) redirect\b""")) { r -> "${r.groupValues[1]} redirection" }
@@ -1020,6 +1022,14 @@ class SituationParser(private val names: NameIndex) {
                 if (m.cards[r.groupValues[1]]?.isSpellOnly == true && ctx.events.any { e -> e.verb == "cast" && e.card?.name == m.cards[r.groupValues[1]]?.display }) "i cast a second ${r.groupValues[1]} at ${r.groupValues[2].replace("their face", "them").replace("my face", "me")}, secondspell-note ${r.groupValues[1]}" else t0 } ?: t0 }
         // "Does my Colonnade still animate?" under Blood Moon: whether its own ability can be activated.
         t2 = t2.replace(Regex("""^(?:does|can|will) my (c\d+) still (?:animate|become a creature|turn into a creature|activate|be animated|flip on|turn on)\??$""", RegexOption.IGNORE_CASE), "can i animate my $1")
+        // "Painter's Servant naming green." on its own: the permanent is out with its colour chosen.
+        t2 = t2.replace(Regex("""^(c\d+) (?:naming|choosing|that names) (white|blue|black|red|green)\.?$""", RegexOption.IGNORE_CASE), "i control $1 naming $2")
+        // "Darksteel Mutation on their Thalia. Does it still tax me?": the permanent on the board that taxes spells.
+        t2 = t2.replace(Regex("""^(?:does|will|do) (?:it|she|he|that) (?:still )?(?:tax|make (?:my |our |their )?spells cost more|raise the cost of) ?(?:me|us|my spells|our spells|their spells|them)?\??$""", RegexOption.IGNORE_CASE), "abilityworks-question any tax")
+        // "I cast Bolt at their Thalia and they have protection from green on it": the protection is there when the spell is cast.
+        t2 = t2.replace(Regex("""^(i|we|they|he|she|my opponent|the opponent) (casts?) (c\d+) (at|on|targeting) (their |my |the )?(c\d+)(?:,? (?:which|that) has| and (?:they|it|he|she) (?:has|have)) (protection from [a-z]+)(?: on it)?$""", RegexOption.IGNORE_CASE), "$5$6 has $7, $1 $2 $3 $4 $5$6")
+        // "Can my Celestial Colonnade become a creature and attack?" under Blood Moon: whether the land's own animation can be activated, then the attack.
+        t2 = t2.replace(Regex("""^(?:does|can|will) my (c\d+) (?:still )?(?:animate|become a creature|turn into a creature|be animated|flip on|turn on) and (?:attack|swing|be an attacker|block)\??$""", RegexOption.IGNORE_CASE), "can i animate my $1")
         // "My Mishra's Factory, can it still become a creature?": the land named first, then asked about as "it".
         t2 = t2.let { t0 -> Regex("""^(?:(?:my|i have) (c\d+),? )?(?:does|can|will) (?:it|that|my (c\d+)) still (?:animate|become a creature|turn into a creature|activate|be animated|flip on|turn on|attack as a creature)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r ->
                 val land = r.groupValues[1].ifEmpty { r.groupValues[2] }.ifEmpty { ctx.objects.values.lastOrNull { o -> o.controller == "me" && o.zone == "battlefield" && o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Land") } == true }?.card?.name?.let { n -> m.cards.entries.firstOrNull { it.value.display == n }?.key } ?: "" }
@@ -1683,6 +1693,8 @@ class SituationParser(private val names: NameIndex) {
                 if (handLike && m.cards[r.groupValues[2]]?.display?.lowercase() in discardSpells) "${r.groupValues[1]}, my hand is ${r.groupValues[3]}" else t0 } ?: t0 }
         // "What happens if they redirect?": their Spellskite against the spell.
         t2 = t2.replace(Regex("""^what happens if (they|he|she) (?:redirect|deflect|spellskite)(?: it| that)?(?: (?:to|onto) (?:their |the )?(?:spellskite|c\d+))?\??$""", RegexOption.IGNORE_CASE), "can $1 deflect it")
+        // "Humility is out. Does my Thalia still tax their spells?": whether the permanent still has the ability, asked of the object.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|do|is) (?:my |their |the )?(c\d+) (?:still )?(?:tax|hit|affect|apply to|make) (?:their|his|her|my opponent's|the opponent's|my|our|all) (?:nonland |noncreature )?(?:spells?|plays?)(?: cost more)?\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "abilityworks-question ${r.groupValues[1]} tax" } ?: t0 }
         // "Does Thalia tax their spells next turn?": a static ability applies to spells cast while she's there.
         t2 = t2.let { t0 -> Regex("""^(?:does|will) (?:my )?(c\d+) (?:tax|hit|affect|apply to) (?:their|his|her|my opponent's) (?:spells?|noncreature spells?|next spell|plays?) (?:next turn|on their turn|from now on|going forward|next)\??$""", RegexOption.IGNORE_CASE).find(t0)?.let { r -> "taxnextturn-question ${r.groupValues[1]}" } ?: t0 }
         // "They Path the Angel in my upkeep with Emrakul on top": the top card and the step first, then the spell.
@@ -5096,6 +5108,21 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = "me", to = "handNow")
             return true
         }
+        // "I cast Fell Stinger and exploit my Grizzly Bears": the creature sacrificed as the exploit ability resolves (702.110a).
+        Regex("""^(?:i |we |they |he |she )?(?:exploit|exploits|exploiting|sacrifice|sacrifices|sacrificing) (?:my |the |their )?(c\d+)(?: to (?:its |the )?exploit)?(?: targeting [a-z ]+)?$""").find(clause0)?.let { r ->
+            val castName = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name ?: return@let
+            val src = ctx.objects.values.lastOrNull { it.card.name == castName }?.id ?: slug(castName)
+            if (names.lookup(Names.normalize(castName))?.keywords?.contains("Exploit", true) != true) return@let
+            val victim = m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) ?: addObject(it, "me", false, ctx) } ?: return@let
+            val at = ctx.events.indexOfLast { it.verb == "cast" }   // before the cast: later words about its targets rewrite the last event
+            ctx.events.add(at, EventSpec("choose", player = ctx.events[at].player, obj = src, to = "exploit:$victim"))
+            ctx.notes += "\"${restore(clause0, m)}\" is read as the creature sacrificed to the exploit ability."; return true
+        }
+        // "Does my Thalia still tax their spells?" under Humility: the permanent's ability, asked of the permanent as it is now.
+        Regex("""^abilityworks-question (c\d+|any) (tax)$""").find(clause0)?.let { r ->
+            val id = if (r.groupValues[1] == "any") null else (m.cards[r.groupValues[1]] ?: return@let).let { card -> objectIdFor(card, ctx) ?: addObject(card, "me", false, ctx) }
+            ctx.asks += EventSpec("ask", obj = id, to = "abilityWorks:${r.groupValues[2]}"); return true
+        }
         Regex("""^taxnextturn-question (c\d+)$""").find(clause0)?.let { r ->
             val card = m.cards[r.groupValues[1]] ?: return@let
             ctx.asks += EventSpec("ask", to = "text:Yes. ${card.display}'s tax is a static ability: it applies to every spell it covers that is cast while ${card.display} is on the battlefield, whenever it got there (604.1, 601.2f). Put in during their end step, ${card.display} is on the battlefield for the whole of their next turn, so each noncreature spell they cast then costs {1} more (and so do yours). Only spells already on the stack when she arrived escape it.")
@@ -5581,7 +5608,10 @@ class SituationParser(private val names: NameIndex) {
         }
         Regex("""^skitestops-question (c\d+)$""").find(clause0)?.let { r ->
             val card = m.cards[r.groupValues[1]] ?: return@let
-            ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "skiteStops"); return true
+            // "Humility is out. Can my Spellskite redirect their Bolt?": the Spellskite is a permanent whose abilities may be gone.
+            val skite = ctx.objects.values.lastOrNull { it.card.name == "Spellskite" && it.zone == "battlefield" }?.id
+                ?: if (ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name in setOf("Humility", "Dress Down", "Darksteel Mutation", "Titania's Song", "Song of the Dryads", "Kenrith's Transformation") }) m.cards.values.firstOrNull { it.display == "Spellskite" }?.let { sk -> addObject(sk, "me", false, ctx) } else null
+            ctx.asks += EventSpec("ask", obj = skite, card = CardRef(name = card.display, oracleId = card.oracleId), to = "skiteStops"); return true
         }
         if (clause0 == "flipondemand-question") {
             ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets transforms only when its own upkeep trigger resolves and reveals an instant or sorcery card (701.28a: a permanent transforms only when a spell or ability instructs it to); nothing lets you transform it at instant speed or in response. Said as the trigger itself (\"at my upkeep I reveal Lightning Bolt\"), the transform is played out.")
