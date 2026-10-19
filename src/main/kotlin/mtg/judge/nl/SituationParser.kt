@@ -2105,6 +2105,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = loopRewrite(t2, m, ctx)
         t2 = lkiRewrites(t2, m, ctx)
         t2 = targetRewrites(t2, m, ctx)
+        t2 = zoneRewrites(t2, m, ctx)
         t2 = costRewrites(t2, m, ctx)
         t2 = winLossRewrites(t2, m, ctx)
         t2 = turnRewrites(t2, m, ctx)
@@ -5446,6 +5447,180 @@ class SituationParser(private val names: NameIndex) {
     // ---- turn structure: extra turns, skips, ending the turn, extra phases (500–514, 614.10, 723–726, 731), see TurnAsks.kt ----
 
     /**
+     * Zone-change table talk (400.7, 603.6, 610.3, 701.23b): the Oblivion Ring trick said with the response first,
+     * Flickerwisp on a Ring that holds something, a blink with an Aura on the creature, a Clone blinked, a token exiled,
+     * "I can't find a basic land", Brainstorm and a fetchland, Clone on a face-down creature, phasing with an Aura on.
+     * Questions answered from the rules alone become "zn-question …" markers for [readZoneQuestions].
+     */
+    private fun zoneRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val ic = RegexOption.IGNORE_CASE
+        val subj = """(?:i|we|they|he|she|my opponent|the opponent)"""
+        val theirs = """(?:their|his|her|my opponent's|the opponent's|an opponent's)"""
+        fun perm(id: String) = m.cards[id]?.let { !it.isSpellOnly } == true
+        var t2 = t.trim()
+        // "In response to the enters trigger they Disenchant the Ring": the response said first, read as said after.
+        t2 = Regex("""^in response to (?:the|its|that|my|their|c\d+'s) (?:enters |etb |enter |enters-the-battlefield )?(?:trigger|triggered ability),?\s+($subj (?!.*\bdraw)(?!.*\bin response\b).+?)\??$""", ic).find(t2)?.let { r -> "${r.groupValues[1]} in response to the trigger" } ?: t2
+        // "My opponent casts Fiend Hunter exiling my creature": the creature is the enters trigger's target.
+        t2 = t2.replace(Regex("""^($subj) (casts?|plays?) (c\d+),? (?:exiling|to exile|aiming at) ((?:my|our|their|his|her|my opponent's|the opponent's|an?) (?:creature|c\d+|\d+/\d+))\b""", ic)) { r -> "${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} targeting ${r.groupValues[4]}" }
+        // "I cast Banisher Priest and my opponent Bolts it in response to the trigger": the creature resolves first.
+        t2 = Regex("""^($subj) (casts?|plays?) (c\d+)((?: (?:targeting|on|at) [^,]+?)?),? and (?:then )?($subj) (.+?) in response to (?:the|its|that) (?:etb |enters |enter )?(?:trigger|triggered ability)\??$""", ic).find(t2)?.let { r ->
+            if (!perm(r.groupValues[3])) return@let null
+            // "Does the exile happen?" with no target named: one of the other player's creatures stands in for it.
+            val aim = r.groupValues[4].ifEmpty {
+                if (!Regex("""(?i)\bexile""").containsMatchIn(ctx.fullText)) "" else { ctx.notes += "No target was named for ${m.cards[r.groupValues[3]]?.display}'s enters ability; one of the other player's creatures stands in for it."; " targeting ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "their" else "my"} creature" } }
+            "${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}$aim, resolvetop-marker, ${r.groupValues[5]} ${r.groupValues[6]}" } ?: t2
+        // "I Flickerwisp my own Oblivion Ring that is exiling their Baneslayer Angel": the Ring holds the Angel, then Flickerwisp is cast at it.
+        t2 = Regex("""^(i|we) (?:(?:cast|casts) (c\d+) (?:targeting|on|at)|(c\d+)) (?:my|our) (?:own )?(c\d+),? (?:that is |that's |which is |that's currently |currently |while it's |while it is )?(?:exiling|holding|that exiled|which exiled) ($theirs|my|our) (c\d+)\??$""", ic).find(t2)?.let { r ->
+            val fw = r.groupValues[2].ifEmpty { r.groupValues[3] }
+            if (!perm(fw) || !perm(r.groupValues[4])) null
+            else "i have ${r.groupValues[4]} on ${r.groupValues[5]} ${r.groupValues[6]}, ${r.groupValues[1]} cast $fw targeting ${r.groupValues[4]}" } ?: t2
+        // "My Restoration Angel blinks my creature that has Rancor attached": the Aura on the creature, then the Angel cast at it.
+        t2 = Regex("""^(?:my|our) (c\d+) (?:blinks?|flickers?|exiles and returns) (?:my|our) (creature|c\d+|\d+/\d+(?: creature)?) (?:that has|with|which has|enchanted (?:with|by)|equipped with|wearing) (?:an? )?(c\d+)(?: attached(?: to it)?| on it)?\??$""", ic).find(t2)?.let { r ->
+            if (!perm(r.groupValues[1]) || !perm(r.groupValues[3])) null
+            else "i have ${r.groupValues[3]} on my ${r.groupValues[2]}, i cast ${r.groupValues[1]} targeting my ${r.groupValues[2]}" } ?: t2
+        // "My opponent blinks their Clone that is copying my Grizzly Bears": said with "they" so the Clone rewrite reads it.
+        t2 = t2.replace(Regex("""^(?:my opponent|the opponent|he|she) (blinks?|flickers?) ((?:their|his|her) (?:own )?c\d+ (?:that is|that's|which is) copying)\b""", ic)) { r -> "they ${r.groupValues[1]} ${r.groupValues[2].replace(Regex("""^(?:his|her) """), "their ")}" }
+        // "I exile a token with Path to Exile": the spell cast at the other player's token.
+        t2 = Regex("""^(i|we) (exile|c\d+) (?:an? |their |the |one of their |my opponent's |the opponent's |an opponent's )?(?:\d+/\d+ )?(?:[a-z]+ )?token with (c\d+)\b""", ic).find(t2)?.let { r ->
+            // The verb may have been marked as a card: "Exile" is one, and "exile" is short for Path to Exile.
+            if (r.groupValues[2].startsWith("c") && m.cards[r.groupValues[2]]?.display.let { it != "Exile" && it != m.cards[r.groupValues[3]]?.display }) null
+            else t2.replaceRange(r.range, "${r.groupValues[1]} cast ${r.groupValues[3]} on my opponent's token") } ?: t2
+        // "Do they get it back with persist?": whether the card comes back.
+        // (Only with persist or undying said: "do I get it back?" after Threaten is about control.)
+        t2 = t2.replace(Regex("""^(?:do|does|will|would|can) (?:they|he|she|i|we|you|my opponent) (?:get|bring) (?:it|that|c\d+) back (?:with|from|through) (?:persist|undying)\??$""", ic), "does it come back")
+        // "I search my library with Rampant Growth and say I can't find a basic land": failing to find (701.23b).
+        Regex("""^(?:i|we) (?:search (?:my|our) library (?:with|for) (?:my )?|cast |use |resolve )(c\d+)(?: and search(?: my library)?)?,? (?:and|but|then) (?:say|claim|decide|choose|announce|declare)(?: that)? (?:i|we) (?:can't|cannot|can not|don't|didn't|couldn't|won't) find (?:a |an |any )?(.+?)\??$""", ic).find(t2)?.let { r ->
+            return "zn-question failfind ${r.groupValues[1]} ${r.groupValues[2].replace(' ', '_')}" }
+        // "I cast Brainstorm and crack a fetchland after": the shuffle after the two cards went back, or before Brainstorm resolved.
+        Regex("""^(?:i|we) (?:cast|play) (c\d+),? (?:and|then) (?:then )?(?:crack|use|activate|sacrifice|pop|sac) (?:a |my |the )?(?:fetch(?:land| land)?|c\d+)( after(?:wards?)?| after it resolves| first| before it resolves| in response| with it on the stack| while it's on the stack)?\??$""", ic).find(t2)?.let { r ->
+            if (m.cards[r.groupValues[1]]?.display != "Brainstorm") return@let
+            val before = Regex("""first|before|response|stack""").containsMatchIn(r.groupValues[2])
+            return "zn-question brainfetch ${r.groupValues[1]} ${if (before) "before" else "after"}" }
+        // "I cast a Clone copying a face-down morph creature": its copiable values are the face-down 2/2's (708.2a).
+        Regex("""^(?:i|we|they|my opponent) (?:cast|casts|play|plays) (?:a |an |my |their )?(c\d+) copying (?:a|an|the|their|my|his|her|my opponent's|the opponent's) (?:face[- ]?down (?:morph |manifested |disguised )?(?:creature|morph|2/2)|morph(?: creature)?(?: that's| that is)? face[- ]?down|manifest(?:ed)? creature)\??$""", ic).find(t2)?.let { r ->
+            return "zn-question copyfacedown ${r.groupValues[1]}" }
+        // "My Pacifism is on their creature; the creature phases out": the Aura on it, then the phasing.
+        Regex("""^(?:my |our )?(c\d+) is (?:on|attached to|enchanting) ($theirs|my|our|the) (creature|c\d+)[;,]? (?:and )?(?:then )?(?:the|that|their|my|his|her) (?:creature|c\d+) phases out\??$""", ic).find(t2)?.let { r ->
+            if (!perm(r.groupValues[1])) return@let
+            val whose = if (r.groupValues[2].lowercase() in setOf("my", "our")) "my" else "their"
+            return "i have ${r.groupValues[1]} on $whose ${r.groupValues[3]}, zn-question phaseout" }
+        // The same said over two sentences: "I return a creature from my graveyard to the battlefield. It had counters before."
+        Regex("""^(?:i|we) (?:return|reanimate|bring back|put) (?:a |an |my |the )?(creature|c\d+)(?: card)?(?: back)? from (?:my|our|the) graveyard (?:to|onto) the battlefield$""", ic).find(t2)?.let { r ->
+            if (!Regex("""(?i)\bit (?:had|has had|used to have) .+\b(?:before|earlier|previously|last time|when it died)\b""").containsMatchIn(ctx.fullText)) return@let
+            return "zn-question newobject ${(m.cards[r.groupValues[1]]?.display ?: "the creature").replace(' ', '_')}" }
+        Regex("""^(?:it|the creature) (?:had|has|has had|used to have) .+ (?:before|earlier|previously|last time|when it died)$""", ic).find(t2)?.let {
+            if (ctx.asks.any { a -> a.to?.contains("(400.7)") == true }) return "zn-question ack" }
+        // "My Pacifism is on their creature. The creature phases out."
+        Regex("""^(?:the|that|their|my|his|her) (?:creature|c\d+) phases out$""", ic).find(t2)?.let { return "zn-question phaseout" }
+        // "I return a creature from my graveyard to the battlefield; it had +1/+1 counters and an Aura before": a new object (400.7).
+        Regex("""^(?:i|we) (?:return|reanimate|bring back|put) (?:a |an |my |the )?(creature|c\d+)(?: card)?(?: back)? from (?:my|our|the) graveyard (?:to|onto) the battlefield[;,.]? (?:and |but )?(?:it|the creature) had (.+?)(?: on it)?(?: before| earlier| last time| when it died| previously)?\??$""", ic).find(t2)?.let { r ->
+            val name = m.cards[r.groupValues[1]]?.display ?: "the creature"
+            return "zn-question newobject ${name.replace(' ', '_')} ${r.groupValues[2].replace(' ', '_')}" }
+        // "A creature I stole with Act of Treason dies": the creature is the other player's, cast at with the steal spell, then dies.
+        t2 = t2.replace(Regex("""^(?:a|the|their) (creature|c\d+) (?:that )?(?:i|we) (?:stole|took|gained control of|borrowed|threatened|stole from them) with (c\d+) (dies|died|is destroyed|gets destroyed)\b""", ic)) { r ->
+            val what = if (r.groupValues[1] == "creature") "creature" else r.groupValues[1]
+            "i cast ${r.groupValues[2]} on my opponent's $what, then it ${r.groupValues[3]}" }
+        // "Their creature gains hexproof in response to my Oblivion Ring trigger": the Ring cast at it, then the hexproof.
+        Regex("""^(?:their|his|her|the|my opponent's) (creature|c\d+) (?:gains|gets|is given|has been given) (hexproof|shroud|protection from [a-z]+) in response to (?:my|the) (c\d+)(?:'s)? (?:enters |etb )?(?:trigger|triggered ability|ability)\??$""", ic).find(t2)?.let { r ->
+            if (!perm(r.groupValues[3])) return@let
+            val kw = if (r.groupValues[2].startsWith("protection")) "hexproof" else r.groupValues[2]
+            return "i cast ${r.groupValues[3]} targeting their ${r.groupValues[1]}, resolvetop-marker, they give their ${r.groupValues[1]} $kw" }
+        // "I cast Reanimate on a card in my opponent's graveyard": nothing named, so the rules answer it.
+        Regex("""^(?:i|we) cast (c\d+) (?:on|targeting|at) (?:a|an|some) (?:creature )?card in $theirs graveyard\??$""", ic).find(t2)?.let { r ->
+            return "zn-question theirgraveyard ${r.groupValues[1]}" }
+        // Questions about what was just set up.
+        // "I cast Reanimate on a card in my opponent's graveyard. … If it dies, where does it go?": already answered by the ruling.
+        if (ctx.asks.any { a -> a.to?.startsWith("text:") == true && a.to.contains("If it dies or would go to any graveyard") } && Regex("""^(?:if it dies,? (?:where does it go|whose graveyard does it go (?:to|into))|(?:where|whose graveyard) does it go(?: to| into)? if it dies|who controls it(?:,? and who owns it)?|who owns it(?:,? and who controls it)?)\??$""", ic).matches(t2)) return "zn-question ack"
+        // "I cast Reanimate on Griselbrand in my opponent's graveyard. Who owns it? If it dies, where does it go?"
+        if (reanimatedTheirs(ctx) != null) {
+            if (Regex("""^(?:who controls it(?:,? and who owns it)?|who owns it(?:,? and who controls it)?|who controls and owns it|who owns and controls it)\??$""", ic).matches(t2)) return "zn-question ownctl"
+            if (Regex("""^(?:if it dies,? (?:where does it go|whose graveyard does it go (?:to|into))|(?:where|whose graveyard) does it go(?: to| into)? if it dies)\??$""", ic).matches(t2)) return "zn-question owngy"
+        }
+        Regex("""^(?:do|does|will|would) (?:its|the|my commander's|c\d+'s|that) (?:"?when (?:this|it|~|this creature) dies"? |dies |death |leaves(?:-the-battlefield)? |"?dies"? )?(?:triggers?|abilities|ability)(?: still)? (?:happen|trigger|work|go off|resolve|still happen)(?: if (?:i|we) (?:put|move|send|choose to put) (?:it|them|my commander) (?:in|into|to) the command zone)?\??$""", ic).find(t2)?.let {
+            if (ctx.objects.values.none { it.commander } && ctx.events.none { e -> e.card?.name?.contains("commander", true) == true || e.obj?.contains("commander") == true }) return@let
+            return "zn-question commanderdies" }
+        Regex("""^(?:does|will|would) (?:it|c\d+|the creature) (?:come back|return|get) (?:and )?(?:get )?exiled at (?:the )?(?:end of (?:the )?turn|end step|next end step)\??$""", ic).find(t2)?.let { return "zn-question unearthstays" }
+        Regex("""^what does (?:it|c\d+|the c\d+|the clone) come back as\??$""", ic).find(t2)?.let { return "zn-question comesbackas" }
+        return t2
+    }
+
+    /** The card a spell just cast takes from another player's graveyard (Reanimate), with that spell's caster. */
+    private fun reanimatedTheirs(ctx: Ctx): Pair<ObjectSpec, EventSpec>? {
+        val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return null
+        val o = cast.targets.firstNotNullOfOrNull { ctx.objects[it] }?.takeIf { it.zone == "graveyard" } ?: return null
+        return if ((o.owner ?: o.controller) != (cast.player ?: "me")) o to cast else null
+    }
+
+    /** The "zn-question …" markers [zoneRewrites] leaves, and the follow-up questions they already answer. */
+    private fun readZoneQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        fun text(s: String) { ctx.asks += EventSpec("ask", to = "text:$s") }
+        // The rulings below each quote one of these; a follow-up question after one of them is already answered.
+        val zoneRules = listOf("(701.23", "(701.24a)", "(707.2, 708.2", "(400.7)", "(110.2)", "(903.9a)")
+        // "Is that allowed?", "does it keep them?", "who controls it?": already answered by the ruling a marker gave.
+        if (Regex("""^(?:is that|is it|is this|am i) (?:allowed|legal|ok|okay|fine)(?: to do that)?\??$|^(?:does|do|will) (?:it|they) (?:keep|still have) (?:them|those|it|the counters|its counters)(?: and the aura)?\??$|^(?:does|do|will) (?:the )?shuffl\w*.*$|^what does (?:the )?(?:c\d+|clone|it) (?:copy|become|turn into)\??$|^(?:who controls it|who owns it|whose is it)(?:,? and who (?:owns|controls) it)?\??$|^if it dies,? where does it go\??$|^where does it go if it dies\??$|^(?:where does|what happens to) (?:the aura|the enchantment|c\d+|it)(?: go)?\??$""").matches(c)
+            && ctx.asks.any { it.to?.startsWith("text:") == true && it.to.contains("") }) return true
+        if (!c.startsWith("zn-question ")) return null
+        val parts = c.removePrefix("zn-question ").split(' ')
+        when (parts[0]) {
+            "failfind" -> {
+                val card = m.cards[parts.getOrNull(1) ?: ""]?.display ?: "the spell"
+                val what = parts.getOrNull(2)?.replace('_', ' ')?.trim()?.removeSuffix(" card")?.removeSuffix(" cards") ?: "card"
+                if (Regex("""^(?:card|cards|one|anything|any card)$""").matches(what))
+                    text("No: a search for just \"a card\", with no quality stated, must find one if the library has one (701.23d). Only a search for cards with a stated quality, such as a basic land card, can come up empty by choice (701.23b).")
+                else text("Yes: $card searches for a $what card, a card with a stated quality, and a player searching a hidden zone for cards with a stated quality isn't required to find them, even if they're there (701.23b). Your library is a hidden zone, so nobody can check. You still search, and you still shuffle afterwards (701.24a).")
+            }
+            "brainfetch" -> {
+                if (parts.getOrNull(2) == "before") text("No, they stay on top: cracked in response, the fetchland's ability resolves first, so the library is shuffled before Brainstorm resolves (405.5). Brainstorm then draws three cards from the shuffled library and puts two back on top, and nothing shuffles them away afterwards. To get rid of the two cards, crack the fetchland after Brainstorm has resolved: shuffling randomizes the whole library (701.24a).")
+                else text("Yes: the fetchland's search ends with a shuffle, and shuffling randomizes every card in the library (701.24a), the two cards Brainstorm put back on top included. They are shuffled away, and you no longer know where they are. (The land you find isn't shuffled; it's put onto the battlefield.)")
+            }
+            "copyfacedown" -> {
+                val card = m.cards[parts.getOrNull(1) ?: ""]?.display ?: "the copy"
+                text("$card copies the face-down creature's copiable values, and a face-down permanent's copiable values are only what its face-down status gives it: a 2/2 creature with no text, no name, no subtypes and no mana cost (707.2, 708.2, 708.2a). So $card becomes a nameless, colorless 2/2 with no abilities. It isn't face down itself, so it can't be turned face up, and it learns nothing about the card underneath.")
+            }
+            "phaseout" -> {
+                // The creature an Aura or Equipment was put on, else the last creature described.
+                val host = ctx.objects.values.lastOrNull { it.attachedTo != null && it.zone == "battlefield" }?.attachedTo?.takeIf { it in ctx.objects }
+                    ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && isCreatureName(it.card.name) }?.id ?: return false
+                ctx.events += EventSpec("zone", obj = host, to = "phaseout")
+            }
+            "ack" -> {}
+            "ownctl", "owngy" -> {
+                val (o, cast) = reanimatedTheirs(ctx) ?: return false
+                val caster = cast.player ?: "me"; val owner = o.owner ?: o.controller
+                fun who(p: String) = if (p == "me") "you" else if (p == "opp") "your opponent" else (ctx.players[p] ?: p)
+                fun whose(p: String) = if (p == "me") "yours" else if (p == "opp") "your opponent's" else "${ctx.players[p] ?: p}'s"
+                val spell = cast.card?.name ?: cast.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
+                if (parts[0] == "ownctl") text("${who(caster).replaceFirstChar { it.uppercase() }} control${if (caster == "me") "" else "s"} ${o.card.name} and ${who(owner)} own${if (owner == "me") "" else "s"} it: $spell puts it onto the battlefield under its caster's control, and a permanent's controller is the player under whose control it entered (110.2), but the owner of a card never changes (108.3).")
+                else text("To its owner's graveyard, ${whose(owner)}: an object that would go to a graveyard, hand or library other than its owner's goes to its owner's instead, whoever controlled it (400.3).")
+            }
+            "newobject" -> {
+                val what = parts.getOrNull(1)?.replace('_', ' ') ?: "the creature"
+                text("No: when ${if (what == "the creature") "it" else what} left the battlefield it became a new object with no memory of its previous existence (400.7). Counters aren't kept when an object changes zones; they simply cease to exist (122.2). An Aura that was on it was put into its owner's graveyard as a state-based action once the creature it enchanted was gone (704.5m), and the creature returns with nothing attached. It also comes back untapped and summoning sick.")
+            }
+            "theirgraveyard" -> {
+                val card = m.cards[parts.getOrNull(1) ?: ""]?.display ?: "the spell"
+                text("You control the creature: $card puts it onto the battlefield under its caster's control, and a permanent's controller is the player under whose control it entered (110.2). Your opponent still owns it, since ownership never changes (108.3). If it dies or would go to any graveyard, hand or library, it goes to its owner's, your opponent's (400.3).${if (card == "Reanimate") " Reanimate also makes you lose life equal to its mana value." else ""}")
+            }
+            "commanderdies" -> {
+                val name = ctx.objects.values.firstOrNull { it.commander }?.card?.name ?: "your commander"
+                text("Yes: $name dies (it's put into the graveyard from the battlefield, 700.4), so its \"when this dies\" abilities trigger. Moving a commander to the command zone is a state-based action its owner may take only once it is already in the graveyard (903.9a), and dies abilities look back at the permanent as it was on the battlefield (603.10a), so they trigger and resolve either way. Only a part that does something to the card itself would fail to find it once it has moved on (603.6c).")
+            }
+            "unearthstays" -> {
+                if (ctx.events.none { it.verb == "step" && it.to == "end" }) ctx.events += EventSpec("step", player = ctx.activePlayer ?: "me", to = "end")
+                (ctx.events.lastOrNull { it.verb == "kw" && it.to == "unearth" }?.obj ?: ctx.events.lastOrNull { it.verb == "cast" && it.targets.isNotEmpty() }?.targets?.first() ?: ctx.lastMentioned)
+                    ?.takeIf { it in ctx.objects }?.let { ctx.asks += EventSpec("ask", obj = it, to = "whereIs") }
+            }
+            "comesbackas" -> {
+                val id = ctx.events.lastOrNull { it.verb == "blink" }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return false
+                ctx.asks += EventSpec("ask", obj = id, to = "identity")
+            }
+            else -> return false
+        }
+        return true
+    }
+
+    /**
      * Turn-structure table talk: "in which order do I take the extra turns?", "do I skip my untap step?", "Sundial in my
      * end step with a creature from Sneak Attack", "after my first combat", "can I make them concede?". Questions become
      * "turn-question …" markers for [readTurnQuestions]; a few situations said in one breath become their events here.
@@ -6111,6 +6286,7 @@ class SituationParser(private val names: NameIndex) {
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readLkiQuestions(clause0, m, ctx)?.let { return it }
         readTargetQuestions(clause0, m, ctx)?.let { return it }
+        readZoneQuestions(clause0, m, ctx)?.let { return it }
         readCostQuestions(clause0, m, ctx)?.let { return it }
         readWinLossQuestions(clause0, m, ctx)?.let { return it }
         readTurnQuestions(clause0, m, ctx)?.let { return it }
@@ -10592,7 +10768,8 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^(?:blinks?|blinked|blinking|flickers?|flickered|flickering) ($possPrefix|an? )?(c\d+|it|that|creature|guy|dude|\d+/\d+)(?: creature)?$""").find(c)?.let { r ->
             val who = possessiveOwner(r.groupValues[1], ctx, m) ?: actor ?: ctx.lastOwner ?: "me"
             val id = when (val w = r.groupValues[2]) {
-                "it", "that" -> ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+                // "They cast Clone copying my Bears, then they blink it": the permanent just cast, once it has resolved.
+                "it", "that" -> ctx.lastMentioned?.takeIf { it in ctx.objects } ?: castPermanentObject(ctx) ?: return@let
                 "creature", "guy", "dude" -> ctx.objects.values.lastOrNull { it.controller == who && it.zone == "battlefield" && isCreatureName(it.card.name) }?.id
                     ?: describedCreatures("a ", "", "creature", who, ctx).firstOrNull() ?: return@let
                 else -> if (Regex("""^\d+/\d+$""").matches(w)) describedCreatures("a ", w, "creature", who, ctx).firstOrNull() ?: return@let

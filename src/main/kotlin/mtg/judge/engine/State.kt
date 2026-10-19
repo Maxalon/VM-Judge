@@ -311,6 +311,8 @@ class GameState(
     var turnNumber: Int? = null
     /** Extra turns, skips, extra phases and delayed end-step triggers this turn has set up (see Turns.kt). */
     val turns = TurnPlan()
+    /** What zone changes this game have set up for later (see Zones.kt). */
+    val zones = ZoneMemo()
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */
     val combatDamageMuted = mutableSetOf<String>()
     /** "… but there is no spell on the stack": said outright, so a mode needing a spell to target can be ruled out (700.2a). */

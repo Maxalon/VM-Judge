@@ -595,6 +595,14 @@ class Engine(val state: GameState) {
 
     fun draw(playerId: String, count: Int) { drawCards(state.player(playerId), count); stateBasedActions() }
 
+    /** Zones.kt: a card in exile put onto the battlefield as a new object (Flickerwisp's delayed return, 400.7). */
+    internal fun returnFromExile(ex: GameObject, controller: String): GameObject {
+        val back = state.add(GameObject(freshObjectId(ex.def.name), ex.printedDef, Zone.BATTLEFIELD, controller, ex.owner)); back.timestamp = state.tick(); back.summoningSick = state.isCreature(back); ex.successor = back.id
+        back.enteredFrom = Zone.EXILE
+        applyEntersReplacements(back); onEvent(GameEvent.EntersBattlefield(back)); stateBasedActions()
+        return back
+    }
+
     /** Draws, tracking the library size when it's known; drawing from an empty library flags the player for 704.5b. */
     /** A Narset-style limit on how many cards [who] may draw this turn, with the permanent imposing it. */
     private fun drawLimit(who: Player): Pair<Int, GameObject>? = state.objects.values.filter { it.isOnBattlefield() }
@@ -1578,6 +1586,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${item.describe} can't target ${t.name} while it's still a spell on the stack: a creature spell isn't a creature until it resolves. Aim it at ${t.name} once it has entered the battlefield, or counter the spell instead."
                 }
                 if (item.kind == StackKind.SPELL) item.source.zone = Zone.GRAVEYARD
+                Zones.afterFizzle(this, item)   // an Oblivion Ring whose exile fizzled holds nothing (Zones.kt)
                 if (item.kind == StackKind.SPELL && item.source.abilities.any { it is TriggeredAbility && (it.trigger is Trigger.ThisDies || it.trigger is Trigger.ThisLeavesBattlefield) }) trace.step("${item.source.name} goes to the graveyard from the stack, not from the battlefield, so its \"${item.source.abilities.filterIsInstance<TriggeredAbility>().first { it.trigger is Trigger.ThisDies || it.trigger is Trigger.ThisLeavesBattlefield }.text.replace("~", item.source.name)}\" ability doesn't trigger.", "603.6c", "608.2b")
                 afterResolution(); return
             } else if (illegalCount > 0) {
@@ -3220,6 +3229,14 @@ class Engine(val state: GameState) {
                     onEvent(GameEvent.EntersBattlefield(t))
                 }
             }
+            else -> applyEffect2(effect, item)
+        }
+    }
+
+    /** The second half of [applyEffect], split out so each method stays under the JVM 64 KB limit. */
+    private fun applyEffect2(effect: Effect, item: StackItem) {
+        val you = state.player(item.controller)
+        when (effect) {
             is Effect.SacrificeUnlessEscaped -> {
                 val o = item.source; val p = state.player(o.controller)
                 if (o.kwf.escaped) {
@@ -3483,7 +3500,7 @@ class Engine(val state: GameState) {
                 }}.", "615.1", "615.7", "611.2a"); state.outcomes += "Prevention effect until end of turn (${item.describe})." }
                 else forEachLegalTarget(item, effect.target) { ref -> state.shields += Shield(r, (ref as? Ref.Obj)?.id, (ref as? Ref.Player)?.id, r.amount, item.describe); trace.step("${state.nameOf(ref)} gets a prevention shield: the next ${r.amount?.toString() ?: "all"} damage that would be dealt to it this turn is prevented.", "615.7", "615.1"); state.outcomes += "${state.nameOf(ref)} has a prevention shield (${r.amount?.toString() ?: "all"}) this turn." }
             }
-            is Effect.Exile -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { move(it, Zone.EXILE, "${it.name} is exiled.", "701.13a"); it.exiledBy = item.source.id; state.lastExiledDef = it.def } }
+            is Effect.Exile -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { move(it, Zone.EXILE, "${it.name} is exiled.", "701.13a"); it.exiledBy = item.source.id; state.lastExiledDef = it.def; Zones.afterExile(this, item, it) } }
             is Effect.Blink -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 blinkObject(o, if (effect.ownersControl) o.owner else item.controller)
             } }
@@ -3766,6 +3783,7 @@ class Engine(val state: GameState) {
             }
             is Effect.Narrated -> {
                 if (Turns.resolve(this, effect.text, item)) return   // extra turns, skips, ending the turn, extra phases (Turns.kt)
+                if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 if (quellerReturns(effect, item)) return
                 // "that many": the count of what the previous part affected (Settle the Wreckage's exiled attackers).
@@ -3872,6 +3890,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${item.source.name}: the player it hit (or the controller of the permanent it hit) may pay ${cc.groupValues[1]} as it resolves to copy it and choose a new target for the copy — it can be chained back at ${state.player(item.controller).subject.lowercase()}, and that copy can be chained again (707.10)."
                 }
             }
+            else -> {}   // the first half of applyEffect handles the rest
         }
     }
 
@@ -4066,7 +4085,11 @@ class Engine(val state: GameState) {
                 if (!item.source.isOnBattlefield()) {
                     // 610.3a–b: the "until" event has already happened, so the exile doesn't happen at all.
                     trace.step("${item.source.name} has already left the battlefield, so the duration is already over and nothing is exiled.", "610.3", if (item.kind == StackKind.TRIGGERED) "610.3b" else "610.3a")
-                    state.outcomes += "Nothing is exiled: ${item.source.name} had already left the battlefield."
+                    // Banishing Light, Banisher Priest: one ability with a duration, unlike Oblivion Ring's two separate triggers.
+                    val aimed = item.targets.filterIsInstance<Ref.Obj>().mapNotNull { state.objects[it.id]?.name }.firstOrNull()
+                    // Whatever it was aimed at, nothing moves, so an unnamed target doesn't leave the answer open.
+                    if (aimed == null) state.clarifications.removeAll { it.about == "${item.source.name}'s triggered ability's target" }
+                    state.outcomes += "Nothing is exiled: ${item.source.name} had already left the battlefield. Its ability exiles ${aimed ?: "its target"} only \"until ${item.source.name} leaves the battlefield\", and that has already happened, so ${aimed ?: "the target"} doesn't move at all (${if (item.kind == StackKind.TRIGGERED) "610.3b" else "610.3a"}). It's one ability with a duration, not two separate triggers like Oblivion Ring's, so there is no exile for good."
                     return
                 }
                 forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
@@ -4121,6 +4144,7 @@ class Engine(val state: GameState) {
             }
             is Effect.ReturnExiledCard -> {
                 val exiled = state.objects.values.filter { it.zone == Zone.EXILE && it.exiledBy == item.source.id }
+                if (exiled.isEmpty() && Zones.returnFoundNothing(this, item)) return   // the Oblivion Ring trick (Zones.kt)
                 if (exiled.isEmpty()) {
                     trace.step("${item.source.name}'s ability returns the card it exiled, but nothing it exiled is described here.", "608.2")
                     state.outcomes += "${item.source.name} returns the card it exiled to the battlefield under its owner's control (as a new object: untapped, no counters, summoning sick if it's a creature). Nothing exiled by it was described, so name that card to see it return."

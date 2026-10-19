@@ -913,6 +913,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "turn" -> TurnAsks.applyEvent(e, state)
             "tggrant" -> TargetAsks.applyEvent(e, state, engine)
             "tgemptystack" -> state.stackSaidEmpty = true
+            "zone" -> ZoneAsks.applyEvent(e, state, engine)
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1018,6 +1019,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "costplan" -> CostAsks.describePlan(e, who)
             "firststrikedamage" -> "first-strike combat damage is dealt"
             "turn" -> TurnAsks.describeEvent(e, who)
+            "zone" -> ZoneAsks.describeEvent(e, state)
             "kw" -> "${who ?: "you"} use${if (who == null || who == "you") "" else "s"} ${e.to}${state.objects[e.obj]?.let { " on ${it.name}" } ?: ""}"
             "step", "beginstep" -> "${when (who) { null -> "the active player's"; "you" -> "your"; else -> "$who's" }} ${when (val st = (e.to ?: "upkeep").lowercase()) { "end" -> "end step"; "draw" -> "draw step"; "cleanup" -> "cleanup step"; "combat" -> "combat phase"; "untap" -> "untap step"; else -> st.replace('_', ' ') }} begins"
             else -> e.verb
@@ -1589,6 +1591,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     return true
                 }
                 if (e.to == "whereIs" || e.to == "comesBack") {
+                    ZoneAsks.goneToken(e.obj, e.to, state)?.let { state.outcomes += it; return true }   // a token that left (704.5d)
                     // A card that came back (Oblivion Ring leaving, persist) is a new object: follow it there.
                     val o = (state.objects[e.obj] ?: state.objects.values.lastOrNull { it.def.name.equals(e.obj?.replace('_', ' '), true) } ?: throw JudgeException("ask needs an object"))
                         .let { first -> generateSequence(first) { it.successor?.let { id -> state.objects[id] } }.last() }
@@ -1615,7 +1618,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val o = state.obj(e.obj ?: throw JudgeException("ask needs an object"))
                     val owner = state.player(o.owner)
                     state.trace.step("${o.name} is owned by ${owner.subject.lowercase()}, and a card put into a graveyard goes to its owner's graveyard whoever controlled it.", "400.3", "108.3")
-                    state.outcomes += "${o.name} goes to ${owner.possessive} graveyard${if (o.controller != o.owner) ", not ${state.player(o.controller).possessive}" else ""}: a card put into a graveyard goes to its owner's graveyard, whoever controlled it (400.3). ${if (o.controller != o.owner) "Control changes who uses it, not whose card it is (108.3)." else ""}".trimEnd()
+                    state.outcomes += "${o.name} goes to ${owner.possessive} graveyard${if (o.controller != o.owner) ", not ${state.player(o.controller).let { if (it.you) "yours" else it.possessive }}" else ""}: a card put into a graveyard goes to its owner's graveyard, whoever controlled it (400.3). ${if (o.controller != o.owner) "Control changes who uses it, not whose card it is (108.3)." else ""}".trimEnd()
                     return true
                 }
                 if (e.to == "attackAdvice") {
@@ -1750,6 +1753,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     state.outcomes += engine.spellCost(castAlt ?: e.obj ?: e.card?.name?.let { n -> state.objects.values.lastOrNull { it.def.name.equals(n, true) }?.id } ?: throw JudgeException("ask needs an object")); return true
                 }
                 if (e.to == "identity") { val o = state.obj(e.obj ?: throw JudgeException("ask needs an object")); val where = o.zone.name.lowercase().replace('_', ' ')
+                    ZoneAsks.cameBackAs(o, state)?.let { state.outcomes += it; return true }   // a blinked Clone (400.7, 707.5)
                     // "Does it stay a creature?" (an animated manland under Blood Moon): what it is right now, with the effects on it.
                     if (o.isOnBattlefield() && o.animatedAs != null) {
                         val moon = state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name in setOf("Blood Moon", "Magus of the Moon") }

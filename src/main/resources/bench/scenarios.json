@@ -41621,5 +41621,274 @@
       "608.2b",
       "702.11b"
     ]
+  },
+  {
+    "id": "zn1",
+    "text": "I cast Oblivion Ring targeting my opponent's Tarmogoyf. In response to the enters trigger they Disenchant the Ring. What happens?",
+    "expect": [
+      "Oblivion Ring's leaves-the-battlefield ability resolves first and returns nothing",
+      "Tarmogoyf is exiled for good"
+    ],
+    "cite": [
+      "603.6c",
+      "405.5"
+    ]
+  },
+  {
+    "id": "zn2",
+    "text": "I cast Banishing Light targeting my opponent's Tarmogoyf. In response to the enters trigger they Disenchant Banishing Light. What happens?",
+    "expect": [
+      "Nothing is exiled: Banishing Light had already left the battlefield.",
+      "Tarmogoyf doesn't move at all (610.3b)"
+    ],
+    "notExpect": [
+      "Tarmogoyf: the battlefield → exile"
+    ],
+    "cite": [
+      "610.3b"
+    ]
+  },
+  {
+    "id": "zn3",
+    "text": "I Flickerwisp my own Oblivion Ring that is exiling their Baneslayer Angel. What happens?",
+    "expect": [
+      "Baneslayer Angel: exile → the battlefield (opponent's control), returned by Oblivion Ring.",
+      "Oblivion Ring returns to the battlefield under your control at the beginning of the next end step",
+      "its target is chosen at that time"
+    ],
+    "cite": [
+      "603.7a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "zn4",
+    "text": "My Restoration Angel blinks my creature that has Rancor attached. Where does Rancor go?",
+    "expect": [
+      "Rancor: the battlefield → your graveyard.",
+      "Rancor: your graveyard → your hand."
+    ],
+    "cite": [
+      "704.5m"
+    ]
+  },
+  {
+    "id": "zn5",
+    "text": "My opponent blinks their Clone that is copying my Grizzly Bears. What does it come back as?",
+    "expect": [
+      "Clone's own \"enter as a copy\" ability applies again as it enters",
+      "Here it comes back as a copy of Grizzly Bears."
+    ],
+    "cite": [
+      "400.7",
+      "707.5"
+    ]
+  },
+  {
+    "id": "zn6",
+    "text": "I exile a token with Path to Exile. Does it come back? Do they get a land?",
+    "expect": [
+      "it can't come back (111.8)",
+      "Yes: the search is opponent's."
+    ],
+    "cite": [
+      "704.5d",
+      "111.8"
+    ]
+  },
+  {
+    "id": "zn7",
+    "text": "My commander dies. Do its \"when this dies\" triggers happen if I put it in the command zone?",
+    "expect": [
+      "so its \"when this dies\" abilities trigger",
+      "a commander: your graveyard → the command zone"
+    ],
+    "cite": [
+      "903.9a",
+      "700.4",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "zn8",
+    "text": "My commander is Kokusho, the Evening Star. It dies. Do its dies triggers happen if I put it in the command zone?",
+    "expect": [
+      "Kokusho, the Evening Star: your graveyard → the command zone",
+      "opponent loses 5 life.",
+      "You gain 5 life."
+    ],
+    "cite": [
+      "903.9a"
+    ]
+  },
+  {
+    "id": "zn9",
+    "text": "I unearth Dregscape Zombie and then Flickerwisp it. Does it come back exiled at end of turn?",
+    "expect": [
+      "Dregscape Zombie stays on the battlefield: it came back as a new object",
+      "Dregscape Zombie is on the battlefield."
+    ],
+    "cite": [
+      "603.7c",
+      "400.7"
+    ]
+  },
+  {
+    "id": "zn10",
+    "text": "I search my library with Rampant Growth and say I can't find a basic land. Is that allowed?",
+    "expect": [
+      "Yes: Rampant Growth searches for a basic land card, a card with a stated quality"
+    ],
+    "cite": [
+      "701.23b"
+    ]
+  },
+  {
+    "id": "zn11",
+    "text": "I cast Brainstorm and crack a fetchland after. Does shuffling put back the two cards I put on top?",
+    "expect": [
+      "Yes: the fetchland's search ends with a shuffle"
+    ],
+    "cite": [
+      "701.24a"
+    ]
+  },
+  {
+    "id": "zn12",
+    "text": "I cast Brainstorm and crack a fetchland in response. Do the two cards I put back get shuffled away?",
+    "expect": [
+      "No, they stay on top"
+    ],
+    "cite": [
+      "405.5",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "zn13",
+    "text": "I control Vampire Hexmage and activate it on my opponent's Jace with 3 loyalty. What happens?",
+    "expect": [
+      "Jace, the Mind Sculptor loses all its counters (3 loyalty).",
+      "Jace, the Mind Sculptor: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "704.5i"
+    ]
+  },
+  {
+    "id": "zn14",
+    "text": "My opponent casts Fiend Hunter exiling my creature. I kill Fiend Hunter in response to the enters trigger. Does my creature come back?",
+    "expect": [
+      "Fiend Hunter's leaves-the-battlefield ability resolves first and returns nothing",
+      "a creature is exiled for good"
+    ],
+    "cite": [
+      "603.6c"
+    ]
+  },
+  {
+    "id": "zn15",
+    "text": "I cast Banisher Priest and my opponent Bolts it in response to the trigger. Does the exile happen?",
+    "expect": [
+      "Nothing is exiled: Banisher Priest had already left the battlefield."
+    ],
+    "cite": [
+      "610.3b"
+    ]
+  },
+  {
+    "id": "zn16",
+    "text": "I cast a Clone copying a face-down morph creature. What does the Clone copy?",
+    "expect": [
+      "a 2/2 creature with no text, no name, no subtypes and no mana cost"
+    ],
+    "cite": [
+      "707.2",
+      "708.2a"
+    ]
+  },
+  {
+    "id": "zn17",
+    "text": "A creature I stole with Act of Treason dies. Whose graveyard does it go to?",
+    "expect": [
+      "a creature goes to opponent's graveyard, not yours"
+    ],
+    "cite": [
+      "400.3"
+    ]
+  },
+  {
+    "id": "zn18",
+    "text": "My Pacifism is on their creature; the creature phases out. What happens to the Aura?",
+    "expect": [
+      "Pacifism phases out along with a creature (702.26g)"
+    ],
+    "notExpect": [
+      "Pacifism: the battlefield → "
+    ],
+    "cite": [
+      "702.26g",
+      "702.26d"
+    ]
+  },
+  {
+    "id": "zn19",
+    "text": "Their creature gains hexproof in response to my Oblivion Ring trigger. What happens?",
+    "expect": [
+      "Oblivion Ring's triggered ability doesn't resolve (all targets illegal).",
+      "Oblivion Ring stays on the battlefield exiling nothing"
+    ],
+    "cite": [
+      "608.2b"
+    ]
+  },
+  {
+    "id": "zn20",
+    "text": "I return a creature from my graveyard to the battlefield; it had +1/+1 counters and an Aura before. Does it keep them?",
+    "expect": [
+      "No: when it left the battlefield it became a new object"
+    ],
+    "cite": [
+      "400.7",
+      "122.2",
+      "704.5m"
+    ]
+  },
+  {
+    "id": "zn21",
+    "text": "I control Leyline of the Void. My opponent's Kitchen Finks dies. Do they get it back with persist?",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Leyline of the Void).",
+      "No: Kitchen Finks is in exile."
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "zn22",
+    "text": "I cast Reanimate on a card in my opponent's graveyard. Who controls it and who owns it? If it dies, where does it go?",
+    "expect": [
+      "You control the creature",
+      "it goes to its owner's, your opponent's (400.3)"
+    ],
+    "cite": [
+      "400.3",
+      "110.2",
+      "108.3"
+    ]
+  },
+  {
+    "id": "zn23",
+    "text": "I cast Reanimate targeting Griselbrand in my opponent's graveyard. Who controls it and who owns it? If it dies, where does it go?",
+    "expect": [
+      "You control Griselbrand and your opponent owns it",
+      "To its owner's graveyard, your opponent's",
+      "You lose 8 life (Griselbrand's mana value)."
+    ],
+    "cite": [
+      "400.3",
+      "110.2"
+    ]
   }
 ]

@@ -254,6 +254,7 @@ object Turns {
 
     private fun resolveDelayed(e: Engine, d: DelayedTrigger) {
         val st = e.state
+        if (d.action == "return") { Zones.returnDelayed(e, d); return }   // Flickerwisp (Zones.kt)
         val o = st.objects[d.objectId]
         if (o == null || !o.isOnBattlefield() || o.controller != d.controller) {
             st.trace.step("${d.source.name}'s delayed trigger resolves, but ${o?.name ?: "the creature"} is no longer on the battlefield under its controller's control, so it does nothing (a creature that left and came back is a new object).", "603.7c", "400.7")

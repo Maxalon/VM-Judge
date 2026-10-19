@@ -1344,6 +1344,7 @@ object OracleParser {
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
+        mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
         WinLoss.parseSentence(s) { target(it, Kind.PLAYER) }?.let { return it }
         // Populate (701.36) and amass [subtype] N (701.47), alone or after "you lose N life and".
