@@ -37953,5 +37953,184 @@
       "613.4b",
       "704.5f"
     ]
+  },
+  {
+    "id": "apnap-two-blood-artists-wrath-four-player",
+    "text": "In a four player game, two opponents each control a Blood Artist. I cast Wrath of God killing 6 creatures total. How much life do I lose and in what order do the triggers go on the stack?",
+    "expect": [
+      "You lose 12 life in all.",
+      "Here: opponent's 6 triggers, then opponent 2's 6 triggers",
+      "so opponent 2's resolve first and opponent's resolve last."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.3b",
+      "101.4"
+    ]
+  },
+  {
+    "id": "ward-said-as-has-ward-2-not-paid",
+    "text": "Their creature has ward 2. I target it with Lightning Bolt and don't pay. What happens?",
+    "expect": [
+      "you didn't pay {2}, so ward counters Lightning Bolt (702.21a).",
+      "Lightning Bolt is countered."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "702.21a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "ward-bolt-their-creature-with-ward-and-pay",
+    "text": "I Bolt their creature with ward 2 and pay. Does it die?",
+    "expect": [
+      "You pay {2}",
+      "Yes: a creature with ward {2} died"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "702.21a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "three-players-attacks-split-between-two-players",
+    "text": "Three players: Alice attacks Bob with a 3/3 and me with a 2/2. I have one 2/2 blocker. What happens?",
+    "expect": [
+      "Bob takes 3 damage.",
+      "a 2/2 creature: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "509.1a",
+      "510.1c"
+    ]
+  },
+  {
+    "id": "apnap-bob-and-carol-blood-artists-on-my-turn",
+    "text": "It's my turn in a three player game. I cast Wrath of God. Bob has a Blood Artist and Carol has a Blood Artist. Whose trigger resolves first?",
+    "expect": [
+      "You are the active player and have none here",
+      "Here: Bob's 2 triggers, then Carol's 2 triggers",
+      "so Carol's resolve first and Bob's resolve last."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.3b",
+      "101.4"
+    ]
+  },
+  {
+    "id": "commander-21-damage-from-the-same-commander",
+    "text": "In Commander, I take 21 damage from the same commander over the game. Do I lose?",
+    "expect": [
+      "You lose the game (commander damage).",
+      "Yes: You have lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "903.10a",
+      "704.6c"
+    ]
+  },
+  {
+    "id": "four-players-counter-a-spell-aimed-at-another-player",
+    "text": "Four players. My opponent casts Thoughtseize on Bob. Can I counter it with Counterspell?",
+    "expect": [
+      "Thoughtseize is countered.",
+      "You don't have to be the target to respond."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "117.3d",
+      "117.1a"
+    ]
+  },
+  {
+    "id": "ward-on-thalia-path-cost-in-all",
+    "text": "They have ward 1 on Thalia. I cast Path to Exile and pay the ward. How much did Path cost me in all?",
+    "expect": [
+      "Path to Exile cost you 2 mana to cast: {W} plus {1} from Thalia, Guardian of Thraben's tax",
+      "3 mana in all."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "601.2f",
+      "702.21a"
+    ]
+  },
+  {
+    "id": "burning-inquiry-two-leylines-everyone-discards",
+    "text": "Two opponents both have Leyline of Sanctity. I cast Burning Inquiry. Who discards?",
+    "expect": [
+      "Everyone: you, opponent and opponent 2 each discard.",
+      "opponent 2 discards 3 cards."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "701.9a",
+      "702.11c"
+    ]
+  },
+  {
+    "id": "four-players-others-cannot-block-for-the-defender",
+    "text": "In a four player game I attack the player on my left with everything. Can the others block for him?",
+    "expect": [
+      "No. Each attacking creature attacks one player",
+      "opponent takes 1 damage."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "509.1a",
+      "506.2a"
+    ]
+  },
+  {
+    "id": "three-players-thalia-taxes-another-players-spell",
+    "text": "Three players. I control Thalia. Bob casts Brainstorm. Does it cost Bob more?",
+    "expect": [
+      "Brainstorm costs {U} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more)"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "fleshbag-four-player-who-sacrifices",
+    "text": "They cast Fleshbag Marauder in a four player game. Who sacrifices?",
+    "expect": [
+      "Every player has to sacrifice: opponent sacrifices",
+      "Fleshbag Marauder: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "701.21a"
+    ]
   }
 ]

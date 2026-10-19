@@ -294,6 +294,12 @@ class GameState(
     /** The permanent most recently sacrificed (Fling's "the sacrificed creature's power"), with last-known information. */
     var lastSacrificed: GameObject? = null
     val assumptions = mutableListOf<String>()
+    /** Each time abilities of several players triggered at once: their controllers in the order put on the stack (603.3b). */
+    val apnapBatches = mutableListOf<List<String>>()
+    /** The player the question is about ("how much life do I lose?"): with several opponents, a harmful "target player" trigger is taken as aimed at them. */
+    var focusPlayer: String? = null
+    /** Mana paid for an "unless pays" counter aimed at a spell (ward, Mana Leak), by the spell's object id: (source name, amount). */
+    val paidToSaveSpell = mutableMapOf<String, MutableList<Pair<String, Int>>>()
     /** Players who said they will pay the next "unless … pays" cost asked of them (Rhystic Study, Mana Leak…). */
     val willPay = mutableSetOf<String>()
     /** Choices announced for a permanent's next triggered ability, by source object id ("put Rakdos with Kaalia's trigger"): an object id. */

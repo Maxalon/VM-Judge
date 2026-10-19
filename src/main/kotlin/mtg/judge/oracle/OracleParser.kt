@@ -1730,12 +1730,16 @@ object OracleParser {
         }
         for ((re, rules) in narratedRes) if (re.matches(s)) return Effect.Narrated(s.trimEnd('.'), rules)
         // "You draw a card and you lose 1 life." / "Each opponent loses 1 life and you gain 1 life.": two effects joined by "and".
-        Regex("""^(.+?)(?: and |, then |, and then )(you |each opponent |target player |that player |it |~ |create |draw |gain |lose |put |exile |destroy |sacrifice |tap |untap |return |scry |mill |discard )(.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trimEnd('.'))?.let { m ->
+        Regex("""^(.+?)(?: and |, then |, and then )(you |each opponent |target player |that player |it |~ |create |draw |gain |lose |put |exile |destroy |sacrifice |tap |untap |return |scry |mill |discard |discards )(.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trimEnd('.'))?.let { m ->
             if (!m.groupValues[1].contains(" and ", true) && !m.groupValues[1].startsWith("if ", true)) {
                 val left = parseSentence(m.groupValues[1].replaceFirstChar { it.uppercase() })
                 // "You draw a card and lose 1 life." (Phyrexian Arena's current wording): the second verb keeps the first's subject.
                 val rightText = (m.groupValues[2] + m.groupValues[3]).replaceFirstChar { it.uppercase() }
-                val right = parseSentence(rightText).let { r0 ->
+                // "Each player draws three cards, then discards three cards at random" (Burning Inquiry): a third-person
+                // verb with no subject of its own is the left half's subject acting again, every player, not "you".
+                val carried = Regex("""^(you|each opponent|each player|target player|that player) """, RegexOption.IGNORE_CASE).find(m.groupValues[1])?.groupValues?.get(1)
+                    ?.takeIf { it.lowercase() != "you" && Regex("""^(?:discards|draws|loses|gains|sacrifices|mills) """, RegexOption.IGNORE_CASE).containsMatchIn(rightText) }
+                val right = (if (carried != null) parseSentence(carried.replaceFirstChar { it.uppercase() } + " " + rightText.replaceFirstChar { it.lowercase() }) else parseSentence(rightText)).let { r0 ->
                     if (r0 is Effect.Unparsed && Regex("""^(you|each opponent|each player|target player|that player) """, RegexOption.IGNORE_CASE).find(m.groupValues[1])?.let { subj -> !rightText.startsWith(subj.groupValues[1], true) } == true)
                         parseSentence(Regex("""^(you|each opponent|each player|target player|that player) """, RegexOption.IGNORE_CASE).find(m.groupValues[1])!!.groupValues[1].replaceFirstChar { it.uppercase() } + " " + rightText.replaceFirstChar { it.lowercase() })
                     else r0 }
