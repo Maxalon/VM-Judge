@@ -54,6 +54,12 @@ class KeywordFlags {
     var kicks = 0
     /** Cards whose text was spliced onto this spell (702.47). */
     val spliced = mutableListOf<String>()
+    /** Cast bestowed: an Aura spell, and the Aura it becomes, until it stops being bestowed (702.103). */
+    var bestowed = false
+    /** Put into its owner's hand from outside the game by the companion special action (702.139a, 116.2g). */
+    var fromCompanion = false
+    /** Cast for its blitz cost: haste, a dies-draw ability, and sacrificed at the next end step (702.152a). */
+    var blitzed = false
 }
 
 /** The kind of cost a keyword names, from the card's own text: "Buyback {3}" -> "{3}"; null when the card has none. */
@@ -121,6 +127,11 @@ fun Engine.keywordEndStep(playerId: String) {
         state.trace.step("It is the beginning of the end step, so the delayed trigger from ${o.name}'s dash cost triggers and returns it from the battlefield to its owner's hand.", "702.109a", "603.7")
         leave(o.id, Zone.HAND)
         state.outcomes += "${o.name} returns to its owner's hand at the beginning of the end step (dash, 702.109a)."
+    }
+    // Blitz: the permanent is sacrificed at the beginning of the next end step, and its dies ability draws a card (702.152a).
+    for (o in state.objects.values.toList().filter { it.isOnBattlefield() && it.kwf.blitzed }) {
+        state.trace.step("It is the beginning of the end step, so the delayed trigger from ${o.name}'s blitz cost triggers: its controller sacrifices it.", "702.152a", "603.7")
+        sacrifice(o.controller, o.id)
     }
     for (o in state.objects.values.toList().filter { it.isOnBattlefield() && it.kwf.unearthed }) {
         state.trace.step("It is the beginning of the end step, so the delayed triggered ability from unearthing ${o.name} triggers and exiles it.", "702.84a", "603.7")

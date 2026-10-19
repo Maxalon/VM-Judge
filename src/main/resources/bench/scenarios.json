@@ -40979,5 +40979,237 @@
       "603.7a",
       "603.7b"
     ]
+  },
+  {
+    "id": "gp1",
+    "text": "I have a creature card in my graveyard. My opponent controls Containment Priest. I cast Reanimate targeting it.",
+    "expect": [
+      "your graveyard → exile (replaced by Containment Priest)"
+    ],
+    "notExpect": [
+      "Containment Priest: the battlefield"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6"
+    ]
+  },
+  {
+    "id": "gp2",
+    "text": "I cast Fireball for X=3, then I copy my Fireball with Reverberate; what is the copy's X?",
+    "expect": [
+      "The copy's X is 3, the same as Fireball's",
+      "A copy of Fireball is put on the stack targeting opponent, with X = 3 like the original."
+    ],
+    "notExpect": [
+      "Battlefield:"
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "gp3",
+    "text": "I copy my Fireball with Reverberate; what is the copy's X?",
+    "expect": [
+      "The copy's X is the same as the original's X, which wasn't stated"
+    ],
+    "notExpect": [
+      "Battlefield:"
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "gp4",
+    "text": "My opponent casts Lightning Bolt targeting my Boros Reckoner",
+    "expect": [
+      "Boros Reckoner's trigger deals that much damage to any target its controller chooses",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "603.3d",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "gp5",
+    "text": "I block with Boros Reckoner and my opponent Bolts it; does Reckoner's trigger deal damage?",
+    "expect": [
+      "Yes: Boros Reckoner's ability triggered.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "603.3d",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "gp6",
+    "text": "My creature has 'if it would die, exile it instead' and I have a 'when this dies' trigger on it. Does the trigger happen?",
+    "expect": [
+      "No: You don't draw.",
+      "→ exile (replaced by"
+    ],
+    "notExpect": [
+      "You draw 1 card."
+    ],
+    "cite": [
+      "614.6",
+      "700.4"
+    ]
+  },
+  {
+    "id": "gp7",
+    "text": "I have a 2/2 with 'when this creature dies, draw a card'. It dies. Do I draw a card?",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ],
+    "cite": [
+      "603.10a",
+      "121.1"
+    ]
+  },
+  {
+    "id": "gp8",
+    "text": "I have a creature with 'at the beginning of your upkeep, sacrifice this unless you pay 2'. It is my upkeep and I have no mana. What happens?",
+    "expect": [
+      "is sacrificed.",
+      "you have only 0 mana available"
+    ],
+    "cite": [
+      "701.21a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "gp9",
+    "text": "I control Grizzly Bears. I cast Hopeful Eidolon for its bestow cost on my Grizzly Bears. In response my opponent kills the Bears with Doom Blade. What happens to Hopeful Eidolon?",
+    "expect": [
+      "Hopeful Eidolon isn't countered or fizzled: with its target gone it stops being bestowed and enters the battlefield as a creature (702.103e)."
+    ],
+    "notExpect": [
+      "Hopeful Eidolon doesn't resolve"
+    ],
+    "cite": [
+      "702.103e",
+      "608.3b"
+    ]
+  },
+  {
+    "id": "gp10",
+    "text": "I control Grizzly Bears. I cast Hopeful Eidolon for its bestow cost on my Grizzly Bears and it resolves. Then my opponent casts Doom Blade on the Bears. Is Hopeful Eidolon still on the battlefield?",
+    "expect": [
+      "Hopeful Eidolon stays on the battlefield as a creature"
+    ],
+    "notExpect": [
+      "Hopeful Eidolon: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "702.103f",
+      "704.5m"
+    ]
+  },
+  {
+    "id": "gp11",
+    "text": "I have 20 life. I cast Tenacious Underdog for its blitz cost. It resolves. Then my end step begins. Do I draw a card?",
+    "expect": [
+      "is cast for its blitz cost {2}{B}{B} and 2 life",
+      "You draw 1 card.",
+      "You go from 20 to 18 life."
+    ],
+    "cite": [
+      "702.152a",
+      "603.7",
+      "701.21a"
+    ]
+  },
+  {
+    "id": "gp12",
+    "text": "I control a 2/2 Soldier token. I cast Druid's Deliverance. What do I get from populate?",
+    "expect": [
+      "You get a token copy of Soldier token (populate, 701.36a)."
+    ],
+    "cite": [
+      "701.36a",
+      "707.2"
+    ]
+  },
+  {
+    "id": "gp13",
+    "text": "I control Grizzly Bears. I cast Druid's Deliverance. Do I get a token?",
+    "expect": [
+      "You control no creature tokens, so populate creates nothing (701.36b)."
+    ],
+    "cite": [
+      "701.36b"
+    ]
+  },
+  {
+    "id": "gp14",
+    "text": "I control Dreadhorde Invasion. It is my upkeep. What do I get from amass?",
+    "expect": [
+      "You get a 0/0 Zombie Army token.",
+      "is 1/1 (0/0 base, 1 +1/+1 counter)"
+    ],
+    "cite": [
+      "701.47a",
+      "701.47b"
+    ]
+  },
+  {
+    "id": "gp15",
+    "text": "I control Dreadhorde Invasion. It is my upkeep. I cast Lazotep Plating in response to the trigger. How big is my Army?",
+    "expect": [
+      "is 2/2 (0/0 base, 2 +1/+1 counters)"
+    ],
+    "cite": [
+      "701.47a"
+    ]
+  },
+  {
+    "id": "gp16",
+    "text": "I cast Lurrus from my companion zone. Can I put Lurrus into my hand?",
+    "expect": [
+      "can't be cast from the companion zone directly",
+      "Yes: pay {3}"
+    ],
+    "cite": [
+      "702.139a",
+      "116.2g"
+    ]
+  },
+  {
+    "id": "gp17",
+    "text": "Lurrus is my companion. It is my opponent's turn. Can I put Lurrus into my hand?",
+    "expect": [
+      "No: Lurrus of the Dream-Den can't be put into your hand now."
+    ],
+    "cite": [
+      "702.139a",
+      "116.2g"
+    ]
+  },
+  {
+    "id": "gp18",
+    "text": "My 2/2 first striker attacks and nobody blocks. After first strike damage I give my creature double strike. How much damage does my opponent take?",
+    "expect": [
+      "deals combat damage a second time",
+      "Yes: opponent takes 4 damage in all."
+    ],
+    "cite": [
+      "702.4d"
+    ]
+  },
+  {
+    "id": "gp19",
+    "text": "My opponent controls Grizzly Bears. I cast Lightning Bolt on it and they respond by bouncing it with Unsummon. Does Bolt fizzle?",
+    "expect": [
+      "Players call this fizzling."
+    ],
+    "cite": [
+      "608.2b"
+    ]
   }
 ]

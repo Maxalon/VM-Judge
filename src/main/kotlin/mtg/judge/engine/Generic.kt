@@ -79,11 +79,25 @@ object Generic {
         if (n in setOf("symmetrical discard spell", "each player discards spell")) return OracleParser.parse("generic-each-discard", "a symmetrical discard spell", "Sorcery", "{B}", 1.0, "B", null, null, emptyList(), "Each player discards a card.")
         if (n in setOf("land destruction spell", "land destruction")) return OracleParser.parse("generic-land-destruction", "a land destruction spell", "Sorcery", "{1}{R}{R}", 3.0, "R", null, null, emptyList(), "Destroy target land.")
         if (n in setOf("dies-draw enchantment", "dies draw enchantment")) return OracleParser.parse("generic-dies-draw", "a dies-draw enchantment", "Enchantment", "{1}{B}", 2.0, "B", null, null, emptyList(), "Whenever a creature dies, draw a card.")
+        // "my creature has 'if it would die, exile it instead' and 'when this dies, draw a card'": several quoted abilities, set apart
+        // by a fullwidth semicolon, are each read the way one is and joined as the lines of one rules text (113.1).
+        Regex("""^(?:(\d+)/(\d+) )?(creature|artifact|enchantment|permanent|land|planeswalker|equipment|aura) that says (.+；.+)$""").find(n)?.let { m ->
+            val kind = m.groupValues[3]; val size = if (m.groupValues[1].isNotEmpty()) "${m.groupValues[1]}/${m.groupValues[2]} " else ""
+            val defs = m.groupValues[4].split('；').filter { it.isNotBlank() }.mapNotNull { spell("$size$kind that says $it") }
+            val first = defs.firstOrNull() ?: return@let
+            val shown = m.groupValues[4].replace('_', ' ').trim('"')
+            return OracleParser.parse("generic-says-$kind-multi-${m.groupValues[4].take(60)}", "${if (size.isNotEmpty()) "a $size" else if (kind.first() in "aeiou") "an " else "a "}$kind that says \"$shown\"", first.typeLine, first.manaCost, first.manaValue, first.colors.joinToString(""), first.power?.toString(), first.toughness?.toString(),
+                defs.flatMap { it.keywords }.distinct(), defs.joinToString("\n") { it.oracleText }, loyalty = first.loyalty?.toString())
+        }
         // "a creature that says when it enters draw a card": a permanent whose rules text is the words given.
         Regex("""^(?:(\d+)/(\d+) )?(creature|artifact|enchantment|permanent|land|planeswalker|equipment|aura) that says (.+)$""").find(n)?.let { m ->
             val kind = m.groupValues[3]; val raw = m.groupValues[4].replace('_', ' ').trim().trim('"')
             val self = if (kind == "creature") "this creature" else "this permanent"
             var t = raw.replace(Regex("""^(when(?:ever)?) it\b"""), "$1 $self").replace(Regex("""^it (can't|can|has|gets|deals|doesn't)\b"""), "${self.replaceFirstChar { c -> c.uppercase() }} $1")
+            // "if it would die, exile it instead" / "when this dies, draw a card": the card says "this creature", with a comma after the condition.
+            t = t.replace(Regex("""^(if|when|whenever) (?:it|this(?: creature| permanent)?) (would die|dies|would be destroyed|is destroyed|would leave the battlefield|leaves the battlefield),? ?(?=\S)"""), "$1 $self $2, ")
+            // "sacrifice this unless you pay 2": the card's "sacrifice this creature unless you pay {2}" (the upkeep cost of Phyrexian Etchings and its kin).
+            t = t.replace(Regex("""\b(sacrifice) (?:this|it)(?: creature| permanent)? unless you pay \{?(\d+)\}?(?: mana)?$"""), "$1 $self unless you pay {$2}")
             t = t.replace(Regex("""\bon it$"""), "on $self").replace(Regex("""^tap[:,]? (.+)$"""), "{T}: $1")
             // "regenerate this creature: pay 2" / "pay 2: regenerate this creature": the card writes "{2}: Regenerate ~."
             t = t.replace(Regex("""^regenerate (?:this creature|it|this permanent)[:,]? (?:pay )?(\d+)(?: mana)?$""", RegexOption.IGNORE_CASE), "{$1}: Regenerate $self").replace(Regex("""^(?:pay )?(\d+)(?: mana)?: regenerate (?:this creature|it|this permanent)$""", RegexOption.IGNORE_CASE), "{$1}: Regenerate $self")

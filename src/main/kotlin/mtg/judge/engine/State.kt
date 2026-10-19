@@ -273,6 +273,8 @@ class GameState(
     val siegesDefeated: MutableSet<String> = mutableSetOf()
     /** Creatures that had first strike or double strike as the first combat damage step began, once it has (702.7b). */
     var firstStrikers: Set<String>? = null
+    /** Of those, the ones that had double strike as the first-strike step began (702.4c, 702.4d). */
+    var doubleStrikersAtStart: Set<String> = emptySet()
     /** A loop of mandatory actions repeated with no way to stop it: the game is a draw (104.4b, 732.4). */
     var gameDrawn = false
     /** Choices made among several legal options while resolving (an Aura choosing what to enchant): a loop with one isn't mandatory. */

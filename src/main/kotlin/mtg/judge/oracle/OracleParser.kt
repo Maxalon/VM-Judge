@@ -233,7 +233,8 @@ object OracleParser {
     private val keywordActions = setOf("activate", "attach", "cast", "counter", "create", "destroy", "discard", "double", "exchange", "exile", "fight", "mill", "play", "regenerate", "reveal", "sacrifice", "scry", "search", "shuffle", "tap", "untap", "vote", "transform", "detain", "populate", "monstrosity", "bolster", "manifest", "support", "investigate", "meld", "goad", "exert", "explore", "assemble", "surveil", "adapt", "amass", "learn", "venture into the dungeon", "connive", "open an attraction", "roll to visit your attractions", "convert", "incubate", "the ring tempts you", "face a villainous choice", "time travel", "discover", "cloak", "collect evidence", "suspect", "forage", "manifest dread", "endure", "behold")
 
     private fun isKeywordLine(line: String, keywords: Collection<String>): Boolean {
-        val parts = line.trimEnd('.').split(',', ';').map { it.trim().lowercase() }
+        // "Blitz—{2}{B}{B}, Pay 2 life": the life is part of the keyword's cost, not a keyword of its own.
+        val parts = line.trimEnd('.').replace(Regex(""",\s*pay \d+ life""", RegexOption.IGNORE_CASE), "").split(',', ';').map { it.trim().lowercase() }
         val kws = keywords.map { it.lowercase() }.toSet() - keywordActions
         // "Evoke—Exile a black card from your hand": a keyword whose cost follows an em-dash with no space.
         return parts.isNotEmpty() && parts.all { p -> kws.any { k -> p == k || p.startsWith("$k ") || p.startsWith("$k—") || p.startsWith("$k–") } }
@@ -1345,6 +1346,13 @@ object OracleParser {
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
         WinLoss.parseSentence(s) { target(it, Kind.PLAYER) }?.let { return it }
+        // Populate (701.36) and amass [subtype] N (701.47), alone or after "you lose N life and".
+        if (Regex("""^populate\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Populate
+        Regex("""^(?:you lose (\d+) life and )?amass (?:([A-Za-z]+) )?(\d+)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m ->
+            val raw = m.groupValues[2].ifEmpty { "Zombies" }; val sub = raw.replaceFirstChar { it.uppercase() }.let { if (it == "Elves") "Elf" else if (it == "Wolves") "Wolf" else if (it.endsWith("s")) it.dropLast(1) else it }
+            val amass = Effect.Amass(sub, m.groupValues[3].toInt())
+            return if (m.groupValues[1].isNotEmpty()) Effect.Seq(listOf(Effect.LoseLife(Who.YOU, m.groupValues[1].toInt()), amass)) else amass
+        }
         // Spell Queller's leave trigger: the engine plays it out from the card it remembered exiling.
         Regex("""^the exiled card's owner may cast (?:that card|it) without paying its mana cost\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("608.2c", "118.7a")) }
         // "(You may) have ~ deal 3 damage to any target" says what "~ deals 3 damage to any target" says.

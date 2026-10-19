@@ -52,6 +52,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
         val def = obj.def
         val plain = e.copy(obj = obj.id, card = null, to = null)
         lastKw = kind; lastObj = obj.id
+        if (kind == "bestow" || kind == "blitz") return GapKeywords.prepareCast(kind, e, state, engine0, obj, plain)
         when (kind) {
             "buyback" -> {
                 val cost = keywordCostText(def, "buyback")
@@ -231,6 +232,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 if (!o.def.oracleText.contains("exert", true)) { state.outcomes += "${o.name} has no exert ability, so it can't be exerted as it attacks."; return }
                 engine.exertObject(o)
             }
+            "companion" -> GapKeywords.companion(e, state, cardDef)
             "unearth" -> unearth(e, state, engine)
             "dredge" -> dredge(e, state, engine)
             "madnesscast" -> madnessCast(e, state, engine)

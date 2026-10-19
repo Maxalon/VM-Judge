@@ -1903,6 +1903,97 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /** Gaps reported by earlier tracks: pronouns after a zone card, copied-spell X, quoted abilities, pumps with no spell. */
+    private fun gapRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t
+        t2 = quotedAbilityRewrite(t2, ctx)
+        // Companion (702.139a): "Lurrus is my companion", "I cast Lurrus from my companion zone", "can I put Lurrus into my hand?" (a special action costing {3}).
+        t2 = t2.let { t0 ->
+            val zone = """(?:my |the |our )?(?:companion(?: zone)?|outside the game|sideboard)"""
+            val timing = Regex("""\b(?:opponent's turn|their turn|in response|during combat|upkeep|end step|draw step|declare|with .* on the stack)\b""").containsMatchIn(t0)
+            val src = if (timing) "badtiming" else "ask"
+            Regex("""^(c\d+) is (?:my |our )?(?:chosen )?companion$|^(?:my |our )?companion is (c\d+)$""").find(t0.trim())?.let { "gapcompanion ${it.groupValues[1].ifEmpty { it.groupValues[2] }} declared" }
+                ?: Regex("""^(?:i|we) (?:cast|play) (c\d+) from $zone\b.*$""").find(t0.trim())?.let { "gapcompanion ${it.groupValues[1]} cast" }
+                ?: Regex("""^(?:can|could|may|am i able to) (?:i|we) (?:put|move|bring|get|take) (c\d+|my companion|it) (?:in|into|to) (?:my )?hand(?: from $zone)?(?: (?:for|by paying|paying|with) (?:\{3\}|3|three)(?: mana)?)?(?: (?:during|in|on|at) .+)?\??$""").find(t0.trim())?.let { "gapcompanion ${it.groupValues[1]} $src" }
+                ?: Regex("""^(?:i|we) (?:pay (?:\{3\}|3|three)(?: mana)? (?:to |and )?)?(?:put|move|bring|get|take) (c\d+|my companion|it) (?:in|into|to) (?:my )?hand(?: from $zone)?(?: (?:for|by paying|paying|with) (?:\{3\}|3|three)(?: mana)?)?(?: (?:during|in|on|at) .+)?$""").find(t0.trim())?.let { "gapcompanion ${it.groupValues[1]} do${if (timing) "-badtiming" else ""}" }
+                ?: t0 }
+        // Bestow and blitz: "I cast Hopeful Eidolon for its bestow cost on my Bears", "I bestow Hopeful Eidolon on my Bears", "I blitz Tenacious Underdog".
+        if (ctx.kwPending == null) {
+            Regex("""^(.*?)\b(i|we|they|he|she|my opponent|the opponent) (bestow|blitz)s? (c\d+)\b(.*)$""", RegexOption.IGNORE_CASE).find(t2.trim())?.let { r ->
+                ctx.kwPending = r.groupValues[3].lowercase(); t2 = "${r.groupValues[1]}${r.groupValues[2]} cast ${r.groupValues[4]}${r.groupValues[5]}".trim()
+            }
+        }
+        if (ctx.kwPending == null && Regex("""\b(?:casts?|plays?|casting)\b""").containsMatchIn(t2)) {
+            Regex("""\s*,?\s*\b(?:(?:for|using|with|via|by paying|paying|and pays?) (?:its |the |their |my )?|(?:cast )?)(bestow|blitz)(?:ed)?(?: cost| ability)?\b""", RegexOption.IGNORE_CASE).find(t2)?.let { r ->
+                ctx.kwPending = r.groupValues[1].lowercase(); t2 = t2.replaceFirst(r.value, " ").replace(Regex("""\s+"""), " ").trim()
+            }
+        }
+        // "After first strike damage I give my creature double strike": a pump with no spell named is an instant effect applied at that moment,
+        // read as an unnamed spell that says so; the creature then has the keyword only from that moment on (611.2a).
+        t2 = t2.let { t0 -> Regex("""^(.*?)\b(i|we|they|my opponent|he|she) (?:give|gives|gave|grant|grants|granted) (?:(my|their|his|her|the|that|this) )?(creature|attacker|blocker|guy|dude|\d+/\d+(?: creature)?) (first strike|double strike|lifelink|deathtouch|trample|flying|haste|vigilance|menace|reach|indestructible|hexproof)(?: until end of turn| this turn)?$""", RegexOption.IGNORE_CASE).find(t0.trim())?.let { r ->
+            val kw = r.groupValues[5].lowercase(); val what = r.groupValues[4].lowercase().removeSuffix(" creature")
+            val aim = if (what == "it") "it" else "${r.groupValues[3].ifEmpty { "my" }.lowercase().let { d -> if (d in setOf("the", "that", "this")) "my" else d }} ${if (what in setOf("creature", "attacker", "blocker", "guy", "dude")) "creature" else what}"
+            ctx.notes += "No spell was named for giving ${r.groupValues[4]} $kw; it is read as an effect applied at that moment (an unnamed spell that says so)."
+            "${r.groupValues[1]}${r.groupValues[2]} cast a spell that says target creature ${if (kw.contains('/')) "gets" else "gains"} $kw until end of turn on $aim" } ?: t0 }
+        // "...Does the trigger happen?" about a dies trigger on a creature that also says it is exiled instead: the creature is destroyed and the trigger asked about.
+        t2 = t2.let { t0 -> Regex("""^(?:does|will|would|can) (?:the|that|its|my) (?:dies? |death )?(?:trigger|ability)(?: still| even)? (?:happen|trigger|go off|work|resolve|fire)(?: at all)?\??$""", RegexOption.IGNORE_CASE).find(t0.trim())?.let {
+            val said = ctx.objects.values.lastOrNull { o -> o.card.name?.let { n -> n.contains("that says") && n.contains("would die") && Regex("""\bwhen(?:ever)? this (?:creature )?dies""").containsMatchIn(n) } == true }
+            if (said == null || ctx.events.any { e -> e.verb == "leave" }) null
+            else { ctx.notes += "The question assumes the creature would die, so it is read as destroyed."; "it is destroyed, do i draw a card" } } ?: t0 }
+        return t2
+    }
+
+    /**
+     * Quoted rules text on a described permanent: "My creature has 'if it would die, exile it instead' and I have a 'when this dies' trigger on it"
+     * or "a 2/2 with 'when this creature dies, draw a card'". The quotes become a nameless permanent whose rules text is the words given
+     * (several quotes are several lines of one text), which the oracle parser reads like a printed card's (113.1).
+     */
+    private fun quotedAbilityRewrite(t: String, ctx: Ctx): String {
+        if (!t.contains('\'') && !t.contains('"')) return t
+        val q = """(?:(?<![A-Za-z0-9])'([^']{4,}?)'(?![A-Za-z0-9])|"([^"]{4,}?)")"""
+        val tail = """(?:,? ?(?:and |also |plus |but )?(?:(?:i|they|we|he|she) (?:also )?(?:have|has|got|put) an? |it (?:also )?(?:has|gets) |an? )?$q(?: (?:trigger|ability|effect))?(?: on (?:it|that creature|my creature|the creature))?)*"""
+        val re = Regex("""\b(my|their|his|her|an?|the) ((?:\d+/\d+ )?(?:creature|artifact|enchantment|permanent|land|planeswalker|equipment|aura)|\d+/\d+)(?: card| token)? (?:has|have|with|that has|that's got|which has|with the ability|that reads|reading|that says|gains|gets) $q$tail""", RegexOption.IGNORE_CASE)
+        return re.replace(t) { r ->
+            val quotes = Regex(q).findAll(r.value).map { it.groupValues[1].ifEmpty { it.groupValues[2] } }.toList()
+            val kindWord = r.groupValues[2].lowercase()
+            val size = Regex("""\d+/\d+""").find(kindWord)?.value
+            val kind = kindWord.replace(Regex("""^\d+/\d+ ?"""), "").ifEmpty { "creature" }
+            val parts = quotes.map { qt ->
+                var x = qt.trim().trimEnd('.').lowercase()
+                // "when this dies": a trigger whose effect wasn't said; drawing a card stands in so the trigger can be seen to happen or not.
+                if (Regex("""^(?:when|whenever|at the beginning of)\b[^,]*$""").matches(x) && Regex("""\b(?:dies|enters|leaves|attacks|blocks)\b""").containsMatchIn(x)) {
+                    x += ", draw a card"; ctx.notes += "The trigger \"$qt\" doesn't say what it does; \"draw a card\" stands in for its effect."
+                }
+                x.replace(' ', '_').replace(',', '\uFF0C')
+            }
+            // "I have a creature with '…'" already names the owner; "My creature has '…'" doesn't.
+            val owner = if (Regex("""(?:have|has|controls?|cast|casts|play|plays)\s+$""").containsMatchIn(t.substring(0, r.range.first))) "" else if (r.groupValues[1].lowercase() in setOf("their", "his", "her")) "they have " else "i have "
+            "${owner}a says-${if (size != null) "$size~" else ""}${parts.joinToString("\uFF1B")} $kind"
+        }
+    }
+
+    private fun readGapQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        // Companion markers from gapRewrites: "gapcompanion c1 declared|cast|ask|do|do-badtiming|badtiming".
+        Regex("""^gapcompanion (c\d+|my companion|it) (declared|cast|ask|do|do-badtiming|badtiming)$""").find(clause0.trim())?.let { r ->
+            val card = (if (r.groupValues[1].startsWith("c")) m.cards[r.groupValues[1]] else null) ?: m.cards.values.firstOrNull { Regex("""(?i)\bcompanion\b""").containsMatchIn(it.keywords) } ?: return@let
+            val ref = CardRef(name = card.display, oracleId = card.oracleId)
+            if (r.groupValues[2] == "declared") { ctx.notes += "${card.display} is your companion: it started outside the game, revealed before the game began (103.2b, 702.139a)."; return true }
+            val kind = r.groupValues[2].removePrefix("do-").let { if (it == "do") "ask" else it }
+            if (ctx.events.none { it.verb == "kw" && it.to == "companion" }) ctx.events += EventSpec("kw", player = "me", card = ref, to = "companion", source = if (kind == "do") "ask" else kind)
+            if (r.groupValues[2] == "cast") ctx.events += EventSpec("cast", player = "me", card = ref)
+            ctx.lastActor = "me"; ctx.lastVerb = if (r.groupValues[2] == "cast") "cast" else "kw"
+            return true
+        }
+        // "I copy my Fireball with Reverberate; what is the copy's X?": the copy has the original's X (707.10).
+        Regex("""^what(?:'s| is) (?:the )?(?:copy's|copies'|copied spell's) x$""").find(clause0.trim())?.let {
+            val cast = ctx.events.lastOrNull { e -> e.verb == "cast" && e.amount != null && (e.card?.name ?: e.obj?.let { id -> ctx.objects[id]?.card?.name }) !in xlessCopySpells }
+            val nm = cast?.let { e -> e.card?.name ?: e.obj?.let { id -> ctx.objects[id]?.card?.name } } ?: "the original"
+            ctx.asks += EventSpec("ask", to = "text:The copy's X is " + (if (cast != null) "${cast.amount}, the same as $nm's: " else "the same as the original's X, which wasn't stated: ") +
+                "a copy of a spell copies all of the original's choices, including the value of X (707.10)."); return true
+        }
+        return null
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
@@ -1910,6 +2001,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = costRewrites(t2, m, ctx)
         t2 = winLossRewrites(t2, m, ctx)
         t2 = turnRewrites(t2, m, ctx)
+        t2 = gapRewrites(t2, m, ctx)
         t2 = stackRewrites(t2, m, ctx)
         t2 = combatRewrites(t2, m, ctx)
         t2 = replacementRewrites(t2, m, ctx)
@@ -5776,6 +5868,7 @@ class SituationParser(private val names: NameIndex) {
         readCostQuestions(clause0, m, ctx)?.let { return it }
         readWinLossQuestions(clause0, m, ctx)?.let { return it }
         readTurnQuestions(clause0, m, ctx)?.let { return it }
+        readGapQuestions(clause0, m, ctx)?.let { return it }
         readStackQuestions(clause0, m, ctx)?.let { return it }
         readCombatQuestions(clause0, m, ctx)?.let { return it }
         replacementQuestions(clause0, m, ctx)?.let { return it }
@@ -13443,6 +13536,12 @@ class SituationParser(private val names: NameIndex) {
             }
             // After a block, "it" may be the blocker or the creature it blocks.
             ctx.events.lastOrNull()?.takeIf { it.verb == "block" }?.let { b -> candidates += listOfNotNull(b.obj) + b.targets.filter { it in ctx.objects } }
+            // "I have a creature card in my graveyard. They control Containment Priest. I cast Reanimate targeting it": the permanent
+            // is the last thing said, but the spell can only aim at the card in the graveyard; objects in other zones follow as fallbacks.
+            if (lm != null && !lm.startsWith("cast:") && ctx.objects[lm] != null) {
+                val zone = ctx.objects.getValue(lm).zone ?: "battlefield"
+                candidates += ctx.objects.values.reversed().filter { it.id != lm && (it.zone ?: "battlefield") != zone && it.zone in setOf("graveyard", "exile") }.map { it.id }
+            }
             if (candidates.isNotEmpty()) { out += candidates.joinToString("|"); return out }
         }
         if (Regex("""^(me|my face|myself)\b""").containsMatchIn(seg)) { out += "me"; ctx.usesMe = true; return out }

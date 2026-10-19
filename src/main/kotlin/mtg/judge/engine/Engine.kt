@@ -1332,7 +1332,7 @@ class Engine(val state: GameState) {
     private fun helpsThePlayer(e: Effect?): Boolean = when (e) { is Effect.Draw -> true; is Effect.GainLife -> true; is Effect.Seq -> e.effects.firstOrNull { it !is Effect.Narrated }?.let { helpsThePlayer(it) } == true; is Effect.May -> helpsThePlayer(e.effect); else -> false }
     /** Pumps, keyword grants, shields, +1/+1 counters: aimed at your own things when an opponent's also qualify. */
     private fun isBeneficial(e: Effect?): Boolean = when (e) { is Effect.Pump, is Effect.GainKeywords, is Effect.CreateShield, is Effect.Regenerate, is Effect.Untap, is Effect.Mentor, is Effect.Backup -> true; is Effect.PutCounters -> e.kind.let { it == "+1/+1" || it.startsWith("+") }; is Effect.Seq -> e.effects.isNotEmpty() && e.effects.all { isBeneficial(it) || it is Effect.Narrated }; is Effect.May -> isBeneficial(e.effect); else -> false }
-    private fun isHarmful(e: Effect?): Boolean = when (e) { is Effect.Destroy, is Effect.Exile, is Effect.Damage, is Effect.Bounce, is Effect.Tap, is Effect.Counter, is Effect.ShuffleIntoLibrary, is Effect.GainControl -> true; is Effect.Seq -> e.effects.any { isHarmful(it) }; is Effect.May -> isHarmful(e.effect); is Effect.UnlessPays -> isHarmful(e.effect); else -> false }
+    private fun isHarmful(e: Effect?): Boolean = when (e) { is Effect.Destroy, is Effect.Exile, is Effect.Damage, is Effect.DamageThatMuch, is Effect.Bounce, is Effect.Tap, is Effect.Counter, is Effect.ShuffleIntoLibrary, is Effect.GainControl -> true; is Effect.Seq -> e.effects.any { isHarmful(it) }; is Effect.May -> isHarmful(e.effect); is Effect.UnlessPays -> isHarmful(e.effect); else -> false }
     /** Effects phrased "target player …" whose player is carried by a [Who] rather than a TargetSpec. */
     /** Whether the spell's targets are a mode's rather than its own — a Modal, possibly behind a rider sentence. */
     private fun isModal(e: Effect?): Boolean = e is Effect.Modal || (e is Effect.Seq && e.effects.any { isModal(it) })
@@ -1549,6 +1549,8 @@ class Engine(val state: GameState) {
         trace.step("All players pass priority; ${item.describe} (top of the stack) starts to resolve.", "117.4", "608.1")
         // Killing the Top in response to its ability: the ability is already on the stack and exists independently of its source.
         if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.effect !is WinLossEffect) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
+        // A bestowed Aura spell whose target is illegal resolves as a creature spell instead (702.103e).
+        if (item.kind == StackKind.SPELL && item.source.kwf.bestowed && item.targets.isNotEmpty() && item.targets.none { isTargetLegal(item, it) }) GapMech.bestowToCreature(state, item)
         // 608.2b target legality
         if (item.targets.isNotEmpty()) {
             val legal = item.targets.map { it to isTargetLegal(item, it) }
@@ -1558,7 +1560,7 @@ class Engine(val state: GameState) {
                 val why = legal.filter { !it.second }.mapNotNull { (it.first as? Ref.Obj)?.let { r -> if (state.objects[r.id]?.zone == item.targetZones[r.id]) targetingProblem(item.source, item.controller, r)?.second else null } }.distinct()
                 trace.step("${item.describe}'s target${if (item.targets.size > 1) "s are" else " is"} no longer legal (${legal.joinToString("; ") { whyIllegal(item, it.first) }}), so it doesn't resolve and is removed from the stack" +
                     (if (item.kind == StackKind.SPELL) " and put into its owner's graveyard" else "") + ".", *(listOf("608.2b") + why).toTypedArray())
-                state.outcomes += "${item.describe} doesn't resolve (all targets illegal)."
+                state.outcomes += "${item.describe} doesn't resolve (all targets illegal)." + (if (state.outcomes.none { it.contains("fizzl") }) " Players call this fizzling." else "")
                 // "they cast a 3/3 and I Bolt it before it resolves": a creature spell isn't a creature yet.
                 if (item.kind == StackKind.SPELL) legal.filter { !it.second }.mapNotNull { (it.first as? Ref.Obj)?.let { r -> state.objects[r.id] } }.filter { it.zone == Zone.STACK }.forEach { t ->
                     state.outcomes += "${item.describe} can't target ${t.name} while it's still a spell on the stack: a creature spell isn't a creature until it resolves. Aim it at ${t.name} once it has entered the battlefield, or counter the spell instead."
@@ -1819,7 +1821,8 @@ class Engine(val state: GameState) {
                     val enchant = obj.def.enchant
                     // Animate Dead: once its card is back on the battlefield, it enchants "creature put onto the battlefield with ~".
                     val legal = host != null && host.isOnBattlefield() && (enchant == null || state.matches(enchant, host, obj.controller, obj) || (enchant.inGraveyard && state.hasCreatureType(host)))
-                    if (!legal) { move(obj, Zone.GRAVEYARD, "${obj.name} is ${if (host == null || !host.isOnBattlefield()) "no longer attached to anything" else "attached to something it can't enchant"}, so it's put into its owner's graveyard (state-based action).", "704.3", "704.5m"); changed = true }
+                    if (!legal && obj.kwf.bestowed) { GapMech.bestowedFallsOff(state, obj); changed = true }
+                    else if (!legal) { move(obj, Zone.GRAVEYARD, "${obj.name} is ${if (host == null || !host.isOnBattlefield()) "no longer attached to anything" else "attached to something it can't enchant"}, so it's put into its owner's graveyard (state-based action).", "704.3", "704.5m"); changed = true }
                 } else if (obj.def.isEquipment && obj.attachedTo != null) {
                     if (host == null || !host.isOnBattlefield() || !state.isCreature(host)) { obj.attachedTo = null; trace.step("${obj.name} is no longer attached to a creature, so it becomes unattached and stays on the battlefield (state-based action).", "704.3", "704.5n"); state.outcomes += "${obj.name} stays on the battlefield, unattached."; changed = true }
                 }
@@ -2021,7 +2024,7 @@ class Engine(val state: GameState) {
         }
         trace.step("At least one creature has first strike or double strike, so there is an extra combat damage step in which only those creatures deal damage.", "510.4", "702.7b")
         dealCombatDamage(attackers) { it.has("first strike") || it.has("double strike") }
-        state.firstStrikers = strikers.map { it.id }.toSet()
+        state.firstStrikers = strikers.map { it.id }.toSet(); state.doubleStrikersAtStart = strikers.filter { it.has("double strike") }.map { it.id }.toSet()
         trace.step("After the first-strike combat damage step, the active player receives priority; spells cast now come before the regular combat damage step.", "510.3", "510.4")
     }
 
@@ -2054,6 +2057,11 @@ class Engine(val state: GameState) {
         val struck = state.firstStrikers
         if (struck != null) {
             trace.step("Then the regular combat damage step: creatures that had neither first strike nor double strike as the first combat damage step began, plus any that have double strike now, deal damage.", "510.4", "702.7b")
+            // Double strike given after the first-strike damage was dealt still earns the second damage (702.4d); taken away during that step it stops it (702.4c).
+            for (id in struck) state.objects[id]?.takeIf { it.isOnBattlefield() }?.let { o ->
+                if (o.has("double strike") && id !in state.doubleStrikersAtStart) { trace.step("${o.name} had first strike and dealt its combat damage in the first step; it has double strike now, so it assigns combat damage again in this second step.", "702.4d"); state.outcomes += "${o.name} deals combat damage a second time: gaining double strike after the first-strike damage step lets it assign damage in the regular step (702.4d)." }
+                else if (!o.has("double strike") && id in state.doubleStrikersAtStart) { trace.step("${o.name} had double strike as the first combat damage step began but no longer has it, so it assigns no combat damage in the second step.", "702.4c"); state.outcomes += "${o.name} deals no more combat damage: losing double strike during the first-strike step stops its second damage (702.4c)." }
+            }
             dealCombatDamage(attackers) { it.id !in struck || it.has("double strike") }
             state.combatDamageDealt = true
             trace.step("The active player receives priority.", "510.3")
@@ -2210,7 +2218,7 @@ class Engine(val state: GameState) {
                 continue
             }
             val jailer = if (obj.zone == Zone.GRAVEYARD) graveyardAbilitiesGone() else null
-            for (ability in obj.abilities.filterIsInstance<TriggeredAbility>() + grantedTriggers(obj)) {
+            for (ability in obj.abilities.filterIsInstance<TriggeredAbility>() + grantedTriggers(obj) + GapMech.blitzTriggers(obj, event)) {
                 val fromGy = obj.zone == Zone.GRAVEYARD && functionsFromGraveyard(ability)
                 if (fromGy && jailer != null) {
                     if (state.trace.steps.none { it.text.startsWith("${jailer.name} takes the abilities away") })
@@ -2523,7 +2531,7 @@ class Engine(val state: GameState) {
             // A trigger nobody named a target for: the only legal target, or for "target player"/"target opponent" the one opponent.
             val spec = needed[0]
             // "Whenever … deals combat damage to a player, … deals 2 damage to any target": the player it just hit is the natural target.
-            if (causedBy != null && causedBy != obj.controller && Kind.PLAYER in spec.filter.kinds && isHarmful(ability.effect) && targetingProblem(obj, obj.controller, Ref.Player(causedBy)) == null) {
+            if (causedBy != null && causedBy != obj.controller && Kind.PLAYER in spec.filter.kinds && isHarmful(ability.effect) && ability.effect !is Effect.DamageThatMuch && targetingProblem(obj, obj.controller, Ref.Player(causedBy)) == null) {
                 state.assumptions += "${obj.name}'s triggered ability targets ${state.nameOf(Ref.Player(causedBy))} (\"${spec.raw}\"; assuming the player it just hit)."
                 targets = listOf(Ref.Player(causedBy))
             }
@@ -2581,6 +2589,9 @@ class Engine(val state: GameState) {
                 trace.step("${obj.name}'s triggered ability needs a target (${spec.raw}) that the situation doesn't name, so what it does to that target isn't shown.", "603.3d", "601.2c")
             }
             if (inferred != null) targets = inferred
+            // Boros Reckoner dealt damage: "any target" is its controller's free choice (603.3d); the obvious one is shown and said so.
+            if (ability.effect is Effect.DamageThatMuch && targets.size == 1 && state.outcomes.none { it.startsWith("${obj.name}'s trigger deals that much damage") })
+                state.outcomes += "${obj.name}'s trigger deals that much damage to any target its controller chooses (603.3d); no target was named, so the obvious one is shown: ${state.nameOf(targets[0])}."
         }
         // "Vendilion Clique targeting me": a player named with the cast is the enters-the-battlefield trigger's target.
         if (targets.isEmpty() && ability.trigger == Trigger.ThisEnters && obj.etbTargets?.any { it is Ref.Player } == true && (targetsAPlayer(ability.effect) || Regex("""\btarget (?:player|opponent)\b""", RegexOption.IGNORE_CASE).containsMatchIn(ability.text))) {
@@ -2736,6 +2747,8 @@ class Engine(val state: GameState) {
         when (effect) {
             is Effect.ShuffleGraveyardIntoLibrary, is Effect.ReturnExiledCard, is Effect.SacrificeEnchanted, is Effect.GainLifeThatMuch, is Effect.TapOrUntap, is Effect.CreateTokenCopy, is Effect.OpponentMayTakeDamage, is Effect.DamageCausing, is Effect.DoublePower, is Effect.PumpCount, is Effect.LoseHalfLife, is Effect.ExileUntilLeaves, is Effect.SacrificeTarget, is Effect.GainLifeEqualTo, is Effect.FreezeUntap, is Effect.RemoveCounters, is Effect.SetBasePtTarget, is Effect.LoseLifeEqual -> applyEffectMore(effect, item)
             is Effect.Seq -> effect.effects.forEach { applyEffect(it, item) }
+            is Effect.Populate -> GapMech.populate(state, item) { onEvent(GameEvent.EntersBattlefield(it)) }
+            is Effect.Amass -> GapMech.amass(state, item, effect.subtype, effect.n) { onEvent(GameEvent.EntersBattlefield(it)) }
             is Effect.CantCastThisTurn -> {
                 val who = when (effect.who) {
                     Who.EACH_PLAYER -> state.players.map { it.id }
@@ -4481,6 +4494,8 @@ class Engine(val state: GameState) {
             state.outcomes += "The face-down creature is revealed: it was ${obj.printedDef.name} (708.9)."
             obj.def = obj.printedDef; obj.kwf.faceDown = false
         }
+        // A bestowed Aura is the same card showing different characteristics, not a copy; it is itself again in any other zone (702.103b).
+        if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.kwf.bestowed) { obj.def = obj.printedDef; obj.kwf.bestowed = false }
         if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.def !== obj.printedDef) {
             trace.step("${obj.printedDef.name} was a copy of ${obj.def.name}; the copy effect ends as it leaves the battlefield, so in its new zone it is ${obj.printedDef.name} again, a new object with no memory of what it was.", "400.7", "707.2")
             state.outcomes += if (obj.transformed) "${obj.def.name} turns back to its front face, ${obj.printedDef.name}, as it leaves the battlefield (712.8)." else "${obj.printedDef.name} stops being a copy of ${obj.def.name} as it leaves the battlefield."
@@ -5594,6 +5609,7 @@ class Engine(val state: GameState) {
     private fun describeTargets(targets: List<Ref>) = if (targets.isEmpty()) "" else " targeting " + targets.joinToString(" and ") { state.nameOf(it) }
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
+        is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"
         is Effect.Damage -> if (effect.selfPower) "deal damage equal to its power to ${effect.target.raw}" else "deal ${effect.amount} damage to ${effect.target.raw}"
