@@ -38278,5 +38278,141 @@
     "cite": [
       "302.6"
     ]
+  },
+  {
+    "id": "kw-extort-bolt-drain",
+    "text": "I have Syndic of Tithes and cast Lightning Bolt at their face, paying for extort. How much life does the opponent lose in all?",
+    "expect": [
+      "opponent loses 1 life.",
+      "You gain 1 life.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "702.101a",
+      "608.2d"
+    ]
+  },
+  {
+    "id": "kw-extort-two-syndics-trigger-twice",
+    "text": "I control two Syndic of Tithes. I cast Lightning Bolt at the opponent and pay for both extorts. How much life does the opponent have?",
+    "expect": [
+      "opponent loses 1 life. (×2)",
+      "You gain 1 life. (×2)"
+    ],
+    "cite": [
+      "702.101a"
+    ]
+  },
+  {
+    "id": "kw-extort-declined-no-drain",
+    "text": "I control Syndic of Tithes and cast Lightning Bolt at the opponent, and I don't pay for extort. How much life do I gain?",
+    "expect": [
+      "You don't pay {W/B}: nothing more happens.",
+      "No: you gain no life here."
+    ],
+    "notExpect": [
+      "You gain 1 life."
+    ],
+    "cite": [
+      "608.2d"
+    ]
+  },
+  {
+    "id": "kw-exploit-fell-stinger-draws",
+    "text": "I have a Grizzly Bears and a Llanowar Elves. I cast Fell Stinger and exploit the Grizzly Bears, targeting the opponent. How much life does the opponent have?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "opponent draws 2 cards.",
+      "opponent loses 2 life."
+    ],
+    "notExpect": [
+      "Llanowar Elves: the battlefield"
+    ],
+    "cite": [
+      "702.110a",
+      "702.110b"
+    ]
+  },
+  {
+    "id": "kw-exploit-nothing-else-to-sacrifice",
+    "text": "I cast Fell Stinger with no other creatures. Do I draw?",
+    "expect": [
+      "Fell Stinger exploits nothing: there is no other creature to sacrifice.",
+      "No: You don't draw."
+    ],
+    "cite": [
+      "702.110a"
+    ]
+  },
+  {
+    "id": "kw-bloodthirst-after-bolt",
+    "text": "I cast Lightning Bolt at the opponent's face, then I cast Carnage Wurm. How big is Carnage Wurm?",
+    "expect": [
+      "Carnage Wurm enters with 3 +1/+1 counters (bloodthirst); it's 9/9.",
+      "Carnage Wurm is 9/9 (6/6 base, 3 +1/+1 counters)."
+    ],
+    "cite": [
+      "702.54a",
+      "120.3a"
+    ]
+  },
+  {
+    "id": "kw-bloodthirst-nobody-hurt",
+    "text": "I cast Carnage Wurm. How big is it?",
+    "expect": [
+      "Carnage Wurm enters with no counters: no opponent was dealt damage this turn (bloodthirst).",
+      "Carnage Wurm is 6/6."
+    ],
+    "cite": [
+      "702.54a"
+    ]
+  },
+  {
+    "id": "kw-backup-hexproof-to-bears",
+    "text": "I have a Grizzly Bears. I cast Saiba Cryptomancer targeting the Grizzly Bears. Does the Grizzly Bears have hexproof?",
+    "expect": [
+      "Grizzly Bears has 1 +1/+1 counter.",
+      "Grizzly Bears gains Hexproof until end of turn.",
+      "Yes: Grizzly Bears has hexproof."
+    ],
+    "cite": [
+      "702.165a"
+    ]
+  },
+  {
+    "id": "kw-backup-on-itself-gains-nothing",
+    "text": "I cast Saiba Cryptomancer with no other creatures. How big is it?",
+    "expect": [
+      "Saiba Cryptomancer has 1 +1/+1 counter.",
+      "Saiba Cryptomancer is 1/2 (0/1 base, 1 +1/+1 counter)."
+    ],
+    "cite": [
+      "702.165a"
+    ]
+  },
+  {
+    "id": "kw-mentor-counter-on-lesser-attacker",
+    "text": "I attack with Barging Sergeant and my Grizzly Bears. How much damage does the opponent take?",
+    "expect": [
+      "Grizzly Bears has 1 +1/+1 counter.",
+      "opponent takes 4 damage.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "702.134a"
+    ]
+  },
+  {
+    "id": "kw-mentor-equal-power-no-target",
+    "text": "I attack with Barging Sergeant and a 4/4 creature. Does the 4/4 get a counter?",
+    "expect": [
+      "opponent takes 4 damage. (×2)"
+    ],
+    "notExpect": [
+      "has 1 +1/+1 counter"
+    ],
+    "cite": [
+      "508.1a"
+    ]
   }
 ]

@@ -147,6 +147,27 @@ object OracleParser {
                         // Saddle works like crew, but the Mount is already a creature: saddling only turns on
                         // what its own text does while saddled (702.166a).
                         "saddle" -> abilities += ActivatedAbility(part.trimEnd('.') + " (tap any number of other untapped creatures you control with total power N or more)", Effect.SaddleSelf, part)
+                        // Extort (702.101a): each spell cast triggers a payment of {W/B}; if it's paid, a one-life drain.
+                        "extort" -> abilities += TriggeredAbility(Trigger.SpellCast(Who.YOU), Effect.IfYouDo(Effect.Narrated("pay {W/B}", listOf("702.101a")), Effect.Seq(listOf(Effect.LoseLife(Who.EACH_OPPONENT, 1), Effect.GainLifeLostThisWay)), "{W/B}"),
+                            "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)")
+                        // Exploit (702.110a): sacrificing a creature as the enters-trigger resolves is what "exploits a creature" (702.110b).
+                        "exploit" -> abilities += TriggeredAbility(Trigger.ThisEnters, Effect.May(Effect.Exploit), "Exploit (When this creature enters, you may sacrifice a creature.)")
+                        // Mentor (702.134a): a counter on an attacking creature that has less power than this one.
+                        "mentor" -> abilities += TriggeredAbility(Trigger.ThisAttacks, Effect.Mentor(TargetSpec(ObjFilter(setOf(Kind.CREATURE), attacking = true, raw = "attacking creature with lesser power"), "attacking creature with lesser power")),
+                            "Mentor (Whenever this creature attacks, put a +1/+1 counter on target attacking creature with lesser power.)")
+                        // Bloodthirst N (702.54a): enters with N +1/+1 counters if an opponent was dealt damage this turn.
+                        "bloodthirst" -> {
+                            val n = part.substringAfter(' ').trim().trimEnd('.').toIntOrNull()
+                            if (n == null) abilities += StaticAbility(part, kw)
+                            else abilities += StaticAbility("Bloodthirst $n (If an opponent was dealt damage this turn, this creature enters with $n +1/+1 counters on it.)", null, listOf(StaticEffect.EntersWithCounters("+1/+1", n, onlyIfOpponentDamaged = true)))
+                        }
+                        // Backup N (702.165a): what it grants is whatever is printed below it; filled in once the card's other lines are read.
+                        "backup" -> {
+                            val n = part.substringAfter(' ').trim().trimEnd('.').toIntOrNull()
+                            if (n == null) abilities += StaticAbility(part, kw)
+                            else abilities += TriggeredAbility(Trigger.ThisEnters, Effect.Backup(TargetSpec(ObjFilter(setOf(Kind.CREATURE), raw = "creature"), "creature"), n, emptySet(), ""),
+                                "Backup $n (When this creature enters, put ${if (n == 1) "a +1/+1 counter" else "$n +1/+1 counters"} on target creature. If that's another creature, it gains the following abilities until end of turn.)")
+                        }
                         else -> abilities += StaticAbility(part, kw)
                     }
                 }
@@ -160,6 +181,13 @@ object OracleParser {
             }
         }
         if (isSpell && spellLines.isNotEmpty()) spellEffect = parseEffect(spellLines.joinToString(" "))
+        // Backup (702.165a): the abilities printed below the backup ability are what another creature gains.
+        abilities.indexOfFirst { it is TriggeredAbility && it.effect is Effect.Backup }.takeIf { it >= 0 }?.let { bi ->
+            val ta = abilities[bi] as TriggeredAbility; val bk = ta.effect as Effect.Backup
+            val below = abilities.drop(bi + 1)
+            val kwBelow = below.filterIsInstance<StaticAbility>().mapNotNull { it.keyword?.takeIf { k -> k in keywordList } }.toSet()
+            abilities[bi] = ta.copy(effect = bk.copy(keywords = kwBelow, grantedText = below.joinToString("; ") { it.text.trimEnd('.') }))
+        }
         val kws = keywords.map { it.lowercase() }.toSet()
         // Basic land types carry intrinsic mana abilities (305.6): "({T}: Add {G} or {U}.)" is reminder text, so add them from the type line.
         if ("Land" in types) for (sub in subs) basicLandMana[sub]?.let { sym -> if (abilities.none { it is ActivatedAbility && it.cost == "{T}" && (it.effect as? Effect.AddMana)?.text == sym }) abilities += ActivatedAbility("{T}", Effect.AddMana(sym), "{T}: Add $sym. (intrinsic, from being ${if (sub.first() in "AEIOU") "an" else "a"} $sub)") }
@@ -424,6 +452,7 @@ object OracleParser {
         if (Regex("""^~ dies$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisDies
         if (Regex("""^~ leaves the battlefield$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisLeavesBattlefield
         if (Regex("""^~ attacks(?: an opponent| a player)?$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisAttacks
+        if (Regex("""^~ exploits a creature$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisExploits
         return Trigger.Unknown(c)
     }
 
@@ -1494,6 +1523,12 @@ object OracleParser {
         Regex("""^return (?:all|each) (.+?) to (?:their owners?' hands?|its owner's hand|their owner's hands?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> val f = parseFilter(m.groupValues[1], Kind.PERMANENT); if (f.verifiable) return Effect.ForAll(f, "bounce") }
         // "Each player discards their hand." on its own.
         if (Regex("""^each player discards (?:their|his or her) hand\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.DiscardHand(Who.EACH_PLAYER)
+        // "Target player draws two cards and loses 2 life." (Fell Stinger, Phyrexian Arena's kin)
+        Regex("""^(target player|you) draws? (a|\w+|\d+) cards? and loses? (\d+|\w+) life\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val who = if (m.groupValues[1].equals("you", true)) Who.YOU else Who.TARGET_PLAYER
+            val n = number(m.groupValues[2]); val l = number(m.groupValues[3])
+            if (n != null && l != null) return Effect.Seq(listOf(Effect.Draw(who, n), Effect.LoseLife(who, l)))
+        }
         // "Each player discards their hand, then draws seven cards." (Wheel of Fortune, Windfall-style)
         Regex("""^each player discards (?:their|his or her) hand, then draws (\w+|\d+) cards?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             number(m.groupValues[1])?.let { return Effect.Seq(listOf(Effect.DiscardHand(Who.EACH_PLAYER), Effect.Draw(Who.EACH_PLAYER, it))) }

@@ -12,6 +12,8 @@ class Player(val id: String, val name: String, var life: Int?) {
     /** Veil of Summer: colours this player has hexproof from until end of turn. */
     val hexproofFrom = mutableSetOf<Char>()
     var drew = 0
+    /** Dealt damage this turn (Bloodthirst, 702.54a); cleared in the cleanup step. */
+    var damagedThisTurn = false
     /** Cards drawn this turn, for "can't draw more than one card each turn" (Narset). */
     var drewThisTurn = 0
     var lost = false

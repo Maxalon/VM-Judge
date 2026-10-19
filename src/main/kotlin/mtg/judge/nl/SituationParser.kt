@@ -4993,6 +4993,16 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", player = "me", to = "handNow")
             return true
         }
+        // "I cast Fell Stinger and exploit my Grizzly Bears": the creature sacrificed as the exploit ability resolves (702.110a).
+        Regex("""^(?:i |we |they |he |she )?(?:exploit|exploits|exploiting|sacrifice|sacrifices|sacrificing) (?:my |the |their )?(c\d+)(?: to (?:its |the )?exploit)?(?: targeting [a-z ]+)?$""").find(clause0)?.let { r ->
+            val castName = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name ?: return@let
+            val src = ctx.objects.values.lastOrNull { it.card.name == castName }?.id ?: slug(castName)
+            if (names.lookup(Names.normalize(castName))?.keywords?.contains("Exploit", true) != true) return@let
+            val victim = m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) ?: addObject(it, "me", false, ctx) } ?: return@let
+            val at = ctx.events.indexOfLast { it.verb == "cast" }   // before the cast: later words about its targets rewrite the last event
+            ctx.events.add(at, EventSpec("choose", player = ctx.events[at].player, obj = src, to = "exploit:$victim"))
+            ctx.notes += "\"${restore(clause0, m)}\" is read as the creature sacrificed to the exploit ability."; return true
+        }
         // "Does my Thalia still tax their spells?" under Humility: the permanent's ability, asked of the permanent as it is now.
         Regex("""^abilityworks-question (c\d+|any) (tax)$""").find(clause0)?.let { r ->
             val id = if (r.groupValues[1] == "any") null else (m.cards[r.groupValues[1]] ?: return@let).let { card -> objectIdFor(card, ctx) ?: addObject(card, "me", false, ctx) }
