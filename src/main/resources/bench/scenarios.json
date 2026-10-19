@@ -42126,5 +42126,201 @@
     "cite": [
       "903.10a"
     ]
+  },
+  {
+    "id": "ct1",
+    "text": "My creature has two +1/+1 counters and gets one -1/-1 counter. What does it have now?",
+    "expect": [
+      "a creature has 1 +1/+1 counter."
+    ],
+    "cite": [
+      "704.5q"
+    ]
+  },
+  {
+    "id": "ct2",
+    "text": "My Kitchen Finks with persist comes back with a -1/-1 counter. I then put a +1/+1 counter on it. Does it persist again if it dies?",
+    "expect": [
+      "Yes: Kitchen Finks has no -1/-1 counter on it now",
+      "persist returns it again"
+    ],
+    "cite": [
+      "704.5q",
+      "702.79a"
+    ]
+  },
+  {
+    "id": "ct3",
+    "text": "My Kitchen Finks has both persist and undying from Mikaeus, the Unhallowed. It dies with no counters. What happens?",
+    "expect": [
+      "Kitchen Finks comes back with a +1/+1 counter (undying)",
+      "Kitchen Finks's persist does nothing"
+    ],
+    "cite": [
+      "603.3b",
+      "400.7",
+      "702.79a",
+      "702.93a"
+    ]
+  },
+  {
+    "id": "ct4",
+    "text": "My opponent attacks my Jace, the Mind Sculptor with 3 loyalty with a 2/2 and casts Lightning Bolt on Jace too. Does he die?",
+    "expect": [
+      "deals no combat damage: Jace, the Mind Sculptor, which it was attacking, left the battlefield",
+      "Yes: Jace, the Mind Sculptor died"
+    ],
+    "cite": [
+      "506.4c",
+      "704.5i",
+      "306.8"
+    ]
+  },
+  {
+    "id": "ct5",
+    "text": "I control The Chain Veil and activate it. Can I use Jace, the Mind Sculptor's ability twice this turn?",
+    "expect": [
+      "can be activated a second time this turn"
+    ],
+    "notExpect": [
+      "can't be activated: a loyalty ability"
+    ],
+    "cite": [
+      "606.3"
+    ]
+  },
+  {
+    "id": "ct6",
+    "text": "I control Doubling Season and activate Jace, the Mind Sculptor's +2. How many loyalty counters does it get?",
+    "expect": [
+      "Doubling Season doesn't double the +2",
+      "Jace, the Mind Sculptor has 5 loyalty counters."
+    ],
+    "cite": [
+      "609.1",
+      "606.4"
+    ]
+  },
+  {
+    "id": "ct7",
+    "text": "I proliferate with 3 poison counters on my opponent and a +1/+1 counter on my creature. What happens?",
+    "expect": [
+      "a creature has 2 +1/+1 counters.",
+      "opponent has 4 poison counters."
+    ],
+    "cite": [
+      "701.34a"
+    ]
+  },
+  {
+    "id": "ct8",
+    "text": "I cast Clone copying a creature with three +1/+1 counters. Does the Clone have the counters?",
+    "expect": [
+      "Clone doesn't get a creature's 3 +1/+1 counters"
+    ],
+    "cite": [
+      "707.2"
+    ]
+  },
+  {
+    "id": "ct9",
+    "text": "My Walking Ballista has one counter and I remove the last one in response to removal. What happens to it?",
+    "expect": [
+      "Walking Ballista: the battlefield → your graveyard.",
+      "opponent takes 1 damage."
+    ],
+    "cite": [
+      "117.5",
+      "704.5f",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "ct10",
+    "text": "I cast Giant Growth on my opponent's Grizzly Bears with a -1/-1 counter. What are its power and toughness?",
+    "expect": [
+      "Grizzly Bears is 4/4 (2/2 base, +3/+3 until end of turn, 1 -1/-1 counter)."
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "ct11",
+    "text": "I have 10 energy counters. Does anything happen? Can my opponent remove them?",
+    "expect": [
+      "Nothing happens: you just have 10 energy counters.",
+      "Your opponent can't remove them just by choosing to"
+    ],
+    "cite": [
+      "122.1",
+      "107.14"
+    ]
+  },
+  {
+    "id": "ct12",
+    "text": "My opponent controls a planeswalker and I control Vorinclex, Monstrous Raider. My opponent activates their planeswalker's +1 ability. How many loyalty counters does it get?",
+    "expect": [
+      "a planeswalker gets 0 loyalty counters instead of 1",
+      "a planeswalker has 4 loyalty counters."
+    ],
+    "cite": [
+      "606.4",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "ct13",
+    "text": "My planeswalker has 3 loyalty and I activate its -3 ability. Does the ability still resolve?",
+    "expect": [
+      "Yes: a planeswalker's ability was already on the stack",
+      "a planeswalker: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "is tapped",
+      "stops being a copy"
+    ],
+    "cite": [
+      "704.5i",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "ct14",
+    "text": "My opponent's creature has a +1/+1 counter and I turn it into a 3/3 Elk with Oko, Thief of Crowns. Is it a 4/4?",
+    "expect": [
+      "a creature is 4/4 (3/3 base, 1 +1/+1 counter)."
+    ],
+    "cite": [
+      "613.4b",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "ct15",
+    "text": "My creature with a stun counter would untap during my untap step. What happens?",
+    "expect": [
+      "a creature stays tapped: a stun counter is removed from it instead of it untapping"
+    ],
+    "notExpect": [
+      "a creature untaps."
+    ],
+    "cite": [
+      "122.1d"
+    ]
+  },
+  {
+    "id": "ct16",
+    "text": "My Grizzly Bears has two +1/+1 counters. My opponent puts a -1/-1 counter on it. What counters does it have?",
+    "expect": [
+      "Grizzly Bears has 1 +1/+1 counter.",
+      "it's 3/3 with 1 +1/+1 counter left"
+    ],
+    "notExpect": [
+      "Grizzly Bears has 1 -1/-1 counter."
+    ],
+    "cite": [
+      "704.5q"
+    ]
   }
 ]

@@ -2106,6 +2106,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = counterRewrites(t2, m, ctx)
         t2 = lkiRewrites(t2, m, ctx)
         t2 = targetRewrites(t2, m, ctx)
         t2 = zoneRewrites(t2, m, ctx)
@@ -5556,6 +5557,98 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** The "zn-question …" markers [zoneRewrites] leaves, and the follow-up questions they already answer. */
+    /**
+     * Counters and planeswalkers (122, 306, 606, 701.34, 702.79, 702.93): table talk about counters said as one
+     * sentence, rewritten into the facts and events the rest of the parser reads, or a "ct-question" marker.
+     */
+    private fun counterRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val ic = RegexOption.IGNORE_CASE
+        val opp = """(?:my opponent|the opponent|they|he|she)"""
+        var t2 = t.trim()
+        val countersSaid = Regex("""\bcounters?\b""", ic).containsMatchIn(ctx.fullText)
+        // "My creature has two +1/+1 counters and gets a -1/-1 counter. What does it have now?": its counters.
+        if (countersSaid) t2 = t2.replace(Regex("""^what (?:counters )?(?:does|do) (it|c\d+|(?:my|their|the) c\d+) (?:have|have on it|end up with|end up having)(?: now| left| then| afterwards)?\??$""", ic)) { r -> "how many counters does ${r.groupValues[1]} have" }
+        // "How many loyalty counters does it get?" after a loyalty ability: the planeswalker activated last.
+        if (Regex("""^how many loyalty(?: counters)? (?:does|did|will) (?:it|the planeswalker|(?:my |their )?c\d+) (?:get|end up with|have)(?: now)?\??$""", ic).matches(t2) && ctx.events.any { it.verb == "activate" }) return "ct-question loyalty"
+        // "Does it persist again if it dies?": whether persist or undying would return it next time.
+        if (Regex("""^(?:does|will|would|can) (?:it|(?:my |their |the )?c\d+) (?:still )?(?:persist|undying|come back|return)(?: again)?(?: to the battlefield)?(?: again)? (?:if|when|once) it dies(?: again)?\??$""", ic).matches(t2)) return "ct-question again"
+        // "My Kitchen Finks has both persist and undying from Mikaeus, the Unhallowed": the lord that grants undying is on the battlefield.
+        Regex("""^(my|their|his|her) (c\d+) has (?:both )?persist and undying (?:from|thanks to|because of|via) (?:my |their )?(c\d+)$""", ic).find(t2)?.let { r ->
+            return if (r.groupValues[1].lowercase() == "my") "i control ${r.groupValues[3]} and ${r.groupValues[2]}" else "my opponent controls ${r.groupValues[3]} and ${r.groupValues[2]}" }
+        // "It dies with no counters (on it)": it dies; having none is what the board already says.
+        t2 = t2.replace(Regex("""^(it|c\d+|(?:my|their) c\d+) (dies|is destroyed) with no counters(?: on it)?$""", ic), "$1 $2")
+        // "My opponent attacks my Jace (3 loyalty) with a 2/2": the planeswalker's loyalty first, then the attack at it.
+        Regex("""^($opp) attacks (?:my|our) (c\d+)(?: with (\d+) loyalty| \((\d+) loyalty\))? with (?:an? )?(\d+/\d+|c\d+)(?: creature)?((?:,? and | and then ).+)?$""", ic).find(t2)?.let { r ->
+            val loyalty = r.groupValues[3].ifEmpty { r.groupValues[4] }
+            val att = r.groupValues[5].let { if (it.startsWith("c")) it else "a $it creature" }
+            return "${if (loyalty.isNotEmpty()) "my ${r.groupValues[2]} has $loyalty loyalty, " else ""}${r.groupValues[1]} attacks my ${r.groupValues[2]} with $att${r.groupValues[6]}" }
+        // "I proliferate with 3 poison counters on my opponent and a +1/+1 counter on my creature": the counters, then proliferate.
+        Regex("""^(i|we) proliferate(?:,)? with (.+?)\??$""", ic).find(t2)?.let { r ->
+            val parts = r.groupValues[2].split(Regex(""",? and |, """)).map { p -> Regex("""^(an?|one|two|three|\d+) (\S+) counters? on (.+)$""", ic).find(p.trim()) ?: return@let }
+            return parts.joinToString(", ") { p -> "${p.groupValues[3]} ${if (Regex("""^(?:my opponent|the opponent|them|him|her|they)$""", ic).matches(p.groupValues[3])) "has" else "has"} ${p.groupValues[1]} ${p.groupValues[2]} counter${if (p.groupValues[1].lowercase() in setOf("a", "an", "one", "1")) "" else "s"}" }
+                .replace(Regex("""^(?:them|him|her|they) has""", ic), "my opponent has") + ", ${r.groupValues[1]} proliferate" }
+        // "I cast Clone copying a creature with three +1/+1 counters": the creature and its counters, then the Clone at it.
+        Regex("""^(i|we) cast (c\d+) copying (an?|their|my opponent's|the opponent's|my) (creature|c\d+|\d+/\d+(?: creature)?) with (an?|one|two|three|four|five|\d+) ([+-]1/[+-]1) counters?(?: on it)?\??$""", ic).find(t2)?.let { r ->
+            val whose = when (r.groupValues[3].lowercase()) { "a", "an" -> { ctx.notes += "Whose creature it is wasn't said; it's taken to be your opponent's (it doesn't change what the copy gets)."; "their" }; else -> r.groupValues[3] }
+            return "$whose ${r.groupValues[4]} has ${r.groupValues[5]} ${r.groupValues[6]} counters, ${r.groupValues[1]} cast ${r.groupValues[2]} copying it" }
+        // "My Walking Ballista has one counter and I remove the last one in response to removal": the removal, then the
+        // Ballista's own "remove a counter" ability in response.
+        Regex("""^my (c\d+) has (?:one|1|a|a single) (?:\+1/\+1 )?counter(?: on it)?(?:,)? and i remove (?:the last one|it|that counter|the last counter|its last counter)(?: in response to (?:the |a |their )?removal(?: spell)?| in response)?$|^my (c\d+) has (?:0|no) counters(?: on it)?(?: left)? after (?:i remove|removing) (?:the last one|its last counter|the last counter) in response to (?:the |a |their )?removal(?: spell)?$""", ic).find(t2)?.let { r ->
+            val b = r.groupValues[1].ifEmpty { r.groupValues[2] }
+            ctx.notes += "\"Removal\" is read as a spell that destroys the creature, and the counter as removed by its own ability, aimed at your opponent."
+            return "my $b has 1 +1/+1 counter, my opponent casts a removal spell targeting $b, in response i activate $b targeting my opponent" }
+        // "What are its power and toughness?": the "and" would split it into two questions.
+        t2 = t2.replace(Regex("""^what (?:are|is|'s) (its|(?:my |their |the )?c\d+(?:'s)?) power and toughness(?: now| then)?\??$""", ic)) { r -> if (r.groupValues[1] == "its") "how big is it" else "how big is ${r.groupValues[1].removeSuffix("'s")}" }
+        // "I have 10 energy counters": counters on a player that no rule acts on (122.1).
+        Regex("""^(i|we|my opponent|they|he|she) (?:have|has|got|gets?) (\d+|an?|one|two|three|four|five|six|seven|eight|nine|ten) energy(?: counters?)?$""", ic).find(t2)?.let { r ->
+            val who = if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else "opp"
+            return "ct-question energy ${number(r.groupValues[2]) ?: 1} $who" }
+        if (Regex("""\benergy\b""", ic).containsMatchIn(ctx.fullText) && Regex("""^(?:does|will) anything happen|^can (?:my opponent|the opponent|they|he|she) (?:remove|take|get rid of) (?:them|those|my energy|the energy|it)\??$""", ic).containsMatchIn(t2)) return "ct-question ack"
+        // "My creature with a stun counter would untap during my untap step": tapped, with the counter, in that untap step.
+        Regex("""^(my|their) (creature|c\d+|\d+/\d+(?: creature)?) (?:with|that has) (an?|one|two|three|\d+) stun counters?(?: on it)? (?:would|is about to|should|is going to) untap(?: during (?:my|their|its controller's) (?:next )?untap step)?\??$""", ic).find(t2)?.let { r ->
+            val turn = if (r.groupValues[1].lowercase() == "my") "my" else "their"
+            return "${r.groupValues[1]} ${r.groupValues[2]} is tapped and has ${r.groupValues[3]} stun counter${if (r.groupValues[3].lowercase() in setOf("a", "an", "one", "1")) "" else "s"}, it's $turn untap step" }
+        // "I turn it into a 3/3 Elk with Oko, Thief of Crowns": Oko's +1 aimed at it.
+        t2 = t2.replace(Regex("""(?<=^|, |and |then )(i|we|$opp) (?:turns?|makes?) (it) into an? (?:\d+/\d+ )?(?:green )?elk(?: creature)? with (c\d+)(?:'s \+1(?: ability)?)?$""", ic)) { r ->
+            val you = r.groupValues[1].lowercase() in setOf("i", "we")
+            "${r.groupValues[1]} ${if (you) "activate" else "activates"} ${r.groupValues[3]}'s +1 targeting ${r.groupValues[2]}" }
+        // "Their creature … is turned into a 3/3 Elk by Oko": the same, said the other way round (Oko is the asker's unless said).
+        t2 = t2.replace(Regex("""(?<=^|, |and |then )(?:it )?(?:is|gets) turned into an? (?:\d+/\d+ )?(?:green )?elk(?: creature)? by (my |their |his |her |my opponent's )?(c\d+)(?:'s \+1(?: ability)?)?$""", ic)) { r ->
+            if (r.groupValues[1].trim().lowercase() in setOf("their", "his", "her", "my opponent's")) "my opponent activates ${r.groupValues[2]}'s +1 targeting it" else "i activate ${r.groupValues[2]}'s +1 targeting it" }
+        // "My opponent activates their planeswalker's +1 ability": the planeswalker nobody named, by the cost.
+        Regex("""^(i|we|$opp) activates? (?:the|their|his|her|my|our) planeswalker's ([+-]\d+)(?: loyalty)?(?: ability)?$""", ic).find(t2)?.let { r ->
+            return "ct-question pwact ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else "opp"} ${r.groupValues[2]}" }
+        return t2
+    }
+
+    /** The "ct-question" markers counterRewrites leaves (counters on players, loyalty, persist and undying next time). */
+    private fun readCounterQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        if (!c.startsWith("ct-question ")) return null
+        val parts = c.removePrefix("ct-question ").split(' ')
+        when (parts[0]) {
+            "ack" -> {}
+            "again" -> {
+                val o = ctx.objects.values.lastOrNull { o -> o.card.name?.let { n -> names.lookup(Names.normalize(n)) }?.keywords?.let { k -> k.contains("persist", true) || k.contains("undying", true) } == true }
+                    ?: ctx.lastMentioned?.let { ctx.objects[it] } ?: return false
+                ctx.asks += EventSpec("ask", obj = o.id, to = "ct:returnsAgain")
+            }
+            "energy" -> ctx.asks += EventSpec("ask", player = parts.getOrNull(2) ?: "me", to = "ct:energy:${parts.getOrNull(1) ?: "1"}")
+            // "My opponent activates their planeswalker's +1 ability": that player's planeswalker, by the cost.
+            "pwact" -> {
+                val who = parts.getOrNull(1)?.let { if (it == "opponent") "opp" else it } ?: "me"; val cost = parts.getOrNull(2) ?: return false
+                val pw = ctx.objects.values.lastOrNull { o -> o.controller == who && o.zone == "battlefield" && (o.card.name?.lowercase()?.contains("planeswalker") == true || o.card.name?.let { n -> names.lookup(Names.normalize(n)) }?.typeLine?.contains("Planeswalker") == true) } ?: return false
+                ctx.events += EventSpec("activate", player = who, obj = pw.id, to = cost); ctx.lastActor = who; ctx.lastVerb = "activate"; ctx.lastMentioned = pw.id
+            }
+            "loyalty" -> {
+                val id = ctx.events.lastOrNull { it.verb == "activate" && it.obj?.let { o -> ctx.objects[o] } != null }?.obj ?: return false
+                ctx.asks += EventSpec("ask", obj = id, to = "counters")
+            }
+            else -> return false
+        }
+        return true
+    }
+
     private fun readZoneQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         val c = clause0.trim()
         fun text(s: String) { ctx.asks += EventSpec("ask", to = "text:$s") }
@@ -6288,6 +6381,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readCounterQuestions(clause0, m, ctx)?.let { return it }
         readLkiQuestions(clause0, m, ctx)?.let { return it }
         readTargetQuestions(clause0, m, ctx)?.let { return it }
         readZoneQuestions(clause0, m, ctx)?.let { return it }

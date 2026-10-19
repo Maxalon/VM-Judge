@@ -781,9 +781,21 @@ class Engine(val state: GameState) {
         val hold = mutableListOf<Pair<String, () -> Unit>>()
         val outer = triggerHold
         triggerHold = hold
-        try { return activate0(playerId, objectId, abilityIndex, targets, choice, x, payLife) }
-        finally { triggerHold = outer; flushTriggers(hold) }
+        try {
+            val item = activate0(playerId, objectId, abilityIndex, targets, choice, x, payLife)
+            // "Ballista removes its last counter", "Jace −3 from 3": the cost left it at 0 toughness or 0 loyalty. State-based
+            // actions are checked before anyone gets priority, so it's gone before the ability resolves; the ability
+            // still resolves on its own (113.7a).
+            if (item != null && costLeftDying) {
+                trace.step("Paying the cost left ${state.objects[objectId]?.name ?: "it"} ${if (state.objects[objectId]?.def?.isPlaneswalker == true && !state.isCreature(state.objects.getValue(objectId))) "with 0 loyalty" else "with 0 toughness"}. State-based actions are checked before any player receives priority, so it's put into its owner's graveyard now, with the ability still on the stack. The ability exists independently of its source and still resolves.", "117.5", "704.3", "113.7a")
+                stateBasedActions()
+            }
+            return item
+        }
+        finally { costLeftDying = false; triggerHold = outer; flushTriggers(hold) }
     }
+    /** A cost just paid left its permanent dying to a state-based action (0 toughness, 0 loyalty). */
+    private var costLeftDying = false
 
     private fun activate0(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
         val obj = state.obj(objectId)
@@ -912,6 +924,7 @@ class Engine(val state: GameState) {
             if (left == 0) onEvent(GameEvent.CountersGone(obj, kind))
             trace.step("${p.subject} ${p.v("removes", "remove")} $n $kind counter${if (n == 1) "" else "s"} from ${obj.name} as the cost ($left left${if (state.isCreature(obj) && obj.isOnBattlefield()) "; it's now ${obj.power}/${obj.toughness}" else ""}). A cost is paid as the ability is activated, so the counter is gone before the ability resolves.", "602.2b", "122.5")
             state.outcomes += "${obj.name}: $n $kind counter${if (n == 1) "" else "s"} removed as the cost ($left left)."
+            costLeftDying = costLeftDying || (state.isCreature(obj) && (obj.toughness ?: 1) <= 0)
         }
         // "Crew 1" paid with a named creature: it taps, and its power has to cover the crew number.
         choice?.takeIf { it.startsWith("crew:") }?.removePrefix("crew:")?.let { cid -> state.objects[cid] }?.let { crew ->
@@ -925,16 +938,14 @@ class Engine(val state: GameState) {
         }
         (ability.loyaltyCost ?: if (ability.loyaltyCostIsX) -(x ?: 0) else null)?.let { lc ->
             if (ability.loyaltyCostIsX) trace.step("X is ${x ?: 0}, so the −X costs ${x ?: 0} loyalty.", "107.3a", "606.4")
-            if (obj.id in state.loyaltyUsedThisTurn) {
-                trace.step("One of ${obj.name}'s loyalty abilities has already been activated this turn, and a planeswalker's loyalty abilities can be activated only once per turn in total. ${ability.cost} can't be activated now.", "606.3")
-                state.outcomes += "${obj.name}'s ${ability.cost} can't be activated: a loyalty ability of it was already activated this turn (606.3)."
-                return null
-            }
-            state.loyaltyUsedThisTurn += obj.id
+            if (!CounterRules.mayActivateLoyalty(this, obj, playerId, ability.cost)) return null   // one per turn (606.3), The Chain Veil
             val have = obj.counters["loyalty"] ?: 0
             if (lc < 0 && have < -lc) { trace.step("${obj.name} has $have loyalty and can't pay the ${lc} loyalty cost.", "606.6"); state.outcomes += "${obj.name}'s $lc ability can't be activated (not enough loyalty)."; return null }
-            obj.counters["loyalty"] = have + lc
-            trace.step("${state.player(playerId).subject} ${state.player(playerId).v("activates", "activate")} ${obj.name}'s ${ability.cost} loyalty ability, ${if (lc >= 0) "putting $lc loyalty counter${if (lc == 1) "" else "s"} on it" else "removing ${-lc} loyalty counter${if (lc == -1) "" else "s"} from it"} (now ${obj.counters["loyalty"]}). Loyalty abilities can be activated only at sorcery speed and once per turn per permanent.", "606.4", "606.3")
+            // Doubling Season doesn't touch a cost; Vorinclex does (CounterRules.loyaltyCostCounters).
+            val put = CounterRules.loyaltyCostCounters(this, obj, playerId, lc)
+            obj.counters["loyalty"] = have + put
+            trace.step("${state.player(playerId).subject} ${state.player(playerId).v("activates", "activate")} ${obj.name}'s ${ability.cost} loyalty ability, ${if (lc >= 0) "putting $put loyalty counter${if (put == 1) "" else "s"} on it" else "removing ${-lc} loyalty counter${if (lc == -1) "" else "s"} from it"} (now ${obj.counters["loyalty"]}). Loyalty abilities can be activated only at sorcery speed and once per turn per permanent.", "606.4", "606.3")
+            costLeftDying = costLeftDying || (lc < 0 && have + lc == 0)
         }
         // "I have Scavenging Ooze and no mana. Can I exile it?": the mana part of the cost against the mana stated (118.3, 602.2b).
         run {
@@ -1443,8 +1454,9 @@ class Engine(val state: GameState) {
             for (o in frozen) { o.skipNextUntap = false
                 if (o.kwf.exerted) { o.kwf.exerted = false; trace.step("${o.name} was exerted, so it doesn't untap during this untap step (its controller's next one); it untaps normally in the untap step after this.", "701.43a", "502.3"); state.outcomes += "${o.name} stays tapped: it was exerted, so it doesn't untap during this untap step (701.43a)." }
                 else { trace.step("${o.name} doesn't untap: an effect said it doesn't untap during this untap step.", "502.3", "611.2a"); state.outcomes += "${o.name} stays tapped (it doesn't untap this untap step)." } }
-            val wereTapped = (mine - held.toSet() - frozen.toSet()).filter { it.tapped == true }
-            (mine - held.toSet() - frozen.toSet()).forEach { it.tapped = false; it.summoningSick = false; it.attacking = null; it.blocking = null; it.alsoBlocking.clear() }
+            val stunned = CounterRules.stunned(this, mine - held.toSet() - frozen.toSet())   // stun counters (122.1d)
+            val wereTapped = (mine - held.toSet() - frozen.toSet() - stunned.toSet()).filter { it.tapped == true }
+            (mine - held.toSet() - frozen.toSet() - stunned.toSet()).forEach { it.tapped = false; it.summoningSick = false; it.attacking = null; it.blocking = null; it.alsoBlocking.clear() }
             for (o in wereTapped) state.outcomes += "${o.name} untaps."
             // Seedborn Muse: another player's permanents untap in this player's untap step too.
             for (src in state.objects.values.filter { it.isOnBattlefield() && it.controller != activePlayer }) {
@@ -1798,7 +1810,10 @@ class Engine(val state: GameState) {
                 trace.step("${obj.name} has both +1/+1 and -1/-1 counters, so $n of each are removed (state-based action); it's now ${obj.power}/${obj.toughness}.", "704.3", "704.5q")
                 // Said in the trace only, a board that was nothing but a creature carrying both kinds of counter
                 // answered "nothing changes" — when removing them is the whole of what happens.
-                state.outcomes += "${obj.name}: $n +1/+1 and $n -1/-1 counter${if (n == 1) "" else "s"} are removed (704.5q); it's ${obj.power}/${obj.toughness}."
+                // "Bears with two +1/+1 counters gets a -1/-1 counter": the count said as the counter went on is stale now.
+                state.outcomes.removeAll { Regex("""^${Regex.escape(obj.name)} has \d+ [+-]1/[+-]1 counters?\.$""").matches(it) }
+                val left = listOf("+1/+1", "-1/-1").mapNotNull { k -> obj.counters[k]?.takeIf { it > 0 }?.let { "$it $k counter${if (it == 1) "" else "s"}" } }
+                state.outcomes += "${obj.name}: $n +1/+1 and $n -1/-1 counter${if (n == 1) "" else "s"} are removed (704.5q); it's ${obj.power}/${obj.toughness}${if (left.isEmpty()) " with no +1/+1 or -1/-1 counters" else " with ${left.joinToString(" and ")} left"}."
                 changed = true
             }
             // Creatures dying to the same state-based check die at once: each sees the others go (603.10a).
@@ -2129,6 +2144,13 @@ class Engine(val state: GameState) {
                     if (a.has("trample")) { trace.step("${a.name} was blocked but its blocker is gone; it has trample, so it assigns all $power damage to ${state.nameOf(a.attacking!!)}.", "702.19d"); hits += Hit(a, a.attacking!!, power) }
                     else { trace.step("${a.name} was blocked and its blocker has left combat. A blocked creature stays blocked, and without trample it assigns no combat damage at all.", "509.1h", "510.1c"); state.outcomes += "${a.name} deals no combat damage: its blocker left combat and it stays blocked." }
                 }
+                // "They attack my Jace with a 2/2 and Bolt him too": Jace left the battlefield, so he's removed from combat; the
+                // 2/2 is still attacking, but it attacks nothing and, unblocked, deals no combat damage (506.4c).
+                else if (blockers.isEmpty() && (a.attacking as? Ref.Obj)?.let { r -> state.objects[r.id]?.isOnBattlefield() != true } == true) {
+                    val gone = state.objects[(a.attacking as Ref.Obj).id]?.name ?: "the permanent it attacked"
+                    trace.step("$gone left the battlefield, so it was removed from combat. ${a.name} is still an attacking creature, but it isn't attacking any player, planeswalker or battle, so, unblocked, it deals no combat damage.", "506.4", "506.4c")
+                    state.outcomes += "${a.name} deals no combat damage: $gone, which it was attacking, left the battlefield (506.4c)."
+                }
                 else if (blockers.isEmpty()) { trace.step("${a.name} is unblocked and assigns $power damage to ${state.nameOf(a.attacking!!)}.", "510.1b"); hits += Hit(a, a.attacking!!, power) }
                 else if (blockers.size == 1) {
                     val b = blockers[0]
@@ -2457,6 +2479,19 @@ class Engine(val state: GameState) {
     private fun undyingOrPersist(obj: GameObject, undying: Boolean, persist: Boolean) {
         if (!undying && !persist) return
         if (obj.zone != Zone.GRAVEYARD) return
+        // "Kitchen Finks with undying from Mikaeus dies with no counters": each keyword is its own trigger and both go on
+        // the stack (603.3b). Persist goes first so undying, on top, resolves first and returns it; persist then finds no
+        // card in the graveyard to return (400.7).
+        if (undying && persist && (obj.counters["+1/+1"] ?: 0) == 0 && (obj.counters["-1/-1"] ?: 0) == 0) {
+            trace.step("${obj.name} has both persist and undying, and it died with no counters on it, so both trigger. They are separate triggered abilities; ${state.player(obj.controller).subject.lowercase()} ${state.player(obj.controller).v("chooses", "choose")} the order they go on the stack. Whichever resolves first returns the card; the other then finds no card in the graveyard to return, since the returned permanent is a new object.", "702.79a", "702.93a", "603.3b", "400.7")
+            state.assumptions += "Undying is put on the stack above persist, so it resolves first and ${obj.name} returns with a +1/+1 counter (the other order returns it with a -1/-1 counter, 603.3b)."
+            undyingOrPersistOne(obj, false); undyingOrPersistOne(obj, true); return
+        }
+        if (undying) undyingOrPersistOne(obj, true)
+        if (persist) undyingOrPersistOne(obj, false)
+    }
+
+    private fun undyingOrPersistOne(obj: GameObject, undying: Boolean) {
         val kw = if (undying) "undying" else "persist"
         val kind = if (undying) "+1/+1" else "-1/-1"
         val had = obj.counters[kind] ?: 0
@@ -2482,9 +2517,11 @@ class Engine(val state: GameState) {
     private fun persistReturnNow(obj: GameObject, undying: Boolean) {
         val kw = if (undying) "undying" else "persist"
         val kind = if (undying) "+1/+1" else "-1/-1"
-        if (obj.zone != Zone.GRAVEYARD) {
-            trace.step("${obj.name} is no longer in the graveyard (it's in ${zoneName(obj.zone, obj)}), so its $kw ability does nothing when it resolves: there is no card there to return (400.7).", if (undying) "702.93a" else "702.79a", "400.7")
-            state.outcomes += "${obj.name} doesn't come back: it left the graveyard before $kw could return it."
+        if (obj.zone != Zone.GRAVEYARD || obj.successor != null) {
+            val now = obj.successor?.let { state.objects[it] }?.zone ?: obj.zone
+            trace.step("${obj.name} is no longer in the graveyard (it's ${if (now == Zone.BATTLEFIELD) "on" else "in"} ${zoneName(now, obj)}), so its $kw ability does nothing when it resolves: there is no card there to return (400.7).", if (undying) "702.93a" else "702.79a", "400.7")
+            state.outcomes += if (obj.successor != null) "${obj.name}'s $kw does nothing: the card already returned to the battlefield as a new object, so there is no card in the graveyard for it to return (400.7)."
+                else "${obj.name} doesn't come back: it left the graveyard before $kw could return it."
             return
         }
         val def = obj.def
@@ -3787,6 +3824,7 @@ class Engine(val state: GameState) {
             is Effect.Narrated -> {
                 if (Turns.resolve(this, effect.text, item)) return   // extra turns, skips, ending the turn, extra phases (Turns.kt)
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
+                if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 if (quellerReturns(effect, item)) return
                 // "that many": the count of what the previous part affected (Settle the Wreckage's exiled attackers).
@@ -3871,7 +3909,7 @@ class Engine(val state: GameState) {
                 o.transmogrifiedBy = item.source.name
                 o.def = o.def.copy(types = setOf("Creature"), subtypes = setOf(effect.subtype), colors = effect.color?.let { setOf(it) } ?: emptySet(), abilities = emptyList(), keywords = emptySet(), power = effect.power, toughness = effect.toughness)
                 o.pumps.clear(); o.tempKeywords.clear(); o.basePt = null
-                trace.step("$was loses all abilities and becomes ${effect.color?.let { c -> mapOf('W' to "a white", 'U' to "a blue", 'B' to "a black", 'R' to "a red", 'G' to "a green")[c] } ?: "a"} ${effect.subtype} creature with base power and toughness ${effect.power}/${effect.toughness}: its types, colour and abilities are replaced (layers 4, 5 and 6) and its base size set (layer 7b). Counters and Auras on it stay, and it's still ${state.describePt(o)} now.", "613.1d", "613.1e", "613.1f", "613.4b")
+                trace.step("$was loses all abilities and becomes ${effect.color?.let { c -> mapOf('W' to "a white", 'U' to "a blue", 'B' to "a black", 'R' to "a red", 'G' to "a green")[c] } ?: "a"} ${effect.subtype} creature with base power and toughness ${effect.power}/${effect.toughness}: its types, colour and abilities are replaced (layers 4, 5 and 6) and its base size set (layer 7b). Counters and Auras on it stay${if ((o.counters["+1/+1"] ?: 0) + (o.counters["-1/-1"] ?: 0) > 0) "; its counters still apply on top of the new base, in layer 7c" else ""}, and it's ${state.describePt(o)} now.", "613.1d", "613.1e", "613.1f", "613.4b", *(if ((o.counters["+1/+1"] ?: 0) + (o.counters["-1/-1"] ?: 0) > 0) arrayOf("613.4c") else emptyArray()))
                 state.outcomes += "${o.name} is now ${effect.color?.let { c -> mapOf('W' to "a white", 'U' to "a blue", 'B' to "a black", 'R' to "a red", 'G' to "a green")[c] } ?: "a"} ${effect.subtype} creature with no abilities, ${state.describePt(o)}."
             } }
             is Effect.SpellCantBeCountered -> forEachLegalTarget(item, effect.target) { ref -> (ref as? Ref.Stack)?.let { r -> state.stack.firstOrNull { it.id == r.id } }?.let { sp ->
@@ -4564,7 +4602,8 @@ class Engine(val state: GameState) {
             trace.step("${obj.printedDef.name} leaves the battlefield as ${obj.def.subtypes.firstOrNull()?.let { "a $it" } ?: "a creature"} with no abilities; ${obj.transmogrifiedBy}'s effect applied to that permanent only, so in its new zone it is the card ${obj.printedDef.name} again, a new object with no memory of the effect.", "400.7")
             obj.def = obj.printedDef; obj.transmogrifiedBy = null
         }
-        if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.def !== obj.printedDef) {
+        // (A planeswalker nobody named that was only given the loyalty ability the asker used isn't a copy: CounterAsks.genericLoyalty.)
+        if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.def !== obj.printedDef && !(obj.printedDef.oracleId.startsWith("generic-") && obj.def.oracleId == obj.printedDef.oracleId)) {
             trace.step("${obj.printedDef.name} was a copy of ${obj.def.name}; the copy effect ends as it leaves the battlefield, so in its new zone it is ${obj.printedDef.name} again, a new object with no memory of what it was.", "400.7", "707.2")
             state.outcomes += if (obj.transformed) "${obj.def.name} turns back to its front face, ${obj.printedDef.name}, as it leaves the battlefield (712.8)." else "${obj.printedDef.name} stops being a copy of ${obj.def.name} as it leaves the battlefield."
             obj.def = obj.printedDef

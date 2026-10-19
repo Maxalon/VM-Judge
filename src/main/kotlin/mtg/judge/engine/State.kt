@@ -315,6 +315,8 @@ class GameState(
     val turns = TurnPlan()
     /** What zone changes this game have set up for later (see Zones.kt). */
     val zones = ZoneMemo()
+    /** Loyalty activations and The Chain Veil this turn (see CounterRules.kt). */
+    val counterMemo = CounterMemo()
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */
     val combatDamageMuted = mutableSetOf<String>()
     /** "… but there is no spell on the stack": said outright, so a mode needing a spell to target can be ruled out (700.2a). */

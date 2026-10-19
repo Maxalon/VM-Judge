@@ -616,6 +616,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 e.to?.takeIf { it.startsWith("sacrifice:") }?.removePrefix("sacrifice:")?.let { sacId ->
                     if (obj.def.abilities.filterIsInstance<ActivatedAbility>().none { a -> a.cost.contains("sacrifice", true) }) { engine.sacrifice(e.player ?: state.obj(sacId).controller, sacId); return }
                 }
+                CounterAsks.genericLoyalty(obj, e.to)   // "my planeswalker … its −3": a planeswalker nobody named
                 // "+1" / "-3" names a loyalty ability by its cost. "Ugin -3" with only a "−X" ability: X is 3.
                 val minusX = e.to?.takeIf { Regex("""^-\d+$""").matches(it.replace('\u2212', '-')) && obj.def.abilities.filterIsInstance<ActivatedAbility>().none { a -> a.cost.replace('\u2212', '-') == it.replace('\u2212', '-') } }
                     ?.let { c -> obj.def.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> a.cost.replace('\u2212', '-') == "-X" }.takeIf { it >= 0 }?.let { it to c.replace('\u2212', '-').removePrefix("-").toInt() } }
@@ -744,7 +745,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             "${o.name} isn't on the battlefield any more (${o.zone.name.lowercase().replace('_', ' ')}). While it was, it was its printed ${o.def.power}/${o.def.toughness} minus your life total: at ${state.player(o.owner).life} life, ${(o.def.power ?: 13) - state.player(o.owner).life!!}/${(o.def.toughness ?: 13) - state.player(o.owner).life!!}."
                         !o.isOnBattlefield() -> "${o.name} isn't on the battlefield."
                         state.notACreatureBecause(o) != null -> "${o.name} isn't a creature right now (${state.player(o.controller).possessive} ${state.notACreatureBecause(o)}), so it has no power or toughness. It's still an enchantment on the battlefield and keeps its other abilities."
-                        state.hasCreatureType(o) -> { ptLayerStep(o, state); "${if (o.printedDef.name != o.def.name && !o.token) "${o.printedDef.name} (copying ${o.def.name})" else o.name} is ${state.describePt(o)}." }
+                        state.hasCreatureType(o) -> { ptLayerStep(o, state); CounterAsks.layer7cStep(o, state); "${if (o.printedDef.name != o.def.name && !o.token) "${o.printedDef.name} (copying ${o.def.name})" else o.name} is ${state.describePt(o)}." }
                         state.outcomes.any { it.startsWith("${o.name} isn't a creature:") } -> return
                         else -> "${o.name} isn't a creature."
                     }
@@ -965,6 +966,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         WinLossAsks.describe(e, who)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         TargetAsks.describe(e, state, who)?.let { return it }
+        if (e.verb == "ask") CounterAsks.describe(e, state)?.let { return it }
         val tg = if (e.targets.isEmpty()) "" else " targeting " + e.targets.joinToString(" and ") { runCatching { state.nameOf(parseRef(it, state)) }.getOrDefault(it) }
         return when (e.verb.lowercase()) {
             "cast" -> { val land = e.card?.let { c -> runCatching { cardDef(c, state) }.getOrNull() }?.let { "Land" in it.types && !it.isInstantOrSorcery } == true
@@ -2247,6 +2249,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("lki:") == true) return LkiAsks.answer(e, state, engine)
                 if (e.to?.startsWith("tg:") == true) return TargetAsks.answer(e, state, engine, curEvents) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("cmd:") == true) return CommanderAsks.answer(e, state) { oid, n -> oid?.let { cards.byOracleId(it) } ?: n?.let { cards.resolve(it).best?.card } }
+                if (e.to?.startsWith("ct:") == true) return CounterAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

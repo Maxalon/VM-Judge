@@ -652,6 +652,7 @@ object OracleParser {
     fun parseStatic(line: String): List<StaticEffect> {
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
+        mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
         Regex("""^all cards that aren't on the battlefield, spells, and permanents are the chosen colou?r in addition to their other colou?rs\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EverythingIsChosenColour) }
@@ -1345,6 +1346,7 @@ object OracleParser {
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
+        mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
         WinLoss.parseSentence(s) { target(it, Kind.PLAYER) }?.let { return it }
         // Populate (701.36) and amass [subtype] N (701.47), alone or after "you lose N life and".
