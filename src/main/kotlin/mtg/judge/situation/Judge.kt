@@ -685,6 +685,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             muted != null -> "No: $muted stops it. ${o.name} entering doesn't cause any ability to trigger, its own included."
                             stripped != null -> "No: ${o.name} has no abilities under $stripped, so there is nothing to trigger."
                             diesReplacedAnswer(o, state) != null -> diesReplacedAnswer(o, state)!!.let { (why, ans) -> state.trace.step(why, "614.6", "700.4"); ans }
+                            LkiAsks.noTrigger(o, state) != null -> LkiAsks.noTrigger(o, state)!!
                             else -> "No: ${o.name}'s ability didn't trigger (nothing that happened matched its trigger condition)."
                         }
                     }
@@ -959,6 +960,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
     private fun describeEvent(e: EventSpec, state: GameState): String {
         val who = e.player?.let { state.players.firstOrNull { p -> p.id == it }?.let { p -> if (p.you) "you" else p.name } ?: it }
         WinLossAsks.describe(e, who)?.let { return it }
+        if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         val tg = if (e.targets.isEmpty()) "" else " targeting " + e.targets.joinToString(" and ") { runCatching { state.nameOf(parseRef(it, state)) }.getOrDefault(it) }
         return when (e.verb.lowercase()) {
             "cast" -> { val land = e.card?.let { c -> runCatching { cardDef(c, state) }.getOrNull() }?.let { "Land" in it.types && !it.isInstantOrSorcery } == true
@@ -2234,6 +2236,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("turn:") == true) return TurnAsks.answer(e, state, engine)
                 if (e.to?.startsWith("combat:") == true) return CombatAsks.answer(e, state, engine)
                 if (e.to?.startsWith("cost:") == true) return CostAsks.answer(e, state, engine)
+                if (e.to?.startsWith("lki:") == true) return LkiAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

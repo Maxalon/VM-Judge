@@ -116,6 +116,11 @@ class GameObject(
     var exiledBy: String? = null
     /** Power as it last was on the battlefield (last known information, 113.7a) for "equal to its power" after a zone change. */
     var lkiPower: Int? = null
+    /** What took its abilities away as it last existed on the battlefield (Oko's Elk, Humility): a leaves-the-battlefield or
+     *  dies ability looks back at that object, so it had nothing to trigger (603.10a). Set as it leaves the battlefield. */
+    var lkiAbilitiesGone: String? = null
+    /** "Loses all abilities and becomes a 3/3 Elk" (Oko): the source of that effect, which ends with the object (400.7). */
+    var transmogrifiedBy: String? = null
 
     /** Until-end-of-turn keyword grants from resolved effects. */
     val tempKeywords = mutableSetOf<String>()

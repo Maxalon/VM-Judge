@@ -3820,6 +3820,7 @@ class Engine(val state: GameState) {
             } }
             is Effect.Transmogrify -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 val was = "${o.name}${if (state.isCreature(o)) " (${state.describePt(o)})" else ""}"
+                o.transmogrifiedBy = item.source.name
                 o.def = o.def.copy(types = setOf("Creature"), subtypes = setOf(effect.subtype), colors = effect.color?.let { setOf(it) } ?: emptySet(), abilities = emptyList(), keywords = emptySet(), power = effect.power, toughness = effect.toughness)
                 o.pumps.clear(); o.tempKeywords.clear(); o.basePt = null
                 trace.step("$was loses all abilities and becomes ${effect.color?.let { c -> mapOf('W' to "a white", 'U' to "a blue", 'B' to "a black", 'R' to "a red", 'G' to "a green")[c] } ?: "a"} ${effect.subtype} creature with base power and toughness ${effect.power}/${effect.toughness}: its types, colour and abilities are replaced (layers 4, 5 and 6) and its base size set (layer 7b). Counters and Auras on it stay, and it's still ${state.describePt(o)} now.", "613.1d", "613.1e", "613.1f", "613.4b")
@@ -4496,6 +4497,13 @@ class Engine(val state: GameState) {
         }
         // A bestowed Aura is the same card showing different characteristics, not a copy; it is itself again in any other zone (702.103b).
         if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.kwf.bestowed) { obj.def = obj.printedDef; obj.kwf.bestowed = false }
+        // Its last known information (608.2h, 603.10a): whether it had any abilities as it left, looked back at by its own dies trigger.
+        if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD) obj.lkiAbilitiesGone = obj.transmogrifiedBy ?: printedAbilitiesGone(obj)
+        // Oko's Elk: the effect applied to the permanent only, so the card in its new zone is itself again, a new object (400.7).
+        if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.transmogrifiedBy != null) {
+            trace.step("${obj.printedDef.name} leaves the battlefield as ${obj.def.subtypes.firstOrNull()?.let { "a $it" } ?: "a creature"} with no abilities; ${obj.transmogrifiedBy}'s effect applied to that permanent only, so in its new zone it is the card ${obj.printedDef.name} again, a new object with no memory of the effect.", "400.7")
+            obj.def = obj.printedDef; obj.transmogrifiedBy = null
+        }
         if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD && obj.def !== obj.printedDef) {
             trace.step("${obj.printedDef.name} was a copy of ${obj.def.name}; the copy effect ends as it leaves the battlefield, so in its new zone it is ${obj.printedDef.name} again, a new object with no memory of what it was.", "400.7", "707.2")
             state.outcomes += if (obj.transformed) "${obj.def.name} turns back to its front face, ${obj.printedDef.name}, as it leaves the battlefield (712.8)." else "${obj.printedDef.name} stops being a copy of ${obj.def.name} as it leaves the battlefield."

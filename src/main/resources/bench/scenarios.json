@@ -41211,5 +41211,168 @@
     "cite": [
       "608.2b"
     ]
+  },
+  {
+    "id": "lk1",
+    "text": "I control Blood Artist and three other creatures. Wrath of God destroys all of them. How many times does Blood Artist trigger?",
+    "expect": [
+      "Blood Artist triggers 4 times: once for each creature that died, itself included.",
+      "opponent loses 1 life. (×4)"
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "lk2",
+    "text": "My opponent controls Zulaport Cutthroat and Blood Artist. I control two creatures. Damnation destroys all creatures. How much life do I lose?",
+    "expect": [
+      "You lose 6 life in all."
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "lk3",
+    "text": "My opponent casts Doom Blade targeting my Sakura-Tribe Elder. In response I sacrifice Sakura-Tribe Elder to its ability. What happens?",
+    "expect": [
+      "a basic land enters the battlefield.",
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "602.2b",
+      "113.7a",
+      "608.2b"
+    ]
+  },
+  {
+    "id": "lk4",
+    "text": "My opponent casts Path to Exile targeting my Kitchen Finks. Does persist trigger?",
+    "expect": [
+      "No: Kitchen Finks was exiled, not put into a graveyard. \"Dies\" means put into a graveyard from the battlefield (700.4), so persist doesn't trigger"
+    ],
+    "notExpect": [
+      "comes back"
+    ],
+    "cite": [
+      "700.4",
+      "603.6c"
+    ]
+  },
+  {
+    "id": "lk5",
+    "text": "My opponent controls Grizzly Bears and a creature with \"When this creature dies, return target creature card from your graveyard to the battlefield.\" I cast Wrath of God. Can they return the Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is already in the graveyard then and can be the target.",
+      "Grizzly Bears enters the battlefield."
+    ],
+    "cite": [
+      "603.3d",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "lk6",
+    "text": "My commander is Kokusho, the Evening Star. It dies and I put it into the command zone. Does its ability trigger?",
+    "expect": [
+      "your graveyard → the command zone",
+      "opponent loses 5 life.",
+      "You gain 5 life."
+    ],
+    "cite": [
+      "603.10a",
+      "903.9a"
+    ]
+  },
+  {
+    "id": "lk7",
+    "text": "My opponent casts Murder targeting my Mother of Runes. In response I activate Mother of Runes giving itself protection from black. Later that turn they cast Doom Blade on it. Does protection still apply?",
+    "expect": [
+      "Yes: Mother of Runes still has protection from black until end of turn (611.2a), so Doom Blade can't target it (702.16b)."
+    ],
+    "notExpect": [
+      "Mother of Runes: the battlefield"
+    ],
+    "cite": [
+      "611.2a",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "lk8",
+    "text": "My opponent casts Fatal Push targeting my Grizzly Bears. In response I sacrifice Grizzly Bears to Phyrexian Altar. Do I get the mana?",
+    "expect": [
+      "Yes. Sacrificing the creature is the cost of the Altar's mana ability",
+      "Fatal Push doesn't resolve (all targets illegal)."
+    ],
+    "notExpect": [
+      "Tapping a land"
+    ],
+    "cite": [
+      "605.1a",
+      "608.2b"
+    ]
+  },
+  {
+    "id": "lk9",
+    "text": "I control Oko, Thief of Crowns. I turn my opponent's Kitchen Finks into an Elk with Oko. Then it dies. Does persist trigger?",
+    "expect": [
+      "No: as Kitchen Finks last existed on the battlefield it had no abilities (Oko, Thief of Crowns's effect)."
+    ],
+    "notExpect": [
+      "stops being a copy",
+      "comes back"
+    ],
+    "cite": [
+      "603.10a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "lk10",
+    "text": "My Grizzly Bears was dealt 1 damage this turn. Then it is flickered with Cloudshift. Is it still damaged?",
+    "expect": [
+      "No: Grizzly Bears left the battlefield and returned as a new object with no memory of its previous existence (400.7)"
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "lk11",
+    "text": "My opponent casts Swords to Plowshares targeting my Grizzly Bears with a +1/+1 counter on it. How much life do I gain?",
+    "expect": [
+      "You gain 3 life."
+    ],
+    "notExpect": [
+      "You gain 2 life."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "lk12",
+    "text": "My commander is Kokusho, the Evening Star. My opponent casts Swords to Plowshares targeting Kokusho. In response I sacrifice Kokusho to Viscera Seer and put it into the command zone. Do I get the life? Does Swords resolve?",
+    "expect": [
+      "You gain 5 life.",
+      "Swords to Plowshares doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "603.10a",
+      "903.9a",
+      "608.2b"
+    ]
+  },
+  {
+    "id": "lk13",
+    "text": "Blood Artist and three other creatures I control die to Wrath of God. How many times does Blood Artist trigger?",
+    "expect": [
+      "Blood Artist triggers 4 times"
+    ],
+    "cite": [
+      "603.10a"
+    ]
   }
 ]
