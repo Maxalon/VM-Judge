@@ -25,6 +25,12 @@ jobs:
               for p in $parts; do git show "origin/data:$p"; done > "$RUNNER_TEMP/judge.db.xz"
               xz -d "$RUNNER_TEMP/judge.db.xz"
               echo "MTG_JUDGE_DB=$RUNNER_TEMP/judge.db" >> "$GITHUB_ENV"
+              # The raw rules text too: the citation tests parse it with this revision's parser, so a database
+              # built by another revision (the daily build runs from main) can't fail a correct citation.
+              if git ls-tree --name-only origin/data | grep -qx 'MagicCompRules.txt'; then
+                git show origin/data:MagicCompRules.txt > "$RUNNER_TEMP/MagicCompRules.txt"
+                echo "MTG_JUDGE_CR_TEXT=$RUNNER_TEMP/MagicCompRules.txt" >> "$GITHUB_ENV"
+              fi
             fi
           fi
       - run: ./gradlew test --no-daemon

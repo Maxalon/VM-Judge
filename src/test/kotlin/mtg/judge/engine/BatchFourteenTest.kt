@@ -357,18 +357,18 @@ class BatchFourteenTest {
     @Test
     fun `undying brings a creature back once`() {
         val s = state(); s.put("wolf", youngWolf, "me")
-        val e = Engine(s); e.leave("wolf", Zone.GRAVEYARD)
+        val e = Engine(s); e.leave("wolf", Zone.GRAVEYARD); e.resolveAll()   // undying is a trigger: it returns the card when it resolves
         val back = s.objects.values.last { it.def.name == "Young Wolf" && it.isOnBattlefield() }
         assertEquals(2, back.power); assertEquals(1, back.counters["+1/+1"])
         // With the counter already on it, it stays dead.
-        e.leave(back.id, Zone.GRAVEYARD)
+        e.leave(back.id, Zone.GRAVEYARD); e.resolveAll()
         assertEquals(0, s.objects.values.count { it.def.name == "Young Wolf" && it.isOnBattlefield() })
     }
 
     @Test
     fun `persist brings a creature back smaller`() {
         val s = state(); s.put("finks", finks, "me")
-        val e = Engine(s); e.leave("finks", Zone.GRAVEYARD)
+        val e = Engine(s); e.leave("finks", Zone.GRAVEYARD); e.resolveAll()
         val back = s.objects.values.last { it.def.name == "Kitchen Finks" && it.isOnBattlefield() }
         assertEquals(2, back.power); assertEquals(1, back.toughness)
     }
@@ -377,9 +377,9 @@ class BatchFourteenTest {
     fun `mikaeus grants undying to non-humans only`() {
         val s = state(); s.put("mik", mikaeus, "me"); s.put("bear", bears, "me"); s.put("vanguard", human, "me")
         val e = Engine(s)
-        e.leave("vanguard", Zone.GRAVEYARD)
+        e.leave("vanguard", Zone.GRAVEYARD); e.resolveAll()
         assertEquals(0, s.objects.values.count { it.def.name == "Elite Vanguard" && it.isOnBattlefield() })
-        e.leave("bear", Zone.GRAVEYARD)
+        e.leave("bear", Zone.GRAVEYARD); e.resolveAll()
         assertEquals(1, s.objects.values.count { it.def.name == "Grizzly Bears" && it.isOnBattlefield() })
     }
 
