@@ -1088,6 +1088,10 @@ object OracleParser {
                     // "Tap target creature. It doesn't untap during its controller's next untap step." (Frost Breath and its kin)
                     val prev = out.removeAt(out.lastIndex) as Effect.Tap
                     out += Effect.Seq(listOf(prev, Effect.FreezeUntap(prev.target))); i++
+                } else if (Regex("""^If (?:two|both|the) cards that share a (colou?r|card type) were milled this way, repeat this process\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.lastOrNull() is Effect.Mill) {
+                    // Grindstone: the mill loops for as long as each pair milled shares a colour.
+                    val shared = Regex("""share a (colou?r|card type)""", RegexOption.IGNORE_CASE).find(cur)!!.groupValues[1].lowercase().replace("colour", "color")
+                    out[out.lastIndex] = (out.last() as Effect.Mill).copy(repeatIfShare = shared); i++
                 } else if (Regex("""^(?:It|They) can't be regenerated\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.isNotEmpty()) {
                     val prev = out.removeAt(out.lastIndex)
                     out += when (prev) { is Effect.Destroy -> prev.copy(noRegen = true); is Effect.ForAll -> prev.copy(noRegen = true); else -> Effect.Seq(listOf(prev, Effect.Narrated("it can't be regenerated", listOf("701.19c")))) }

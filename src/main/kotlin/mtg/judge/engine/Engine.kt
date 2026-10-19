@@ -2560,27 +2560,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${item.source.name} goes into ${you.possessive} library seventh from the top; ${you.subject.lowercase()} ${you.v("gains", "gain")} ${effect.life} life."
                 }
             }
-            is Effect.CopySpell -> forEachLegalTarget(item, effect.target) { ref ->
-                val target = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: (ref as? Ref.Obj)?.let { r -> state.stack.firstOrNull { it.source.id == r.id } }
-                if (target == null) { trace.step("${state.nameOf(ref)} is no longer on the stack, so there's nothing to copy.", "707.10"); return@forEachLegalTarget }
-                val you = state.player(item.controller)
-                val copyObj = state.add(GameObject(freshObjectId(target.source.name + " copy"), target.source.def, Zone.STACK, item.controller, token = true))
-                // 707.10c: new targets may be chosen. Assume they stay unless the copy would hit its new controller, who then aims it at the opponent.
-                var targets = target.targets
-                val named = item.choice?.split('|')?.mapNotNull { c -> state.objects[c]?.let { Ref.Obj(it.id) } ?: state.players.firstOrNull { it.id == c }?.let { Ref.Player(it.id) } } ?: emptyList()
-                if (effect.newTargets && named.isNotEmpty() && named.size == targets.size) { targets = named; trace.step("${you.subject} ${you.v("chooses", "choose")} new targets for the copy: ${named.joinToString(" and ") { state.nameOf(it) }}.", "707.10c") }
-                else if (effect.newTargets) {
-                    val opp = state.opponentsOf(item.controller).singleOrNull()
-                    val retargeted = targets.map { t -> if (t is Ref.Player && t.id == item.controller && opp != null) Ref.Player(opp.id) else if (t is Ref.Obj && state.objects[t.id]?.controller == item.controller && isHarmful(target.effect) && opp != null) (state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == opp.id && it.def.isCreature }?.let { Ref.Obj(it.id) } ?: Ref.Player(opp.id)) else t }
-                    if (retargeted != targets) { targets = retargeted; state.assumptions += "${you.subject} ${you.v("chooses", "choose")} new targets for the copy of ${target.source.name}: ${targets.joinToString(" and ") { state.nameOf(it) }} (707.10c; the original aimed at ${you.subject.lowercase()})." }
-                    else state.assumptions += "${you.subject} ${you.v("keeps", "keep")} the copy's targets as they were (707.10c allows new ones)."
-                }
-                val copy = StackItem(state.newStackId(), StackKind.SPELL, item.controller, copyObj, target.effect, targets, zonesOf(targets), target.text, target.modes, x = target.x, kicked = target.kicked)
-                state.stack += copy
-                trace.step("${you.subject} ${you.v("puts", "put")} a copy of ${target.source.name} on the stack, above ${item.describe}. The copy isn't cast (so \"when you cast\" abilities don't trigger and it can't be countered by \"counter target spell\" only while it's a spell on the stack, which it is), and it copies every choice made for the original: modes, targets, X${if (targets != target.targets) ", except the targets changed" else ""}.", "707.10", "707.10c")
-                state.outcomes += "A copy of ${target.source.name} is put on the stack${describeTargets(targets)}."
-                onEvent(GameEvent.SpellCopied(copy))
-            }
+            is Effect.CopySpell -> forEachLegalTarget(item, effect.target) { ref -> copySpell(effect, item, ref) }
             is Effect.StormCopy -> {
                 val you = state.player(item.controller)
                 val spell = state.stack.firstOrNull { it.source === item.source }
@@ -2621,7 +2601,9 @@ class Engine(val state: GameState) {
                             state.clarifications += Clarification("${item.describe}'s division", "${effect.amount} damage can't be divided among $n targets: each one has to be assigned at least 1 damage as the spell is cast (601.2d).")
                             trace.step("The division is chosen as ${item.describe} is cast, and each target must be assigned at least 1 damage, so $n targets can't share ${effect.amount} damage.", "601.2d")
                         } else {
-                            trace.step("${item.source.name} deals ${effect.amount} damage divided among ${legal.joinToString(" and ") { state.nameOf(it) }}. The division was chosen as it was cast, each target assigned at least 1, and it can't be changed now.", "601.2d", "119.4")
+                            // "Fireball with X=5 at me": one target takes it all; there is nothing to divide.
+                            if (n == 1) trace.step("${item.source.name} has a single target, so all ${effect.amount} damage goes to ${state.nameOf(legal[0])}; there is nothing to divide.", "601.2d")
+                            else if (!effect.evenly) trace.step("${item.source.name} deals ${effect.amount} damage divided among ${legal.joinToString(" and ") { state.nameOf(it) }}. The division was chosen as it was cast, each target assigned at least 1, and it can't be changed now.", "601.2d", "119.4")
                             if (n > 1) state.assumptions += if (item.source.def.oracleText.contains("divided evenly", true)) "${item.describe}'s ${effect.amount} damage is divided evenly among the $n targets named (${legal.joinToString(" and ") { state.nameOf(it) }}), rounded down, as its own text requires."
                                 else "${item.describe}'s ${effect.amount} damage is split as evenly as it goes among the $n targets named (${legal.joinToString(" and ") { state.nameOf(it) }}); the caster could have divided it any other way as it was cast."
                             legal.forEachIndexed { i, ref -> applyDamage(item.source.name, ref, base + if (i < extra) 1 else 0, item.source) }
@@ -2900,7 +2882,7 @@ class Engine(val state: GameState) {
                     }
                 }
             }
-            is Effect.Mill -> for (p in resolvePlayers(effect.who, item)) {
+            is Effect.Mill -> if (effect.repeatIfShare != null) millRepeating(effect, item) else for (p in resolvePlayers(effect.who, item)) {
                 val lib = p.librarySize
                 val n = if (lib != null && lib < effect.count) lib else effect.count
                 if (lib != null && lib < effect.count) trace.step("${p.subject} ${p.v("has", "have")} only $lib card${if (lib == 1) "" else "s"} in ${p.possessive} library, so ${p.subject.lowercase()} ${p.v("mills", "mill")} as many as possible: $n. (Milling from a too-small library doesn't make a player lose; only drawing does.)", "701.17b", "704.5b")
@@ -3696,6 +3678,91 @@ class Engine(val state: GameState) {
      * plus any other copy effects on it — and nothing else. Counters, damage, Auras, control effects and pumps on
      * the original are not copied, and the copy keeps its own id, controller and everything it did on its way in.
      */
+    /**
+     * Grindstone: "Target player mills two cards. If two cards that share a color were milled this way, repeat this
+     * process." The process loops while each batch shares a colour. Under Painter's Servant every card is the named
+     * colour, so every pair shares it and the loop runs until the library can't give a full batch: the whole library.
+     */
+    private fun millRepeating(effect: Effect.Mill, item: StackItem) {
+        for (p in resolvePlayers(effect.who, item)) {
+            val lib = p.librarySize
+            val painted = state.painter()
+            val shared = effect.repeatIfShare ?: "color"
+            if (painted == null || shared != "color") {
+                val n = if (lib != null && lib < effect.count) lib else effect.count
+                trace.step("${p.subject} ${p.v("mills", "mill")} $n card${if (n == 1) "" else "s"}. Whether the process repeats depends on whether the ${effect.count} cards milled share a $shared (two colorless cards share none), which the situation doesn't say.", "701.17a", "608.2c")
+                if (lib != null) p.librarySize = lib - n
+                state.outcomes += "${p.subject} ${p.v("mills", "mill")} at least $n cards; it repeats for as long as each ${effect.count} milled share a $shared."
+                state.clarifications += Clarification("${item.describe}'s repeat", "Which cards were milled? ${item.source.name} mills again each time the ${effect.count} cards milled share a $shared.")
+                continue
+            }
+            val colour = when (painted.second) { 'W' -> "white"; 'U' -> "blue"; 'B' -> "black"; 'R' -> "red"; else -> "green" }
+            if (lib == null) {
+                trace.step("Every card in ${p.possessive} library is $colour (${painted.first.name}), so every ${effect.count} cards milled share a colour and the process repeats until the library runs out: ${p.subject.lowercase()} ${p.v("mills", "mill")} ${p.possessive} whole library.", "701.17a", "608.2c")
+                state.outcomes += "${p.subject} ${p.v("mills", "mill")} ${p.possessive} entire library (every pair milled is $colour, so it keeps repeating)."
+                state.clarifications += Clarification("${p.possessive} library size", "How many cards are in ${p.possessive} library? All of them are milled.")
+                continue
+            }
+            val full = lib / effect.count; val rest = lib % effect.count
+            trace.step("Every card in ${p.possessive} library is $colour (${painted.first.name} names $colour), so each ${effect.count} cards milled share a colour and the process repeats: ${p.subject.lowercase()} ${p.v("mills", "mill")} ${effect.count} cards $full time${if (full == 1) "" else "s"}${if (rest > 0) ", then the last $rest (fewer than ${effect.count}, so the process stops there)" else ", and with the library empty the next batch mills nothing, so it stops"}.", "701.17a", "608.2c")
+            p.librarySize = 0
+            state.outcomes += "${p.subject} ${p.v("mills", "mill")} $lib cards: ${p.possessive} entire library (0 left)."
+        }
+    }
+
+    /** Fork, Twincast: put a copy of the spell [ref] names on the stack under [item]'s controller (707.10). */
+    private fun copySpell(effect: Effect.CopySpell, item: StackItem, ref: Ref) {
+        val target = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: (ref as? Ref.Obj)?.let { r -> state.stack.firstOrNull { it.source.id == r.id } }
+        if (target == null) { trace.step("${state.nameOf(ref)} is no longer on the stack, so there's nothing to copy.", "707.10"); return }
+        val you = state.player(item.controller)
+        val copyObj = state.add(GameObject(freshObjectId(target.source.name + " copy"), target.source.def, Zone.STACK, item.controller, token = true))
+        // 707.10c: new targets may be chosen. Assume they stay unless the copy would hit its new controller, who then aims it at the opponent.
+        var targets = target.targets
+        val copiedEffect = target.effect ?: Effect.Seq(emptyList())
+        // "They Twincast my Thoughtseize": the original's "target player" was never named, so it is the one it was
+        // aimed at (its caster's opponent); the copy's controller aims the copy at their own opponent instead.
+        val playerTarget = targets.isEmpty() && targetsAPlayer(copiedEffect)
+        if (playerTarget) {
+            val origAt = if (helpsThePlayer(copiedEffect)) target.controller else state.opponentsOf(target.controller).singleOrNull()?.id
+            if (origAt != null) targets = listOf(Ref.Player(origAt))
+        }
+        val named = item.choice?.split('|')?.mapNotNull { c -> state.objects[c]?.let { Ref.Obj(it.id) } ?: state.players.firstOrNull { it.id == c }?.let { Ref.Player(it.id) } } ?: emptyList()
+        if (effect.newTargets && named.isNotEmpty() && named.size == targets.size) { targets = named; trace.step("${you.subject} ${you.v("chooses", "choose")} new targets for the copy: ${named.joinToString(" and ") { state.nameOf(it) }}.", "707.10c") }
+        else if (effect.newTargets) {
+            val opp = state.opponentsOf(item.controller).singleOrNull()
+            val helps = helpsThePlayer(copiedEffect)
+            val retargeted = targets.map { t -> when {
+                t is Ref.Player && t.id == item.controller && opp != null && !helps -> Ref.Player(opp.id)
+                t is Ref.Player && t.id != item.controller && helps -> Ref.Player(item.controller)
+                // "I Fork their Counterspell aimed at my Thalia": the copy counters the original Counterspell instead (601.2c: any legal target).
+                t is Ref.Stack && state.stackItem(t.id)?.controller == item.controller && isHarmful(target.effect) && target.controller != item.controller -> Ref.Stack(target.id)
+                t is Ref.Obj && state.objects[t.id]?.controller == item.controller && isHarmful(target.effect) && opp != null -> state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == opp.id && it.def.isCreature }?.let { Ref.Obj(it.id) } ?: Ref.Player(opp.id)
+                else -> t } }
+            if (retargeted != targets) { val was = targets; targets = retargeted; state.assumptions += "${you.subject} ${you.v("chooses", "choose")} new targets for the copy of ${target.source.name}: ${targets.joinToString(" and ") { state.nameOf(it) }} (707.10c lets the copy's controller pick any legal target${if (targets.size > 1) "s" else ""}, keeping the number of targets; the original aimed at ${was.joinToString(" and ") { state.nameOf(it) }})." }
+            else if (playerTarget) state.assumptions += "${you.subject} ${you.v("keeps", "keep")} the copy aimed at ${targets.joinToString(" and ") { state.nameOf(it) }}, like the original (707.10c allows new targets)."
+            else state.assumptions += "${you.subject} ${you.v("keeps", "keep")} the copy's targets as they were (707.10c allows new ones)."
+        }
+        val copy = StackItem(state.newStackId(), StackKind.SPELL, item.controller, copyObj, target.effect, targets, zonesOf(targets), target.text, target.modes, x = target.x, kicked = target.kicked)
+        state.stack += copy
+        val modal = (target.effect as? Effect.Modal) ?: (target.effect as? Effect.Seq)?.effects?.filterIsInstance<Effect.Modal>()?.firstOrNull()
+        val modeNames = target.modes.map { mi -> modal?.modeTexts?.getOrNull(mi - 1)?.replace("~", target.source.name)?.trimEnd('.')?.let { "\"$it\"" } ?: "mode $mi" }
+        val kept = listOfNotNull(modeNames.takeIf { it.isNotEmpty() }?.let { ms -> "the same mode${if (ms.size > 1) "s" else ""} (${ms.joinToString(" and ")})" }, target.x?.let { "X = $it" })
+        val nTargets = target.targets.size.takeIf { it > 0 }?.let { if (it == 1) "one target" else "$it targets" }
+        trace.step("${you.subject} ${you.v("puts", "put")} a copy of ${target.source.name} on the stack, above ${item.describe}. The copy isn't cast (so \"when you cast\" abilities don't trigger), ${you.subject.lowercase()} ${you.v("controls", "control")} it, and it copies every choice made for the original: modes, targets, the value of X${if (kept.isNotEmpty() || nTargets != null) " (here ${(kept + listOfNotNull(nTargets)).joinToString(", ")})" else ""}${if (targets != target.targets && target.targets.isNotEmpty()) ", except the targets changed" else ""}. Only the targets can change, and only because the effect allows it; the number of targets stays the same.", "707.10", "707.10c")
+        state.outcomes += "A copy of ${target.source.name} is put on the stack${describeTargets(targets)}${if (kept.isNotEmpty()) ", with ${kept.joinToString(" and ")} like the original" else ""}."
+        // "Twincast my Kolaghan's Command: can the copy choose different modes?": no, the modes are copied (707.10).
+        if (target.modes.isNotEmpty()) state.outcomes += "The copy can't choose different modes: the modes chosen for ${target.source.name} are copied with it; only its targets may be changed${if (effect.newTargets) "" else " (and only if the effect allows it)"}."
+        // "Fork my Fireball split between two creatures: does the copy split the same way?": the division is a casting choice, copied too.
+        val divided = (target.effect as? Effect.DamageDivided) ?: (target.effect as? Effect.Seq)?.effects?.filterIsInstance<Effect.DamageDivided>()?.firstOrNull()
+        if (divided != null && target.targets.size > 1) {
+            val n = target.targets.size; val total = if (divided.x) target.x ?: 0 else divided.amount
+            trace.step("How ${target.source.name} divides its damage among its targets was decided as it was cast${if (divided.evenly) " (here its own text fixes it: evenly, rounded down)" else ""}, and the copy keeps that division too; with new targets the copy still has $n targets and the same $total damage to divide.", "707.2", "601.2d")
+            state.outcomes += if (divided.evenly) "The copy splits its $total damage the same way: evenly among its $n targets, rounded down (${total / n} each), as ${target.source.name}'s own text requires; only which targets it has may change."
+                else "The copy keeps the original's division of its $total damage among its $n targets; only which targets it has may change, not how the damage is divided."
+        }
+        onEvent(GameEvent.SpellCopied(copy))
+    }
+
     private fun applyEntersAsCopy(o: GameObject, choice: String?) {
         val e = o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.EntersAsCopy>().firstOrNull() ?: return
         val was = o.name
@@ -3711,21 +3778,90 @@ class Engine(val state: GameState) {
             trace.step("$was would enter as a copy of ${withArticle(e.filter.raw)}, but there is none on the battlefield to copy, so nothing is copied and it enters as ${if (o.def.isCreature) "the ${o.def.power ?: 0}/${o.def.toughness ?: 0} it is printed as" else "itself"}.", "707.2", "614.1c")
             return
         }
-        if (asked == null) state.assumptions += "$was enters as a copy of ${chosen.name}${if (legal.size > 1) " (nothing said which ${e.filter.raw}; there were ${legal.size} to choose from)" else ""}."
+        // A Clone returned by persist is a new object: its own copy ability applies again, and it may pick anything (or nothing).
+        if (asked == null) state.assumptions += "$was enters as a copy of ${chosen.name}${if (legal.size > 1) " (nothing said which ${e.filter.raw}; there were ${legal.size} to choose from)" else " (each time it enters, its own copy ability lets it choose again)"}."
         trace.step("$was enters as a copy of ${chosen.name}: it copies the printed card and any other copy effects on it, and nothing else — not counters, damage, Auras, or anything else that has happened to ${chosen.name}.", "707.2", "707.2a", "614.1c")
+        // "Clone copying their Tarmogoyf that has two +1/+1 counters and a Giant Growth on it": name what stays behind.
+        val notCopied = listOfNotNull(
+            chosen.counters.filter { it.value > 0 }.entries.joinToString(" and ") { "${it.value} ${it.key} counter${if (it.value == 1) "" else "s"}" }.ifEmpty { null },
+            chosen.pumps.takeIf { it.isNotEmpty() }?.let { ps -> val sg = { n: Int -> if (n >= 0) "+$n" else "$n" }; "${sg(ps.sumOf { it.first })}/${sg(ps.sumOf { it.second })} until end of turn" },
+            "its damage".takeIf { chosen.damage > 0 })
+        if (notCopied.isNotEmpty()) state.outcomes += "$was doesn't get ${chosen.name}'s ${notCopied.joinToString(" or ")}: counters and pump effects aren't copiable values, so it's ${chosen.name} as printed."
         o.def = chosen.def
         if (e.tapped) o.tapped = true
-        e.except?.let { ex ->
-            // Phantasmal Image: "except it's an Illusion in addition to its other types and it has \"When this creature
-            // becomes the target of a spell or ability, sacrifice it.\"" — the copy keeps that type and that ability (707.9b).
-            val quoted = Regex(""""([^"]+)"""").find(ex)?.groupValues?.get(1)
-            val extraType = Regex("""it's an? (\w+) in addition to its other types""", RegexOption.IGNORE_CASE).find(ex)?.groupValues?.get(1)
-            if (quoted != null || extraType != null) {
-                val extra = quoted?.let { q -> mtg.judge.oracle.OracleParser.parse("copy-except-${o.id}", o.def.name, o.def.typeLine, o.def.manaCost, o.def.manaValue, o.def.colors.joinToString(""), o.def.power?.toString(), o.def.toughness?.toString(), emptyList(), q).abilities } ?: emptyList()
-                o.def = o.def.copy(abilities = o.def.abilities + extra, subtypes = o.def.subtypes + listOfNotNull(extraType))
-                trace.step("$was keeps the exception in its own text: it's ${extraType?.let { "an $it in addition to its other types" } ?: "as copied"}${quoted?.let { " and has \"$it\"" } ?: ""}.", "707.9b")
-            } else state.unsupported += Unsupported(was, "The copy's exception is not modeled: " + ex.replace("~", was))
+        e.except?.let { ex -> applyCopyExceptions(o, was, ex) }
+    }
+
+    /**
+     * The "except …" of a copy effect (707.9): each clause modifies the copiable values or adds to how the copy enters.
+     * Phantasmal Image: "it's an Illusion in addition to its other types and it has \"When this creature becomes the
+     * target of a spell or ability, sacrifice it.\"" (707.9a, 707.9b). Phyrexian Metamorph: "it's an artifact in addition
+     * to its other types". Spark Double: "it enters with an additional +1/+1 counter on it if it's a creature, it enters
+     * with an additional loyalty counter on it if it's a planeswalker, and it isn't legendary" (707.9f: the "if it's a
+     * creature" is judged on what the copy would be without the exception). Quicksilver Gargantuan: "it's 7/7".
+     */
+    private fun applyCopyExceptions(o: GameObject, was: String, ex: String) {
+        val quotes = Regex(""""([^"]+)"""").findAll(ex).map { it.groupValues[1] }.toList()
+        var text = ex; quotes.forEachIndexed { i, q -> text = text.replace("\"$q\"", "QUOTE$i") }
+        val asCopied = o.def
+        val superWords = setOf("legendary", "snow", "basic", "world")
+        val cardTypes = setOf("artifact", "creature", "enchantment", "land", "planeswalker", "battle", "kindred", "instant", "sorcery")
+        val said = mutableListOf<String>(); val notModeled = mutableListOf<String>()
+        var condition: String? = null
+        // "if it's a creature, it enters with two additional +1/+1 counters on it and it has changeling" (Moritte): the condition covers what follows.
+        val clauses = text.trim().trimEnd('.').split(Regex(""",? and,? (?=if it's)|,? and (?=it(?:'s| |\b))|, (?=it(?:'s| |\b)|if it's)""")).map { it.trim() }.filter { it.isNotEmpty() }
+        fun holds(cond: String?): Boolean = cond == null || cond.split(Regex(""" or """)).any { t -> t.trim().removePrefix("an ").removePrefix("a ").replaceFirstChar { it.uppercase() }.let { tt -> tt in asCopied.types || tt in asCopied.supertypes || tt in asCopied.subtypes } }
+        for (c0 in clauses) {
+            var c = c0
+            Regex("""^if it's (an? [a-z ]+?), (.+)$""").find(c)?.let { r -> condition = r.groupValues[1]; c = r.groupValues[2] }
+            val trailingIf = Regex("""^(.+?) if it's (an? [a-z ]+)$""").find(c)
+            val cond = trailingIf?.groupValues?.get(2) ?: condition
+            if (trailingIf != null) c = trailingIf.groupValues[1]
+            if (!holds(cond)) { said += "${c.replace("QUOTE", "\"…")} only if it's $cond, which it isn't"; continue }
+            val r1 = Regex("""^it's (?:an? )?([a-z ]+?) in addition to its other types$""", RegexOption.IGNORE_CASE).find(c)
+            val r2 = Regex("""^it (?:isn't|is not|'s not) legendary$""").find(c)
+            val r3 = Regex("""^it has QUOTE(\d+)$""").find(c)
+            val r4 = Regex("""^it has ([a-z ]+)$""").find(c)
+            val r5 = Regex("""^it enters with (an|one|two|three|four|five|\d+) additional ([+-]1/[+-]1|loyalty) counters? on it$""").find(c)
+            val r6 = Regex("""^it's (\d+)/(\d+)$""").find(c)
+            val r7 = Regex("""^it's legendary$""").find(c)
+            when {
+                r1 != null -> {
+                    val words = r1.groupValues[1].split(Regex("""\s+and\s+|\s+""")).filter { it.isNotEmpty() }
+                    val sup = words.filter { it.lowercase() in superWords }.map { it.replaceFirstChar { ch -> ch.uppercase() } }
+                    val typ = words.filter { it.lowercase() in cardTypes }.map { it.replaceFirstChar { ch -> ch.uppercase() } }
+                    val sub = words.filter { it.lowercase() !in superWords && it.lowercase() !in cardTypes }.map { it.replaceFirstChar { ch -> ch.uppercase() } }
+                    o.def = o.def.copy(supertypes = o.def.supertypes + sup, types = o.def.types + typ, subtypes = o.def.subtypes + sub)
+                    said += "it's ${withArticle(r1.groupValues[1])} in addition to its other types"
+                }
+                r2 != null -> { o.def = o.def.copy(supertypes = o.def.supertypes - "Legendary"); said += "it isn't legendary (so the legend rule doesn't apply to it)" }
+                r7 != null -> { o.def = o.def.copy(supertypes = o.def.supertypes + "Legendary"); said += "it's legendary" }
+                r3 != null -> {
+                    val q = quotes[r3.groupValues[1].toInt()]
+                    val extra = mtg.judge.oracle.OracleParser.parse("copy-except-${o.id}", o.def.name, o.def.typeLine, o.def.manaCost, o.def.manaValue, o.def.colors.joinToString(""), o.def.power?.toString(), o.def.toughness?.toString(), emptyList(), q).abilities
+                    o.def = o.def.copy(abilities = o.def.abilities + extra); said += "it has \"$q\""
+                }
+                r4 != null && r4.groupValues[1].trim() == "changeling" -> { o.def = o.def.copy(changeling = true, keywords = o.def.keywords + "Changeling"); said += "it has changeling" }
+                r4 != null && r4.groupValues[1].trim().split(" ").size <= 2 -> { val kw = r4.groupValues[1].trim().replaceFirstChar { it.uppercase() }; o.def = o.def.copy(keywords = o.def.keywords + kw); said += "it has ${kw.lowercase()}" }
+                r5 != null -> {
+                    val n = when (r5.groupValues[1]) { "an", "one" -> 1; "two" -> 2; "three" -> 3; "four" -> 4; "five" -> 5; else -> r5.groupValues[1].toInt() }
+                    val kind = r5.groupValues[2]
+                    o.counters[kind] = (o.counters[kind] ?: 0) + n
+                    said += "it enters with $n additional $kind counter${if (n == 1) "" else "s"} on it${cond?.let { " (it's $it)" } ?: ""}"
+                }
+                r6 != null -> { o.def = o.def.copy(power = r6.groupValues[1].toInt(), toughness = r6.groupValues[2].toInt()); said += "it's ${r6.groupValues[1]}/${r6.groupValues[2]}" }
+                else -> notModeled += c.replace(Regex("""QUOTE(\d+)""")) { "\"${quotes[it.groupValues[1].toInt()]}\"" }
+            }
         }
+        if (said.isNotEmpty()) trace.step("$was keeps the exception in its own copy effect: ${said.joinToString("; ")}. That becomes part of what it copied${if (o.counters.isNotEmpty()) "; the extra counters are put on it as it enters" else ""}.", *listOfNotNull("707.9b", "707.9a".takeIf { quotes.isNotEmpty() }, "707.9f".takeIf { clauses.any { "if it's" in it } }, "122.6".takeIf { o.counters.isNotEmpty() }).toTypedArray())
+        if (said.any { it.startsWith("it isn't legendary") } && "Legendary" in asCopied.supertypes) state.outcomes += "$was copies ${asCopied.name} but isn't legendary, so the legend rule doesn't apply."
+        // "Phyrexian Metamorph copying their Batterskull: what is it?": the copy's own type line, exception included.
+        if (said.any { it.endsWith("in addition to its other types") }) {
+            val unchanged = o.def.types == asCopied.types && o.def.subtypes == asCopied.subtypes && o.def.supertypes == asCopied.supertypes
+            state.outcomes += "$was is now ${o.def.name}: ${(listOf("Legendary", "Basic", "Snow", "World").filter { it in o.def.supertypes } + o.def.types.sortedBy { listOf("Kindred", "Artifact", "Enchantment", "Land", "Creature", "Planeswalker", "Battle").indexOf(it) }).joinToString(" ")}${if (o.def.subtypes.isNotEmpty()) " — " + o.def.subtypes.joinToString(" ") else ""}${if (o.def.isCreature) " ${o.def.power}/${o.def.toughness}" else ""}${if (unchanged) " (it already was all that, so the exception adds nothing)" else ""}, with all of ${asCopied.name}'s abilities."
+        }
+        o.counters.filter { it.value > 0 }.forEach { (k, v) -> state.outcomes += "$was enters with $v additional $k counter${if (v == 1) "" else "s"}." }
+        if (notModeled.isNotEmpty()) state.unsupported += Unsupported(was, "The copy's exception is not modeled: " + notModeled.joinToString(", ").replace("~", was))
     }
 
     private fun applyEntersReplacements(o: GameObject, choice: String? = null) {
@@ -3744,7 +3880,7 @@ class Engine(val state: GameState) {
             else if (handKnown) { trace.step("As ${o.name} would enter, ${owner.subject.lowercase()} may discard ${withArticle(e.filter.raw)} instead; ${owner.subject.lowercase()} ${owner.v("has", "have")} none, so ${o.name} is put into its owner's graveyard and never enters.", "614.1c"); state.outcomes += "${o.name} goes to the graveyard instead of entering (no ${e.filter.raw} to discard)."; o.mustGoToGraveyard = true; moveRaw(o, Zone.GRAVEYARD) }
             else { state.assumptions += "${o.name} enters only if ${withArticle(e.filter.raw)} is discarded as it would enter; assuming ${owner.subject.lowercase()} ${owner.v("has", "have")} one and ${owner.v("does", "do")}. Say the hand for a precise answer."; state.outcomes += "${owner.subject} ${owner.v("discards", "discard")} ${withArticle(e.filter.raw)} for ${o.name}." }
         }
-        if (o.def.isPlaneswalker && startingLoyalty != null) { val n = countersPlaced(o, startingLoyalty, "loyalty"); o.counters["loyalty"] = n; trace.step("${o.name} enters with $n loyalty counters.", "306.5b"); state.outcomes += "${o.name} has $n loyalty." }
+        if (o.def.isPlaneswalker && startingLoyalty != null) { val n = countersPlaced(o, startingLoyalty, "loyalty") + (o.counters["loyalty"] ?: 0); o.counters["loyalty"] = n; trace.step("${o.name} enters with $n loyalty counters.", "306.5b"); state.outcomes += "${o.name} has $n loyalty." }
         // Blind Obedience and friends: someone else's static makes this enter tapped.
         for (src in state.objects.values.filter { it.isOnBattlefield() && it !== o }) {
             for (e in src.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.OthersEnterTapped>()) {

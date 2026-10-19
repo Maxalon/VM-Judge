@@ -1301,8 +1301,67 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** Sentence rewrites that run before anything is stripped: table talk turned into the plainer forms read below. */
+    /**
+     * A copy spell said with the spell it copies in one breath: what follows the copied spell is that spell's own
+     * X, targets or modes, so it is cast first with them and the copy spell then aimed at it.
+     * "My opponent casts Fork on their own Fireball with X=5" -> "my opponent casts Fireball with x=5, my opponent casts Fork on Fireball".
+     * "I Fork their Counterspell targeting my Thalia" -> "my opponent casts Counterspell targeting my Thalia, i cast Fork on Counterspell".
+     * "I copy Kolaghan's Command choosing discard and shock with Twincast" -> "i cast Kolaghan's Command choosing …, i cast Twincast on Kolaghan's Command".
+     */
+    private fun copySpellRewrites(t: String, m: Marked, ctx: Ctx): String {
+        fun isCopySpell(c: String) = m.cards[c]?.display in xlessCopySpells
+        fun copiedOk(c: String) = m.cards[c]?.let { it.isSpellOnly && it.display !in ctx.castCards } == true
+        fun caster(subj: String, poss: String): String? = when {
+            poss == "my" -> "i"
+            poss in setOf("their", "his", "her", "my opponent's", "the opponent's") -> "my opponent"
+            poss.isEmpty() -> subj
+            else -> null
+        }
+        fun verb(who: String) = if (who == "i" || who == "we" || who == "they") "cast" else "casts"
+        Regex("""^((?:in response,? )?)(i|we|they|he|she|my opponent|the opponent) (?:(?:casts?|casting) (c\d+) (?:on|targeting|at|copying)|(c\d+)s?) (?:(my|their|his|her|my opponent's|the opponent's) )?(?:own )?(c\d+) ((?:with|for|where|aimed|targeting|at|on|split|divided|choosing|picking|x)\b.*)$""", RegexOption.IGNORE_CASE).find(t)?.let { r ->
+            val c1 = r.groupValues[3].ifEmpty { r.groupValues[4] }; val c2 = r.groupValues[6]
+            if (!isCopySpell(c1) || !copiedOk(c2)) return@let
+            val subj = r.groupValues[2].lowercase(); val who = caster(subj, r.groupValues[5].lowercase()) ?: return@let
+            return "${r.groupValues[1]}$who ${verb(who)} $c2 ${r.groupValues[7]}, $subj ${verb(subj)} $c1 on $c2"
+        }
+        Regex("""^((?:in response,? )?)(i|we|they|he|she|my opponent|the opponent) (?:copy|copies|copying) (?:(my|their|his|her|my opponent's|the opponent's) )?(?:own )?(c\d+)((?: .*?)?) (?:with|using|by casting) (c\d+)$""", RegexOption.IGNORE_CASE).find(t)?.let { r ->
+            val c1 = r.groupValues[6]; val c2 = r.groupValues[4]
+            if (!isCopySpell(c1) || !copiedOk(c2)) return@let
+            val subj = r.groupValues[2].lowercase(); val who = caster(subj, r.groupValues[3].lowercase()) ?: return@let
+            return "${r.groupValues[1]}$who ${verb(who)} $c2${r.groupValues[5]}, $subj ${verb(subj)} $c1 on $c2"
+        }
+        // "I cast Clone copying their Tarmogoyf that has two +1/+1 counters and a Giant Growth on it": what has happened to
+        // the creature is said first, as its own facts, so the copy can be seen not to take it (707.2).
+        Regex("""^(i|we|they|he|she|my opponent|the opponent) (casts?) (c\d+) (copying|as a copy of) (my|their|his|her) (c\d+) (?:that has|which has|that's got|with|having) (.+?)(?: on it)?$""", RegexOption.IGNORE_CASE).find(t)?.let { r ->
+            val copied = m.cards[r.groupValues[6]] ?: return@let
+            if (copied.isSpellOnly || m.cards[r.groupValues[3]]?.isSpellOnly != false) return@let
+            val poss = r.groupValues[5].lowercase(); val owner = if (poss == "my") "i" else "they"
+            val facts = mutableListOf<String>(); val pumps = mutableListOf<String>()
+            for (item in r.groupValues[7].split(Regex(""",? and |, """))) {
+                val counters = Regex("""^(\d+|an?|one|two|three|four|five|six) ([+-]\d+/[+-]\d+) counters?(?: on it)?$""").find(item.trim())
+                val pump = Regex("""^(?:an? |the )?(c\d+)(?: on it| cast on it)?$""").find(item.trim())?.groupValues?.get(1)?.takeIf { m.cards[it]?.isSpellOnly == true }
+                when {
+                    counters != null -> facts += "$poss ${r.groupValues[6]} has ${counters.groupValues[1].replace(Regex("^an?$"), "1")} ${counters.groupValues[2]} counter${if (counters.groupValues[1] in setOf("a", "an", "one", "1")) "" else "s"} on it"
+                    pump != null -> pumps += pump
+                    else -> return@let
+                }
+            }
+            return (facts + pumps.map { p -> "$owner cast $p on ${r.groupValues[6]}" }).joinToString(", ") + ", then ${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} ${r.groupValues[4]} ${r.groupValues[6]}"
+        }
+        // "My Clone copying Kitchen Finks dies": the Clone came in as that copy (the copied creature is still around), then dies.
+        Regex("""^(my|their|his|her|the opponent's|my opponent's) (c\d+) (?:that's |that is |which is |who is )?(?:copying|as a copy of|a copy of) (?:(my|their|his|her|an?|the) )?(c\d+) (dies|died|is destroyed|gets destroyed|is exiled|gets exiled|is sacrificed|gets sacrificed|is bounced|leaves the battlefield)$""", RegexOption.IGNORE_CASE).find(t)?.let { r ->
+            val clone = m.cards[r.groupValues[2]] ?: return@let; val copied = m.cards[r.groupValues[4]] ?: return@let
+            if (clone.isSpellOnly || copied.isSpellOnly) return@let
+            val mine = r.groupValues[1].lowercase() == "my"
+            val copiedMine = r.groupValues[3].lowercase() == "my"
+            val has = if (ctx.objects.values.any { it.card.oracleId == copied.oracleId && it.zone == "battlefield" }) "" else "${if (copiedMine) "i have" else if (mine) "they have" else "i have"} ${r.groupValues[4]}, "
+            return "$has${if (mine) "i cast" else "they cast"} ${r.groupValues[2]} copying ${r.groupValues[4]}, then it ${r.groupValues[5]}"
+        }
+        return t
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
-        var t2 = t
+        var t2 = copySpellRewrites(t, m, ctx)
         // "Which blocks best?": the blocks weighed.
         t2 = t2.replace(Regex("""^(?:which|what) (?:one )?blocks? best\??$|^(?:which|what) is (?:my|the) best block(?:er)?\??$""", RegexOption.IGNORE_CASE), "which should i block with")
         // "Can they redirect to Spellskite and does Spellskite die?": their redirect, then the fate of the new target.
@@ -3388,7 +3447,10 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.life.isNotEmpty()) { ctx.lastStat = "life"; ctx.lastStatWho = ctx.life.keys.last() }
         // "I cast Brainstorm with 1 card in my library" / "with no cards left in their library": library sizes, wherever they sit.
         Regex("""\s*\b(?:with|and|at|having) (\d+|no|one|two|three|four|five|six|seven) cards? (?:left )?in (?:(my|their|his|her|the) )?library\b""").find(t2)?.let { r ->
-            val who = if (r.groupValues[2] == "my") "me" else if (r.groupValues[2] == "the" || r.groupValues[2].isEmpty()) (actorOfClause(t2.trim()) ?: "me") else pronounPlayer(ctx, "their")
+            // "activate Grindstone targeting my opponent with 40 cards in library": the player just named owns that library.
+            val before = t2.substring(0, r.range.first)
+            val namedJustBefore = Regex("""\b(me|my opponent|the opponent|opponent|them|him|her)\s*$""").find(before)?.groupValues?.get(1)
+            val who = if (r.groupValues[2] == "my") "me" else if ((r.groupValues[2] == "the" || r.groupValues[2].isEmpty()) && namedJustBefore != null) (if (namedJustBefore == "me") "me" else pronounPlayer(ctx, "their")) else if (r.groupValues[2] == "the" || r.groupValues[2].isEmpty()) (actorOfClause(t2.trim()) ?: "me") else pronounPlayer(ctx, "their")
             ctx.librarySize[who] = if (r.groupValues[1] == "no") 0 else number(r.groupValues[1]) ?: 0; ctx.note(who); any = true; t2 = t2.removeRange(r.range)
         }
         // "… attacks me with Bears and I'm at 1 life": the life total was taken out above; a dangling "and" is left behind.
@@ -4529,6 +4591,12 @@ class SituationParser(private val names: NameIndex) {
 
     /** More early questions, split out of readEarlyQuestionsB for the JVM method size limit. */
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        // "My opponent casts Fireball at me. X is 5.": the X of the last spell cast that has none yet (a copy spell has no X).
+        Regex("""^(?:and |with )?x (?:is|was|=|equals|equal to|of) ?(\d+)$""").find(clause0.trim())?.let { r ->
+            val at = ctx.events.indexOfLast { e -> e.verb == "cast" && e.amount == null && (e.card?.name ?: e.obj?.let { ctx.objects[it]?.card?.name }) !in xlessCopySpells }
+            if (at < 0) return@let
+            ctx.events[at] = ctx.events[at].copy(amount = r.groupValues[1].toInt()); return true
+        }
         // "Does it get a Construct?" with the Saga under Blood Moon: no chapter abilities, so nothing triggers on the lore counter.
         if (clause0 == "sagachapter-question") {
             val saga = ctx.objects.values.lastOrNull { it.card.name == "Urza's Saga" } ?: return false
@@ -8987,7 +9055,8 @@ class SituationParser(private val names: NameIndex) {
             ctx.events += EventSpec("leave", obj = id, to = to); ctx.lastMentioned = id; return true
         }
         Regex("""^(?:it|that|this|he|she|they) (dies|died|is destroyed|gets destroyed|goes to the graveyard|leaves the battlefield|is exiled|gets exiled|is bounced|is sacrificed|gets sacrificed)$""").find(c)?.let { r ->
-            val id = ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.objects.values.lastOrNull()?.id ?: return@let
+            // "I cast Clone copying Kitchen Finks, then it dies": "it" is the Clone, once it has resolved, not the Finks it copied.
+            val id = ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.lastMentioned?.takeIf { it.startsWith("cast:") }?.let { castPermanentObject(ctx) } ?: ctx.objects.values.lastOrNull()?.id ?: return@let
             val to = when { r.groupValues[1].contains("exiled") -> "exile"; r.groupValues[1].contains("bounced") -> "hand"; else -> "graveyard" }
             if (r.groupValues[1].contains("sacrificed")) ctx.events += EventSpec("sacrifice", player = ctx.objects.getValue(id).controller, obj = id) else ctx.events += EventSpec("leave", obj = id, to = to)
             ctx.lastMentioned = id; return true
@@ -9047,7 +9116,8 @@ class SituationParser(private val names: NameIndex) {
             val card = m.cards.getValue(r.groupValues[2])
             val ownerWord = c.substringBefore(" c").trim()
             val owner = when { r.groupValues[1].isNotEmpty() -> r.groupValues[1]; ownerWord.startsWith("my opponent") || ownerWord.startsWith("opponent") || ownerWord.startsWith("the opponent") || ownerWord == "their" -> pronounPlayer(ctx, "their"); ownerWord == "my" -> "me"; else -> actor ?: ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId }?.controller ?: ctx.lastOwner }
-            val id = objectIdFor(card, ctx) ?: addObject(card, owner, false, ctx)
+            // "I cast Clone copying Kitchen Finks, then Clone dies": the Clone just cast, once it has resolved.
+            val id = objectIdForOrCast(card, ctx) ?: addObject(card, owner, false, ctx)
             val to = when { c.contains("exiled") -> "exile"; c.contains("bounced") -> "hand"; else -> "graveyard" }
             if (c.contains("sacrificed")) ctx.events += EventSpec("sacrifice", player = owner, obj = id) else ctx.events += EventSpec("leave", obj = id, to = to)
             ctx.lastMentioned = id; return true
@@ -11366,6 +11436,9 @@ class SituationParser(private val names: NameIndex) {
 
     /** Cards whose target, as they're cast or enter, is a card in a graveyard: "targeting my Bolt" means the Bolt there. */
     private val graveyardReachers = setOf("Snapcaster Mage", "Eternal Witness", "Sun Titan", "Regrowth", "Reanimate", "Animate Dead", "Unearth", "Raise Dead", "Gravedigger", "Karmic Guide", "Noxious Revival", "Reclaim", "Archaeomancer", "Mnemonic Wall", "Timeless Witness", "Torrential Gearhulk", "Necromancy", "Dance of the Dead", "Persist", "Unburial Rites", "Zombify", "Resurrection", "Ghoulcaller's Chant", "Wildest Dreams", "Restock", "Nature's Spiral")
+    /** Spells that copy another spell and have no X of their own: an X said with them is the copied spell's. */
+    private val xlessCopySpells = setOf("Fork", "Twincast", "Reverberate", "Increasing Vengeance", "Reiterate", "Dualcaster Mage", "Return the Favor", "Narset's Reversal", "Lithoform Engine")
+
     private fun emitCast(who: String, card: NameIndex.Entry, restIn0: String, m: Marked, ctx: Ctx) {
         // "cast Giant Growth on it after my opponent Bolts it": what came after happened first, and "it" is still the creature.
         val restIn = Regex("""^(.*?)\s+after ((?:i|we|they|he|she|my opponent|the opponent|@\w+) .+)$""", RegexOption.IGNORE_CASE).find(restIn0)?.let { r ->
@@ -11484,6 +11557,11 @@ class SituationParser(private val names: NameIndex) {
         val flashedBack = Regex("""\b(?:with flashback|for (?:its|the) flashback cost|via flashback|flashing it back|using flashback|from (?:my|their|his|her|the) graveyard)\b""").containsMatchIn(rest)
         // "I cast Teferi's Protection, they Bolt me": a cast right after the other player's is read as a response, with
         // the first spell still on the stack. Said out loud, so a player who meant "after it resolved" can say so.
+        // "I cast Phantasmal Image copying their Grizzly Bears. They Bolt it.": what it copies is chosen as it enters, so saying
+        // what it copied says it resolved; the Bolt is aimed at the permanent, not the spell.
+        ctx.events.lastOrNull()?.takeIf { last -> last.verb == "cast" && last.player != who && last.to?.startsWith("copy:") == true && !Regex("""\b(?:in response|respond)""").containsMatchIn(rest + " " + ctx.currentClause) }?.let { last ->
+            castPermanentObject(ctx)?.let { id -> ctx.notes += "${ctx.objects[id]?.card?.name ?: "It"} was said to copy something, which it does only as it enters, so it is read as resolved before ${card.display} was cast." }
+        }
         ctx.events.lastOrNull()?.let { last ->
             if (last.verb == "cast" && last.player != who && !Regex("""\b(?:in response|respond)""").containsMatchIn(rest))
                 ctx.notes += "${card.display} is read as cast in response to ${last.card?.name ?: "the spell before it"}, which is still on the stack; say \"then\" or \"after it resolves\" if it had resolved first."
@@ -11603,7 +11681,13 @@ class SituationParser(private val names: NameIndex) {
             } else null
             // "I have Spell Queller in hand. Can I Queller it?": the copy already said to be in hand is the one cast, not a second.
             ?: ctx.objects.values.firstOrNull { it.card.oracleId == card.oracleId && it.zone == "hand" && it.controller == who && (card.typeLine.contains("Creature") || card.isSpellOnly) }?.id
-        repeat(n) { i -> ctx.events += EventSpec("cast", player = who, obj = gyObj, card = if (gyObj != null) null else CardRef(name = card.display, oracleId = card.oracleId), targets = targets, modes = modes, to = if (copyOf != null) "copy:$copyOf" else if (flashedBack) "flashback" else if (overload) "overload" else if (kicked) "kicked" else if (evoked) "evoke" else if (revolt != null) "revolt" else if (mastery != null) "spellmastery" else namedCard?.let { "name:$it" } ?: modeWord?.let { "mode:" + List(modeRepeat) { _ -> it }.joinToString("|") } ?: if (altCost) "altcost" else null, amount = xValue, payLife = ctx.payLife); if (secondTime != null && i == 0) ctx.events += EventSpec("resolveAll") }
+        // "casts Fork on their own Fireball with X=5": a copy spell has no X of its own, so the X said is the copied spell's,
+        // and the copy keeps it (707.10).
+        val xOwn = if (xValue != null && card.display in xlessCopySpells) {
+            val at = targets.firstOrNull { it.endsWith(":spell") }?.let { t -> ctx.events.indexOfLast { e -> e.verb == "cast" && ((e.card?.name?.let { slug(it) + ":spell" } == t) || (e.obj != null && e.obj + ":spell" == t) || e.obj == t.removeSuffix(":spell")) } } ?: -1
+            if (at >= 0 && ctx.events[at].amount == null) { ctx.events[at] = ctx.events[at].copy(amount = xValue); null } else xValue
+        } else xValue
+        repeat(n) { i -> ctx.events += EventSpec("cast", player = who, obj = gyObj, card = if (gyObj != null) null else CardRef(name = card.display, oracleId = card.oracleId), targets = targets, modes = modes, to = if (copyOf != null) "copy:$copyOf" else if (flashedBack) "flashback" else if (overload) "overload" else if (kicked) "kicked" else if (evoked) "evoke" else if (revolt != null) "revolt" else if (mastery != null) "spellmastery" else namedCard?.let { "name:$it" } ?: modeWord?.let { "mode:" + List(modeRepeat) { _ -> it }.joinToString("|") } ?: if (altCost) "altcost" else null, amount = xOwn, payLife = ctx.payLife); if (secondTime != null && i == 0) ctx.events += EventSpec("resolveAll") }
         ctx.payLife = null
         if (n > 1) ctx.notes += "${card.display} is cast $n times, one copy after another (each is its own spell)." 
         ctx.lastActor = who
