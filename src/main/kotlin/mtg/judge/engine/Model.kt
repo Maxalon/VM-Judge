@@ -195,7 +195,9 @@ sealed interface Effect {
     /** Aetherflux Reservoir: "you gain N life for each spell you've cast this turn". */
     data class GainLifePerSpellThisTurn(val who: Who, val per: Int) : Effect
     /** "Target player mills N cards" (701.17a). */
-    data class Mill(val who: Who, val count: Int) : Effect
+    data class Mill(val who: Who, val count: Int,
+                    /** Grindstone: "If two cards that share a color were milled this way, repeat this process." — what they must share ("color"). */
+                    val repeatIfShare: String? = null) : Effect
     /** Nykthos: "Choose a color. Add an amount of mana of that color equal to your devotion to that color." */
     data object AddManaDevotion : Effect
     /** Gaea's Cradle, Cabal Coffers: "Add {G} for each creature you control." */

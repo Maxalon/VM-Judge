@@ -978,7 +978,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         // Player shorthand for a mode: "bounce" is "return … to its owner's hand", "shatter" is "destroy … artifact".
         val shorthand = mapOf("bounce" to "return owner hand", "shatter" to "destroy artifact", "counterspell" to "counter spell", "fog" to "prevent all damage",
             "tuck" to "bottom library", "wrath" to "destroy all creatures", "naturalize" to "destroy artifact enchantment", "disenchant" to "destroy artifact enchantment",
-            "drain" to "loses life gain life", "shrink" to "gets until end of turn", "discard" to "discards card")
+            "drain" to "loses life gain life", "shrink" to "gets until end of turn", "discard" to "discards card",
+            // "choosing discard and shock" (Kolaghan's Command): a damage mode named after the burn spell that deals as much.
+            "shock" to "deals damage", "ping" to "deals damage", "burn" to "deals damage")
         // "-2/-2": the phrase itself in a mode's text decides before any word scoring (its digits are too short to score).
         texts.indexOfFirst { it.lowercase().contains(phrase.trim().lowercase()) }.takeIf { it >= 0 && phrase.trim().length >= 3 }?.let { return it }
         val want = words(shorthand[phrase.trim()] ?: phrase)

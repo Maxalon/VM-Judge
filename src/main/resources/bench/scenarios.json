@@ -38132,5 +38132,186 @@
     "cite": [
       "701.21a"
     ]
+  },
+  {
+    "id": "copy-fork-own-fireball-keeps-x",
+    "text": "My opponent casts Fork on their own Fireball with X=5. How much damage does the copy deal?",
+    "expect": [
+      "A copy of Fireball is put on the stack targeting you, with X = 5 like the original.",
+      "You take 5 damage. (×2)"
+    ],
+    "notExpect": [
+      "X = 0"
+    ],
+    "cite": [
+      "707.10",
+      "107.3a"
+    ]
+  },
+  {
+    "id": "copy-fork-fireball-x-said-apart",
+    "text": "My opponent casts Fireball at me. X is 5. They Fork it. How much damage does the copy deal?",
+    "expect": [
+      "with X = 5 like the original",
+      "You take 5 damage. (×2)"
+    ],
+    "notExpect": [
+      "X = 0"
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "copy-twincast-their-bolt-at-my-face",
+    "text": "I cast Twincast on their Lightning Bolt aimed at my face. Where does the copy go?",
+    "expect": [
+      "A copy of Lightning Bolt is put on the stack targeting opponent.",
+      "opponent takes 3 damage.",
+      "You take 3 damage."
+    ],
+    "cite": [
+      "707.10",
+      "707.10c"
+    ]
+  },
+  {
+    "id": "copy-clone-goyf-counters-and-pump-not-copied",
+    "text": "I cast Clone copying their Tarmogoyf that has two +1/+1 counters and a Giant Growth on it. How big is my Clone?",
+    "expect": [
+      "Clone doesn't get Tarmogoyf's 2 +1/+1 counters or +3/+3 until end of turn",
+      "Clone (copying Tarmogoyf) is 1/2"
+    ],
+    "cite": [
+      "707.2"
+    ]
+  },
+  {
+    "id": "copy-phantasmal-image-bolted-after-it-resolves",
+    "text": "I cast Phantasmal Image copying their Grizzly Bears. They Bolt it. What happens?",
+    "expect": [
+      "Phantasmal Image is now Grizzly Bears: Creature — Bear Illusion 2/2",
+      "Phantasmal Image is sacrificed.",
+      "Lightning Bolt doesn't resolve (all targets illegal)."
+    ],
+    "notExpect": [
+      "can't target Phantasmal Image"
+    ],
+    "cite": [
+      "707.9a",
+      "707.9b",
+      "608.2b"
+    ]
+  },
+  {
+    "id": "copy-spark-double-own-thalia-not-legendary",
+    "text": "I cast Spark Double copying my own Thalia. Does the legend rule apply?",
+    "expect": [
+      "Spark Double copies Thalia, Guardian of Thraben but isn't legendary, so the legend rule doesn't apply.",
+      "Spark Double enters with 1 additional +1/+1 counter."
+    ],
+    "notExpect": [
+      "the battlefield → your graveyard"
+    ],
+    "cite": [
+      "707.9b",
+      "707.9f"
+    ]
+  },
+  {
+    "id": "copy-fork-their-counterspell-on-my-thalia",
+    "text": "I Fork their Counterspell targeting my Thalia. What does my copy do?",
+    "expect": [
+      "A copy of Counterspell is put on the stack targeting Counterspell.",
+      "Counterspell is countered.",
+      "Thalia, Guardian of Thraben enters the battlefield."
+    ],
+    "cite": [
+      "707.10",
+      "707.10c"
+    ]
+  },
+  {
+    "id": "copy-they-twincast-my-thoughtseize",
+    "text": "They Twincast my Thoughtseize. Who discards?",
+    "expect": [
+      "A copy of Thoughtseize is put on the stack targeting you.",
+      "Thoughtseize: you discard a nonland card",
+      "opponent loses 2 life."
+    ],
+    "cite": [
+      "707.10",
+      "707.10c"
+    ]
+  },
+  {
+    "id": "grindstone-painter-mills-whole-library",
+    "text": "I control Painter's Servant naming blue and activate Grindstone targeting my opponent with 40 cards in library. How many are milled?",
+    "expect": [
+      "opponent mills 40 cards: opponent's entire library (0 left)."
+    ],
+    "cite": [
+      "701.17a",
+      "613.1e"
+    ]
+  },
+  {
+    "id": "copy-fork-fireball-split-keeps-division",
+    "text": "I cast Fork on my own Fireball with X=3 split between two creatures. Does the copy have to split the same way?",
+    "expect": [
+      "with X = 3 like the original",
+      "The copy splits its 3 damage the same way: evenly among its 2 targets, rounded down (1 each)"
+    ],
+    "cite": [
+      "707.2",
+      "707.10",
+      "601.2d"
+    ]
+  },
+  {
+    "id": "copy-twincast-kolaghans-command-same-modes",
+    "text": "I copy Kolaghan's Command choosing discard and shock with Twincast. Can the copy choose different modes?",
+    "expect": [
+      "The copy can't choose different modes",
+      "opponent discards 1 card. (×2)",
+      "opponent takes 2 damage. (×2)"
+    ],
+    "cite": [
+      "707.10",
+      "700.2a"
+    ]
+  },
+  {
+    "id": "copy-clone-of-finks-persists",
+    "text": "My Clone copying Kitchen Finks dies. Does it persist?",
+    "expect": [
+      "Clone comes back with a -1/-1 counter (persist); it's now 2/1."
+    ],
+    "cite": [
+      "702.79a",
+      "707.2"
+    ]
+  },
+  {
+    "id": "copy-metamorph-batterskull-living-weapon",
+    "text": "I cast Phyrexian Metamorph copying their Batterskull. What is it?",
+    "expect": [
+      "Phyrexian Metamorph is now Batterskull: Artifact — Equipment",
+      "You get a Phyrexian Germ token."
+    ],
+    "cite": [
+      "707.9b",
+      "702.92a"
+    ]
+  },
+  {
+    "id": "copy-metamorph-bears-is-artifact-creature",
+    "text": "I cast Phyrexian Metamorph copying their Grizzly Bears. What is it?",
+    "expect": [
+      "Phyrexian Metamorph is now Grizzly Bears: Artifact Creature — Bear 2/2"
+    ],
+    "cite": [
+      "707.9b"
+    ]
   }
 ]
