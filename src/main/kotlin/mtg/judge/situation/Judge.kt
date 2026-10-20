@@ -149,6 +149,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             // A trigger the parser couldn't read is as invisible as text it couldn't read at all: it can never fire,
             // so the answer would say "nothing changes" while the card sat there doing its thing.
             for (a in o.def.abilities) if (a is mtg.judge.engine.TriggeredAbility && a.trigger is mtg.judge.engine.Trigger.Unknown) unparsed += a.text
+            unparsed.removeAll { mtg.judge.engine.ModernMech.handlesAbility(it) }   // Amulet of Vigor, Murktide Regent (ModernMechanics.kt)
             if (unparsed.isNotEmpty()) state.unsupported += mtg.judge.engine.Unsupported(o.name, "Rules text not modeled: " + unparsed.distinct().joinToString(" | "))
         }
         engine.narrateLandTypeSetters()
@@ -745,7 +746,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             "${o.name} isn't on the battlefield any more (${o.zone.name.lowercase().replace('_', ' ')}). While it was, it was its printed ${o.def.power}/${o.def.toughness} minus your life total: at ${state.player(o.owner).life} life, ${(o.def.power ?: 13) - state.player(o.owner).life!!}/${(o.def.toughness ?: 13) - state.player(o.owner).life!!}."
                         !o.isOnBattlefield() -> "${o.name} isn't on the battlefield."
                         state.notACreatureBecause(o) != null -> "${o.name} isn't a creature right now (${state.player(o.controller).possessive} ${state.notACreatureBecause(o)}), so it has no power or toughness. It's still an enchantment on the battlefield and keeps its other abilities."
-                        state.hasCreatureType(o) -> { ptLayerStep(o, state); CounterAsks.layer7cStep(o, state); AuditAsks.chosenTypeStep(o, state); "${if (o.printedDef.name != o.def.name && !o.token) "${o.printedDef.name} (copying ${o.def.name})" else o.name} is ${state.describePt(o)}." }
+                        state.hasCreatureType(o) -> { ptLayerStep(o, state); CounterAsks.layer7cStep(o, state); AuditAsks.chosenTypeStep(o, state); ModernAsks.deliriumStep(o, state); "${if (o.printedDef.name != o.def.name && !o.token) "${o.printedDef.name} (copying ${o.def.name})" else o.name} is ${state.describePt(o)}." }
                         state.outcomes.any { it.startsWith("${o.name} isn't a creature:") } -> return
                         else -> "${o.name} isn't a creature."
                     }
@@ -781,7 +782,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             // "They have Blood Moon. Can my Dryad Arbor tap for mana?": its mana came from its land type, and the new type gives {R}.
                             moon != null && o.def.subtypes.any { it in setOf("Plains", "Island", "Swamp", "Mountain", "Forest") } -> "Yes, but only for {R}: ${moon.name} makes ${o.name} a Mountain, so it loses its own land types and the mana abilities they gave it, and has \"{T}: Add {R}\" instead (305.7, 305.6)."
                             moon != null -> "No: ${moon.name} makes ${o.name} a Mountain with none of its own abilities; it has only \"{T}: Add {R}\", so it taps for one red mana and nothing else (305.7, 613.1d)."
-                            lock != null && any.isNotEmpty() -> "No: ${lock.name} says ${o.name}\'s activated abilities can\'t be activated${if (lock.rulesText.contains("mana abilit", true)) " (mana abilities excepted, as it says)" else ""}."
+                            lock != null && any.isNotEmpty() -> { ModernAsks.lockStep(o, lock, any, engine, state); "No: ${lock.name} says ${o.name}\'s activated abilities can\'t be activated${if (lock.rulesText.contains("mana abilit", true)) " (mana abilities excepted, as it says)" else ""}." }
                             any.isEmpty() -> "${o.name} has no activated abilities."
                             o.tapped == true && tapAbilities.isNotEmpty() && tapAbilities.size == any.size -> "No: ${o.name} is already tapped, and every one of its abilities costs {T}."
                             tapAbilities.isNotEmpty() && state.isCreature(o) && o.summoningSick == true && !state.hasKeyword(o, "haste") ->
@@ -918,6 +919,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "cascade" -> AuditAsks.applyEvent(e, state) { c -> cardDef(c, state) }
             "edh" -> EdhAsks.applyEvent(e, state, engine)
             "nm" -> NewMechanicAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
+            "md" -> ModernAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1684,7 +1686,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val got = state.trace.steps.any { st -> Regex("""(?i)\b(?:extra|additional) turn""").containsMatchIn(st.text) && st.text.contains(p.subject) }
                     if (got) { state.outcomes += "Yes: ${p.subject.lowercase()} ${p.v("takes", "take")} an extra turn after this one."; return true }
                     // A "when you cast" trigger on a card that was put onto the battlefield rather than cast.
-                    val putIn = curEvents.filter { it.verb == "enter" && it.obj != null }.mapNotNull { state.objects[it.obj] }.firstOrNull { o -> Regex("""(?i)when you cast this spell""").containsMatchIn(o.def.oracleText) && Regex("""(?i)(?:extra|additional) turn""").containsMatchIn(o.def.oracleText) }
+                    val putIn = (curEvents.filter { it.verb == "enter" && it.obj != null }.mapNotNull { state.objects[it.obj] } + ModernAsks.putNotCast(state, curEvents)).firstOrNull { o -> Regex("""(?i)when you cast this spell""").containsMatchIn(o.def.oracleText) && Regex("""(?i)(?:extra|additional) turn""").containsMatchIn(o.def.oracleText) }
+                    putIn?.let { o -> state.trace.step("${o.name}'s extra turn is a \"when you cast this spell\" trigger. ${o.name} was put onto the battlefield by an effect, not cast, so that trigger never triggered.", "603.2", "601.2a") }
                     state.outcomes += if (putIn != null) "No: ${putIn.name}'s extra turn comes from \"when you cast this spell\", a trigger that happens only when it's cast. Putting it onto the battlefield with an effect (Show and Tell, Sneak Attack) isn't casting it (601.2a), so the trigger never happens (603.2). It's still on the battlefield with its other abilities."
                         else "No: nothing here gives ${p.subject.lowercase()} an extra turn."
                     return true
@@ -2262,6 +2265,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("ed:") == true) return EdhAsks.answer(e, state, engine)
                 if (e.to?.startsWith("nm:") == true) return NewMechanicAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("lv:") == true) return LegacyAsks.answer(e, state, engine)
+                if (e.to?.startsWith("md:") == true) return ModernAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

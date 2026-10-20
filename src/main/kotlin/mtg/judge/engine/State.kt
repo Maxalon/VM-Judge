@@ -305,6 +305,8 @@ class GameState(
     var pendingCost: CastCost? = null
     /** Cards a cascade said it hit ("I cast Violent Outburst and cascade into Crashing Footfalls"), in order (702.85a). */
     val cascadeHits = mutableListOf<CardDef>()
+    /** The Modern track's per-situation memory (ModernMechanics.kt). */
+    val md = ModernState()
     /** A spell being cast while another spell or ability resolves (cascade): timing permissions don't apply (608.2g). */
     var castDuringResolution = false
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */

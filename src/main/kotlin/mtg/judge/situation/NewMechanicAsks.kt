@@ -231,11 +231,13 @@ internal object NewMechanicAsks {
                 val gy = state.objects.values.filter { it.zone == Zone.GRAVEYARD && it.owner == player }
                 when (word) {
                     "delirium" -> {
-                        val all = listOf("Artifact", "Battle", "Creature", "Enchantment", "Instant", "Kindred", "Land", "Planeswalker", "Sorcery")
-                        val types = gy.flatMap { it.def.types.map { ty -> if (ty == "Tribal") "Kindred" else ty } }.filter { it in all }.toSortedSet()
-                        val listed = gy.joinToString(", ") { "${it.def.name} (${it.def.types.joinToString(" ").lowercase()})" }
-                        t.step("Delirium checks for four or more card types among cards in ${p.possessive} graveyard. Each card counts every card type it has, so an artifact creature gives both artifact and creature; supertypes and subtypes don't count. ${p.possessive.replaceFirstChar { it.uppercase() }} graveyard: ${listed.ifEmpty { "nothing" }}. That's ${plural(types.size, "card type")}${if (types.isEmpty()) "" else ": " + types.joinToString(", ") { it.lowercase() }}.", "207.2c", "205.2a")
-                        state.outcomes += if (types.size >= 4) "Yes: delirium is on, with ${types.size} card types in ${p.possessive} graveyard (${types.joinToString(", ") { it.lowercase() }}) (205.2a)." else "No: only ${types.size} card type${if (types.size == 1) "" else "s"} in ${p.possessive} graveyard (${types.joinToString(", ") { it.lowercase() }}); delirium needs four (205.2a)."
+                        // One count for every delirium question (ModernAsks.deliriumTypes); a named permanent with a delirium
+                        // ability also gets its size ("I control Dragon's Rage Channeler … Does it have delirium?").
+                        val types = ModernAsks.deliriumTypes(player, state)
+                        val perm = o?.takeIf { it.isOnBattlefield() && ModernAsks.hasDeliriumAbility(it) }
+                        val list = types.joinToString(", ") { it.lowercase() }
+                        state.outcomes += if (types.size >= 4) "Yes: delirium is on, with ${types.size} card types in ${p.possessive} graveyard ($list)${perm?.let { ", so ${it.name} has delirium; it's ${state.describePt(it)}" } ?: ""} (205.2a)."
+                            else "No: only ${types.size} card type${if (types.size == 1) "" else "s"} in ${p.possessive} graveyard ($list); delirium needs four${perm?.let { ". ${it.name} is ${state.describePt(it)}" } ?: ""} (205.2a)."
                     }
                     "descend" -> {
                         val n = arg.substringAfter(':', "").toIntOrNull() ?: o?.def?.oracleText?.let { Regex("""(?i)descend (\d+)""").find(it)?.groupValues?.get(1)?.toIntOrNull() } ?: 4

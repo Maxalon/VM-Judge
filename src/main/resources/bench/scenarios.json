@@ -46177,5 +46177,356 @@
       "702.40a",
       "707.10"
     ]
+  },
+  {
+    "id": "md1",
+    "text": "I evoke Solitude targeting my opponent's Ragavan, Nimble Pilferer. With the evoke sacrifice trigger on the stack, I cast Ephemerate targeting Solitude. Is Solitude sacrificed?",
+    "expect": [
+      "No: Solitude left the battlefield and came back as a new object",
+      "opponent gains 2 life"
+    ],
+    "cite": [
+      "603.3b",
+      "702.74a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "md2",
+    "text": "My opponent has Lightning Bolt and Counterspell in hand. I evoke Grief. With the sacrifice trigger on the stack, I cast Undying Malice targeting Grief. Is Grief sacrificed?",
+    "expect": [
+      "Grief returns to the battlefield tapped with a +1/+1 counter on it",
+      "Yes, Grief is sacrificed by its evoke trigger, but it comes right back",
+      "Lightning Bolt: opponent's hand → opponent's graveyard"
+    ],
+    "cite": [
+      "603.3b",
+      "603.6c",
+      "400.7"
+    ]
+  },
+  {
+    "id": "md3",
+    "text": "My opponent controls Ragavan, Nimble Pilferer and Dragon's Rage Channeler. I evoke Fury targeting Ragavan. With the sacrifice trigger on the stack, I cast Not Dead After All targeting Fury. What happens?",
+    "expect": [
+      "Fury returns to the battlefield tapped with a Wicked Role token attached to it",
+      "Dragon's Rage Channeler: the battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "603.3b",
+      "611.2a",
+      "303.7"
+    ]
+  },
+  {
+    "id": "md4",
+    "text": "My opponent controls Leyline of Sanctity. I evoke Grief. What happens?",
+    "expect": [
+      "Grief's triggered ability has no legal target and is removed from the stack",
+      "Grief is sacrificed."
+    ],
+    "cite": [
+      "603.3d",
+      "702.11c",
+      "702.74a"
+    ]
+  },
+  {
+    "id": "md5",
+    "text": "My opponent controls five Llanowar Elves. I evoke Fury. Can I divide its 4 damage among five creatures?",
+    "expect": [
+      "No: each target must be assigned at least 1 damage",
+      "at most 4 targets, not 5"
+    ],
+    "cite": [
+      "601.2d"
+    ]
+  },
+  {
+    "id": "md6",
+    "text": "I control Ensnaring Bridge. I have two cards in hand: Ragavan, Nimble Pilferer and a Mountain. I cast Ragavan for its dash cost. Can Ragavan attack?",
+    "expect": [
+      "No: Ragavan, Nimble Pilferer can't attack (Ensnaring Bridge: You have 1 card in hand"
+    ],
+    "cite": [
+      "601.2a",
+      "508.1c",
+      "702.10b"
+    ]
+  },
+  {
+    "id": "md7",
+    "text": "Ragavan, Nimble Pilferer deals combat damage to my opponent and exiles the top card of their library, a Forest. Can I play the Forest?",
+    "expect": [
+      "No: Ragavan, Nimble Pilferer says you may cast that card, and a land can't be cast"
+    ],
+    "cite": [
+      "116.2a",
+      "701.18b"
+    ]
+  },
+  {
+    "id": "md8",
+    "text": "I control Dragon's Rage Channeler. My graveyard has Bonecrusher Giant, Crib Swap and Mishra's Bauble. Does it have delirium?",
+    "expect": [
+      "Yes: delirium is on, with 4 card types in your graveyard (artifact, creature, instant, kindred)",
+      "3/3"
+    ],
+    "cite": [
+      "205.2a",
+      "715.4"
+    ]
+  },
+  {
+    "id": "md9",
+    "text": "I cast Murktide Regent with delve, exiling two Lightning Bolts and a Bonecrusher Giant. How big is it?",
+    "expect": [
+      "Murktide Regent is 5/5 (3/3 base, 2 +1/+1 counters)"
+    ],
+    "cite": [
+      "702.66a",
+      "614.1c",
+      "715.4"
+    ]
+  },
+  {
+    "id": "md10",
+    "text": "I control Omnath, Locus of Creation. I play Arid Mesa. Then I crack it for a Mountain. What happens?",
+    "expect": [
+      "(first resolution this turn): you gain 4 life",
+      "(second resolution this turn): you add {R}{G}{W}{U}"
+    ],
+    "cite": [
+      "605.5a",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "md11",
+    "text": "I control Amulet of Vigor and a Forest. I play Simic Growth Chamber. Can I tap it for mana before returning a land?",
+    "expect": [
+      "Simic Growth Chamber is untapped (Amulet of Vigor)",
+      "Yes: order the triggers so the untap resolves first"
+    ],
+    "cite": [
+      "603.3b",
+      "605.3a"
+    ]
+  },
+  {
+    "id": "md12",
+    "text": "I control Dryad of the Ilysian Grove and a Forest. How much does Leyline Binding cost?",
+    "expect": [
+      "Leyline Binding costs {5}{W} minus {5}",
+      "1 mana in all"
+    ],
+    "cite": [
+      "601.2f",
+      "613.1d",
+      "202.3"
+    ]
+  },
+  {
+    "id": "md13",
+    "text": "My opponent controls Ragavan, Nimble Pilferer. I control Up the Beanstalk, Dryad of the Ilysian Grove and a Forest. I cast Leyline Binding. Do I draw a card?",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ],
+    "cite": [
+      "202.3",
+      "603.2"
+    ]
+  },
+  {
+    "id": "md15",
+    "text": "I control Urza's Saga with two lore counters. My precombat main phase begins. Can its chapter III find Walking Ballista?",
+    "expect": [
+      "No: Walking Ballista's mana cost is {X}{X}, not {0} or {1}"
+    ],
+    "cite": [
+      "202.1",
+      "107.3"
+    ]
+  },
+  {
+    "id": "md16",
+    "text": "I control Urza's Saga with two lore counters. My precombat main phase begins and its chapter III finds Shadowspear. What happens?",
+    "expect": [
+      "Shadowspear is put onto the battlefield from your library",
+      "Urza's Saga: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "701.23a",
+      "714.4"
+    ]
+  },
+  {
+    "id": "md17",
+    "text": "I control Yawgmoth, Thran Physician, Grizzly Bears and Young Wolf with a +1/+1 counter. I sacrifice Grizzly Bears to Yawgmoth, targeting Young Wolf. Then I sacrifice Young Wolf to Yawgmoth. Does Young Wolf come back?",
+    "expect": [
+      "1 +1/+1 and 1 -1/-1 counter are removed",
+      "Young Wolf comes back with a +1/+1 counter (undying)"
+    ],
+    "cite": [
+      "704.5q",
+      "702.93a"
+    ]
+  },
+  {
+    "id": "md18",
+    "text": "Grief is in my graveyard and I cast Living End. What happens?",
+    "expect": [
+      "You get Grief back from exile onto the battlefield (Living End)",
+      "Grief: opponent discards a nonland card"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "md19",
+    "text": "During my opponent's end step I cast Violent Outburst and cascade into Living End. Can I cast Living End?",
+    "expect": [
+      "Living End is cast from exile without paying its mana cost",
+      "Yes: cascade lets you cast Living End while its trigger resolves"
+    ],
+    "cite": [
+      "702.85a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "md20",
+    "text": "I cast The One Ring. On my next upkeep, does its protection stop the burden life loss?",
+    "expect": [
+      "No: the protection ends as your next turn begins"
+    ],
+    "cite": [
+      "702.16e",
+      "702.16j"
+    ]
+  },
+  {
+    "id": "md21",
+    "text": "My opponent casts Lightning Bolt. In response, can I activate Teferi, Time Raveler's -3 targeting their Aether Vial?",
+    "expect": [
+      "No: Teferi, Time Raveler's loyalty abilities can be activated only at sorcery speed"
+    ],
+    "cite": [
+      "606.3"
+    ]
+  },
+  {
+    "id": "md22",
+    "text": "I control Teferi, Time Raveler. My opponent has Aether Vial with 3 counters. On my turn, can they Vial in Spell Queller?",
+    "expect": [
+      "Spell Queller enters the battlefield.",
+      "Yes: Teferi, Time Raveler only limits casting spells",
+      "Spell Queller's trigger has no spell to target"
+    ],
+    "cite": [
+      "113.3b",
+      "603.3d"
+    ]
+  },
+  {
+    "id": "md23",
+    "text": "My opponent controls Chalice of the Void with one counter. I cast Ragavan, Nimble Pilferer for its dash cost. Does Chalice counter it?",
+    "expect": [
+      "Yes: Ragavan, Nimble Pilferer still has mana value 1 when cast for its alternative cost"
+    ],
+    "cite": [
+      "118.9c",
+      "202.3",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "md24",
+    "text": "I activate Karn, the Great Creator's -2. Can I get Walking Ballista from my sideboard?",
+    "expect": [
+      "Yes: your sideboard is outside the game (400.11a)"
+    ],
+    "cite": [
+      "400.11a",
+      "400.11b"
+    ]
+  },
+  {
+    "id": "md25",
+    "text": "My Nahiri, the Harbinger has 8 loyalty. I activate its -8 and put Emrakul, the Aeons Torn onto the battlefield. Do I get an extra turn, and can it attack?",
+    "expect": [
+      "No: Emrakul, the Aeons Torn's extra turn comes from \"when you cast this spell\"",
+      "opponent takes 15 damage"
+    ],
+    "cite": [
+      "702.10b",
+      "603.2"
+    ]
+  },
+  {
+    "id": "md26",
+    "text": "My opponent controls Collector Ouphe. Can I sacrifice my Treasure for mana?",
+    "expect": [
+      "No: Collector Ouphe says Treasure token's activated abilities can't be activated"
+    ],
+    "cite": [
+      "602.5",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "md27",
+    "text": "My opponent controls Stony Silence. Can I remove a counter from my Walking Ballista to deal damage?",
+    "expect": [
+      "No: Stony Silence says Walking Ballista's activated abilities can't be activated"
+    ],
+    "cite": [
+      "602.5"
+    ]
+  },
+  {
+    "id": "md28",
+    "text": "My opponent controls Hushbringer. I cast Phyrexian Metamorph copying my Thragtusk. Do I gain 5 life?",
+    "expect": [
+      "No: you gain no life here."
+    ],
+    "cite": [
+      "614.1c",
+      "603.2"
+    ]
+  },
+  {
+    "id": "md29",
+    "text": "My opponent controls Blood Sun. I control two Forests and play Lotus Field. What happens?",
+    "expect": [
+      "Lotus Field enters untapped: under Blood Sun",
+      "Lotus Field's ability doesn't trigger (Blood Sun)"
+    ],
+    "cite": [
+      "614.12",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "md30",
+    "text": "My opponent controls Leyline of Sanctity. I attack with Goblin Guide. Does its trigger happen?",
+    "expect": [
+      "Yes: Goblin Guide's ability resolves as normal."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "md31",
+    "text": "My opponent casts Primeval Titan with Cavern of Souls naming Giant. I evoke Subtlety targeting it. What happens?",
+    "expect": [
+      "Primeval Titan can't be countered (cast with Cavern of Souls)",
+      "Primeval Titan is put on the top or bottom of opponent's library"
+    ],
+    "cite": [
+      "701.6a"
+    ]
   }
 ]

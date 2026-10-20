@@ -1654,6 +1654,9 @@ object OracleParser {
             if (!m.groupValues[1].startsWith("target", true) && !m.groupValues[1].startsWith("another target", true) && m.groupValues[1] != "~") { val f = parseFilter(m.groupValues[1], Kind.PERMANENT); val kws = keywordsIn(m.groupValues[2]); if (f.verifiable && kws != null) return Effect.PumpAll(f, 0, 0, kws.toList()) }
         }
         Regex("""^Remove all counters from (target .+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.RemoveAllCounters(target(m.groupValues[1])) }
+        // Yawgmoth, Thran Physician: "Put a -1/-1 counter on up to one target creature and draw a card": the counter, then the draw.
+        Regex("""^(put .+? counters? on target .+?) and draw (a|one|two|three) cards?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            countersOnRe.matchEntire(m.groupValues[1])?.let { return Effect.Seq(listOf(parseSentence(m.groupValues[1]), Effect.Draw(Who.YOU, number(m.groupValues[2]) ?: 1))) } }
         countersOnRe.matchEntire(s)?.let { m ->
             val isX = m.groupValues[1].equals("X", true)
             val n = if (isX) 0 else (number(m.groupValues[1]) ?: return Effect.Unparsed(s))
@@ -2091,7 +2094,8 @@ object OracleParser {
     private fun target(desc: String, defaultKind: Kind? = null): TargetSpec {
         // "target instant or sorcery spell, except that the copy is red" (Fork): the rider isn't part of what the target has to be.
         val d = desc.trim().let { if (it.startsWith("target ", true)) it.drop(7) else it }.trim().replace(Regex("""(?i),?\s*except that\b.*$"""), "").trim()
-        return TargetSpec(parseFilter(d, defaultKind), d)
+        // "exile up to one other target creature" (Solitude): "other" excludes the source itself, so it can't aim at itself.
+        return TargetSpec(parseFilter(d, defaultKind).let { if (Regex("""(?i)^other\b""").containsMatchIn(d)) it.copy(other = true) else it }, d)
     }
 
     private val landTypes = setOf("plains", "island", "swamp", "mountain", "forest", "desert", "gate", "lair", "locus", "mine", "power-plant", "tower", "urza's", "sphere", "cave", "town", "cloud")

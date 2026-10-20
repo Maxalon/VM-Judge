@@ -234,7 +234,7 @@ class Engine(val state: GameState) {
         } else targets
         // The spell's own text names a target the engine couldn't model ("target creature loses all abilities …"): the target is kept, not queried.
         val unmodeledTarget = needed.isEmpty() && targets.isNotEmpty() && effect != null && effect.hasUnparsed() && !targetsAPlayer(effect) && Regex("""(?i)\btarget\b""").containsMatchIn(card.oracleText ?: "")
-        if (unmodeledTarget) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
+        if (unmodeledTarget && !ModernMech.handles(unparsedText(effect!!))) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
         // "I Stifle the mana ability": an activated mana ability never goes on the stack, so there is nothing to
         // target. Before this the answer was a clarification asking which ability was meant.
         if (needed.any { Regex("""(?i)\bability\b""").containsMatchIn(it.raw) } && targets.isEmpty() &&
@@ -327,6 +327,7 @@ class Engine(val state: GameState) {
             return null
         }
         CommanderRules.cast(obj, fromZone)   // 903.8: this cast counts toward the next one's commander tax
+        ModernMech.leftHand(state, obj, fromZone)   // a card counted in a stated hand size leaves the hand (ModernMechanics.kt)
         obj.zone = Zone.STACK
         obj.x = x
         obj.wasKicked = kicked
@@ -512,7 +513,7 @@ class Engine(val state: GameState) {
         AuditMech.splitCastNote(state, item)
         wardTriggers(item)
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
-        if (item.effect?.hasUnparsed() == true) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
+        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         // A spell at a player ("any target") can be sent to Spellskite too, it being a creature.
         val skiteCouldTake = item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" } || (item.targets.any { it is Ref.Player } && Regex("""(?i)\bany target\b""").containsMatchIn(card.oracleText))
         if (skiteCouldTake) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
@@ -1053,7 +1054,7 @@ class Engine(val state: GameState) {
         targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, playerId, item.id)) } }
         if (wasOnBattlefield) onEvent(GameEvent.AbilityActivated(obj, playerId))
         state.player(playerId).let { p -> trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s ability (${ability.cost})${describeTargets(targets)}. It goes on top of the stack.", "602.2a", "405.2") }
-        if (ability.effect.hasUnparsed()) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -1409,7 +1410,7 @@ class Engine(val state: GameState) {
     private fun helpsThePlayer(e: Effect?): Boolean = when (e) { is Effect.Draw -> true; is Effect.GainLife -> true; is Effect.Seq -> e.effects.firstOrNull { it !is Effect.Narrated }?.let { helpsThePlayer(it) } == true; is Effect.May -> helpsThePlayer(e.effect); else -> false }
     /** Pumps, keyword grants, shields, +1/+1 counters: aimed at your own things when an opponent's also qualify. */
     private fun isBeneficial(e: Effect?): Boolean = when (e) { is Effect.Pump, is Effect.GainKeywords, is Effect.CreateShield, is Effect.Regenerate, is Effect.Untap, is Effect.Mentor, is Effect.Backup -> true; is Effect.PutCounters -> e.kind.let { it == "+1/+1" || it.startsWith("+") }; is Effect.Seq -> e.effects.isNotEmpty() && e.effects.all { isBeneficial(it) || it is Effect.Narrated }; is Effect.May -> isBeneficial(e.effect); else -> false }
-    private fun isHarmful(e: Effect?): Boolean = when (e) { is Effect.Destroy, is Effect.Exile, is Effect.Damage, is Effect.DamageThatMuch, is Effect.Bounce, is Effect.Tap, is Effect.Counter, is Effect.ShuffleIntoLibrary, is Effect.GainControl -> true; is Effect.Seq -> e.effects.any { isHarmful(it) }; is Effect.May -> isHarmful(e.effect); is Effect.UnlessPays -> isHarmful(e.effect); else -> false }
+    private fun isHarmful(e: Effect?): Boolean = when (e) { is Effect.Destroy, is Effect.Exile, is Effect.Damage, is Effect.DamageDivided, is Effect.DamageThatMuch, is Effect.Bounce, is Effect.Tap, is Effect.Counter, is Effect.ShuffleIntoLibrary, is Effect.GainControl -> true; is Effect.Seq -> e.effects.any { isHarmful(it) }; is Effect.May -> isHarmful(e.effect); is Effect.UnlessPays -> isHarmful(e.effect); else -> false }
     /** Effects phrased "target player …" whose player is carried by a [Who] rather than a TargetSpec. */
     /** Whether the spell's targets are a mode's rather than its own — a Modal, possibly behind a rider sentence. */
     private fun isModal(e: Effect?): Boolean = e is Effect.Modal || (e is Effect.Seq && e.effects.any { isModal(it) })
@@ -1709,7 +1710,7 @@ class Engine(val state: GameState) {
                     // abilities that go on applying, so they don't get this line.
                     val entersOnly = setOf(StaticEffect.EntersTapped::class, StaticEffect.EntersWithCounters::class, StaticEffect.EntersAsCopy::class)
                     if (now.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it::class !in entersOnly }) trace.step("${now.name}'s static ability starts applying to the permanents it describes.", "604.2", "613.1")
-                    now.abilities.filterIsInstance<UnparsedAbility>().takeIf { it.isNotEmpty() }?.let { un -> if (state.unsupported.none { it.what == now.name }) state.unsupported += Unsupported(now.name, "Rules text not modeled: " + un.joinToString(" | ") { it.text }) }
+                    now.abilities.filterIsInstance<UnparsedAbility>().filterNot { ModernMech.handlesAbility(it.text) }.takeIf { it.isNotEmpty() }?.let { un -> if (state.unsupported.none { it.what == now.name }) state.unsupported += Unsupported(now.name, "Rules text not modeled: " + un.joinToString(" | ") { it.text }) }
                     state.outcomes += "${if (now !== def) "${def.name}, a copy of ${now.name}," else now.name} enters the battlefield."
                     narrateLandTypeSetters(item.source)
                     narrateLayers(item.source)
@@ -2330,7 +2331,8 @@ class Engine(val state: GameState) {
                 continue
             }
             val jailer = if (obj.zone == Zone.GRAVEYARD) graveyardAbilitiesGone() else null
-            for (ability in TriggerRules.lookBack(obj, event, obj.abilities).filterIsInstance<TriggeredAbility>() + grantedTriggers(obj) + GapMech.blitzTriggers(obj, event) + AuditMech.cascadeTriggers(obj, event) + NewMech.dynamicTriggers(obj, event)) {
+            for (ability in TriggerRules.lookBack(obj, event, obj.abilities).filterIsInstance<TriggeredAbility>() + grantedTriggers(obj) + GapMech.blitzTriggers(obj, event) + AuditMech.cascadeTriggers(obj, event) + NewMech.dynamicTriggers(obj, event) + ModernMech.untapTriggers(state, obj, event)) {
+                if (ModernMech.bloodSunMutes(state, obj, ability, event) { matches(obj, ability.trigger, event, false) }) continue
                 val fromGy = obj.zone == Zone.GRAVEYARD && functionsFromGraveyard(ability)
                 if (fromGy && jailer != null) {
                     if (state.trace.steps.none { it.text.startsWith("${jailer.name} takes the abilities away") })
@@ -2380,7 +2382,7 @@ class Engine(val state: GameState) {
             if (controllers.size > 1) state.clarifications += Clarification("active player", "Abilities controlled by ${controllers.joinToString(" and ") { if (state.player(it).you) "you" else state.player(it).name }} triggered at the same time; they go on the stack in APNAP order, so whose turn it is decides which resolves first (603.3b). Assuming ${if (state.player(order.first()).you) "you are" else state.player(order.first()).name + " is"} the active player.")
             triggered.sortedBy { order.indexOf(it.first.controller) }
         }
-        for ((obj, ability) in ordered) {
+        for ((obj, ability) in ModernMech.untapLast(state, ordered)) {
             val cause = when (event) {
                 is GameEvent.SpellCast -> "${if (state.player(event.item.controller).you) "you" else state.player(event.item.controller).name} casting ${event.item.source.name}"
                 is GameEvent.EntersBattlefield -> "${event.obj.name} entering the battlefield"
@@ -2627,8 +2629,13 @@ class Engine(val state: GameState) {
         val hush = state.objects.values.filter { it.isOnBattlefield() }.any { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.NoEtbTriggers } }
         if (hush) { trace.step("${obj.name}'s evoke sacrifice trigger is an enters-the-battlefield trigger too, so it doesn't trigger either: ${obj.name} stays on the battlefield.", "702.74a", "603.2"); state.outcomes += "${obj.name} stays on the battlefield (its evoke trigger never triggered)."; return }
         trace.step("${obj.name}'s evoke ability triggers: its evoke cost was paid, so its controller will sacrifice it. This goes on the stack above the other enters-the-battlefield triggers of ${obj.name} only if it triggered later; abilities that triggered at the same time are put on the stack in the order their controller chooses.", "702.74a", "603.3b")
-        putTriggerOnStack(obj, ability, emptyList())
+        ModernMech.evokeOrder(state, putTriggerOnStack(obj, ability, emptyList()))
     }
+
+    /** Bridges for ModernMechanics.kt: a granted trigger, a fresh object id, and a card returned from a graveyard entering. */
+    internal fun mdPutTrigger(obj: GameObject, ability: TriggeredAbility) = putTriggerOnStack(obj, ability, emptyList())
+    internal fun mdFreshId(name: String) = freshObjectId(name)
+    internal fun mdEnters(o: GameObject) { applyEntersReplacements(o); onEvent(GameEvent.EntersBattlefield(o)) }
 
     /** Kira, Great Glass-Spinner: triggered abilities a permanent has because a static grants them to what it is (613.1f). */
     /** The activated abilities a permanent has: its own, plus any granted to it (Cryptolith Rite) while it is on the battlefield. */
@@ -2729,6 +2736,19 @@ class Engine(val state: GameState) {
                 state.outcomes += "${obj.name}'s trigger has nothing to target: it was the only ${spec.raw.substringBefore(" in ")} described in ${state.player(obj.controller).possessive} graveyard and it's on the battlefield now, so the trigger is removed from the stack (603.3d). Name another creature card there for it to return one."
                 return null
             }
+            // Spell Queller put in with Aether Vial on an empty stack: "target spell" has nothing to aim at, so the trigger is removed (603.3d).
+            if (inferred == null && targets.isEmpty() && spec.filter.kinds.isNotEmpty() && spec.filter.kinds.all { it == Kind.SPELL } && state.stack.none { it.kind == StackKind.SPELL }) {
+                trace.step("${obj.name}'s triggered ability needs a target (${spec.raw}), and there is no spell on the stack, so it has no legal target and is removed from the stack.", "603.3d")
+                state.outcomes += "${obj.name}'s trigger has no spell to target and does nothing."
+                return null
+            }
+            // Solitude blinked with no other creature left: "up to one" lets the trigger have no target at all (601.2c), and it does nothing.
+            if (inferred == null && targets.isEmpty() && Kind.PLAYER !in spec.filter.kinds && Regex("""(?i)\bup to (?:one|two|three|four|\w+) (?:other )?target\b""").containsMatchIn(ability.text)
+                && state.objects.values.none { it.isOnBattlefield() && filterMatches(spec.filter, Ref.Obj(it.id), obj.controller, obj) && targetingProblem(obj, obj.controller, Ref.Obj(it.id)) == null }) {
+                trace.step("${obj.name}'s triggered ability says \"up to\" a number of targets, and nothing on the battlefield is a legal one (${spec.raw}), so it's put on the stack with no target and does nothing.", "601.2c", "603.3d")
+                state.outcomes += "${obj.name}'s trigger has no legal target (${spec.raw}); \"up to one\" lets it have none, so it does nothing."
+                return null
+            }
             if (inferred == null && targets.isEmpty() && state.clarifications.none { it.about == "${obj.name}'s triggered ability's target" }) {
                 state.clarifications += Clarification("${obj.name}'s triggered ability's target",
                     "${obj.name}'s triggered ability needs a target (${spec.raw}) and the situation doesn't say which${if (state.players.size > 2) " (${state.opponentsOf(obj.controller).joinToString(" or ") { if (it.you) "you" else it.name }})" else ""}; what the ability does to that target is left out. Say who it targets for a complete answer.")
@@ -2774,7 +2794,7 @@ class Engine(val state: GameState) {
         splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
-        if (ability.effect.hasUnparsed()) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -3948,6 +3968,7 @@ class Engine(val state: GameState) {
                 if (EdhMech.resolve(this, effect.text, item)) return   // Tergrid, Consultation, Expropriate, Leadership Vacuum (EdhMechanics.kt)
                 if (LegacyMech.narrated(this, effect.text, item)) return   // Dreadnought phased out, Chrome Mox imprint (LegacyMechanics.kt)
                 LegacyMech.narratedAs(state, effect.text, item)?.let { applyEffect(it, item); return }   // Children of Korlis
+                if (ModernMech.narrated(this, state, effect.text, item)) return   // Undying Malice's return (ModernMechanics.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 // Devoted Druid's "Untap ~": the permanent really untaps, so its {T} ability can be activated again.
                 if (Regex("""(?i)^untap ~\.?$""").matches(effect.text.trim()) && item.source.isOnBattlefield()) {
@@ -4047,6 +4068,7 @@ class Engine(val state: GameState) {
             } }
             is Effect.Unparsed -> {
                 if (Turns.resolve(this, effect.text, item)) return
+                if (ModernMech.unparsed(this, state, effect.text, item)) return   // Undying Malice, Not Dead After All (ModernMechanics.kt)
                 trace.step("(Not modeled: \"${effect.text}\")")
                 enterBlockersNote(item, effect.text)
                 // Counterbalance: the spell is countered if the revealed card's mana value matches it.
@@ -4605,6 +4627,7 @@ class Engine(val state: GameState) {
     private fun applyEntersReplacements(o: GameObject, choice: String? = null) {
         entersAbilitiesGone(o)
         applyEntersAsCopy(o, choice)
+        ModernMech.entersWithExiled(state, o)   // Murktide Regent's counters for the cards delve exiled (ModernMechanics.kt)
         val startingLoyalty = o.def.loyalty?.let { NewMech.compleatedLoyalty(state, o, it) }
         if ("Saga" in o.def.subtypes && o.def.abilities.any { it is TriggeredAbility && it.trigger is Trigger.Chapter } && (o.counters["lore"] ?: 0) == 0) {
             // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (714.3a), not its rules text (305.7), but the chapter abilities are gone.
@@ -4635,7 +4658,8 @@ class Engine(val state: GameState) {
         val moon = if ("Land" in o.def.types && "Basic" !in o.def.supertypes && o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.EntersTapped })
             state.objects.values.firstOrNull { m -> m.isOnBattlefield() && m !== o && m.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.NonbasicLandsAreMountains } } else null
         if (moon != null) { trace.step("${moon.name} makes ${o.name} a Mountain with no abilities, and that applies as it enters (a type-changing effect, 613.2; replacement effects that would apply to it entering are checked after, 614.12), so its own enters-tapped text is gone: it enters untapped, with no life to pay.", "614.12", "613.2"); state.outcomes += "${o.name} enters untapped under ${moon.name}, with nothing to pay: it's a Mountain with no abilities, and its own text doesn't apply as it enters (614.12)." }
-        for (e in o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }) if (moon == null) when (e) {
+        val sun = if (moon == null) ModernMech.bloodSunEnters(state, o) else null   // Blood Sun: a land's "enters tapped" is gone too (ModernMechanics.kt)
+        for (e in o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }) if (moon == null && sun == null) when (e) {
             is StaticEffect.EntersTapped -> {
                 // The shocklands: the payment is made as it enters, so nothing can be done in between. Said
                 // nothing, the choice the card offers is taken (the life is paid), unless that would be lethal.
@@ -5412,7 +5436,7 @@ class Engine(val state: GameState) {
 
     /** "~ costs {1} less to cast for each creature on the battlefield": how much less, and why. */
     internal fun selfReduction(obj: GameObject): Pair<Int, String> {
-        val r = obj.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.SelfCostReduction>().firstOrNull() ?: return 0 to ""
+        val r = obj.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.SelfCostReduction>().firstOrNull() ?: return ModernMech.domainReduction(state, obj) ?: (0 to "")
         val per = r.per ?: return r.amount to "a flat {${r.amount}}"
         val n = when (per) {
             is CountExpr.Permanents -> state.objects.values.count { it.isOnBattlefield() && state.matches(per.filter, it, obj.controller) }
@@ -5514,7 +5538,7 @@ class Engine(val state: GameState) {
         state.outcomes += "${obj.name}: ${zoneName(from, obj)} → ${zoneName(to, obj)}."
         if (noLongerKw?.second != null) { trace.step("${obj.name} had no abilities on the battlefield (${noLongerKw.second}), and a leaves-the-battlefield ability looks back at the object as it last existed there, so it had no ${noLongerKw.first} to trigger: it stays in the graveyard.", "603.10a", "613.1f"); state.outcomes += "${obj.name} doesn't return: it had no ${noLongerKw.first} on the battlefield (${noLongerKw.second})." }
         if (from == Zone.BATTLEFIELD) {
-            if (to == Zone.GRAVEYARD) { onEvent(GameEvent.Dies(obj)); undyingOrPersist(obj, hadUndying, hadPersist) } else onEvent(GameEvent.LeavesBattlefield(obj))
+            if (to == Zone.GRAVEYARD) { onEvent(GameEvent.Dies(obj)); undyingOrPersist(obj, hadUndying, hadPersist); ModernMech.onDies(this, state, obj) } else onEvent(GameEvent.LeavesBattlefield(obj))
             if (to == Zone.GRAVEYARD) onEvent(GameEvent.PutIntoGraveyard(obj))
             // "Exile … until ~ leaves the battlefield": leaving is the event that returns them (610.3, 610.3c).
             state.exiledUntilLeaves.remove(obj.id)?.forEach { id ->

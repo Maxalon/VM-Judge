@@ -75,6 +75,8 @@ internal fun manaText(generic: Int, symbols: List<String>): String = (if (generi
 /** The alternative cost a card offers in its own text ("you may pay {0} rather than pay this spell's mana cost"), or null. */
 internal fun alternativeCostText(card: CardDef): String? =
     Regex("""(?i)you may ([^.]+?) rather than pay (?:this spell's|~'s|${Regex.escape(card.name)}'s) mana cost""").find(card.oracleText)?.groupValues?.get(1)
+        // "Ragavan for its dash cost": a keyword that is an alternative cost of mana (702.109a dash, prowl, surge, spectacle, blitz).
+        ?: Regex("""(?m)^(?:Dash|Prowl|Surge|Spectacle|Blitz|Freerunning)[ —]+(\{[^}]+\}(?:\{[^}]+\})*)""").find(card.oracleText)?.let { "pay ${it.groupValues[1]}" }
 
 /**
  * The total cost of casting [obj] (601.2f). [alternative] means it was said to be cast for an alternative cost or
