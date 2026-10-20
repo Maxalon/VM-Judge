@@ -43,9 +43,10 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                 val sing = singularize(span)
                 // Exact name, then nickname, then singularized forms; a nickname beats a token that happens to share the word ("bears" -> Grizzly Bears, not a Bear token).
                 // "Jace" is a planeswalker token as well as a nickname for Jace, the Mind Sculptor: the token never wins over the nickname.
-                val exact = byNorm[key]?.takeIf { (it.isCard && it.kind == "full") || key !in aliases }
+                val exact = byNorm[key]?.takeIf { (it.isCard && it.kind == "full" && key !in Slang.overrides) || key !in aliases }
                 val e0 = exact ?: alias(key) ?: sing?.let { alias(it) } ?: sing?.let { byNorm[it] }
                     ?: (if (len >= 2) byNorm["the $key"] ?: sing?.let { byNorm["the $it"] } else null)
+                    ?: (if (len >= 2) missingApostrophe(span) else null)
                 // A first name shared by several legendary creatures ("Sheoldred", "Atraxa"): the front face of a transforming card
                 // that happens to carry it ("Sheoldred // The True Scriptures") doesn't win over them.
                 // "two Thalias": the plural of a first name is the same first name.
@@ -66,6 +67,18 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             if (hit != null) { found += hit; i = hit.end } else i++
         }
         return found
+    }
+
+    /** "geralfs messenger", "urzas saga": a possessive name typed without its apostrophe ("geralf s messenger" in the index). */
+    private fun missingApostrophe(span: List<String>): Entry? {
+        for (j in 0 until span.size - 1) {
+            val w = span[j]
+            if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) {
+                val k = (span.take(j) + listOf(w.dropLast(1), "s") + span.drop(j + 1)).joinToString(" ")
+                byNorm[k]?.takeIf { it.isCard && it.kind == "full" }?.let { return it }
+            }
+        }
+        return null
     }
 
     /** "stifles" -> "stifle", "counterspells" -> "counterspell": verbified or plural card names. */

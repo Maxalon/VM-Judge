@@ -29,6 +29,8 @@ class NoInventedCardsTest {
     private val slangNicknames = mapOf(
         "fow" to "Force of Will", "led" to "Lion's Eye Diamond", "rip" to "Rest in Peace", "tseize" to "Thoughtseize", "lab" to "Laboratory Maniac",
         "thoracle" to "Thassa's Oracle", "kcommand" to "Kolaghan's Command", "mom" to "Mother of Runes", "trini" to "Trinisphere", "pacify" to "Pacifism",
+        "tnn" to "True-Name Nemesis", "fon" to "Force of Negation", "drc" to "Dragon's Rage Channeler", "skite" to "Spellskite", "esg" to "Elvish Spirit Guide",
+        "seize" to "Thoughtseize", "birds" to "Birds of Paradise", "tithe" to "Smothering Tithe", "rift" to "Cyclonic Rift",
     )
 
     @Test

@@ -47485,5 +47485,1097 @@
     "cite": [
       "120.3f"
     ]
+  },
+  {
+    "id": "wx1",
+    "text": "i got syndic of tithes. i bolt face and pay for extort. how much life does opp lose total",
+    "expect": [
+      "opponent loses 1 life.",
+      "You gain 1 life.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "702.101a",
+      "608.2d"
+    ]
+  },
+  {
+    "id": "wx2",
+    "text": "my unblocked 1/1 is swinging. i ninjutsu ninja of the deep hours. does the ninja hit and do i draw?",
+    "expect": [
+      "a 1/1 creature: the battlefield → your hand.",
+      "Ninja of the Deep Hours enters the battlefield.",
+      "opponent takes 2 damage.",
+      "You draw 1 card."
+    ],
+    "cite": [
+      "702.49a",
+      "702.49c",
+      "508.4"
+    ]
+  },
+  {
+    "id": "wx3",
+    "text": "first draw of the turn is terminus. can i miracle it for w",
+    "expect": [
+      "Yes: Terminus was the first card you drew this turn, so you reveal it and may cast it for the miracle cost {W} when the trigger resolves (702.94a)."
+    ],
+    "cite": [
+      "702.94a",
+      "702.94b",
+      "603.11"
+    ]
+  },
+  {
+    "id": "wx4",
+    "text": "geralfs messenger w/ a +1/+1 counter dies. does it come back",
+    "expect": [
+      "Geralf's Messenger doesn't come back: it had 1 +1/+1 counter when it died, so undying doesn't return it."
+    ],
+    "cite": [
+      "702.93a"
+    ]
+  },
+  {
+    "id": "wx5",
+    "text": "i jump start radical idea. what happens to it",
+    "expect": [
+      "You discard 1 card.",
+      "Radical Idea is exiled (jump-start, 702.133a)."
+    ],
+    "cite": [
+      "702.133a"
+    ]
+  },
+  {
+    "id": "wx6",
+    "text": "can i plot slickshot show-off in combat",
+    "expect": [
+      "No: Slickshot Show-Off can't be plotted now. Plot works only in your main phase with an empty stack (702.170a)."
+    ],
+    "cite": [
+      "702.170a",
+      "116.2"
+    ]
+  },
+  {
+    "id": "wx7",
+    "text": "opp swings a 2/2 at my jtms w/ 3 loyalty and bolts jace too. does he die",
+    "expect": [
+      "deals no combat damage: Jace, the Mind Sculptor, which it was attacking, left the battlefield",
+      "Yes: Jace, the Mind Sculptor died"
+    ],
+    "cite": [
+      "506.4c",
+      "704.5i",
+      "306.8"
+    ]
+  },
+  {
+    "id": "wx8",
+    "text": "i giant growth opp's bears w/ a -1/-1 counter. what are its power and toughness",
+    "expect": [
+      "Grizzly Bears is 4/4 (2/2 base, +3/+3 until end of turn, 1 -1/-1 counter)."
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "wx9",
+    "text": "opp's guy has a +1/+1 counter and i oko it into a 3/3 elk. is it a 4/4",
+    "expect": [
+      "a creature is 4/4 (3/3 base, 1 +1/+1 counter)."
+    ],
+    "cite": [
+      "613.4b",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "wx10",
+    "text": "my guy w/ a stun counter would untap in my untap step. what happens",
+    "expect": [
+      "a creature stays tapped: a stun counter is removed from it instead of it untapping"
+    ],
+    "notExpect": [
+      "a creature untaps."
+    ],
+    "cite": [
+      "122.1d"
+    ]
+  },
+  {
+    "id": "wx11",
+    "text": "its my upkeep, i have 40 life w/ felidar sovereign. trigger is on the stack and in response opp bolts me. do i win",
+    "expect": [
+      "No: You haven't won",
+      "40 or more life"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "wx12",
+    "text": "forgot my dark confidant trigger and we noticed after i drew for the turn. what now",
+    "expect": [
+      "Dark Confidant's ability triggered at the beginning of your upkeep whether or not anyone remembered it",
+      "tournament rules"
+    ],
+    "cite": [
+      "603.2",
+      "603.3",
+      "100.6"
+    ]
+  },
+  {
+    "id": "wx13",
+    "text": "i got fiend hunter which exiled opp's bears. opp clones fiend hunter and exiles my llanowar elves. then the clone dies. do the bears come back",
+    "expect": [
+      "Llanowar Elves: exile → the battlefield (your control), returned by Clone.",
+      "No: Grizzly Bears stays in exile."
+    ],
+    "notExpect": [
+      "Grizzly Bears: exile → the battlefield"
+    ],
+    "cite": [
+      "607.2a",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "wx14",
+    "text": "i got guttersnipe. i bolt face. opp counterspells the bolt. does guttersnipe still deal 2 dmg",
+    "expect": [
+      "opponent takes 2 damage.",
+      "Yes: Guttersnipe's ability triggered when Lightning Bolt was cast"
+    ],
+    "cite": [
+      "601.2i",
+      "603.3"
+    ]
+  },
+  {
+    "id": "wx15",
+    "text": "opp has blood artist, i have leyline of sanctity. opp's bears dies. can blood artist target me",
+    "expect": [
+      "No: you have hexproof (Leyline of Sanctity)",
+      "opponent loses 1 life."
+    ],
+    "notExpect": [
+      "You lose 1 life"
+    ],
+    "cite": [
+      "603.3d",
+      "702.11c"
+    ]
+  },
+  {
+    "id": "wx16",
+    "text": "plague engineer naming faerie is out. opp animates mutavault. how big is it",
+    "expect": [
+      "Mutavault is 1/1 (2/2 base, -1/-1 from Plague Engineer)."
+    ],
+    "notExpect": [
+      "Plague Engineer is 2/2."
+    ],
+    "cite": [
+      "205.3m",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "wx17",
+    "text": "harsh mentor is out. opp taps birds for mana and cracks polluted delta. how much dmg do they take",
+    "expect": [
+      "opponent pays 1 life.",
+      "opponent takes 2 damage.",
+      "Yes: opponent takes 2 damage in all."
+    ],
+    "cite": [
+      "603.2",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "wx18",
+    "text": "bowmasters is out. on their turn opp casts wheel of fortune. what happens",
+    "expect": [
+      "opponent takes 1 damage. (×7)",
+      "Orc Army token gets 1 +1/+1 counter and is 7/7"
+    ],
+    "cite": [
+      "701.47a",
+      "603.2"
+    ]
+  },
+  {
+    "id": "wx19",
+    "text": "my library is empty. i cast thoracle, opp bounces thoracle w/ petty theft in response to the trigger. do i win",
+    "expect": [
+      "Thassa's Oracle: the battlefield → your hand.",
+      "You win the game (Thassa's Oracle: X = 0, library = 0)."
+    ],
+    "notExpect": [
+      "X = 2"
+    ],
+    "cite": [
+      "113.7a",
+      "700.5",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wx20",
+    "text": "opp has reality smasher. no other cards in my hand and i bolt it. what happens",
+    "expect": [
+      "You can't discard a card (your hand is empty), so Reality Smasher's triggered ability isn't stopped.",
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "118.3",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "wx21",
+    "text": "Alice, Bob, Carol and me playing. I got rhystic out. Bob sol rings. Can Carol pay the {1} for Bob",
+    "expect": [
+      "No: only Bob can pay {1} for Rhystic Study",
+      "Carol can't pay it"
+    ],
+    "cite": [
+      "118.12a",
+      "118.3"
+    ]
+  },
+  {
+    "id": "wx22",
+    "text": "me, alice, bob and carol playing. i have smothering tithe. bob wheels and nobody pays. how many treasures do i get",
+    "expect": [
+      "You get a Treasure token. (×21)"
+    ],
+    "notExpect": [
+      "(×28)"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "wx23",
+    "text": "me, alice, bob and carol playing. alice has sol ring and rhystic, i got tithe. i cast dockside. what happens",
+    "expect": [
+      "Alice pays {2}",
+      "You get a Treasure token. (×2)"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "wx24",
+    "text": "i cast thoracle. devotion to blue is 2 and i got 30 cards in library. w/ the trigger on the stack i consult naming a card thats not in my library. do i win",
+    "expect": [
+      "Your whole library is exiled",
+      "You win the game (Thassa's Oracle: X = 2, library = 0)"
+    ],
+    "cite": [
+      "701.13a",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wx25",
+    "text": "alice, bob, carol and me playing. bob has carnage tyrant and carol has progenitus. i overload rift. what happens",
+    "expect": [
+      "Carnage Tyrant's hexproof doesn't help",
+      "Progenitus' protection from everything doesn't help",
+      "Progenitus: the battlefield → Carol's hand"
+    ],
+    "cite": [
+      "702.11b",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "wx26",
+    "text": "alice, bob, carol and me playing. bob goaded my bears. on my turn who does it have to attack",
+    "expect": [
+      "Grizzly Bears must attack Alice or Carol",
+      "It can't attack Bob"
+    ],
+    "cite": [
+      "701.15a",
+      "701.15b"
+    ]
+  },
+  {
+    "id": "wx27",
+    "text": "alice, bob, carol and me playing. its my turn. i cast torment of hailfire x=2. in what order do my opps choose",
+    "expect": [
+      "Alice, then Bob, then Carol"
+    ],
+    "cite": [
+      "101.4",
+      "101.4b"
+    ]
+  },
+  {
+    "id": "wx28",
+    "text": "i control hullbreacher and bob controls notion thief. carol wheels. who decides what happens to carol's draws",
+    "expect": [
+      "Carol chooses which of Hullbreacher or Notion Thief replaces each of Carol's draws"
+    ],
+    "cite": [
+      "616.1"
+    ]
+  },
+  {
+    "id": "wx29",
+    "text": "i kenrith's transformation bob's cmdr atraxa praetors' voice. is it still a cmdr? if it hits me is that cmdr damage",
+    "expect": [
+      "still Bob's commander",
+      "is commander damage from Bob's commander"
+    ],
+    "cite": [
+      "903.3",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wx30",
+    "text": "my cmdr has been cast from the cmd zone twice. i sac command beacon and put it in my hand. how much more does it cost to cast from hand",
+    "expect": [
+      "with no commander tax"
+    ],
+    "cite": [
+      "903.8"
+    ]
+  },
+  {
+    "id": "wx31",
+    "text": "i got necropotence and opp has sheoldred the apocalypse. my turn. do i lose life in my draw step",
+    "expect": [
+      "You skip your draw step (Necropotence)",
+      "you lose no life"
+    ],
+    "notExpect": [
+      "You lose 2 life"
+    ],
+    "cite": [
+      "614.10"
+    ]
+  },
+  {
+    "id": "wx32",
+    "text": "edgar markov is in my cmd zone. i cast bloodghast. do i get a vampire token",
+    "expect": [
+      "You get a Vampire token"
+    ],
+    "notExpect": [
+      "is gone"
+    ],
+    "cite": [
+      "113.6b"
+    ]
+  },
+  {
+    "id": "wx33",
+    "text": "alice, bob, carol and me playing. kaalia of the vast swings at bob. i put serra angel in w/ the trigger. can the angel be attacking carol",
+    "expect": [
+      "Serra Angel is attacking Carol",
+      "Yes: Serra Angel can be attacking Carol"
+    ],
+    "cite": [
+      "508.4"
+    ]
+  },
+  {
+    "id": "wx34",
+    "text": "my cmdr derevi empyrial tactician has been cast from the cmd zone twice. i activate its ability to put it on the bf from the cmd zone. how much is that and does it raise tax",
+    "expect": [
+      "It costs {1}{G}{W}{U}, no commander tax",
+      "the tax doesn't go up"
+    ],
+    "cite": [
+      "113.6m",
+      "903.8"
+    ]
+  },
+  {
+    "id": "wx35",
+    "text": "oloro ageless ascetic is in my cmd zone. its my upkeep. do i gain life",
+    "expect": [
+      "You gain 2 life in all"
+    ],
+    "notExpect": [
+      "is gone"
+    ],
+    "cite": [
+      "113.6b"
+    ]
+  },
+  {
+    "id": "wx36",
+    "text": "alice, bob, carol and me playing. carol's turn. bob sacs ranger-captain of eos and its ability resolves. can i cast swords this turn",
+    "expect": [
+      "No: Swords to Plowshares can't be cast"
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "wx37",
+    "text": "gy has ornithopter, a forest and bolt. does dragon's rage channeler have delirium",
+    "expect": [
+      "Yes: delirium is on, with 4 card types in your graveyard (artifact, creature, instant, land)"
+    ],
+    "cite": [
+      "205.2a",
+      "207.2c"
+    ]
+  },
+  {
+    "id": "wx38",
+    "text": "ledger shredder connives, i discard a forest. does it get a counter",
+    "expect": [
+      "Ledger Shredder gets no +1/+1 counter: the discarded Forest is a land card"
+    ],
+    "cite": [
+      "701.50a"
+    ]
+  },
+  {
+    "id": "wx39",
+    "text": "the ring tempts me and i pick my bears as ring-bearer. can their 3/3 block it",
+    "expect": [
+      "a 3/3 creature can't block Grizzly Bears: a Ring-bearer can't be blocked by creatures with greater power (701.54c)."
+    ],
+    "cite": [
+      "701.54c"
+    ]
+  },
+  {
+    "id": "wx40",
+    "text": "can i play kozilek's return in my mono blue edh deck",
+    "expect": [
+      "No: Kozilek's Return is colorless (devoid), but its color identity is red"
+    ],
+    "cite": [
+      "702.114a",
+      "903.4",
+      "903.5c"
+    ]
+  },
+  {
+    "id": "wx41",
+    "text": "opp has trinisphere. i gush by returning two islands. what do i pay",
+    "expect": [
+      "Gush costs 3 mana in all (Trinisphere"
+    ],
+    "cite": [
+      "601.2f",
+      "118.9d"
+    ]
+  },
+  {
+    "id": "wx42",
+    "text": "opp wastelands my trop. can i tap trop for mana in response",
+    "expect": [
+      "Tropical Island's mana ability: add {G}.",
+      "Tropical Island: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "605.3b"
+    ]
+  },
+  {
+    "id": "wx43",
+    "text": "i got delver and reveal borrower at upkeep. does it flip",
+    "expect": [
+      "No. In the library Brazen Borrower has only its normal characteristics"
+    ],
+    "notExpect": [
+      "Delver transforms into Insectile Aberration"
+    ],
+    "cite": [
+      "715.4"
+    ]
+  },
+  {
+    "id": "wx44",
+    "text": "i swing w/ arcanist and cast bolt from my yard w/ its trigger. where does bolt go after it resolves",
+    "expect": [
+      "Lightning Bolt: the stack → exile instead of the graveyard (Dreadhorde Arcanist, 614.1a).",
+      "Lightning Bolt is in exile"
+    ],
+    "notExpect": [
+      "doesn't have flashback"
+    ],
+    "cite": [
+      "614.1a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "wx45",
+    "text": "i snapcaster fow in my gy. can i flashback fow by pitching a blue card",
+    "expect": [
+      "No: Force of Will can't be cast with flashback and its other alternative cost"
+    ],
+    "cite": [
+      "118.9a",
+      "702.34a"
+    ]
+  },
+  {
+    "id": "wx46",
+    "text": "i cast murktide delving away brainstorm, ponder, bolt, wasteland and delver. how big is it",
+    "expect": [
+      "Murktide Regent enters with 3 +1/+1 counters",
+      "Murktide Regent is 6/6"
+    ],
+    "cite": [
+      "614.1c",
+      "702.66a"
+    ]
+  },
+  {
+    "id": "wx47",
+    "text": "i swing bears equipped w/ jitte and they block w/ a 3/3. what happens",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Umezawa's Jitte has 2 charge counters."
+    ],
+    "cite": [
+      "704.5g"
+    ]
+  },
+  {
+    "id": "wx48",
+    "text": "i control tnn choosing opp. opp toxic deluges paying 3 life. does tnn die",
+    "expect": [
+      "True-Name Nemesis is 0/-2 until end of turn.",
+      "Yes: True-Name Nemesis died"
+    ],
+    "cite": [
+      "704.5f"
+    ]
+  },
+  {
+    "id": "wx49",
+    "text": "i activate stoneforge putting batterskull in. opp stifles the living weapon trigger. do i get a germ",
+    "expect": [
+      "Batterskull's triggered ability is countered.",
+      "No: no Phyrexian Germ token was created."
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "wx50",
+    "text": "opp has pithing needle naming elvish spirit guide. can i exile esg from my hand for mana",
+    "expect": [
+      "Yes: Pithing Needle doesn't stop mana abilities"
+    ],
+    "cite": [
+      "605.1a",
+      "602.5"
+    ]
+  },
+  {
+    "id": "wx51",
+    "text": "opp has fire // ice in hand. i cabal therapy naming fire. what happens",
+    "expect": [
+      "Fire // Ice: opponent's hand → opponent's graveyard."
+    ],
+    "cite": [
+      "709.4a",
+      "201.4b"
+    ]
+  },
+  {
+    "id": "wx52",
+    "text": "i have counterbalance and top card of my library is a forest. opp casts petal. what happens",
+    "expect": [
+      "Counterbalance reveals Forest (mana value 0)",
+      "Lotus Petal is countered."
+    ],
+    "notExpect": [
+      "Lotus Petal enters the battlefield."
+    ],
+    "cite": [
+      "202.3a"
+    ]
+  },
+  {
+    "id": "wx53",
+    "text": "i cast dark ritual, then brainstorm which opp counters w/ spell pierce, then tendrils. how many copies of tendrils do i get",
+    "expect": [
+      "Brainstorm is countered.",
+      "Storm puts 3 copies of Tendrils of Agony on the stack"
+    ],
+    "cite": [
+      "702.40a"
+    ]
+  },
+  {
+    "id": "wx54",
+    "text": "my turn. can i fon by pitching a blue card",
+    "expect": [
+      "No: Force of Negation can't be cast for its alternative cost"
+    ],
+    "cite": [
+      "118.9"
+    ]
+  },
+  {
+    "id": "wx55",
+    "text": "opp has canonist and cast two spells this turn. i cast empty the warrens as my first spell. how many goblins do i get",
+    "expect": [
+      "Storm puts 2 copies of Empty the Warrens on the stack",
+      "You get a Goblin token."
+    ],
+    "notExpect": [
+      "can't be cast"
+    ],
+    "cite": [
+      "702.40a",
+      "707.10"
+    ]
+  },
+  {
+    "id": "wx56",
+    "text": "i got ensnaring bridge. two cards in hand: ragavan and a mountain. i dash ragavan. can it attack",
+    "expect": [
+      "No: Ragavan, Nimble Pilferer can't attack (Ensnaring Bridge: You have 1 card in hand"
+    ],
+    "cite": [
+      "601.2a",
+      "508.1c",
+      "702.10b"
+    ]
+  },
+  {
+    "id": "wx57",
+    "text": "ragavan connects and exiles the top card of their library, a forest. can i play the forest",
+    "expect": [
+      "No: Ragavan, Nimble Pilferer says you may cast that card, and a land can't be cast"
+    ],
+    "cite": [
+      "116.2a",
+      "701.18b"
+    ]
+  },
+  {
+    "id": "wx58",
+    "text": "i control drc. gy has bonecrusher giant, crib swap and mishra's bauble. does it have delirium",
+    "expect": [
+      "Yes: delirium is on, with 4 card types in your graveyard (artifact, creature, instant, kindred)",
+      "3/3"
+    ],
+    "cite": [
+      "205.2a",
+      "715.4"
+    ]
+  },
+  {
+    "id": "wx59",
+    "text": "i cast murktide w/ delve exiling two bolts and a bonecrusher giant. how big is it",
+    "expect": [
+      "Murktide Regent is 5/5 (3/3 base, 2 +1/+1 counters)"
+    ],
+    "cite": [
+      "702.66a",
+      "614.1c",
+      "715.4"
+    ]
+  },
+  {
+    "id": "wx60",
+    "text": "omnath locus of creation is out. i play arid mesa then crack it for a mountain. what happens",
+    "expect": [
+      "(first resolution this turn): you gain 4 life",
+      "(second resolution this turn): you add {R}{G}{W}{U}"
+    ],
+    "cite": [
+      "605.5a",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "wx61",
+    "text": "i control urza's saga w/ two lore counters. my precombat main begins. can chapter 3 find walking ballista",
+    "expect": [
+      "No: Walking Ballista's mana cost is {X}{X}, not {0} or {1}"
+    ],
+    "cite": [
+      "202.1",
+      "107.3"
+    ]
+  },
+  {
+    "id": "wx62",
+    "text": "opp bolts. in response can i -3 teferi time raveler targeting their aether vial",
+    "expect": [
+      "No: Teferi, Time Raveler's loyalty abilities can be activated only at sorcery speed"
+    ],
+    "cite": [
+      "606.3"
+    ]
+  },
+  {
+    "id": "wx63",
+    "text": "this is my second approach of the second sun this game. do i win?",
+    "expect": [
+      "You win the game.",
+      "Yes: You have won the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "wx64",
+    "text": "3 player game, my turn. i wrath. bob has a blood artist and carol has a blood artist. whose trigger resolves first",
+    "expect": [
+      "You are the active player and have none here",
+      "Here: Bob's 2 triggers, then Carol's 2 triggers",
+      "so Carol's resolve first and Bob's resolve last."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.3b",
+      "101.4"
+    ]
+  },
+  {
+    "id": "wx65",
+    "text": "i have wasteland. opp plays urza's saga and goes to ch 2. can i wasteland it in response to the chapter 3 trigger",
+    "expect": [
+      "Yes, you can respond",
+      "the chapter III ability still resolves",
+      "they still search for an artifact with mana cost {0} or {1}"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "wx66",
+    "text": "opp pushes my siege rhino. did they need revolt",
+    "expect": [
+      "Yes. Siege Rhino's mana value is 4"
+    ],
+    "cite": [
+      "601.2c"
+    ]
+  },
+  {
+    "id": "wx67",
+    "text": "opp has teferi time raveler. can i bolt on their turn",
+    "expect": [
+      "No: Lightning Bolt can't be cast (Teferi, Time Raveler: sorcery speed only)"
+    ]
+  },
+  {
+    "id": "wx68",
+    "text": "i thoughtseize and opp vials in thalia in response. does my seize cost more now",
+    "expect": [
+      "Thoughtseize cost {B} when it was cast"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "wx69",
+    "text": "i have finks and opp pyroclasms. does finks come back and die again",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist)",
+      "No: Kitchen Finks is still on the battlefield"
+    ]
+  },
+  {
+    "id": "wx70",
+    "text": "opp bolts me. i have skite. can i redirect it to skite and does skite live",
+    "expect": [
+      "Lightning Bolt now targets Spellskite instead of you",
+      "Yes: Spellskite is still on the battlefield"
+    ]
+  },
+  {
+    "id": "wx71",
+    "text": "i thoughtseize opp and they have skite in hand and a thalia. which should i take",
+    "expect": [
+      "Thoughtseize lets you choose a nonland card from opponent's hand: Spellskite, Thalia, Guardian of Thraben"
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben [thalia_guardian_of_thraben] (opponent's, 2/1)"
+    ]
+  },
+  {
+    "id": "wx72",
+    "text": "opp has ensnaring bridge w/ 3 cards. i swing goyf, its 4/5. can it attack",
+    "expect": [
+      "No: Tarmogoyf can't attack (Ensnaring Bridge: opponent has 3 cards in hand and Tarmogoyf's power is 4, 508.1c)"
+    ]
+  },
+  {
+    "id": "wx73",
+    "text": "opp has bridge and 2 cards in hand. i swing my 3/3 and 1/1. what gets through",
+    "expect": [
+      "a 3/3 creature can't attack (Ensnaring Bridge)",
+      "opponent takes 1 damage"
+    ]
+  },
+  {
+    "id": "wx74",
+    "text": "opp swings a 4/4 trampler. i block w/ skite. how much do i take",
+    "expect": [
+      "Spellskite: the battlefield → your graveyard",
+      "No: you take no damage"
+    ]
+  },
+  {
+    "id": "wx75",
+    "text": "its my turn. i cast two bears this turn then crew esika's chariot with them. can it attack",
+    "expect": [
+      "Grizzly Bears and Grizzly Bears are tapped (they crewed Esika's Chariot: total power 4, crew 4).",
+      "opponent takes 4 damage."
+    ],
+    "cite": [
+      "702.122a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "wx76",
+    "text": "i cast my overlord of the hauntwoods for impending. is it a creature",
+    "expect": [
+      "No: Overlord of the Hauntwoods isn't a creature right now",
+      "You get an Everywhere"
+    ],
+    "cite": [
+      "702.176a"
+    ]
+  },
+  {
+    "id": "wx77",
+    "text": "i control urza's saga w/ two lore counters. my precombat main phase begins. can its chapter 3 find walking ballista",
+    "expect": [
+      "No: Walking Ballista's mana cost is {X}{X}, not {0} or {1}"
+    ],
+    "cite": [
+      "202.1",
+      "107.3"
+    ]
+  },
+  {
+    "id": "wx78",
+    "text": "alice, bob, carol and I playing. i control smothering tithe. bob casts wheel of fortune and nobody pays. how many treasures do i get",
+    "expect": [
+      "You get a Treasure token. (×21)"
+    ],
+    "notExpect": [
+      "(×28)"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "wx79",
+    "text": "i cast approach of the second sun for the second time this game. who wins",
+    "expect": [
+      "You win the game.",
+      "Yes: You have won the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ]
+  },
+  {
+    "id": "wx80",
+    "text": "i plot slickshot show-off during combat. does this work",
+    "expect": [
+      "No: Slickshot Show-Off can't be plotted now. Plot works only in your main phase with an empty stack (702.170a)."
+    ],
+    "cite": [
+      "702.170a",
+      "116.2"
+    ]
+  },
+  {
+    "id": "wx81",
+    "text": "Alice, Bob, Carol and I are playing. Bob goads my bears. On my turn, who does it have to attack",
+    "expect": [
+      "Grizzly Bears must attack Alice or Carol",
+      "It can't attack Bob"
+    ],
+    "cite": [
+      "701.15a",
+      "701.15b"
+    ]
+  },
+  {
+    "id": "wx82",
+    "text": "i unearth vithian stinger. what happens at eot",
+    "expect": [
+      "Vithian Stinger returns from the graveyard with haste.",
+      "Vithian Stinger is exiled at the beginning of the end step (unearth, 702.84a)."
+    ],
+    "cite": [
+      "702.84a",
+      "603.7"
+    ]
+  },
+  {
+    "id": "wx83",
+    "text": "i cast snapcaster mage targeting fow in my gy. can i cast fow w/ flashback by pitching a blue card",
+    "expect": [
+      "No: Force of Will can't be cast with flashback and its other alternative cost"
+    ],
+    "cite": [
+      "118.9a",
+      "702.34a"
+    ]
+  },
+  {
+    "id": "wx84",
+    "text": "its my turn. can i cast force of negation by pitching a blue card",
+    "expect": [
+      "No: Force of Negation can't be cast for its alternative cost"
+    ],
+    "cite": [
+      "118.9"
+    ]
+  },
+  {
+    "id": "wx85",
+    "text": "opp has teferi time raveler. can i cast bolt on their turn",
+    "expect": [
+      "No: Lightning Bolt can't be cast (Teferi, Time Raveler: sorcery speed only)"
+    ]
+  },
+  {
+    "id": "wx86",
+    "text": "i have a bears and a llanowar elves. i cast fell stinger and exploit the bears, targeting opp. how much life does opp have",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "opponent draws 2 cards.",
+      "opponent loses 2 life."
+    ],
+    "notExpect": [
+      "Llanowar Elves: the battlefield"
+    ],
+    "cite": [
+      "702.110a",
+      "702.110b"
+    ]
+  },
+  {
+    "id": "wx87",
+    "text": "i dash in goblin heelcutter. what happens at eot",
+    "expect": [
+      "Goblin Heelcutter is cast for its dash cost {2}{R}: it has haste",
+      "Goblin Heelcutter returns to its owner's hand at the beginning of the end step (dash, 702.109a)."
+    ],
+    "cite": [
+      "702.109a",
+      "603.7"
+    ]
+  },
+  {
+    "id": "wx88",
+    "text": "my walking ballista has 1 counter and i remove the last one in response to removal. what happens to it",
+    "expect": [
+      "Walking Ballista: the battlefield → your graveyard.",
+      "opponent takes 1 damage."
+    ],
+    "cite": [
+      "117.5",
+      "704.5f",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "wx89",
+    "text": "i cast teferi's protection. on their turn opp swings at me w/ their cmdr atraxa praetors' voice. do i take cmdr damage",
+    "expect": [
+      "Damage to you from Atraxa, Praetors' Voice is prevented (protection from everything).",
+      "No commander damage: the prevented damage from Atraxa, Praetors' Voice is never dealt, so it doesn't count toward 21"
+    ],
+    "cite": [
+      "702.16e",
+      "615.1",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wx90",
+    "text": "i got food chain and eternal scourge out. i exile scourge to food chain. how much mana do i get, can i cast it again",
+    "expect": [
+      "makes 4 mana of one colour, only for creature spells",
+      "netting 1 each loop"
+    ],
+    "cite": [
+      "106.6",
+      "732.2a"
+    ]
+  },
+  {
+    "id": "wx91",
+    "text": "i cast overlord of the hauntwoods for impending. is it a creature",
+    "expect": [
+      "No: Overlord of the Hauntwoods isn't a creature right now",
+      "You get an Everywhere"
+    ],
+    "cite": [
+      "702.176a"
+    ]
+  },
+  {
+    "id": "wx92",
+    "text": "i evoke solitude on opp's ragavan. w/ the sac trigger on the stack i blink solitude with ephemerate. is solitude sacrificed",
+    "expect": [
+      "No: Solitude left the battlefield and came back as a new object",
+      "opponent gains 2 life"
+    ],
+    "cite": [
+      "603.3b",
+      "702.74a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "wx93",
+    "text": "opp has stony silence. can i remove a counter from my ballista to ping",
+    "expect": [
+      "No: Stony Silence says Walking Ballista's activated abilities can't be activated"
+    ],
+    "cite": [
+      "602.5"
+    ]
+  },
+  {
+    "id": "wx94",
+    "text": "im at 1 w/ platinum angel and opp paths the angel. do i lose immediately",
+    "expect": [
+      "No: You are still in the game at 1 life"
+    ]
+  },
+  {
+    "id": "wx95",
+    "text": "opp thoughtseizes me and i have two bolts in hand. how many do i keep",
+    "expect": [
+      "You have 1 card in hand"
+    ]
   }
 ]

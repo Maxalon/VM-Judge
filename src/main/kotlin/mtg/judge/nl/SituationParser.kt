@@ -2987,6 +2987,118 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /**
+     * Second round of table talk, after card names are marked (c1, c2…): a card used as the verb with a target
+     * ("i gush by returning two islands", "opp clones fiend hunter", "bob wheels", "opp counterspells it", "i snapcaster fow"),
+     * a keyword used as the verb ("i dash ragavan", "i overload rift", "i flashback bolt"), "first draw of the turn is terminus",
+     * "chalice at 0", "swing a 2/2 at my jtms", "put serra angel in", "can i -3 teferi", "can i bolt on their turn".
+     */
+    private fun slangRewrites2(t: String, m: Marked, ctx: Ctx): String {
+        val io = RegexOption.IGNORE_CASE
+        var t2 = t.trim()
+        val subj = """(?:i|we|they|he|she|my opponent|the opponent|opponent|@\w+)"""
+        fun plain(who: String) = who.lowercase() in setOf("i", "we", "they")
+        fun plainSubj(who: String) = if (who.lowercase() in setOf("opponent", "the opponent")) "my opponent" else who
+        fun verb(who: String, base: String) = if (who.lowercase() in setOf("opponent", "the opponent")) "my opponent ${base}s" else if (plain(who)) "$who $base" else "$who ${base}s"
+        val cloneLike = setOf("Clone", "Phyrexian Metamorph", "Phantasmal Image", "Vesuvan Doppelganger", "Mockingbird", "Sakashima the Impostor", "Spark Double", "Cursed Mirror", "Evil Twin", "Quicksilver Gargantuan")
+        val exilers = setOf("Fiend Hunter", "Banisher Priest", "Skyclave Apparition", "Brutal Cathar")
+        val etbTargeters = setOf("Snapcaster Mage", "Eternal Witness", "Flametongue Kavu", "Shriekmaw", "Man-o'-War", "Gravedigger", "Karmic Guide", "Mulldrifter") + graveyardReachers
+        val target = """(?:(?:at |on |onto |against )?(?:(?:my opponent's|opponent's|@\w+'s|my|their|his|her|the|that|this|an?|your|our)(?: own)?(?: [\w-]+){0,2}? (?:\d+/\d+|creatures?|permanents?|planeswalkers?|tokens?|lands?|artifacts?|enchantments?|c\d+)\b.*|c\d+\b.*|(?:their |the |his |her )?face\b.*|(?:it|that|the spell)\b.*|\d+/\d+\b.*))"""
+        // Cards named like a keyword ("Channel", "Unearth", "Plot"): the keyword is meant, and its own rewrites read it.
+        val keywordNames = setOf("channel", "unearth", "suspend", "plot", "foretell", "dredge", "rebound", "cycling", "explore", "learn", "proliferate", "adapt", "evoke", "fight", "flash", "counter", "retrace", "replicate", "delve", "dash", "entwine", "buyback", "madness", "miracle", "overload", "cascade", "convoke", "equip", "crew", "echo", "kicker", "transmute", "haunt", "splice", "ninjutsu", "mutate", "morph", "disguise", "surge", "emerge", "escape", "spectacle", "prowl", "bestow", "awaken", "cleave", "squad", "casualty", "bargain", "gift", "offspring", "impending", "prototype", "backup", "boast", "exhaust", "saddle", "discover", "connive", "amass", "investigate", "manifest", "incubate", "support", "bolster", "surveil", "scry", "mill", "populate", "transform", "fateseal", "cipher", "flashback", "afflict", "companion")
+        fun spellish(c: NameIndex.Entry) = (c.isSpellOnly || c.typeLine.contains("Aura")) && c.display.lowercase() !in keywordNames
+        fun tgt(x: String) = x.replace(Regex("""^(?:at |on |onto |against )""", io), "").replace(Regex("""^(?:their |the |his |her )?face\b""", io), "my opponent").trim()
+        // "i gush by returning two islands", "i cabal therapy naming fire", "i consult naming a card", "i bolt at face": the card cast, said as a verb.
+        t2 = t2.replace(Regex("""(^|(?<!\b(?:can|could|may|should|will|would|do|does|did) ))\b($subj) (c\d+)(?= (?:by|naming|returning|discarding|sacrificing|at|using|x=\d)\b|\s*$|\s*[,.?!])""", io)) { r ->
+            val card = m.cards[r.groupValues[3]]
+            if (card != null && (spellish(card) || (r.groupValues[2].startsWith("@") && !card.typeLine.contains("Land")))) "${r.groupValues[1]}${verb(r.groupValues[2], "cast")} ${r.groupValues[3]}" else r.value }
+        // "opp counterspells it", "opp bolts me", "opp clones fiend hunter", "i snapcaster fow", "opp wastelands my trop", "i oko it into a 3/3 elk": a card as the verb, aimed.
+        val src = t2
+        t2 = t2.replace(Regex("""(^|(?<!\b(?:can|could|may|should|will|would|do|does|did) ))\b($subj) (c\d+) ($target)$""", io)) { r ->
+            val who = r.groupValues[2]; val ph = r.groupValues[3]; val card = m.cards[ph]; val tx = tgt(r.groupValues[4]); val pre = r.groupValues[1]
+            val before = src.substring(0, r.range.first)
+            val bare = Regex("""^(?:it|that|the spell)\b""", io).containsMatchIn(tx)
+            val firstWord = tx.substringBefore(' ').lowercase()
+            val head = Regex("""^c\d+""").find(tx)?.value?.let { m.cards[it] }
+            val startsCard = Regex("""^c\d+""").containsMatchIn(tx)
+            val ownerPoss = Regex("""^(?:my opponent's|opponent's|@\w+'s)\b""", io).containsMatchIn(tx)
+            val isFace = Regex("""^(?:at |on |onto |against )?(?:their |the |his |her )?face\b""", io).containsMatchIn(r.groupValues[4])
+            val describedCard = Regex("""^(?:my|their|the|his|her|an?)(?: own)?(?: [\w-]+){0,2}? c\d+""", io).containsMatchIn(tx)
+            when {
+                card == null -> r.value
+                Regex("""\b(?:can|could|may|should|will|would|do|does|did)\s+(?:my |the )?$""", io).containsMatchIn(before) -> r.value
+                Regex("""^(?:at |on |in |during )?(?:their|my|your|the|his|her) (?:turn|upkeep|end step|stack|battlefield|graveyard|hand|library|combat|main phase)\b""", io).containsMatchIn(tx) -> r.value
+                Regex("""\b(?:activation|activations|ability|abilities|that|which)\b""", io).containsMatchIn(tx) && !Regex("""\btrigger\b""", io).containsMatchIn(tx) -> r.value
+                card.display == "Oko, Thief of Crowns" && Regex("""^(it|that|their [\w ]+|the [\w ]+|my [\w ]+) into (an? \d+/\d+ \w+)$""", io).matches(tx) ->
+                    Regex("""^(.+?) into (.+)$""").find(tx)!!.let { x -> "$pre${verb(who, "turn")} ${x.groupValues[1]} into ${x.groupValues[2]} with $ph" }
+                bare && spellish(card) && before.endsWith("and ") -> "$pre${verb(who, "cast")} $ph targeting $tx"
+                bare -> r.value
+                spellish(card) && !(startsCard || ownerPoss || isFace) -> r.value
+                spellish(card) && head?.isSpellOnly == true && !needsSpellTarget(card) -> r.value
+                spellish(card) -> "$pre${verb(who, "cast")} $ph targeting $tx"
+                !(startsCard || describedCard) -> r.value
+                card.display in cloneLike -> "$pre${verb(who, "cast")} $ph copying $tx"
+                card.display in exilers -> "$pre${verb(who, "cast")} $ph exiling $tx"
+                card.display in etbTargeters && card.display.lowercase() !in keywordNames -> "$pre${verb(who, "cast")} $ph targeting $tx"
+                card.typeLine.contains("Land") && !firstWord.startsWith("in") -> "$pre${verb(who, "activate")} $ph targeting $tx"
+                else -> r.value }
+        }
+        // "opp vials in thalia in response": they have the Vial, and use it.
+        t2 = t2.replace(Regex("""\b(my opponent|the opponent|opponent) (c\d+) in (c\d+)( in response)?""", io)) { r ->
+            if (m.cards[r.groupValues[2]]?.display == "Aether Vial") "they have ${r.groupValues[2]},${if (r.groupValues[4].isNotEmpty()) " in response" else ""} they vial in ${r.groupValues[3]}" else r.value }
+        // "i dash ragavan", "i overload rift", "i prototype arcane proxy", "i flashback bolt": the keyword, said as the verb.
+        t2 = t2.replace(Regex("""\b($subj) (?:dash|dashes) (?:in )?(c\d+)\b""", io)) { r -> "${verb(r.groupValues[1], "cast")} ${r.groupValues[2]} for its dash cost" }
+        t2 = t2.replace(Regex("""\b($subj) (?:overload|overloads) (c\d+)\b""", io)) { r -> "${verb(r.groupValues[1], "cast")} ${r.groupValues[2]} overloaded" }
+        t2 = t2.replace(Regex("""\b($subj) (?:prototype|prototypes) (c\d+)\b""", io)) { r -> "${verb(r.groupValues[1], "cast")} ${r.groupValues[2]} prototyped" }
+        t2 = t2.replace(Regex("""\b(can|could|may) (i|we) (?:still )?(?:flash ?back) (c\d+) (?=by (?:exiling|pitching|paying)\b)""", io)) { r -> "${r.groupValues[1]} ${r.groupValues[2]} cast ${r.groupValues[3]} with flashback " }
+        t2 = t2.replace(Regex("""(?<!\bcan )(?<!\bcould )(?<!\bmay )\b($subj) (?:flash ?back|flashbacks) (c\d+)\b""", io)) { r -> "${verb(r.groupValues[1], "cast")} ${r.groupValues[2]} with flashback" }
+        // "can i fon by pitching a blue card", "can i bolt on their turn": the spell, cast.
+        t2 = t2.replace(Regex("""\b(can|could|may|should) (i|we|they) (?:still |also |just |then |now )*(c\d+)(?= (?:by|on|during)\b|\s*[?.]?$)""", io)) { r ->
+            val card = m.cards[r.groupValues[3]]
+            if (card != null && spellish(card)) "${r.groupValues[1]} ${r.groupValues[2]} cast ${r.groupValues[3]}" else r.value }
+        // "first draw of the turn is terminus", "this is my second approach this game".
+        t2 = t2.replace(Regex("""^(?:my |the )?(first|second|third) draw (?:of|for|in) (?:the |my )?turn is (c\d+)$""", io)) { r -> "i draw ${r.groupValues[2]} as my ${r.groupValues[1]} draw of the turn" }
+        t2 = t2.replace(Regex("""^(?:this|that) is my (second|third|fourth) (c\d+)(?: this game)?$""", io)) { r -> "i cast ${r.groupValues[2]} for the ${r.groupValues[1]} time this game" }
+        // "chalice at 0", "chalice for 2": the counters it has.
+        t2 = t2.replace(Regex("""(?<!\bcast )(?<!\bcasts )(?<!\bcasting )\b(c\d+) (?:at|set to|set at) (zero|one|two|three|\d)\b""", io)) { r ->
+            if (m.cards[r.groupValues[1]]?.display == "Chalice of the Void") "${r.groupValues[1]} with ${r.groupValues[2].lowercase().let { w -> mapOf("zero" to "0", "one" to "1", "two" to "2", "three" to "3")[w] ?: w }} charge counters" else r.value }
+        // "opp swings a 2/2 at my jtms w/ 3 loyalty": the planeswalker is what's attacked.
+        t2 = t2.replace(Regex("""\b(attack|attacks|attacked) ((?:an? |the |my |their )?(?:\d+/\d+|\w+)(?: [\w/]+){0,3}?) (?:at|into|on|against) ((?:my|their|his|her|the opponent's|opponent's|my opponent's|@\w+'s) c\d+)( with \d+ loyalty)?\b""", io)) { r ->
+            val pw = Regex("""c\d+""").find(r.groupValues[3])?.value?.let { m.cards[it] }
+            if (pw != null && pw.typeLine.contains("Planeswalker")) "${r.groupValues[1]} ${r.groupValues[3]}${r.groupValues[4]} with ${r.groupValues[2]}" else r.value }
+        // "i put serra angel in w/ the trigger", "i activate stoneforge putting batterskull in": onto the battlefield.
+        t2 = t2.replace(Regex("""(?<!\bcan i )(?<!\bcan we )(?<!\bcould i )\b(putting (c\d+) in\b(?! (?:my|your|the|their|his|her|a|an|exile|play|graveyard|hand|library|response|to|front|c\d+)\b)|(?:put|puts|drop|drops) (c\d+) in(?= (?:with|using|via|from|off|and|then)\b))""", io)) { r -> r.value.replace(Regex("""\bin\b"""), "onto the battlefield") }
+        // "can i -3 teferi time raveler targeting their aether vial": the loyalty ability.
+        t2 = t2.replace(Regex("""\b(can|could|may) (i|we) ([+\-−]\d+|[+\-−]x) (c\d+)\b""", io)) { r ->
+            if (m.cards[r.groupValues[4]]?.typeLine?.contains("Planeswalker") == true) "${r.groupValues[1]} ${r.groupValues[2]} activate ${r.groupValues[4]}'s ${r.groupValues[3]}" else r.value }
+        // "can i plot slickshot show-off in combat": a question about whether the keyword action is allowed.
+        t2 = t2.replace(Regex("""^(?:can|could|may) (i|we) (plot|foretell) (c\d+) ((?:in|during) combat|at instant speed|in response|at end of turn|on (?:their|my opponent's) turn)$""", io)) { r -> "${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} ${r.groupValues[4]}, slangallowed-question" }
+        // "plague engineer naming faerie is out": it is on the battlefield, the name chosen.
+        t2 = t2.replace(Regex("""^(c\d+) ((?:naming|choosing) [\w' -]+?) (?:is|are) (?:out|in play|down|on the battlefield)$""", io), "i control $1 $2")
+        // "can the angel be attacking carol": the article goes before a card in a question.
+        t2 = t2.replace(Regex("""^(can|could|will|would) the (c\d+) be\b""", io), "$1 $2 be")
+        // "i got fiend hunter exiling opp's bears": which exiled them.
+        t2 = t2.replace(Regex("""\b(i|we) (have|control) (c\d+),? (?:that |which )?(?:is )?exiling (?=(?:my opponent's|opponent's|their|my)\b)""", io)) { r ->
+            if (m.cards[r.groupValues[3]]?.display in exilers) "${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}, which exiled " else r.value }
+        // "i have no other cards in hand and i bolt it": the helper subject goes ("and cast …").
+        t2 = t2.replace(Regex("""\b(i have (?:no|\d+) (?:other )?cards? in hand) and (?:i|we) (cast|play|activate)\b""", io), "$1 and $2")
+        // "can blood artist target me": its trigger.
+        t2 = t2.replace(Regex("""^(can|could|does|will) (c\d+) (?:still )?target (me|my opponent|them|him|her|you|@\w+)\b""", io)) { r ->
+            val c = m.cards[r.groupValues[2]]
+            if (c != null && !c.isSpellOnly && c.typeLine.contains("Creature")) "${r.groupValues[1]} ${r.groupValues[2]}'s trigger target ${r.groupValues[3]}" else r.value }
+        // "does the ninja hit and do i draw": a creature connecting (never a burn spell: "does my bolt still hit").
+        t2 = t2.replace(Regex("""\b(does|do|did|will|would|can|could) (?:the |my |their )?(c\d+) (?:still |even )?hit\b(?=\s+and\b|\s+or\b|\s*[?.!,]|\s*$)""", io)) { r ->
+            if (m.cards[r.groupValues[2]]?.typeLine?.contains("Creature") == true) "${r.groupValues[1]} ${r.groupValues[2]} deal combat damage" else r.value }
+        // "do the bears come back": does.
+        t2 = t2.replace(Regex("""^do the (c\d+)\b""", io), "does $1")
+        // "i dash it in", "opp dashes it": the card just talked about.
+        t2 = t2.replace(Regex("""\b($subj) (?:dash|dashes) (?:it|that)(?: in)?$""", io)) { r -> "${verb(r.groupValues[1], "cast")} it for its dash cost" }
+        // "crew esika's chariot with them", "cast my overlord": the article.
+        t2 = t2.replace(Regex("""\b(crew|crews) (c\d+) with\b""", io), "$1 my $2 with")
+        t2 = t2.replace(Regex("""\b(cast|casts|casting) my (c\d+)\b""", io), "$1 $2")
+        return t2
+    }
+
     /** "does Reckoners trigger deal damage": a card's name with the apostrophe left off ("Goyfs power"). */
     private fun slangPossessives(sentence: String, short: Map<String, NameIndex.Entry>): String =
         Regex("""\b([A-Za-z]{4,})s (trigger|ability|power|toughness|controller|owner|p/t|text)\b""", RegexOption.IGNORE_CASE).replace(sentence) { r ->
@@ -3451,6 +3563,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = loopRewrite(t2, m, ctx)
         t2 = limitedRewrites(t2, m, ctx)
         t2 = coverageRewrites(t2, m, ctx)
+        t2 = slangRewrites2(t2, m, ctx)
         t2 = edhRewrites(t2, m, ctx)
         t2 = newMechanicRewrites(t2, m, ctx)
         t2 = legacyRewrites(t2, m, ctx)

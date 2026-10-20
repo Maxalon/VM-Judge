@@ -19,8 +19,16 @@ object Slang {
         "tarmagoyf" to "tarmogoyf", "tarmo goyf" to "tarmogoyf", "tormogoyf" to "tarmogoyf", "snappy" to "snapcaster mage", "snapcastor" to "snapcaster mage",
         "lightening bolt" to "lightning bolt", "lighting bolt" to "lightning bolt", "oblivian ring" to "oblivion ring", "thoughtsiez" to "thoughtseize",
         "reanimate" to "reanimate", "pacify" to "pacifism", "deathrite" to "deathrite shaman", "mom" to "mother of runes",
-        "force of wil" to "force of will", "trini" to "trinisphere", "led" to "lion s eye diamond", "swords to plowshare" to "swords to plowshares", "path to exhile" to "path to exile",
+        "force of wil" to "force of will", "trini" to "trinisphere",
+        // Second round of table-talk nicknames (each checked against the card database and the bench texts: none is a card name or a word the corpus uses otherwise).
+        "murktide" to "murktide regent", "arcanist" to "dreadhorde arcanist", "borrower" to "brazen borrower", "skite" to "spellskite", "tnn" to "true name nemesis",
+        "esg" to "elvish spirit guide", "trop" to "tropical island", "drc" to "dragon s rage channeler", "canonist" to "ethersworn canonist",
+        "bowmasters" to "orcish bowmasters", "seize" to "thoughtseize", "tendrils" to "tendrils of agony", "bridge" to "ensnaring bridge", "birds" to "birds of paradise",
+        "led" to "lion s eye diamond", "swords to plowshare" to "swords to plowshares", "path to exhile" to "path to exile",
     )
+
+    /** Nicknames that win over a real card of the same name: nobody at the table means the white instant by "tithe". */
+    val overrides: Set<String> = setOf("tithe", "rift")
 
     private val ci = RegexOption.IGNORE_CASE
     private val colour = """(white|blue|black|red|green)"""
@@ -64,6 +72,8 @@ object Slang {
             r("""\b(does|do|did|will) (it|they|that|this|the creature|my creature|their creature) live\b""", "$1 $2 survive"),
             // "i float 2 mana": mana floating.
             r("""\b(i|we) (?:float|floated|am floating|are floating) (\d+|one|two|three|four|five|six) mana\b""", "$1 have $2 mana floating"),
+            // "my opps", "all opps": the opponents (before the bare "opps" below).
+            r("""\b(my|the|their|all|both|each of my|all of my|two of my) opps\b""", "$1 opponents"),
             // "it's opps turn".
             r("""\bits (opps|opp's|their|my|your) turn\b""", "it's $1 turn"), r("""\bopps\b""", "my opponent's"),
             // "a prevention shield for the next 3 damage".
@@ -81,6 +91,8 @@ object Slang {
             r("""'walkers?\b""", "planeswalker"), r("""(?<=\b(?:my|the|their|his|her|your|our|that|this|an?|opp's|opponent's|enemy|another|each|every|one|any) )walkers?\b""", "planeswalker"),
             // "my cmdr", "cmdr damage", "cmdrs".
             r("""\bcmd(?:e)?rs\b""", "commanders"), r("""\bcmd(?:e)?r\b""", "commander"), r("""\bcommander tax\b""", "commander tax"),
+            // "i swing my 3/3 and 1/1", "i swing bears", "opp swings a 4/4 trampler": attack with it (a target said with "at" is left to the planeswalker rule below).
+            r("""\b(swing|swings|swinging|swung)\b (?!(?:with|at|into|on|against|back|out|in|first|for|and|then|around|away|up|down|over|again|it|him|her|them|me|you|my opponent|everything|all|face|now|too|next|this|that|but|so|if|when|because|alone|together|before|after|from|to)\b)(?=[a-z\d])(?![^.?!]*\b(?:at|into|against)\b)""", "$1 with "),
             // "swing with everything", "swings at my walker", "swung": attack.
             r("""\bswings (?:at|into|on)\b""", "attacks"), r("""\bswing (?:at|into|on)\b""", "attack"), r("""\bswings\b""", "attacks"), r("""\bswinging\b""", "attacking"), r("""\bswung\b""", "attacked"), r("""(?<!\b(?:a|the|that|this|one|first|second) )\bswing\b""", "attack"),
             // "chump blocks", "chump blocked": a block.
@@ -91,7 +103,7 @@ object Slang {
             // "eot", "my main 2", "main phase two".
             r("""\beot\b""", "end of turn"), r("""\b(?:in |during )?(?:my |their |the )?(?:main|mainphase|main phase) ?(?:two|2)\b""", "in my second main phase"),
             r("""\b(?:in |during )?(?:my |their |the )?(?:main|mainphase|main phase) ?(?:one|1)\b""", "in my first main phase"),
-            r("""\b(?:post-?combat|second) main\b(?! phase)""", "second main phase"), r("""\bpre-?combat main\b(?! phase)""", "first main phase"),
+            r("""\b(?:post-?combat|second) main\b(?! phase)""", "second main phase"), r("""\bpre-?combat main\b(?! phase)""", "precombat main phase"),
             // "their face", "to face", "go face": the opponent.
             r("""\band (?:their|his|her|opp's|opponent's|the opponent's|the)? ?face\b(?!\s*-?\s*(?:of|down|up)\b)""", "and my opponent"),
             r("""\b(?:i|we) go(?:es)? face with\b""", "i attack with"), r("""\b(my [\w/ ]+?(?: and my [\w/ ]+?)*) go(?:es)? face\b""", "i attack with $1"),
@@ -139,6 +151,77 @@ object Slang {
             // "twice already", "how much to cast it again".
             r("""\b(once|twice|\d+ times|(?:two|three|four|five) times) already\b""", "$1 before"),
             r("""\bhow much (?:mana )?to cast\b""", "how much does it cost to cast"),
+            // ---- second round: Commander and newer-mechanic table talk ----
+            // "my mono blue edh deck", "my cmd zone".
+            r("""\bedh\b""", "Commander"), r("""\bcmd zone\b""", "command zone"), r("""\bcmdr zone\b""", "command zone"),
+            // "alice, bob, carol and me playing": the roster sentence, with names capitalised so they are read as players.
+            Regex("""(^|(?<=[.!?]\s))((?:me|i|[A-Za-z]+)(?:,\s*[A-Za-z]+)*,?\s+and\s+(?:me|i|[A-Za-z]+)|me(?:,\s*[A-Za-z]+)+)\s+(?:all\s+)?playing(?=\s*[.,!?]|\s*$)""", ci) to { m: MatchResult ->
+                m.groupValues[1] + Regex("""[A-Za-z]+""").replace(m.groupValues[2]) { w -> if (w.value.lowercase() in setOf("me", "i")) "I" else if (w.value.lowercase() == "and") "and" else w.value.replaceFirstChar { it.uppercase() } } + " are playing" },
+            // "3 player game, my turn": the table size is a sentence of its own.
+            r("""\b((?:in an? )?(?:\d+|two|three|four|five|six)[- ]player (?:game|pod|table))\s*[,;:]\s*""", "$1. "),
+            // "my turn." on its own: whose turn it is.
+            r("""(^|[.!?;,]\s*)my turn(?=\s*(?:[.!?;,]|$))""", "$1It's my turn"),
+            // "its my upkeep", "its their end step": the contraction.
+            r("""\bits (?=(?:my|your|their|his|her|the|opp's|opponent's) (?:upkeep|draw step|end step|main phase|beginning of combat|combat|first main phase|second main phase)\b)""", "it's "),
+            // "bob wheels", "i wheel": Wheel of Fortune cast (the noun "wheel" is no nickname, so only the verb is read).
+            r("""\b(?!(?:the|a|an|its|their|my|his|her|your|our|two|three|four|some|no|each|all|these|those|of|with|and|or|on|in)\b)([A-Za-z]+) wheels\b(?! of)""", "$1 casts Wheel of Fortune"),
+            r("""\b(i|we|they) wheel\b(?! of)""", "$1 cast Wheel of Fortune"),
+            // "pick my bears as ring-bearer": choose.
+            r("""\bpick(s|ed)?\b(?=[^.?!]*\bring-?bearer\b)""", "choose$1"),
+            // "i jump start radical idea": the keyword is hyphenated.
+            r("""\bjump start\b""", "jump-start"),
+            // "ch 2", "ch3": chapter.
+            r("""\bch\.? ?(\d)\b""", "chapter $1"),
+            // "no other cards in my hand", "two cards in hand: …": the asker's hand, as a statement.
+            r("""(^|[.!?;]\s*)(no other cards?|no cards?|\d+ cards?|one card|two cards|three cards|four cards|five cards|six cards|seven cards) in (?:my )?hand\b""", "$1i have $2 in hand"),
+            // "gy has bonecrusher giant", "library is empty": the asker's own zone.
+            r("""(^|[.!?;]\s*)(graveyard|library|hand)(?= (?:has|have|contains|holds|is empty|is full)\b)""", "$1my $2"),
+            // "top card of my library is a forest": the article.
+            r("""(^|[.!?;]\s*|\band )top card of (my|the|their|his|her)\b""", "$1the top card of $2"),
+            // "forgot my confidant trigger": I forgot.
+            r("""(^|[.!?;]\s*)forgot\b""", "$1I forgot"),
+            // "i have 40 life w/ felidar sovereign": and control it.
+            r("""\b(i|we|my opponent|opponent|opp|they|he|she) (have|has) (\d+) life (?:with|w/) (?!\d|no |an? (?:\w+ ){0,2}(?:counters?|cards?)\b)""", "$1 $2 $3 life and $1 control "),
+            // "i play arid mesa then crack it": the subject goes on through "then".
+            r("""\b(?![^.?!]*\bsays?\b)(i|we) ([^.?!]*?),? then (crack|cast|play|activate|sacrifice|attack|tap|cycle|exile|discard|equip|pay|return|put|flash|block)\b""", "$1 $2, then $1 $3"),
+            // "in response to the trigger" after the whole play: the trigger was already on the stack.
+            // "i cast thoracle, opp bounces it in response to the trigger": the trigger is on the stack before the response.
+            r("""(^|(?<=[.!?]\s))(i cast [^.?!,]+), ((?:my opponent|opponent|opp|they|he|she)\b[^.?!]*?),? in response to (?:the|its|that|their) (?:etb |enters |upkeep |attack |cast )?(?:trigger|ability)(?=\s*[.!?]|\s*$)""", "$1$2. With the trigger on the stack, $3"),
+            // "mono blue edh": mono-colour.
+            r("""\bmono[- ](white|blue|black|red|green)\b""", "mono-$1"),
+            // "put it on the bf", "put it in my hand": the zones read "onto the battlefield" and "into my hand".
+            r("""\b(put|puts|putting) (it|them|that|this) on the battlefield\b""", "$1 $2 onto the battlefield"),
+            r("""\b(put|puts|putting) (it|them|that|this) in (my|their|his|her|your|its owner's) (hand|graveyard|library)\b""", "$1 $2 into $3 $4"),
+            // "carol's turn." on its own: whose turn it is.
+            Regex("""(^|[.!?]\s+)(?!(?:my|your|their|his|her|its|the|that|this|opp|opponent|everyone|someone|whose)\b)(\w+)'s turn(?=\s*[.!?,;]|\s*$)""", ci) to { m: MatchResult -> m.groupValues[1] + "It's " + m.groupValues[2] + "'s turn" },
+            // "i have x and cast two spells this turn": the helper verb for the second half.
+            r("""\b((?:my opponent|opponent|opp|they|he|she) (?:has|have|controls?)) ([^.?!,]*?) and cast (?=(?:\d+|an?|one|two|three|four|five|six) (?:\w+ )?(?:spells?|creatures?|cards?)\b)""", "$1 $2 and has cast "),
+            // "ragavan connects and exiles the top card": it deals combat damage to the opponent.
+            r("""\bconnects(?= and (?:exiles|draws|creates|makes|gets|puts|steals)\b)""", "deals combat damage to my opponent"),
+            // "can chapter 3 find walking ballista": the chapter, said the way the saga question reads.
+            Regex("""\b(can|does|will|could) (?:its |the |that )?chapter (\d|[ivx]+) (find|search|get|fetch)\b""", ci) to { m: MatchResult -> val n = m.groupValues[2]; val roman = mapOf("1" to "I", "2" to "II", "3" to "III", "4" to "IV")[n] ?: n.uppercase(); "${m.groupValues[1]} its chapter $roman ${m.groupValues[3]}" },
+            // "swing goyf, its 4/5": which is 4/5.
+            r(""",\s*(?:its|it's|he's|hes) (\d+/\d+)\b""", " which is $1"),
+            // "does finks come back and die again": and does it die again.
+            r("""\b(does|do|will|would) ([\w' -]+?) (come back|return|persist|survive|live) and (die|dies|come back|return|trigger|survive|live)\b""", "$1 $2 $3 and $1 it $4"),
+            // "would untap in my untap step": during it.
+            r("""\bin (my|your|their|the) (untap step|draw step|end step|beginning of combat|combat damage step|declare attackers step|declare blockers step)\b""", "during $1 $2"),
+            // "if it hits me is that cmdr damage": it deals combat damage to me.
+            r("""\bif (it|he|she|they) hits? (me|you)(?=,? (?:is|are|does|do|would|will)\b)""", "if $1 deals combat damage to $2"),
+            // "ledger shredder connives, i discard a forest": and.
+            r("""\b(connives|explores|surveils|investigates|proliferates|amasses|adapts|discovers), (?=(?:i|we|they)\b)""", "$1 and "),
+            // "goes to chapter 2": go.
+            r("""\bgoes to chapter\b""", "go to chapter"),
+            // "…, then crew esika's chariot with them": and crew.
+            r("""\bthen crew\b""", "and crew"),
+            // "for impending": its impending cost.
+            r("""\bfor impending\b(?! cost)""", "for its impending cost"),
+            // "the ring tempts me, i choose …": one sentence.
+            r("""\bring tempts me, (?=(?:i|we) )""", "ring tempts me and "),
+            // "my bears is my ring-bearer": I choose it.
+            r("""\b(my [\w' -]+?) (?:is|becomes) (?:my|the) ring-?bearer\b""", "i choose $1 as my ring-bearer"),
+            // "opp pushes my siege rhino": Fatal Push, said as the verb.
+            r("""(?<=\b(?:i|we|they|he|she|opp|opponent) )push(?:es|ed)?(?= (?:my|their|his|her|the|that|this|your|an?|it)\b)""", "fatal push"),
         )
     }
 
