@@ -286,6 +286,7 @@ object OracleParser {
     private val abilityWordStatic = Regex("""^[A-Z][A-Za-z'’]*(?: [A-Za-z'’]+){0,4}\s*[—–]\s*(?=As long as\b|~|Creatures\b|Each\b|You\b|If\b)""")
 
     private fun parseTriggered(line: String): Ability {
+        mtg.judge.engine.EdhMech.parseTriggered(line) { parseEffect(it) }?.let { return it }   // Tergrid, command-zone abilities (EdhMechanics.kt)
         // Harsh Mentor: "Whenever an opponent activates an ability of an artifact, creature, or land on the battlefield, if it
         // isn't a mana ability, ~ deals 2 damage to that player." The list's commas aren't the trigger's comma.
         Regex("""^Whenever (an opponent|a player|you) activates? an ability of (.+?)(?: on the battlefield)?, if it isn't a mana ability, (.+)$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -689,6 +690,7 @@ object OracleParser {
     fun parseStatic(line: String): List<StaticEffect> {
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
+        mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
         mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
@@ -1104,6 +1106,7 @@ object OracleParser {
 
     fun parseEffect(text: String): Effect {
         WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
+        mtg.judge.engine.EdhMech.parseSpell(text) { parseEffect(it) }?.let { return it }   // Demonic Consultation, Expropriate (EdhMechanics.kt)
         Regex("""^look at the top X cards of your library, where X is your devotion to (white|blue|black|red|green)\. Put up to one of them on top of your library and the rest on the bottom of your library in a random order\. If X is greater than or equal to the number of cards in your library, you win the game\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfDevotionCoversLibrary(mapOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G').getValue(it.groupValues[1].lowercase())) }
         if (Regex("""^If ~ was cast from your hand and you've cast another spell named ~ this game, you win the game\. Otherwise, put ~ into its owner's library seventh from the top and you gain (\d+) life\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfCastBefore(it.groupValues[1].toInt()) } != null) Unit
         // "Exile up to one other target creature" (Solitude): read as one target. A spell cast with none chosen
@@ -1395,6 +1398,7 @@ object OracleParser {
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
         mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
+        mtg.judge.engine.EdhMech.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Ranger-Captain, Leadership Vacuum, Command Beacon (EdhMechanics.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
         // Lavinia, Azorius Renegade: "if no mana was spent to cast it, counter that spell."
         if (Regex("""^if no mana was spent to cast it, counter that spell\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.CounterIfNoManaSpent

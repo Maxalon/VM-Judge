@@ -916,6 +916,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "tgemptystack" -> state.stackSaidEmpty = true
             "zone" -> ZoneAsks.applyEvent(e, state, engine)
             "cascade" -> AuditAsks.applyEvent(e, state) { c -> cardDef(c, state) }
+            "edh" -> EdhAsks.applyEvent(e, state, engine)
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -965,6 +966,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
     private fun describeEvent(e: EventSpec, state: GameState): String {
         val who = e.player?.let { state.players.firstOrNull { p -> p.id == it }?.let { p -> if (p.you) "you" else p.name } ?: it }
         WinLossAsks.describe(e, who)?.let { return it }
+        EdhAsks.describe(e, state, who)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
         TargetAsks.describe(e, state, who)?.let { return it }
@@ -1176,7 +1178,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val indestructible = o.isOnBattlefield() && state.hasKeyword(o, "indestructible")
                 state.trace.step("Being a commander isn't a characteristic or an ability: it's an attribute of the card itself, kept through any change to its characteristics and any zone change.", "903.3")
                 state.trace.step("If a commander is put into a graveyard or exile, its owner may put it into the command zone the next time state-based actions are checked.", "903.9a")
-                state.outcomes += "Yes: ${o.name} is still your commander${if (o.isOnBattlefield()) " (now ${engine.describeLayered(o)})" else ""}; ${if (o.controller != o.owner) "another player gaining control of it doesn't change that" else "losing its abilities and card types doesn't change that"}, because being a commander is an attribute of the card, not a characteristic (903.3)." +
+                state.outcomes += "Yes: ${o.name} is still ${state.player(o.owner).possessive} commander${if (o.isOnBattlefield()) " (now ${engine.describeLayered(o)})" else ""}; ${if (o.controller != o.owner) "another player gaining control of it doesn't change that" else "losing its abilities and card types doesn't change that"}, because being a commander is an attribute of the card, not a characteristic (903.3)." +
                     (if (indestructible) " It has indestructible, so it can't be destroyed and lethal damage won't kill it (702.12b); if it's exiled or sacrificed, or dies some other way, you may still move it to the command zone (903.9a)." else " If it dies or is exiled, you may move it to the command zone (903.9a).")
                 if (indestructible) state.trace.step("A permanent with indestructible can't be destroyed and ignores lethal damage.", "702.12b")
                 return true
@@ -2255,6 +2257,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("ct:") == true) return CounterAsks.answer(e, state, engine)
                 if (e.to?.startsWith("tr:") == true) return TriggerAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("au:") == true) return AuditAsks.answer(e, state, engine)
+                if (e.to?.startsWith("ed:") == true) return EdhAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

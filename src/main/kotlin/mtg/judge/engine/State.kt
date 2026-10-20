@@ -295,6 +295,8 @@ class GameState(
      */
     val triggerAim = mutableMapOf<String, String>()
     var combatDamageDealt = false
+    /** Commander-table state: goad, votes, Ranger-Captain's lock (EdhMechanics.kt). */
+    internal val edh = EdhMech.Table()
     /** The question is whether a spell can be paid for ("they have one Mountain … can they?"): then even a single described land is the whole mana base. */
     var describedLandsAreTheBase = false
     /** "Can I cast Path to Exile?" with no creature named: the question is whether the cast is allowed, so a stand-in target is fine. */

@@ -55,6 +55,7 @@ class Engine(val state: GameState) {
             trace.step("${lock.name} says ${e.filter.raw}s${e.minManaValue?.let { " with mana value $it or greater" } ?: ""}${if (e.chosenNumber) " with mana value ${lock.chosenName}" else ""}${if (e.xInCost) " with {X} in their mana costs" else ""} can't be cast, and ${card.name} is one (mana value ${card.manaValue.toInt()}), so it can't be cast at all.", "604.2", "101.2")
             state.outcomes += "${card.name} can't be cast (${lock.name})."; return null
         }
+        if (EdhMech.castBlocked(state, playerId, card)) return null   // Ranger-Captain of Eos: no noncreature spells this turn
         // Silence: a turn-long stop on casting, which ends in the cleanup step.
         if (playerId in state.cantCastThisTurn) {
             val p = state.player(playerId)
@@ -635,7 +636,9 @@ class Engine(val state: GameState) {
         // first card of that player's own draw step is theirs to keep. Without this Brainstorm under a Thief
         // drew its caster three cards and the Thief's controller none.
         state.objects.values.filter { it.isOnBattlefield() && it.controller != who.id }
-            .firstNotNullOfOrNull { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.OpponentsDrawsRedirected>().firstOrNull()?.let { src to it } }
+            .mapNotNull { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.OpponentsDrawsRedirected>().firstOrNull()?.let { src to it } }
+            .filter { (_, e) -> !(e.exceptFirstInDrawStep && state.step == "draw" && state.activePlayer == who.id && who.drewThisTurn == 0 && count == 1) }
+            .let { EdhMech.pickDrawReplacement(state, who, it.distinctBy { (src, _) -> src.controller }) }   // Hullbreacher and Notion Thief: the drawer chooses (616.1)
             ?.let { (thief, e) ->
                 val exempt = if (e.exceptFirstInDrawStep && state.step == "draw" && state.activePlayer == who.id && who.drewThisTurn == 0) minOf(1, count) else 0
                 val redirected = count - exempt
@@ -1516,7 +1519,8 @@ class Engine(val state: GameState) {
             val noMax = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.controller == activePlayer &&
                 o.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.any { e -> e is StaticEffect.NoMaximumHandSize } }
             state.player(activePlayer).let { ap -> ap.handSize?.let { hand ->
-                if (noMax != null) { trace.step("${noMax.name} gives ${ap.subject.lowercase()} no maximum hand size, so ${ap.subject.lowercase()} ${ap.v("keeps", "keep")} all $hand card${if (hand == 1) "" else "s"}.", "514.1", "402.2"); state.outcomes += "${ap.subject} ${ap.v("discards", "discard")} nothing to hand size: ${noMax.name} gives ${ap.subject.lowercase()} no maximum hand size ($hand card${if (hand == 1) "" else "s"} kept)." }
+                if (noMax == null && EdhMech.cleanupHandSize(state, ap, hand)) Unit   // Jin-Gitaxias: an opponent's permanent reduces it
+                else if (noMax != null) { trace.step("${noMax.name} gives ${ap.subject.lowercase()} no maximum hand size, so ${ap.subject.lowercase()} ${ap.v("keeps", "keep")} all $hand card${if (hand == 1) "" else "s"}.", "514.1", "402.2"); state.outcomes += "${ap.subject} ${ap.v("discards", "discard")} nothing to hand size: ${noMax.name} gives ${ap.subject.lowercase()} no maximum hand size ($hand card${if (hand == 1) "" else "s"} kept)." }
                 else if (hand > 7) { trace.step("${ap.subject} ${ap.v("has", "have")} $hand cards in hand and a maximum hand size of seven, so ${ap.subject.lowercase()} ${ap.v("discards", "discard")} ${hand - 7} card${if (hand - 7 == 1) "" else "s"} of ${ap.possessive} choice first.", "514.1", "402.2"); ap.handSize = 7; state.outcomes += "${ap.subject} ${ap.v("discards", "discard")} ${hand - 7} card${if (hand - 7 == 1) "" else "s"} to hand size." }
                 else { trace.step("${ap.subject} ${ap.v("has", "have")} $hand card${if (hand == 1) "" else "s"} in hand, no more than the maximum hand size of seven, so nothing is discarded.", "514.1", "402.2"); state.outcomes += "${ap.subject} ${ap.v("discards", "discard")} nothing to hand size ($hand card${if (hand == 1) "" else "s"}, maximum seven)." }
             } }
@@ -1530,7 +1534,7 @@ class Engine(val state: GameState) {
             }
             state.cantLoseThisTurn.clear(); state.exileInsteadThisTurn.clear()
             state.players.forEach { it.manaPool = 0; it.manaPoolSymbols.clear() }
-            state.cantCastThisTurn.clear()
+            state.cantCastThisTurn.clear(); state.edh.noncreatureLock.clear()
             state.damageLifeFloor.clear()
             state.landsPlayed.clear(); state.extraLandsThisTurn.clear(); state.loyaltyUsedThisTurn.clear(); state.players.forEach { it.damagedThisTurn = false }
             for (o in affected) { o.pumps.clear(); o.tempKeywords.retainAll { it.contains("@until-turn:") }; o.lostKeywords.clear(); o.basePt = null; o.animatedAs = null; o.saddled = false; o.saddledThisTurn = 0; o.damage = 0; trace.step("${o.name} is back to ${if (state.isCreature(o)) state.describePt(o) else "normal"} with no damage.", "514.2"); state.outcomes += "${o.name}'s until-end-of-turn effects and damage are gone (cleanup)." }
@@ -1617,7 +1621,7 @@ class Engine(val state: GameState) {
         state.discardCause = item.controller   // whose spell or ability is making anyone discard while this resolves (Loxodon Smiter)
         trace.step("All players pass priority; ${item.describe} (top of the stack) starts to resolve.", "117.4", "608.1")
         // Killing the Top in response to its ability: the ability is already on the stack and exists independently of its source.
-        if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.effect !is WinLossEffect && !worksFromGraveyard(item)) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
+        if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.source.zone != Zone.COMMAND && item.effect !is WinLossEffect && !worksFromGraveyard(item)) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
         // A bestowed Aura spell whose target is illegal resolves as a creature spell instead (702.103e).
         if (item.kind == StackKind.SPELL && item.source.kwf.bestowed && item.targets.isNotEmpty() && item.targets.none { isTargetLegal(item, it) }) GapMech.bestowToCreature(state, item)
         // 608.2b target legality
@@ -1706,7 +1710,7 @@ class Engine(val state: GameState) {
             }
             StackKind.TRIGGERED, StackKind.ACTIVATED -> {
                 // Dark Confidant bolted in response to its upkeep trigger: the ability on the stack is independent of its source (113.7a).
-                if (item.kind == StackKind.TRIGGERED && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.effect !is WinLossEffect && !worksFromGraveyard(item) && !Regex("""(?i)leaves the battlefield|dies|is put into a graveyard|~ enters|this creature enters|this permanent enters|enters the battlefield""").containsMatchIn(item.text)) {
+                if (item.kind == StackKind.TRIGGERED && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.source.zone != Zone.COMMAND && item.effect !is WinLossEffect && !worksFromGraveyard(item) && !Regex("""(?i)leaves the battlefield|dies|is put into a graveyard|~ enters|this creature enters|this permanent enters|enters the battlefield""").containsMatchIn(item.text)) {
                     val transforms = Regex("""(?i)\btransform\b""").containsMatchIn(item.text)
                     trace.step("${item.source.name} has left the battlefield, but its triggered ability is already on the stack and resolves anyway: an ability on the stack exists independently of its source, using the source's last known information where it needs it.${if (transforms) " The part that would transform ${item.source.name} does nothing: there's no permanent to transform." else ""}", "113.7a", "608.2h")
                     state.outcomes += "${item.source.name}'s trigger still resolves even though ${item.source.name} is gone (113.7a)${if (transforms) ", but with nothing left to transform" else ""}."
@@ -2409,10 +2413,10 @@ class Engine(val state: GameState) {
                 is GameEvent.SpellCast -> event.item.controller; is GameEvent.Drew -> event.playerId; is GameEvent.AbilityActivated -> event.playerId; is GameEvent.BecomesTarget -> event.by; is GameEvent.LifeGained -> event.playerId; is GameEvent.LifeLost -> event.playerId
                 is GameEvent.PlayerAttacks -> event.playerId; is GameEvent.Attacks -> event.obj.controller; is GameEvent.StepBegins -> event.activePlayer
                 is GameEvent.EntersBattlefield -> event.obj.controller; is GameEvent.Dies -> event.obj.controller; is GameEvent.LeavesBattlefield -> event.obj.controller
-                is GameEvent.CreaturesDealtCombatDamageToPlayer -> event.playerId; is GameEvent.DamageDealt -> if (ability.trigger == Trigger.ThisIsDealtDamage) event.source.controller else (event.target as? Ref.Player)?.id ?: event.source.controller; else -> null
+                is GameEvent.CreaturesDealtCombatDamageToPlayer -> event.playerId; is GameEvent.Sacrificed -> event.playerId; is GameEvent.DamageDealt -> if (ability.trigger == Trigger.ThisIsDealtDamage) event.source.controller else (event.target as? Ref.Player)?.id ?: event.source.controller; else -> null
             }
             val causedAmount = when (event) { is GameEvent.LifeGained -> event.amount; is GameEvent.LifeLost -> event.amount; is GameEvent.DamageDealt -> event.amount; else -> null }
-            val causedObject = when (event) { is GameEvent.AttacksAlone -> event.obj.id; is GameEvent.Attacks -> event.obj.id; is GameEvent.EntersBattlefield -> event.obj.id; is GameEvent.Dies -> event.obj.id; is GameEvent.BecomesTarget -> event.sourceId; is GameEvent.SpellCast -> event.item.id; is GameEvent.BecomesBlockedBy -> event.blocker.id; is GameEvent.Blocks -> event.blocked?.id; else -> null }
+            val causedObject = when (event) { is GameEvent.AttacksAlone -> event.obj.id; is GameEvent.Attacks -> event.obj.id; is GameEvent.EntersBattlefield -> event.obj.id; is GameEvent.Dies -> event.obj.id; is GameEvent.BecomesTarget -> event.sourceId; is GameEvent.SpellCast -> event.item.id; is GameEvent.BecomesBlockedBy -> event.blocker.id; is GameEvent.Blocks -> event.blocked?.id; is GameEvent.Sacrificed -> event.obj.id; else -> null }
             putTriggerOnStack(obj, ability, emptyList(), causedBy, causedAmount, causedObject)
         }
         if (ordered.size > 1 && triggerHold == null) trace.step("Multiple abilities triggered at once; they are put on the stack in APNAP order, each player choosing the order among their own.", "603.3b")
@@ -2504,6 +2508,7 @@ class Engine(val state: GameState) {
         is Trigger.PermanentDealsCombatDamageToPlayer -> event is GameEvent.DamageDealt && event.combat && event.target is Ref.Player && onBf() && state.matches(trigger.filter, event.source, obj.controller, obj)
         is Trigger.PermanentDealsCombatDamage -> event is GameEvent.DamageDealt && event.combat && onBf() && state.matches(trigger.filter, event.source, obj.controller, obj)
         Trigger.YourCreaturesDealCombatDamageToPlayer -> event is GameEvent.CreaturesDealtCombatDamageToPlayer && event.playerId == obj.controller && onBf()
+        is Trigger.Edh -> EdhMech.matches(state, obj, trigger, event)
         is Trigger.Unknown -> false
         }
     }
@@ -2778,6 +2783,7 @@ class Engine(val state: GameState) {
         val slot = attackTaxTotal[key]?.second
         if (slot != null && slot < state.outcomes.size) { state.outcomes[slot] = line; attackTaxTotal[key] = n to slot }
         else { attackTaxTotal[key] = n to state.outcomes.size; state.outcomes += line }
+        EdhMech.attackTaxGrandTotal(state, playerId, srcName, per)   // Propaganda and Ghostly Prison on two defenders: one total (508.1h)
     }
 
     /** "Counter target spell unless its controller pays {3}": the payer's choice, or their mana when it is known. */
@@ -3179,7 +3185,7 @@ class Engine(val state: GameState) {
                 val you = state.player(item.controller)
                 when {
                     spell == null -> trace.step("${state.nameOf(ref ?: Ref.Player(item.controller))} isn't on the stack any more, so there is nothing to retarget.", "608.2b")
-                    spell.targets.isEmpty() -> trace.step("${spell.source.name} has no targets, so there is nothing to change.", "115.7")
+                    spell.targets.isEmpty() -> EdhMech.noTargetsToChange(state, spell, item)
                     effect.singleOnly && spell.targets.size > 1 -> trace.step("${spell.source.name} has ${spell.targets.size} targets, and ${item.describe} can only change the target of a spell with a single target.", "115.7")
                     else -> {
                         // The asker may name the new target after the spell; otherwise the obvious choice is to
@@ -3544,7 +3550,7 @@ class Engine(val state: GameState) {
                         if (effect.fromLibrary) trace.step("${you.possessive.replaceFirstChar { c -> c.uppercase() }} library is shuffled.", "701.24a")
                         if (effect.tapped) { chosen.tapped = true; trace.step("${chosen.name} enters tapped, as the effect says.", "614.1c") }
                         if (effect.attacking) {
-                            val defender = item.source.attacking ?: state.opponentsOf(item.controller).singleOrNull()?.let { Ref.Player(it.id) }
+                            val defender = EdhMech.chosenDefender(state, chosen) ?: item.source.attacking ?: state.opponentsOf(item.controller).singleOrNull()?.let { Ref.Player(it.id) }
                             if (defender != null && state.phase == "combat") { chosen.attacking = defender; trace.step("${chosen.name} is put onto the battlefield attacking ${state.nameOf(defender)}. It was never declared as an attacker, so \"whenever ~ attacks\" abilities don't trigger and it isn't affected by attack costs or restrictions; it will deal combat damage as an attacking creature.", "508.4"); state.outcomes += "${chosen.name} is attacking ${state.nameOf(defender)}." }
                             else trace.step("${chosen.name} would enter attacking, but there's no combat going on, so it simply enters the battlefield.", "508.4")
                         }
@@ -3561,11 +3567,13 @@ class Engine(val state: GameState) {
                 val mine = effect.filter?.let { f -> state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && state.matches(f, it, p.id) } } ?: emptyList()
                 val hand = p.handSize
                 when {
+                    // Teferi's Protection: the "unless" is the player's choice (118.12a); a player whose life total can't change takes the life loss, which then doesn't happen.
+                    p.lifeLocked -> EdhMech.lifeLockedUnless(state, p, effect.amount, item)
                     mine.isNotEmpty() -> {
                         val pick = if (mine.size == 1) mine[0] else mine.minWith(compareBy({ if (state.isCreature(it)) 1 else 0 }, { it.def.manaValue }, { it.power ?: 0 }))
                         if (mine.size > 1) state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} rather than losing ${effect.amount} life (${p.subject.lowercase()} ${p.v("chooses", "choose")} which ${effect.filter!!.raw}; assuming the least valuable)."
                         else state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} rather than losing ${effect.amount} life (${p.possessive} choice; assuming ${p.subject.lowercase()} ${p.v("keeps", "keep")} the life)."
-                        move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} instead of losing ${effect.amount} life.", "701.21a")
+                        move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} instead of losing ${effect.amount} life.", "701.21a"); onEvent(GameEvent.Sacrificed(pick, p.id))
                     }
                     effect.discard && hand != null && hand > 0 -> {
                         p.handSize = hand - 1
@@ -3589,13 +3597,13 @@ class Engine(val state: GameState) {
                 if (mine.isEmpty() && sacIndex > 0) break   // said once: nothing left to sacrifice
                 when {
                     mine.isEmpty() -> { trace.step("${p.subject} ${p.v("controls", "control")} no ${effect.filter.raw}, so ${p.subject.lowercase()} ${p.v("sacrifices", "sacrifice")} nothing.", "701.21a"); state.outcomes += "${p.subject} ${p.v("has", "have")} no ${effect.filter.raw} to sacrifice to ${item.source.name}; with one, ${p.subject.lowercase()} would have to." }
-                    mine.size == 1 -> move(mine[0], Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${mine[0].name} (${p.possessive} only ${effect.filter.raw}).", "701.21a")
+                    mine.size == 1 -> { move(mine[0], Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${mine[0].name} (${p.possessive} only ${effect.filter.raw}).", "701.21a"); onEvent(GameEvent.Sacrificed(mine[0], p.id)) }
                     effect.greatestPower -> {
                         val top = mine.maxOf { it.power ?: 0 }; val best = mine.filter { (it.power ?: 0) == top }; val pick = best.first()
                         if (best.size > 1) state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}: ${best.joinToString(" and ") { it.name }} are tied for greatest power ($top), and ${p.subject.lowercase()} ${p.v("chooses", "choose")} among them."
-                        move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} creature with the greatest power ($top)${if (mine.size > 1) " (not ${mine.filter { it !== pick }.joinToString(", ") { "${it.name}, power ${it.power ?: 0}" }})" else ""}.", "701.21a")
+                        move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} creature with the greatest power ($top)${if (mine.size > 1) " (not ${mine.filter { it !== pick }.joinToString(", ") { "${it.name}, power ${it.power ?: 0}" }})" else ""}.", "701.21a"); onEvent(GameEvent.Sacrificed(pick, p.id))
                     }
-                    else -> { val pick = mine.minWith(compareBy<GameObject>({ if (it.token) 0 else 1 }, { it.power ?: 0 }, { it.toughness ?: 0 })); state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} (${p.subject.lowercase()} ${p.v("chooses", "choose")} which ${effect.filter.raw}; assuming a token before a card, then the smallest)."; state.outcomes += "${p.subject} ${p.v("chooses", "choose")} which ${effect.filter.raw} to sacrifice: ${mine.joinToString(" or ") { it.name }}; ${pick.name} is assumed${if (pick.token) " (a token is the usual pick)" else " (the smallest)"}."; move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} choice among ${mine.joinToString(", ") { it.name }}.", "701.21a") }
+                    else -> { val pick = mine.minWith(compareBy<GameObject>({ if (it.token) 0 else 1 }, { it.power ?: 0 }, { it.toughness ?: 0 })); state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} (${p.subject.lowercase()} ${p.v("chooses", "choose")} which ${effect.filter.raw}; assuming a token before a card, then the smallest)."; state.outcomes += "${p.subject} ${p.v("chooses", "choose")} which ${effect.filter.raw} to sacrifice: ${mine.joinToString(" or ") { it.name }}; ${pick.name} is assumed${if (pick.token) " (a token is the usual pick)" else " (the smallest)"}."; move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} choice among ${mine.joinToString(", ") { it.name }}.", "701.21a"); onEvent(GameEvent.Sacrificed(pick, p.id)) }
                 } }
             }
             is Effect.GainLifeEqualToPower -> {
@@ -3665,7 +3673,7 @@ class Engine(val state: GameState) {
                 state.outcomes += when (effect.keywords.singleOrNull()?.substringBefore('@')) { "unblockable" -> "${it.name} can't be blocked ${if (untilNext) dur else "this turn"}."; "cant-block" -> "${it.name} can't block ${if (untilNext) dur else "this turn"}."; "cant-attack" -> "${it.name} can't attack ${if (untilNext) dur else "this turn"}."; else -> "${it.name} has $said $dur." }
             } }
             is Effect.GainLife -> resolvePlayers(effect.who, item).forEach { p -> gainLife(p, effect.amount) }
-            is Effect.LoseLife -> { val n = if (effect.x) (item.x ?: 0) else effect.amount; resolvePlayers(effect.who, item).forEach { p -> p.life = p.life?.minus(n); item.lifeLost += n; trace.step("${p.subject} ${p.v("loses", "lose")} $n life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $n life."; lifeLost(p, n) } }
+            is Effect.LoseLife -> { val n = if (effect.x) (item.x ?: 0) else effect.amount; resolvePlayers(effect.who, item).forEach { p -> if (p.lifeLocked) { EdhMech.lifeLockedLoss(state, p, n); return@forEach }; p.life = p.life?.minus(n); item.lifeLost += n; trace.step("${p.subject} ${p.v("loses", "lose")} $n life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $n life."; lifeLost(p, n) } }
             is Effect.ExileTwo -> for (i in 0..1) item.targets.getOrNull(i)?.let { ref ->
                 if (isTargetLegal(item, ref)) objOf(ref)?.let { o -> move(o, Zone.EXILE, "${o.name} is exiled.", "701.13a") }
                 else trace.step("${state.nameOf(ref)} is an illegal target now, so it isn't exiled.", "608.2b")
@@ -3921,6 +3929,7 @@ class Engine(val state: GameState) {
                 if (Turns.resolve(this, effect.text, item)) return   // extra turns, skips, ending the turn, extra phases (Turns.kt)
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
                 if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
+                if (EdhMech.resolve(this, effect.text, item)) return   // Tergrid, Consultation, Expropriate, Leadership Vacuum (EdhMechanics.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 // Devoted Druid's "Untap ~": the permanent really untaps, so its {T} ability can be activated again.
                 if (Regex("""(?i)^untap ~\.?$""").matches(effect.text.trim()) && item.source.isOnBattlefield()) {
@@ -5171,7 +5180,7 @@ class Engine(val state: GameState) {
             if (ts.isEmpty()) step("${e.source.name}'s ability applies to ${eff.filter.raw.removePrefix("each ")}s, and there's none on the battlefield, so it makes nothing a creature right now.", "613.1d", "604.2")
             if (eff.filter.other && !state.hasCreatureType(e.source)) step("${e.source.name} itself isn't changed: its ability says ${eff.filter.raw}, so it stays a noncreature ${state.typesOf(e.source).joinToString(" ").lowercase()}.", "613.1d")
             for (t in ts) {
-                if (eff.replaceTypes) step("${e.source.name} makes ${t.name} ${withArticle(listOf(eff.subtypes.joinToString(" "), eff.addTypes.sortedBy { it != "Artifact" }.joinToString(" ").lowercase()).filter { it.isNotBlank() }.joinToString(" "))} instead of its old card types and creature types (layer 4), takes away all its other abilities${if (eff.keywords.isNotEmpty()) " and gives it ${eff.keywords.joinToString(" and ")}" else ""} (layer 6), and gives it $sizeWord (layer 7b). Its colour, name and supertypes don't change.", "613.1d", "613.1f", "613.4b")
+                if (eff.replaceTypes) step("${e.source.name} makes ${t.name} ${withArticle(listOf(eff.subtypes.joinToString(" "), eff.addTypes.sortedBy { it != "Artifact" }.joinToString(" ").lowercase()).filter { it.isNotBlank() }.joinToString(" "))} instead of its old card types and creature types (layer 4), takes away all its other abilities${if (eff.keywords.isNotEmpty()) " and gives it ${eff.keywords.joinToString(" and ")}" else ""} (layer 6), and gives it $sizeWord (layer 7b). ${EdhMech.colourNote(e.source) ?: "Its colour, name and supertypes don't change."}", "613.1d", "613.1f", "613.4b", *(if (EdhMech.colourNote(e.source) != null) arrayOf("613.1e") else emptyArray()))
                 else step("${e.source.name} makes ${t.name} a creature in addition to its other types (layer 4), with $sizeWord${if (eff.ptManaValue) ", ${t.def.manaValue.toInt()}" else ""} (layer 7b).", "613.1d", "613.4b")
             }
             if (eff.filter.other && !state.hasCreatureType(e.source)) out("${e.source.name} isn't a creature: its ability changes ${eff.filter.raw}, not ${e.source.name} itself.")
@@ -5366,9 +5375,9 @@ class Engine(val state: GameState) {
         val stated = p.mana
         // "a land that says tap: add one mana of any color and 2 other lands": a count said alongside described
         // mana sources is in addition to them (the "other" lands), so both are added up.
-        val fromSources = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && it.tapped != true }.count { o ->
+        val fromSources = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && it.tapped != true }.sumOf { o ->
             val a = if (state.moonOn(o) != null) o.def.abilities.filterIsInstance<ActivatedAbility>().firstOrNull { ab -> isManaEffect(ab.effect) } else o.abilities.filterIsInstance<ActivatedAbility>().firstOrNull { ab -> isManaEffect(ab.effect) }
-            a != null && !(a.cost.contains("{T}") && state.isCreature(o) && o.summoningSick == true && !state.hasKeyword(o, "haste"))
+            if (a != null && !(a.cost.contains("{T}") && state.isCreature(o) && o.summoningSick == true && !state.hasKeyword(o, "haste"))) EdhMech.manaAmount(a.effect) else 0
         }.takeIf { it > 0 }
         val base = if (stated == null) fromSources else stated + (fromSources ?: 0)
         if (base == null) return if (p.manaPool > 0) p.manaPool else null

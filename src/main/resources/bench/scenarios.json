@@ -45028,5 +45028,391 @@
       "118.9",
       "701.6a"
     ]
+  },
+  {
+    "id": "ed1",
+    "text": "Alice, Bob, Carol and I are playing. I control Rhystic Study. Bob casts Sol Ring. Can Carol pay the {1} for Bob?",
+    "expect": [
+      "No: only Bob can pay {1} for Rhystic Study",
+      "Carol can't pay it"
+    ],
+    "cite": [
+      "118.12a",
+      "118.3"
+    ]
+  },
+  {
+    "id": "ed2",
+    "text": "Alice, Bob, Carol and I are playing. I control Smothering Tithe. Bob casts Wheel of Fortune and nobody pays. How many Treasures do I get?",
+    "expect": [
+      "You get a Treasure token. (×21)"
+    ],
+    "notExpect": [
+      "(×28)"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "ed3",
+    "text": "Alice, Bob, Carol and I are playing. Alice controls Sol Ring and Ghostly Prison, Bob controls two Treasure tokens and Carol controls Propaganda. I control Smothering Tithe. I cast Dockside Extortionist. How many Treasures do I get?",
+    "expect": [
+      "X is 5",
+      "You get a Treasure token. (×5)"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "ed4",
+    "text": "I cast Thassa's Oracle. My devotion to blue is 2 and I have 30 cards in library. With the trigger on the stack I cast Demonic Consultation naming a card that isn't in my library. Do I win?",
+    "expect": [
+      "Your whole library is exiled",
+      "You win the game (Thassa's Oracle: X = 2, library = 0)"
+    ],
+    "cite": [
+      "701.13a",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "ed5",
+    "text": "I control Food Chain and Eternal Scourge. I exile Eternal Scourge with Food Chain. How much mana do I get, and can I cast it again?",
+    "expect": [
+      "makes 4 mana of one colour, only for creature spells",
+      "netting 1 each loop"
+    ],
+    "cite": [
+      "106.6",
+      "732.2a"
+    ]
+  },
+  {
+    "id": "ed6",
+    "text": "Alice, Bob, Carol and I are playing. Bob controls Carnage Tyrant and Carol controls Progenitus. I cast Cyclonic Rift overloaded. What happens?",
+    "expect": [
+      "Carnage Tyrant's hexproof doesn't help",
+      "Progenitus' protection from everything doesn't help",
+      "Progenitus: the battlefield → Carol's hand"
+    ],
+    "cite": [
+      "702.11b",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "ed7",
+    "text": "Alice, Bob, Carol and I are playing. Bob controls Propaganda and Carol controls Ghostly Prison. I attack Bob with two 2/2 creatures and Carol with a 3/3 creature. How much do I have to pay?",
+    "expect": [
+      "You pay {6} in all to attack: {4} for Propaganda + {2} for Ghostly Prison"
+    ],
+    "cite": [
+      "508.1h"
+    ]
+  },
+  {
+    "id": "ed8",
+    "text": "Alice, Bob, Carol and I are playing. Bob goaded my Grizzly Bears. On my turn, who does it have to attack?",
+    "expect": [
+      "Grizzly Bears must attack Alice or Carol",
+      "It can't attack Bob"
+    ],
+    "cite": [
+      "701.15a",
+      "701.15b"
+    ]
+  },
+  {
+    "id": "ed9",
+    "text": "Alice, Bob, Carol and I are playing. Bob and Carol both goaded my Grizzly Bears. Who does it have to attack?",
+    "expect": [
+      "Grizzly Bears must attack Alice:",
+      "It can't attack Bob or Carol"
+    ],
+    "cite": [
+      "701.15c",
+      "508.1d"
+    ]
+  },
+  {
+    "id": "ed10",
+    "text": "Alice, Bob, Carol and I are playing. Bob goaded my Grizzly Bears. Alice and Carol both control Propaganda. Do I have to attack, and whom?",
+    "expect": [
+      "it must attack Bob",
+      "pay {2} to attack Alice"
+    ],
+    "cite": [
+      "508.1d"
+    ]
+  },
+  {
+    "id": "ed11",
+    "text": "Alice, Bob, Carol and I are playing. Carol is the monarch. Bob goaded my Grizzly Bears. On my turn it attacks Carol and isn't blocked. Who is the monarch?",
+    "expect": [
+      "You are the monarch."
+    ],
+    "notExpect": [
+      "Bob is the monarch"
+    ],
+    "cite": [
+      "725.2"
+    ]
+  },
+  {
+    "id": "ed12",
+    "text": "Alice, Bob, Carol and I are playing. It's Bob's turn and Carol is the monarch. Carol loses the game. Who is the monarch now?",
+    "expect": [
+      "Bob becomes the monarch",
+      "Bob is the monarch."
+    ],
+    "cite": [
+      "725.4",
+      "800.4a"
+    ]
+  },
+  {
+    "id": "ed13",
+    "text": "Alice, Bob, Carol and I are playing. Alice controls Grizzly Bears, Bob controls a Zombie token and Carol controls Llanowar Elves. I control Tergrid, God of Fright and cast Plaguecrafter. What happens?",
+    "expect": [
+      "Llanowar Elves comes from Carol's graveyard onto the battlefield under your control",
+      "Grizzly Bears comes from Alice's graveyard onto the battlefield under your control"
+    ],
+    "notExpect": [
+      "Zombie token comes from"
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "ed14",
+    "text": "Alice, Bob, Carol and I are playing and it's my turn. I cast Torment of Hailfire with X=2. In what order do my opponents choose?",
+    "expect": [
+      "Alice, then Bob, then Carol"
+    ],
+    "cite": [
+      "101.4",
+      "101.4b"
+    ]
+  },
+  {
+    "id": "ed15",
+    "text": "Alice, Bob, Carol and I are playing. Alice controls Sol Ring and Bob controls Rhystic Study. I cast Expropriate. I vote time, Alice votes money, Bob votes money and Carol votes time. What happens?",
+    "expect": [
+      "You take 2 extra turns after this one",
+      "You gain control of Alice's Sol Ring",
+      "You gain control of Bob's Rhystic Study"
+    ],
+    "cite": [
+      "701.38a",
+      "500.7"
+    ]
+  },
+  {
+    "id": "ed16",
+    "text": "Alice, Bob, Carol and I are playing. I control Hullbreacher and Bob controls Notion Thief. Carol casts Wheel of Fortune. Who decides what happens to Carol's draws?",
+    "expect": [
+      "Carol chooses which of Hullbreacher or Notion Thief replaces each of Carol's draws"
+    ],
+    "cite": [
+      "616.1"
+    ]
+  },
+  {
+    "id": "ed17",
+    "text": "Alice, Bob, Carol and I are playing. I control Bob's commander, Atraxa, Praetors' Voice, with Control Magic. Bob casts Lightning Bolt at me. Can I cast Fierce Guardianship without paying its mana cost?",
+    "expect": [
+      "Yes: you control a commander (Atraxa, Praetors' Voice, Bob's)"
+    ],
+    "cite": [
+      "903.3d"
+    ]
+  },
+  {
+    "id": "ed18",
+    "text": "Alice, Bob, Carol and I are playing. Bob casts Cyclonic Rift overloaded. I control my commander and cast Deflecting Swat targeting the Rift. Can I change its targets?",
+    "expect": [
+      "Deflecting Swat changes nothing: Cyclonic Rift has no targets"
+    ],
+    "cite": [
+      "115.7",
+      "702.96b"
+    ]
+  },
+  {
+    "id": "ed19",
+    "text": "Alice, Bob, Carol and I are playing. It's Carol's turn. Bob sacrifices Ranger-Captain of Eos and its ability resolves. Can I cast Swords to Plowshares this turn?",
+    "expect": [
+      "No: Swords to Plowshares can't be cast"
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "ed20",
+    "text": "Alice, Bob, Carol and I are playing. I cast Kenrith's Transformation on Bob's commander Atraxa, Praetors' Voice. Is it still a commander? If it deals combat damage to me, is that commander damage?",
+    "expect": [
+      "still Bob's commander",
+      "is commander damage from Bob's commander"
+    ],
+    "cite": [
+      "903.3",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "ed21",
+    "text": "Alice, Bob, Carol and I are playing. I control Jin-Gitaxias, Core Augur. Bob has 5 cards in hand at his cleanup step. What happens?",
+    "expect": [
+      "Bob discards 5 cards to hand size",
+      "maximum hand size is 0"
+    ],
+    "cite": [
+      "402.2",
+      "514.1"
+    ]
+  },
+  {
+    "id": "ed22",
+    "text": "Alice, Bob, Carol and I are playing. Alice controls only Islands and Bob controls only Mountains. Carol controls no lands. What colors can my Exotic Orchard tap for?",
+    "expect": [
+      "Exotic Orchard can tap for blue or red"
+    ],
+    "cite": [
+      "106.7"
+    ]
+  },
+  {
+    "id": "ed23",
+    "text": "My commander has been cast from the command zone twice. I sacrifice Command Beacon and put it into my hand. How much more does it cost to cast from my hand?",
+    "expect": [
+      "with no commander tax"
+    ],
+    "cite": [
+      "903.8"
+    ]
+  },
+  {
+    "id": "ed24",
+    "text": "Alice, Bob, Carol and I are playing. I control Bob's commander, Atraxa, Praetors' Voice, with Control Magic. Bob casts Leadership Vacuum targeting me. What happens?",
+    "expect": [
+      "Atraxa, Praetors' Voice returns to Bob's command zone"
+    ],
+    "cite": [
+      "903.3d"
+    ]
+  },
+  {
+    "id": "ed25",
+    "text": "Alice, Bob, Carol and I are playing. Bob controls Sol Ring. I cast Expropriate. I vote time, Alice votes time, Bob votes money and Carol votes money. Then I lose the game. What happens to the extra turns and Bob's Sol Ring?",
+    "expect": [
+      "Your extra turns never happen",
+      "Sol Ring goes back to Bob's control"
+    ],
+    "cite": [
+      "800.4k",
+      "800.4a"
+    ]
+  },
+  {
+    "id": "ed26",
+    "text": "I control Necropotence and my opponent controls Sheoldred, the Apocalypse. It's my turn. Do I lose life in my draw step?",
+    "expect": [
+      "You skip your draw step (Necropotence)",
+      "you lose no life"
+    ],
+    "notExpect": [
+      "You lose 2 life"
+    ],
+    "cite": [
+      "614.10"
+    ]
+  },
+  {
+    "id": "ed27",
+    "text": "I control Aetherflux Reservoir. I cast Lightning Bolt and the Reservoir trigger resolves. Then I cast Twincast copying it. How much life do I gain in all?",
+    "expect": [
+      "You gain 3 life in all"
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "ed28",
+    "text": "Alice, Bob, Carol and I are playing. Kaalia of the Vast attacks Bob. I put Serra Angel onto the battlefield with its trigger. Can Serra Angel be attacking Carol?",
+    "expect": [
+      "Serra Angel is attacking Carol",
+      "Yes: Serra Angel can be attacking Carol"
+    ],
+    "cite": [
+      "508.4"
+    ]
+  },
+  {
+    "id": "ed29",
+    "text": "Edgar Markov is in my command zone. I cast Bloodghast. Do I get a Vampire token?",
+    "expect": [
+      "You get a Vampire token"
+    ],
+    "notExpect": [
+      "is gone"
+    ],
+    "cite": [
+      "113.6b"
+    ]
+  },
+  {
+    "id": "ed30",
+    "text": "My commander Derevi, Empyrial Tactician has been cast from the command zone twice. I activate its ability to put it onto the battlefield from the command zone. How much does that cost, and does it raise the commander tax?",
+    "expect": [
+      "It costs {1}{G}{W}{U}, no commander tax",
+      "the tax doesn't go up"
+    ],
+    "cite": [
+      "113.6m",
+      "903.8"
+    ]
+  },
+  {
+    "id": "ed31",
+    "text": "Alice, Bob, Carol and I are playing. I cast Teferi's Protection. Then Bob casts Torment of Hailfire with X=5. What happens to me?",
+    "expect": [
+      "You keep everything and lose no life to Torment of Hailfire"
+    ],
+    "notExpect": [
+      "You lose 3 life"
+    ],
+    "cite": [
+      "118.12a",
+      "119.8"
+    ]
+  },
+  {
+    "id": "ed32",
+    "text": "Oloro, Ageless Ascetic is in my command zone. It's my upkeep. Do I gain life?",
+    "expect": [
+      "You gain 2 life in all"
+    ],
+    "notExpect": [
+      "is gone"
+    ],
+    "cite": [
+      "113.6b"
+    ]
+  },
+  {
+    "id": "ed33",
+    "text": "Alice, Bob, Carol and I are playing. Alice controls Sol Ring and Rhystic Study. I control Smothering Tithe. I cast Dockside Extortionist. What happens?",
+    "expect": [
+      "Alice pays {2}",
+      "You get a Treasure token. (×2)"
+    ],
+    "cite": [
+      "608.2h"
+    ]
   }
 ]

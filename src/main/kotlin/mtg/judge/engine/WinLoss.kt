@@ -224,6 +224,7 @@ fun Engine.loseGame(p: Player, why: String, vararg rules: String): Boolean {
 fun Engine.leaveGame(p: Player) {
     val st = state; val tr = st.trace
     if (st.players.size <= 2) return
+    EdhMech.monarchLeaves(st, p)   // 725.4
     val gone = mutableListOf<String>()
     // Spells and abilities they control on the stack.
     for (item in st.stack.toList().filter { it.controller == p.id }) {

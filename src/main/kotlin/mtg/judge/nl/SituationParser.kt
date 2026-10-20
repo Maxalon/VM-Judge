@@ -1691,6 +1691,169 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- four-player Commander tables (see EdhMechanics.kt and EdhAsks.kt) ----
+
+    /** Table talk at Commander tables with three or more players: goad, votes, stolen commanders, the command zone. */
+    private fun edhRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t.trim()
+        val io = RegexOption.IGNORE_CASE
+        val who = """(?:i|we|@\w+)"""
+        fun card(ph: String) = m.cards[ph]
+        // "I attack Bob with two 2/2 creatures and Carol with a 3/3 creature": two attacks, one at each defender.
+        Regex("""^(i|we) attack (@\w+) with (.+?) and (@\w+) with (.+)$""", io).find(t2)?.let { r -> return "${r.groupValues[1]} attack ${r.groupValues[2]} with ${r.groupValues[3]} and ${r.groupValues[1]} attack ${r.groupValues[4]} with ${r.groupValues[5]}" }
+        // "Bob goaded my Grizzly Bears", "Bob and Carol both goaded my Grizzly Bears" (701.15).
+        Regex("""^($who)(?: and ($who))? (?:both |each )?(?:goaded|goads|has goaded|have goaded|have both goaded) (?:my |their |@\w+'s )?(c\d+)$""", io).find(t2)?.let { r ->
+            return "edgoad ${listOf(r.groupValues[1], r.groupValues[2]).filter { it.isNotEmpty() }.joinToString("+") { it.removePrefix("@") }} ${r.groupValues[3]}"
+        }
+        // "Alice and Carol both control Propaganda": one each.
+        Regex("""^(@\w+) and (@\w+) (?:both |each )?control (?:an? )?(c\d+)$""", io).find(t2)?.let { r -> return "edboth ${r.groupValues[1].removePrefix("@")} ${r.groupValues[2].removePrefix("@")} ${r.groupValues[3]}" }
+        // "Edgar Markov is in my command zone": that player's commander, waiting in the command zone.
+        t2 = t2.replace(Regex("""^(?:my commander,? )?(c\d+) is in my command zone$""", io), "my commander $1 is in the command zone")
+        // "My commander has been cast from the command zone twice": the tax counts casts from there (903.8).
+        t2 = t2.replace(Regex("""\b(cast|countered) from (?:the|my) command zone (once|twice|three times|four times|\d+ times)\b""", io), "$1 $2")
+        // "I sacrifice Command Beacon and put my commander into my hand": the second half is what its ability does.
+        t2 = t2.replace(Regex("""^(i|we) (sacrifice|sac|crack) (c\d+) (?:and|to) put (?:it|my commander) into my hand$""", io), "$1 sacrifice $3")
+        // "I control Bob's commander, Atraxa, with Control Magic": a commander someone else owns, under my control.
+        Regex("""^(i|we) control (@\w+)'s commander,? (c\d+),? (?:with|via|through|thanks to|stolen with) (c\d+)$""", io).find(t2)?.let { r -> return "edstolencmd ${r.groupValues[2].removePrefix("@")} ${r.groupValues[3]} ${r.groupValues[4]}" }
+        // "Bob controls his commander Atraxa" / "… on Bob's commander Atraxa": that player's commander, on the battlefield.
+        Regex("""^(@\w+) controls (?:his|her|their) commander,? (c\d+)$""", io).find(t2)?.let { r -> return "edcmd ${r.groupValues[1].removePrefix("@")} ${r.groupValues[2]}" }
+        Regex("""^(.*?\s)(@\w+)'s commander,? (c\d+)(.*)$""", io).find(t2)?.let { r ->
+            if (!Regex("""\b(?:casts?|cast|targets?|targeting|enchants?)\b""").containsMatchIn(r.groupValues[1])) return@let
+            return "edcmd ${r.groupValues[2].removePrefix("@")} ${r.groupValues[3]}, ${r.groupValues[1]}${r.groupValues[2]}'s ${r.groupValues[3]}${r.groupValues[4]}"
+        }
+        // "… cast Demonic Consultation naming a card that isn't in my library".
+        Regex("""^(.*\bcasts? c\d+),? naming (?:a card (?:that )?(?:isn't|is not|not|that's not|that is not) in (?:my|their|his|her) library|a card (?:i|they) don't have(?: left)? in (?:my|their) library)(.*)$""", io).find(t2)?.let { r -> return "${r.groupValues[1]}, edconsult-absent${r.groupValues[2]}" }
+        // "I exile Eternal Scourge with Food Chain": Food Chain's cost, and the creature-only mana it makes.
+        Regex("""^(i|we) exile (?:my )?(c\d+) (?:with|to|using|to activate) (?:my )?(c\d+)$""", io).find(t2)?.let { r ->
+            val chain = card(r.groupValues[3]) ?: return@let
+            if (chain.display != "Food Chain") return@let
+            return "edfoodchain ${r.groupValues[2]} ${r.groupValues[3]}"
+        }
+        // "Bob sacrifices Ranger-Captain of Eos and its ability resolves" / "after its ability resolves, …".
+        Regex("""^(.+?),? and (?:its|the|that)(?: c\d+(?:'s)?)? (?:ability|trigger|triggered ability) resolves$""", io).find(t2)?.let { r -> return "${r.groupValues[1]}, edresolve" }
+        Regex("""^(?:after|once) (?:its|the|that)(?: c\d+(?:'s)?)? (?:ability|trigger|triggered ability) (?:has )?resolved?s?,? (.+)$""", io).find(t2)?.let { r -> return "edresolve, ${r.groupValues[1]}" }
+        // "Alice controls only Islands": the lands are all Islands.
+        t2 = t2.replace(Regex("""\b(controls?) only (c\d+)\b""", io), "$1 $2")
+        if (Regex("""^(@\w+|my opponent|the opponent) controls? no lands?$""", io).matches(t2)) return "ednoop"
+        // Questions these rules answer.
+        Regex("""^can (@\w+) pay (?:the |that |a |the rhystic )?(?:\{\d+\}|\d+|tax|it)? ?for (@\w+)$""", io).find(t2.trimEnd('?'))?.let { r -> return "edwhopays-question ${r.groupValues[1].removePrefix("@")} ${r.groupValues[2].removePrefix("@")}" }
+        if (Regex("""^(?:in )?what order do (?:my |the |his |her |their )?opponents (?:choose|decide|make (?:their|the) choices?|pick)(?: in)?\??$""", io).matches(t2)) return "edorder-question"
+        Regex("""^(?:on (?:my|their|his|her) turn,? )?,?\s*(?:who|which player|whom) (?:does|must|will) (it|c\d+|(?:my |the )?c\d+) (?:have to |has to |need to )?attack\??$""", io).find(t2)?.let { r -> return "edgoad-question ${Regex("""c\d+""").find(r.groupValues[1])?.value ?: "it"}" }
+        if (Regex("""^do (?:i|we) have to attack,? and (?:who|whom)\??$""", io).matches(t2)) return "edgoad-question it"
+        Regex("""^can (?:i|we) cast (c\d+) without paying its mana cost\??$""", io).find(t2)?.let { r -> return "edfreecast-question ${r.groupValues[1]}" }
+        if (Regex("""^can (?:i|we) change (?:its|the|that spell's|their) targets?\??$""", io).matches(t2) && ctx.events.lastOrNull { it.verb == "cast" }?.card?.name in setOf("Deflecting Swat", "Bolt Bend", "Misdirection", "Redirect", "Deflection", "Wild Ricochet", "Reroute", "Divert", "Imp's Mischief")) return "ednoted-question"
+        if (Regex("""^who (?:decides|chooses) what happens to (@\w+|my|their)(?:'s)? draws?\??$""", io).matches(t2)) return "ednoted-question"
+        if (Regex("""^how much mana do (?:i|we) get,? and can (?:i|we) cast it again\??$""", io).matches(t2)) return "ednoted-question"
+        if (Regex("""^how much (?:more )?does it cost to cast(?: it)? from my hand\??$""", io).matches(t2)) return "ednoted-question"
+        if (Regex("""^(?:who is|who's) the monarch(?: now)?\??$""", io).matches(t2)) return "edmonarch-question"
+        Regex("""^if (it|c\d+) deals combat damage to (me|@\w+),? (?:is|does) (?:that|it) (?:count as )?commander damage\??$""", io).find(t2)?.let { r -> return "edcmddamage-question ${r.groupValues[1]}" }
+        Regex("""^what colou?rs? (?:of mana )?can (?:my |the )?(c\d+) (?:tap for|produce|make|add)\??$""", io).find(t2)?.let { r -> return "edorchard-question ${r.groupValues[1]}" }
+        Regex("""^can (c\d+) be attacking (@\w+)\??$""", io).find(t2)?.let { r -> return "edputattacking ${r.groupValues[1]} ${r.groupValues[2].removePrefix("@")}" }
+        Regex("""^(i|we) activate (?:its|c\d+'s|my commander's) ability to put it onto the battlefield from the command zone$""", io).find(t2)?.let { return "edfromcz-question" }
+        if (Regex("""^how much does that cost,? and does it (?:raise|increase|add to) the commander tax\??$""", io).matches(t2)) return "ednoted-question"
+        if (Regex("""^what happens to (?:the|my) extra turns(?:,? and (?:to )?(?:the |@\w+'s |their )?(?:c\d+|permanents?|stuff))?\??$""", io).matches(t2)) return "edleft-question"
+        return t2
+    }
+
+    /** Markers [edhRewrites] leaves, and the plain statements of a multiplayer table it doesn't rewrite. */
+    private fun readEdhQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?')
+        fun player(w: String) = when (w.lowercase()) { "i", "we", "me", "my" -> "me"; else -> w.removePrefix("@").also { ctx.players.putIfAbsent(it, m.players[it] ?: it) } }
+        fun answered() { ctx.notes += "The question is answered by the outcome below." }
+        if (q == "ednoop") return true
+        if (q == "ednoted-question") { answered(); return true }
+        if (q == "edresolve") { ctx.events += EventSpec("resolve"); return true }
+        // "Bob goaded my Grizzly Bears" inside a longer sentence: the clause on its own.
+        Regex("""^(@\w+|i)(?: and (@\w+))? (?:both |each )?(?:goaded|goads|has goaded) (?:my |their |@\w+'s )?(c\d+)$""").find(q)?.let { r ->
+            return readEdhQuestions("edgoad ${listOf(r.groupValues[1], r.groupValues[2]).filter { it.isNotEmpty() }.joinToString("+") { it.removePrefix("@") }} ${r.groupValues[3]}", m, ctx)
+        }
+        Regex("""^edgoad (\S+) (c\d+)$""").find(q)?.let { r ->
+            val card = m.cards[r.groupValues[2]] ?: return@let
+            val id = objectIdFor(card, ctx) ?: addObject(card, "me", false, ctx)
+            for (g in r.groupValues[1].split('+')) ctx.events += EventSpec("edh", player = player(g), obj = id, to = "goad")
+            ctx.lastMentioned = id; ctx.note("me"); return true
+        }
+        Regex("""^edboth (\w+) (\w+) (c\d+)$""").find(q)?.let { r ->
+            val card = m.cards[r.groupValues[3]] ?: return@let
+            for (p in listOf(r.groupValues[1], r.groupValues[2])) addObject(card, player(p), false, ctx, allowDuplicate = true)
+            return true
+        }
+        Regex("""^edstolencmd (\w+) (c\d+) (c\d+)$""").find(q)?.let { r ->
+            val cmd = m.cards[r.groupValues[2]] ?: return@let; val aura = m.cards[r.groupValues[3]] ?: return@let
+            val owner = player(r.groupValues[1])
+            val id = objectIdFor(cmd, ctx) ?: addObject(cmd, "me", false, ctx)
+            ctx.objects[id] = ctx.objects.getValue(id).copy(controller = "me", owner = owner, commander = true)
+            val aid = addObject(aura, "me", false, ctx)
+            ctx.objects[aid] = ctx.objects.getValue(aid).copy(attachedTo = id)
+            ctx.notes += "${cmd.display} is ${ctx.players[owner] ?: owner}'s commander, under your control through ${aura.display}."
+            ctx.note("me"); ctx.lastMentioned = id; return true
+        }
+        Regex("""^edcmd (\w+) (c\d+)$""").find(q)?.let { r ->
+            val cmd = m.cards[r.groupValues[2]] ?: return@let
+            val owner = player(r.groupValues[1])
+            val id = objectIdFor(cmd, ctx) ?: addObject(cmd, owner, false, ctx)
+            ctx.objects[id] = ctx.objects.getValue(id).copy(controller = owner, commander = true)
+            ctx.notes += "${cmd.display} is ${ctx.players[owner] ?: owner}'s commander, on the battlefield."
+            return true
+        }
+        if (q == "edconsult-absent") {
+            val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return null
+            ctx.events += EventSpec("edh", player = cast.player ?: "me", to = "consult")
+            ctx.notes += "The name chosen for ${cast.card?.name ?: "the spell"} is a card that isn't in the library."
+            return true
+        }
+        Regex("""^edfoodchain (c\d+) (c\d+)$""").find(q)?.let { r ->
+            val creature = m.cards[r.groupValues[1]] ?: return@let; val chain = m.cards[r.groupValues[2]] ?: return@let
+            val cid = objectIdFor(creature, ctx) ?: addObject(creature, "me", false, ctx)
+            val fid = objectIdFor(chain, ctx) ?: addObject(chain, "me", false, ctx)
+            ctx.asks += EventSpec("ask", player = "me", obj = cid, source = fid, to = "ed:foodchain"); return true
+        }
+        Regex("""^edwhopays-question (\w+) (\w+)$""").find(q)?.let { r -> ctx.asks += EventSpec("ask", player = player(r.groupValues[1]), source = player(r.groupValues[2]), to = "ed:whopays"); return true }
+        if (q == "edorder-question") { ctx.asks += EventSpec("ask", player = ctx.events.lastOrNull { it.verb == "cast" }?.player ?: "me", card = ctx.events.lastOrNull { it.verb == "cast" }?.card, to = "ed:order"); return true }
+        Regex("""^edgoad-question (\S+)$""").find(q)?.let { r ->
+            val id = if (r.groupValues[1] == "it") ctx.events.lastOrNull { it.verb == "edh" && it.to == "goad" }?.obj ?: ctx.lastMentioned else m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) }
+            ctx.asks += EventSpec("ask", obj = id ?: return null, to = "ed:goad"); return true
+        }
+        Regex("""^edfreecast-question (c\d+)$""").find(q)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            ctx.asks += EventSpec("ask", player = "me", card = CardRef(name = card.display, oracleId = card.oracleId), to = "ed:freecast"); return true
+        }
+        if (q == "edmonarch-question") { ctx.asks += EventSpec("ask", to = "ed:monarch"); return true }
+        if (q == "edleft-question") { ctx.asks += EventSpec("ask", player = ctx.events.lastOrNull { it.verb == "wlLose" }?.player ?: "me", to = "ed:left"); return true }
+        Regex("""^edcmddamage-question (\S+)$""").find(q)?.let { r ->
+            val id = (if (r.groupValues[1] == "it") null else m.cards[r.groupValues[1]]?.let { objectIdFor(it, ctx) }) ?: ctx.objects.values.lastOrNull { it.commander && it.zone == "battlefield" }?.id ?: return null
+            ctx.asks += EventSpec("ask", obj = id, player = "me", to = "ed:cmddamage"); return true
+        }
+        Regex("""^edorchard-question (c\d+)$""").find(q)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val id = objectIdFor(card, ctx) ?: addObject(card, "me", false, ctx)
+            ctx.asks += EventSpec("ask", obj = id, to = "ed:orchard"); return true
+        }
+        Regex("""^edputattacking (c\d+) (\w+)$""").find(q)?.let { r ->
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val p = player(r.groupValues[2])
+            ctx.events.add(0, EventSpec("edh", card = CardRef(name = card.display, oracleId = card.oracleId), targets = listOf(p), to = "attackchoice"))
+            ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), targets = listOf(p), to = "ed:putattacking"); return true
+        }
+        if (q == "edfromcz-question") {
+            val id = ctx.objects.values.lastOrNull { it.commander }?.id ?: return null
+            ctx.asks += EventSpec("ask", obj = id, player = "me", to = "ed:fromcz"); return true
+        }
+        // "I vote time, Alice votes money": the votes for the council's dilemma about to resolve (701.38a).
+        Regex("""^(i|we|@\w+) votes? (?:for )?(time|money)$""").find(q)?.let { r ->
+            ctx.events += EventSpec("edh", player = player(r.groupValues[1]), source = r.groupValues[2], to = "vote"); return true
+        }
+        // "Carol loses the game", "then I lose the game" at a table of three or more: that player leaves it (800.4a).
+        Regex("""^(?:then |and then )?(@\w+|i) (?:loses|lose|lost|concedes|concede|conceded|scoops)(?: the game)?$""").find(q)?.let { r ->
+            if (r.groupValues[1] == "i" && ctx.players.keys.count { it != "me" && it != "opp" } < 2 && (ctx.tableSize ?: 2) <= 2) return@let
+            val p = player(r.groupValues[1])
+            // "Then I lose the game": what was cast before has resolved by then.
+            if (q.startsWith("then") && ctx.events.lastOrNull()?.verb != "resolveAll" && ctx.events.any { it.verb == "cast" }) ctx.events += EventSpec("resolveAll")
+            ctx.events += EventSpec("wlLose", player = p); ctx.lastActor = p; return true
+        }
+        return null
+    }
+
     private fun loopRewrite(t: String, m: Marked, ctx: Ctx): String {
         val withAnd = Regex("""^((?:i|we|they|my opponent|the opponent) (?:control|controls|have|has|got|'ve got) (?:(?:c\d+|and),? )*)(c\d+) with (c\d+)$""", RegexOption.IGNORE_CASE).find(t.trim().trimEnd('.'))?.let { r ->
             val tl = m.cards[r.groupValues[3]]?.typeLine ?: return@let null
@@ -2377,6 +2540,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = edhRewrites(t2, m, ctx)
         t2 = counterRewrites(t2, m, ctx)
         t2 = triggerRewrites(t2, m, ctx)
         t2 = auditRewrites(t2, m, ctx)
@@ -6762,6 +6926,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readEdhQuestions(clause0, m, ctx)?.let { return it }
         readCounterQuestions(clause0, m, ctx)?.let { return it }
         readTriggerQuestions(clause0, m, ctx)?.let { return it }
         readAuditQuestions(clause0, m, ctx)?.let { return it }

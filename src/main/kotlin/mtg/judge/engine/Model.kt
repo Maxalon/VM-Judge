@@ -159,6 +159,8 @@ sealed interface Trigger {
     /** "Whenever one or more creatures you control deal combat damage to a player". */
     data object YourCreaturesDealCombatDamageToPlayer : Trigger
     data class Unknown(val text: String) : Trigger
+    /** Commander-table triggers matched in EdhMechanics.kt: Tergrid's, and abilities that work from the command zone. */
+    data class Edh(val kind: String) : Trigger
 }
 
 sealed interface Effect {

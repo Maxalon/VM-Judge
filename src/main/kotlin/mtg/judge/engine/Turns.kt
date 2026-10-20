@@ -58,12 +58,12 @@ object Turns {
     /** The rules an Oracle sentence this file plays out cites, or null when it isn't one of them. */
     fun narratedRules(s: String): List<String>? = effectRes.firstOrNull { it.first.matches(s.trim()) }?.second
 
-    private val skipStepRe = Regex("""(?:^|\n)(players|you) skip (?:their|your) (untap|upkeep|draw) steps?\.?""", I)
+    private val skipStepRe = Regex("""(?:^|\n)(players |you |)skip (?:their|your) (untap|upkeep|draw) steps?\.?""", I)   // Necropotence: "Skip your draw step."
     private val skipExtraTurnRe = Regex("""if an opponent would begin an extra turn, that player skips that turn instead""", I)
 
     /** Static lines that only say a player skips something: read as recognised notes; the skipping is done by [skipsStep] and [extraTurnSkipper]. */
     fun staticNote(line: String): StaticEffect? = when {
-        Regex("""^(?:players|you) skip (?:their|your) (?:untap|upkeep|draw) steps?\.?$""", I).matches(line.trim()) -> StaticEffect.Note(line.trim(), listOf("614.10", "500.11"))
+        Regex("""^(?:players |you )?skip (?:their|your) (?:untap|upkeep|draw) steps?\.?$""", I).matches(line.trim()) -> StaticEffect.Note(line.trim(), listOf("614.10", "500.11"))
         Regex("""^${skipExtraTurnRe.pattern}\.?$""", I).matches(line.trim()) -> StaticEffect.Note(line.trim(), listOf("614.10", "500.7"))
         else -> null
     }
@@ -71,7 +71,7 @@ object Turns {
     /** The permanent that makes [player] skip their [step] step (Stasis: "Players skip their untap steps"), if any. */
     fun stepSkipper(state: GameState, player: String, step: String): Pair<GameObject, String>? = state.objects.values.firstNotNullOfOrNull { o ->
         if (!o.isOnBattlefield()) return@firstNotNullOfOrNull null
-        skipStepRe.findAll(o.rulesText).firstOrNull { r -> r.groupValues[2].equals(step, true) && (r.groupValues[1].equals("players", true) || o.controller == player) }?.let { o to it.value.trim().trimEnd('.') }
+        skipStepRe.findAll(o.rulesText).firstOrNull { r -> r.groupValues[2].equals(step, true) && (r.groupValues[1].trim().equals("players", true) || o.controller == player) }?.let { o to it.value.trim().trimEnd('.') }
     }
 
     /** The permanent that makes [player] skip an extra turn as it would begin (Stranglehold, an opponent's), if any. */
