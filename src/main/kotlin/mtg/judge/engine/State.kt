@@ -301,6 +301,10 @@ class GameState(
     var castabilityAsked = false
     /** Payment choices said for the next spell cast ("without paying its mana cost", "kicking it"), see Costs.kt. */
     var pendingCost: CastCost? = null
+    /** Cards a cascade said it hit ("I cast Violent Outburst and cascade into Crashing Footfalls"), in order (702.85a). */
+    val cascadeHits = mutableListOf<CardDef>()
+    /** A spell being cast while another spell or ability resolves (cascade): timing permissions don't apply (608.2g). */
+    var castDuringResolution = false
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */
     val ceased = mutableMapOf<String, String>()
     /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.19b). */
@@ -646,6 +650,8 @@ class GameState(
         val ctrlOk = when (f.controller) { null -> true; Who.YOU -> o.controller == controller; Who.OPPONENT -> o.controller != controller; else -> true }
         val anim = o.animatedAs
         // "instant or sorcery card": the filter parser files card types alongside subtypes; a card type is on the type line.
+        // "of the chosen type" (Plague Engineer): the creature type its source chose as it entered; none chosen matches nothing.
+        if ("chosen-type" in f.subtypes) { val t = source?.chosenName ?: return false; return matches(f.copy(subtypes = f.subtypes - "chosen-type" + t), o, controller, source, anyZone) }
         fun hasSub(st: String) = ch.subtypes.any { it.equals(st, true) } || ch.types.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
             (o.def.changeling && "Creature" in ch.types) || anim?.allCreatureTypes == true
         val subOk = if (f.subtypesAny && f.subtypes.isNotEmpty()) f.subtypes.any { st -> hasSub(st) }

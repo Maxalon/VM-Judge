@@ -105,7 +105,12 @@ sealed interface Trigger {
     /** "Whenever one or more land cards are put into your graveyard from anywhere" (The Gitrog Monster). */
     data class CardsToYourGraveyard(val filter: ObjFilter) : Trigger
     /** "Whenever an opponent draws a card" / "a player draws a card". */
-    data class PlayerDraws(val who: Who) : Trigger
+    /** [exceptFirstInDrawStep]: Orcish Bowmasters, "except the first one they draw in each of their draw steps". */
+    data class PlayerDraws(val who: Who, val exceptFirstInDrawStep: Boolean = false) : Trigger
+    /** Harsh Mentor: "Whenever an opponent activates an ability of an artifact, creature, or land on the battlefield, if it isn't a mana ability". */
+    data class AbilityActivated(val who: Who, val filter: ObjFilter, val nonManaOnly: Boolean) : Trigger
+    /** Narcomoeba, Prized Amalgam's cousins: "When ~ is put into your graveyard from your library" (milled, 701.17a). */
+    data object ThisMilled : Trigger
     /** "Whenever you draw your second card each turn". */
     data class YouDrawNth(val n: Int) : Trigger
     /** "Whenever ~ is dealt damage". */
@@ -444,6 +449,12 @@ sealed interface Effect {
     data class Unparsed(val text: String) : Effect
     /** Populate (701.36): copy a creature token you control. */
     data object Populate : Effect
+    /** Cascade's trigger (702.85a): the card it hits is cast from exile for free (AuditMechanics.kt). */
+    data object Cascade : Effect
+    /** Skyclave Apparition's leave trigger: the owner of the card this source exiled gets an X/X token, X its mana value; the card stays exiled. */
+    data class ExiledOwnerTokenMv(val token: String) : Effect
+    /** Lavinia, Azorius Renegade: "if no mana was spent to cast it, counter that spell" — the spell whose casting triggered it. */
+    data object CounterIfNoManaSpent : Effect
     /** Amass [subtype] N (701.47). */
     data class Amass(val subtype: String, val n: Int) : Effect
 
@@ -459,7 +470,7 @@ sealed interface Effect {
         is Repeat -> body.targets()
         is LoseLifeUnlessSacOrDiscard -> emptyList()
         is WinLossEffect -> WinLoss.targets(this)
-        is Populate, is Amass -> emptyList()
+        is Populate, is Amass, is Cascade, is ExiledOwnerTokenMv, is CounterIfNoManaSpent -> emptyList()
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is Exploit, is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
         is Investigate, is Surveil, is SacrificeUnlessEscaped, is Hideaway, is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()

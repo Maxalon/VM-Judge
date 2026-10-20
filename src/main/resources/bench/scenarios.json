@@ -42567,5 +42567,412 @@
       "601.2i",
       "603.3"
     ]
+  },
+  {
+    "id": "au1",
+    "text": "I cast Teferi's Protection. On their turn my opponent attacks me with their commander Atraxa, Praetors' Voice. Do I take commander damage?",
+    "expect": [
+      "Damage to you from Atraxa, Praetors' Voice is prevented (protection from everything).",
+      "No commander damage: the prevented damage from Atraxa, Praetors' Voice is never dealt, so it doesn't count toward 21"
+    ],
+    "cite": [
+      "702.16e",
+      "615.1",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "au2",
+    "text": "I control Dauthi Voidwalker. My opponent's commander Atraxa, Praetors' Voice dies. Where does it go?",
+    "expect": [
+      "Atraxa, Praetors' Voice: the battlefield → exile (replaced by Dauthi Voidwalker).",
+      "Atraxa, Praetors' Voice has a void counter in exile, but it's still opponent's commander",
+      "Atraxa, Praetors' Voice: exile → the command zone (its owner's choice, 903.9a)."
+    ],
+    "cite": [
+      "614.1a",
+      "903.9a",
+      "704.6d"
+    ]
+  },
+  {
+    "id": "au3",
+    "text": "I control Plague Engineer naming Faerie. My opponent activates Mutavault. How big is it?",
+    "expect": [
+      "Mutavault is 1/1 (2/2 base, -1/-1 from Plague Engineer)."
+    ],
+    "cite": [
+      "205.3m",
+      "613.4c"
+    ],
+    "notExpect": [
+      "Plague Engineer is 2/2."
+    ]
+  },
+  {
+    "id": "au4",
+    "text": "I control Harsh Mentor. My opponent taps Birds of Paradise for mana and then cracks Polluted Delta. How much damage do they take?",
+    "expect": [
+      "opponent pays 1 life.",
+      "opponent takes 2 damage.",
+      "Yes: opponent takes 2 damage in all."
+    ],
+    "cite": [
+      "603.2",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "au5",
+    "text": "I control Karn, the Great Creator and Mycosynth Lattice. Can my opponent tap their Island for mana?",
+    "expect": [
+      "Island's ability can't be activated (Karn, the Great Creator)."
+    ],
+    "cite": [
+      "602.5",
+      "604.2"
+    ]
+  },
+  {
+    "id": "au6",
+    "text": "I control Linvala, Keeper of Silence. Can my opponent activate Mutavault, and can they then tap it for mana?",
+    "expect": [
+      "Mutavault is a 2/2 creature until end of turn.",
+      "Mutavault's ability can't be activated (Linvala, Keeper of Silence)."
+    ],
+    "cite": [
+      "602.5",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "au7",
+    "text": "My opponent controls Dress Down. I activate Mutavault. Is it a creature and can I tap it for mana?",
+    "expect": [
+      "Mutavault has no abilities under Dress Down, so you can't activate any of them (it can't be tapped for mana)."
+    ],
+    "cite": [
+      "613.1f",
+      "113.3b"
+    ],
+    "notExpect": [
+      "Mutavault's mana ability: add {C}."
+    ]
+  },
+  {
+    "id": "au8",
+    "text": "My opponent controls Humility. I activate Mutavault. What is its power and toughness?",
+    "expect": [
+      "Mutavault is 2/2 (2/2 base, base set to 2/2 by Mutavault, applied after Humility's in timestamp order (layer 7b)"
+    ],
+    "cite": [
+      "613.1d",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "au9",
+    "text": "I control Opposition Agent. My opponent cracks Polluted Delta. What happens?",
+    "expect": [
+      "Island is exiled instead of entering the battlefield (Opposition Agent).",
+      "You may play Island from exile while it stays there, as your land drop."
+    ],
+    "cite": [
+      "723.2",
+      "723.5",
+      "305.2"
+    ],
+    "notExpect": [
+      "Island enters the battlefield."
+    ]
+  },
+  {
+    "id": "au10",
+    "text": "My opponent controls Drannith Magistrate. I cast Shardless Agent and cascade into Ancestral Vision. Can I cast it?",
+    "expect": [
+      "Ancestral Vision can't be cast from exile (Drannith Magistrate).",
+      "Ancestral Vision isn't cast: it goes to the bottom of your library with the other cascaded cards (702.85a)."
+    ],
+    "cite": [
+      "702.85a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "au11",
+    "text": "My opponent controls Archon of Emeria. I cast Violent Outburst as my first spell this turn and cascade into Crashing Footfalls. What happens?",
+    "expect": [
+      "Crashing Footfalls can't be cast (Archon of Emeria).",
+      "Crashing Footfalls isn't cast: it goes to the bottom of your library"
+    ],
+    "cite": [
+      "702.85a",
+      "101.2"
+    ]
+  },
+  {
+    "id": "au12",
+    "text": "My opponent controls Chalice of the Void with zero counters. I cast Violent Outburst and cascade into Crashing Footfalls. What happens?",
+    "expect": [
+      "Crashing Footfalls is cast from exile without paying its mana cost (cascade, 702.85a).",
+      "Crashing Footfalls is countered."
+    ],
+    "cite": [
+      "702.85a",
+      "202.3a",
+      "701.6a"
+    ],
+    "notExpect": [
+      "is cast at a time a sorcery spell normally can't be"
+    ]
+  },
+  {
+    "id": "au13",
+    "text": "I control Chalice of the Void with zero counters. My opponent casts Force of Will by exiling a blue card. Does Chalice counter it?",
+    "expect": [
+      "No: Force of Will has mana value 5 even when cast without paying its mana cost (118.9c), and Chalice of the Void counts 0, so it doesn't trigger."
+    ],
+    "cite": [
+      "118.9c",
+      "202.3"
+    ]
+  },
+  {
+    "id": "au14",
+    "text": "I control Orcish Bowmasters. During their main phase my opponent casts Wheel of Fortune. What happens?",
+    "expect": [
+      "opponent takes 1 damage. (×7)",
+      "Orc Army token gets 1 +1/+1 counter and is 7/7"
+    ],
+    "cite": [
+      "701.47a",
+      "603.2"
+    ]
+  },
+  {
+    "id": "au15",
+    "text": "I control Notion Thief. During their main phase my opponent casts Wheel of Fortune. How many cards do we each draw?",
+    "expect": [
+      "opponent skips 7 draws (Notion Thief); you draw instead.",
+      "You draw 7 cards. (×2)"
+    ],
+    "cite": [
+      "614.1a",
+      "121.1"
+    ]
+  },
+  {
+    "id": "au16",
+    "text": "My library is empty. I cast Thassa's Oracle. With the trigger on the stack my opponent bounces Thassa's Oracle with Petty Theft. Do I win?",
+    "expect": [
+      "Thassa's Oracle: the battlefield → your hand.",
+      "You win the game (Thassa's Oracle: X = 0, library = 0)."
+    ],
+    "cite": [
+      "113.7a",
+      "700.5",
+      "104.2b"
+    ],
+    "notExpect": [
+      "X = 2"
+    ]
+  },
+  {
+    "id": "au17",
+    "text": "I cast Skyclave Apparition exiling my opponent's Ragavan, Nimble Pilferer. Later my opponent casts Lightning Bolt targeting Skyclave Apparition. What happens?",
+    "expect": [
+      "Ragavan, Nimble Pilferer stays in exile; opponent gets a 1/1 Illusion token instead."
+    ],
+    "cite": [
+      "610.3",
+      "202.3",
+      "701.7a"
+    ],
+    "notExpect": [
+      "Lightning Bolt can't target Skyclave Apparition while it's still a spell"
+    ]
+  },
+  {
+    "id": "au18",
+    "text": "My opponent controls Reality Smasher. I have no other cards in hand and cast Lightning Bolt targeting it. What happens?",
+    "expect": [
+      "You can't discard a card (your hand is empty), so Reality Smasher's triggered ability isn't stopped.",
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "118.3",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "au19",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Daze by returning an Island. Can I tap that Island for mana to pay Thalia's tax first?",
+    "expect": [
+      "Yes: tap the Island for mana first (mana abilities come before payment, 601.2g), then return that same tapped Island to hand to pay Daze's alternative cost (601.2h)."
+    ],
+    "cite": [
+      "601.2g",
+      "601.2h",
+      "118.9d"
+    ]
+  },
+  {
+    "id": "au20",
+    "text": "I control Lavinia, Azorius Renegade. My opponent casts Force of Will by exiling a blue card. What happens?",
+    "expect": [
+      "Force of Will is countered."
+    ],
+    "cite": [
+      "603.4",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "au21",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Become Immense. Can delve pay for the extra 1?",
+    "expect": [
+      "Yes: delve pays any generic mana in the total cost, and Thalia's {1} is part of that total (702.66b)"
+    ],
+    "cite": [
+      "702.66a",
+      "702.66b",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "au22",
+    "text": "My opponent controls Grafdigger's Cage. I mill Narcomoeba. Does it go onto the battlefield?",
+    "expect": [
+      "Narcomoeba: your library → your graveyard.",
+      "Narcomoeba stays in your graveyard: Grafdigger's Cage stops it entering the battlefield"
+    ],
+    "cite": [
+      "701.17a",
+      "603.2",
+      "101.2"
+    ],
+    "notExpect": [
+      "Narcomoeba: your graveyard → the battlefield."
+    ]
+  },
+  {
+    "id": "au23",
+    "text": "I activate Shadowspear's ability. Then I cast Swords to Plowshares targeting my opponent's Carnage Tyrant. What happens?",
+    "expect": [
+      "Carnage Tyrant loses hexproof until end of turn.",
+      "Carnage Tyrant: the battlefield → exile."
+    ],
+    "cite": [
+      "613.1f",
+      "701.13a"
+    ],
+    "notExpect": [
+      "can't target Carnage Tyrant"
+    ]
+  },
+  {
+    "id": "au24",
+    "text": "My opponent controls Dress Down. Then I equip Sword of Fire and Ice to my Grizzly Bears. Does Grizzly Bears have protection from red?",
+    "expect": [
+      "Yes: Grizzly Bears has protection from red."
+    ],
+    "cite": [
+      "702.6a",
+      "613.1"
+    ]
+  },
+  {
+    "id": "au26",
+    "text": "I cast Phyrexian Dreadnought. My opponent casts Stifle targeting its enters trigger. What happens?",
+    "expect": [
+      "Phyrexian Dreadnought's triggered ability is countered."
+    ],
+    "cite": [
+      "701.6a",
+      "603.3"
+    ],
+    "notExpect": [
+      "Phyrexian Dreadnought: the battlefield"
+    ]
+  },
+  {
+    "id": "au27",
+    "text": "I control Devoted Druid and Vizier of Remedies. How much mana can I make?",
+    "expect": [
+      "You can make an arbitrarily large amount of mana with Devoted Druid and Vizier of Remedies"
+    ],
+    "cite": [
+      "732.1b",
+      "732.2a",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "au28",
+    "text": "I cast Emrakul, the Aeons Torn. With its cast trigger on the stack my opponent casts Time Stop. What happens?",
+    "expect": [
+      "Emrakul, the Aeons Torn's triggered ability is exiled from the stack and never resolves: no extra turn is taken (724.1b).",
+      "Emrakul, the Aeons Torn: the stack → exile (the turn was ended)."
+    ],
+    "cite": [
+      "724.1b",
+      "603.3"
+    ],
+    "notExpect": [
+      "Take an extra turn after this one"
+    ]
+  },
+  {
+    "id": "au29",
+    "text": "My opponent controls Torpor Orb. My Kitchen Finks dies. Does it persist, and do I gain 2 life?",
+    "expect": [
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
+      "No: you gain no life here."
+    ],
+    "cite": [
+      "702.79a",
+      "603.6"
+    ]
+  },
+  {
+    "id": "au30",
+    "text": "My opponent controls Chalice of the Void with one counter, Rest in Peace and Grafdigger's Cage. I cast Wear // Tear fused targeting Grafdigger's Cage and Rest in Peace. Is it countered?",
+    "expect": [
+      "No: Wear // Tear isn't countered; it resolves.",
+      "Rest in Peace: the battlefield → exile (replaced by Rest in Peace)."
+    ],
+    "cite": [
+      "702.102a",
+      "202.3d"
+    ],
+    "notExpect": [
+      "Wear // Tear is countered."
+    ]
+  },
+  {
+    "id": "au31",
+    "text": "My opponent controls Chalice of the Void with one counter and Rest in Peace. I cast Tear targeting Rest in Peace. What happens?",
+    "expect": [
+      "Wear // Tear is countered."
+    ],
+    "cite": [
+      "709.3b",
+      "202.3d",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "au32",
+    "text": "I control Devoted Druid. How much mana can I make?",
+    "expect": [
+      "Devoted Druid makes 2 mana at most this way"
+    ],
+    "cite": [
+      "704.5f",
+      "701.26b"
+    ],
+    "notExpect": [
+      "arbitrarily large"
+    ]
   }
 ]

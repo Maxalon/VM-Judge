@@ -452,7 +452,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "counters" -> engine.putCounters(e.obj ?: throw JudgeException("counters needs an object"), e.amount ?: 1, e.to ?: "+1/+1")
             "tap" -> engine.tapObject(e.obj ?: throw JudgeException("tap needs an object"))
             "untap" -> engine.untapObject(e.obj ?: throw JudgeException("untap needs an object"))
-            "mill" -> engine.millCards(e.player ?: throw JudgeException("mill needs a player"), e.amount ?: 1)
+            "mill" -> if (e.obj != null) engine.millNamed(e.player ?: throw JudgeException("mill needs a player"), e.obj) else engine.millCards(e.player ?: throw JudgeException("mill needs a player"), e.amount ?: 1)
             "proliferate" -> engine.proliferate(e.player ?: state.players.first().id)
             // "I cast Angel's Grace and go to 0 life": a life total said after something happened is where that
             // player ends up, not where they started — set at setup the game would have ended before the spell.
@@ -745,7 +745,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             "${o.name} isn't on the battlefield any more (${o.zone.name.lowercase().replace('_', ' ')}). While it was, it was its printed ${o.def.power}/${o.def.toughness} minus your life total: at ${state.player(o.owner).life} life, ${(o.def.power ?: 13) - state.player(o.owner).life!!}/${(o.def.toughness ?: 13) - state.player(o.owner).life!!}."
                         !o.isOnBattlefield() -> "${o.name} isn't on the battlefield."
                         state.notACreatureBecause(o) != null -> "${o.name} isn't a creature right now (${state.player(o.controller).possessive} ${state.notACreatureBecause(o)}), so it has no power or toughness. It's still an enchantment on the battlefield and keeps its other abilities."
-                        state.hasCreatureType(o) -> { ptLayerStep(o, state); CounterAsks.layer7cStep(o, state); "${if (o.printedDef.name != o.def.name && !o.token) "${o.printedDef.name} (copying ${o.def.name})" else o.name} is ${state.describePt(o)}." }
+                        state.hasCreatureType(o) -> { ptLayerStep(o, state); CounterAsks.layer7cStep(o, state); AuditAsks.chosenTypeStep(o, state); "${if (o.printedDef.name != o.def.name && !o.token) "${o.printedDef.name} (copying ${o.def.name})" else o.name} is ${state.describePt(o)}." }
                         state.outcomes.any { it.startsWith("${o.name} isn't a creature:") } -> return
                         else -> "${o.name} isn't a creature."
                     }
@@ -915,6 +915,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "tggrant" -> TargetAsks.applyEvent(e, state, engine)
             "tgemptystack" -> state.stackSaidEmpty = true
             "zone" -> ZoneAsks.applyEvent(e, state, engine)
+            "cascade" -> AuditAsks.applyEvent(e, state) { c -> cardDef(c, state) }
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1420,6 +1421,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     if (drained != null && state.objects.values.none { it.isOnBattlefield() && it.controller == p.id && it.tapped != true && engine.activatedAbilitiesOf(it).any { a -> engine.isManaEffect(a.effect) } }) {
                         state.outcomes += "${p.subject} ${p.v("adds", "add")} ${drained.groupValues[2]} colorless mana ({C} × ${drained.groupValues[2]}, ${drained.groupValues[1]}'s mana value) at the beginning of ${p.possessive.lowercase()} next main phase, from Mana Drain's delayed trigger; it's added then, not now, and lasts until that phase ends."; return true
                     }
+                    if (AuditAsks.untapLoop(p.id, state, engine)) return true
                     state.outcomes += engine.manaAvailable(p.id); return true
                 }
                 if (e.to?.startsWith("sizeIs:") == true) {
@@ -2252,6 +2254,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("cmd:") == true) return CommanderAsks.answer(e, state) { oid, n -> oid?.let { cards.byOracleId(it) } ?: n?.let { cards.resolve(it).best?.card } }
                 if (e.to?.startsWith("ct:") == true) return CounterAsks.answer(e, state, engine)
                 if (e.to?.startsWith("tr:") == true) return TriggerAsks.answer(e, state, engine) { c -> cardDef(c, state) }
+                if (e.to?.startsWith("au:") == true) return AuditAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

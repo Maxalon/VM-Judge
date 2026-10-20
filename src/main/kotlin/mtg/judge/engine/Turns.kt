@@ -220,6 +220,8 @@ object Turns {
         val self = if (item.kind == StackKind.SPELL) "${item.source.name} itself" else "${item.source.name}'s ability itself"
         st.trace.step("${item.describe.replaceFirstChar { it.uppercase() }} ends the turn. First, every object on the stack is exiled, $self included${if (others.isEmpty()) " (nothing else was there)" else ": " + others.joinToString(", ") { it.describe }}. Exiling isn't countering: even something that can't be countered is gone.", "724.1", "724.1a", "724.1b")
         for (o in others) if (o.kind == StackKind.SPELL && !o.source.token) st.outcomes += "${o.source.name}: the stack → exile (the turn was ended)."
+        // "Time Stop in response to Emrakul's cast trigger": a triggered ability exiled this way never resolves, so what it would do never happens.
+        for (o in others) if (o.kind == StackKind.TRIGGERED && !o.text.startsWith("~turns-delayed~")) st.outcomes += "${o.describe.replaceFirstChar { it.uppercase() }} is exiled from the stack and never resolves${if (Regex("(?i)extra turn").containsMatchIn(o.text)) ": no extra turn is taken" else ""} (724.1b)."
         for (d in plan.delayed.filter { it.exiled }) st.objects[d.objectId]?.let { o ->
             st.trace.step("${d.source.name}'s delayed trigger to ${d.action} ${o.name} had already triggered; exiled from the stack, it never resolves. A delayed triggered ability triggers only once, the next time its event happens, so it won't trigger at a later end step either.", "603.7b", "724.1b")
             if (o.isOnBattlefield()) st.outcomes += "${o.name} stays on the battlefield: ${d.source.name}'s delayed trigger was exiled from the stack before it resolved, and it won't trigger again (603.7b, 724.1b)."
