@@ -459,6 +459,8 @@ sealed interface Effect {
     data object CounterIfNoManaSpent : Effect
     /** Amass [subtype] N (701.47). */
     data class Amass(val subtype: String, val n: Int) : Effect
+    /** A keyword or keyword action of the newer sets (adapt, learn, discover, mobilize, offspring, gift, the Ring...), played out in NewMechanics.kt. */
+    data class NewMech(val kind: String, val n: Int = 0, val text: String = "") : Effect
 
     /** Every target specification this effect (recursively) needs, in order. */
     fun targets(): List<TargetSpec> = when (this) {
@@ -472,7 +474,7 @@ sealed interface Effect {
         is Repeat -> body.targets()
         is LoseLifeUnlessSacOrDiscard -> emptyList()
         is WinLossEffect -> WinLoss.targets(this)
-        is Populate, is Amass, is Cascade, is ExiledOwnerTokenMv, is CounterIfNoManaSpent -> emptyList()
+        is Populate, is Amass, is Cascade, is ExiledOwnerTokenMv, is CounterIfNoManaSpent, is NewMech -> emptyList()
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is Exploit, is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
         is Investigate, is Surveil, is SacrificeUnlessEscaped, is Hideaway, is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()

@@ -45414,5 +45414,335 @@
     "cite": [
       "608.2h"
     ]
+  },
+  {
+    "id": "nm1-crew",
+    "text": "It's my turn. I cast two Grizzly Bears this turn and crew my Esika's Chariot with them. Can Esika's Chariot attack?",
+    "expect": [
+      "Grizzly Bears and Grizzly Bears are tapped (they crewed Esika's Chariot: total power 4, crew 4).",
+      "opponent takes 4 damage."
+    ],
+    "cite": [
+      "702.122a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "nm2-devoid",
+    "text": "Can I play Kozilek's Return in my mono-blue Commander deck?",
+    "expect": [
+      "No: Kozilek's Return is colorless (devoid), but its color identity is red"
+    ],
+    "cite": [
+      "702.114a",
+      "903.4",
+      "903.5c"
+    ]
+  },
+  {
+    "id": "nm3-delirium",
+    "text": "My graveyard has Ornithopter, a Forest and Lightning Bolt. Does Dragon's Rage Channeler have delirium?",
+    "expect": [
+      "Yes: delirium is on, with 4 card types in your graveyard (artifact, creature, instant, land)"
+    ],
+    "cite": [
+      "205.2a",
+      "207.2c"
+    ]
+  },
+  {
+    "id": "nm4-manifestdread",
+    "text": "Abhorrent Oculus manifests dread and I manifest a Lightning Bolt face down. Can I turn it face up?",
+    "expect": [
+      "No: Lightning Bolt isn't a creature card, so the face-down 2/2 can't be turned face up"
+    ],
+    "cite": [
+      "701.62a",
+      "701.40a",
+      "701.40b",
+      "701.40g"
+    ]
+  },
+  {
+    "id": "nm5-explore",
+    "text": "My Merfolk Branchwalker explores and reveals a Forest. Does it get a +1/+1 counter?",
+    "expect": [
+      "Forest goes into your hand, and Merfolk Branchwalker gets no +1/+1 counter"
+    ],
+    "cite": [
+      "701.44a"
+    ]
+  },
+  {
+    "id": "nm6-domain",
+    "text": "I control Raugrin Triome and a Forest and cast Tribal Flames at the opponent. How much damage does the opponent take?",
+    "expect": [
+      "opponent takes 4 damage."
+    ],
+    "cite": [
+      "207.2c",
+      "305.6"
+    ]
+  },
+  {
+    "id": "nm7-speed",
+    "text": "It's my turn. I control Howlsquad Heavy and my speed is 2. I cast Lightning Bolt at the opponent, then I cast Shock at the opponent. What is my speed?",
+    "expect": [
+      "Your speed is 3."
+    ],
+    "cite": [
+      "702.179d"
+    ]
+  },
+  {
+    "id": "nm8-connive",
+    "text": "Ledger Shredder connives and I discard a Forest. Does it get a +1/+1 counter?",
+    "expect": [
+      "Ledger Shredder gets no +1/+1 counter: the discarded Forest is a land card"
+    ],
+    "cite": [
+      "701.50a"
+    ]
+  },
+  {
+    "id": "nm9-exhaust",
+    "text": "I activated Riverchurn Monument's exhaust ability, then it was bounced and I cast it again. Can I activate the exhaust ability again?",
+    "expect": [
+      "Yes: Riverchurn Monument is a new object after leaving and returning (400.7)"
+    ],
+    "cite": [
+      "702.177a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "nm10-channel",
+    "text": "I channel Otawara, Soaring City targeting their Grizzly Bears. Can they counter it with Counterspell?",
+    "expect": [
+      "the channel ability is an activated ability, not a spell"
+    ],
+    "cite": [
+      "207.2c",
+      "113.3b"
+    ]
+  },
+  {
+    "id": "nm11-saddle",
+    "text": "Can I saddle my Ornery Tumblewagg during my beginning of combat step?",
+    "expect": [
+      "No: Ornery Tumblewagg's saddle ability can be activated only as a sorcery"
+    ],
+    "cite": [
+      "702.171a",
+      "602.5d"
+    ]
+  },
+  {
+    "id": "nm12-discover",
+    "text": "I cast Trumpeting Carnosaur and discover into a Glorybringer. Can I cast it for free?",
+    "expect": [
+      "Yes: Glorybringer (mana value 5) may be cast without paying its mana cost"
+    ],
+    "cite": [
+      "701.57a"
+    ]
+  },
+  {
+    "id": "nm13-gift",
+    "text": "I cast Into the Flood Maw promising the gift, targeting their Sol Ring. What happens?",
+    "expect": [
+      "opponent gets a Fish token, tapped from Into the Flood Maw's gift",
+      "Sol Ring: the battlefield → opponent's hand."
+    ],
+    "cite": [
+      "702.174f",
+      "702.174j",
+      "702.174m"
+    ]
+  },
+  {
+    "id": "nm14-adapt",
+    "text": "Incubation Druid has a +1/+1 counter on it. I activate its adapt ability. How many +1/+1 counters does it have?",
+    "expect": [
+      "Adapt 3 does nothing: Incubation Druid already has 1 +1/+1 counter"
+    ],
+    "cite": [
+      "701.46a"
+    ]
+  },
+  {
+    "id": "nm15-bargain",
+    "text": "I cast Beseech the Mirror bargaining my Grizzly Bears. Is it bargained?",
+    "expect": [
+      "No: Grizzly Bears can't be sacrificed to bargain"
+    ],
+    "cite": [
+      "702.166a"
+    ]
+  },
+  {
+    "id": "nm16-learn",
+    "text": "Eyetwitch dies. Can I get a Lesson from my sideboard?",
+    "expect": [
+      "Yes: learn lets you reveal a Lesson card you own from outside the game (in a tournament, the sideboard)"
+    ],
+    "cite": [
+      "701.48a",
+      "400.11a"
+    ]
+  },
+  {
+    "id": "nm17-prototype",
+    "text": "I cast Arcane Proxy prototyped. What color is it and what is its mana value?",
+    "expect": [
+      "Arcane Proxy is blue with mana value 3 and is 2/1"
+    ],
+    "cite": [
+      "718.3b",
+      "702.160a"
+    ]
+  },
+  {
+    "id": "nm18-reconfigure",
+    "text": "My Lizard Blades is attached to my Grizzly Bears and the Grizzly Bears dies. Is Lizard Blades a creature again?",
+    "expect": [
+      "Yes: Lizard Blades is unattached and a 1/1 creature again"
+    ],
+    "cite": [
+      "702.151b",
+      "704.5n"
+    ]
+  },
+  {
+    "id": "nm19-offspring",
+    "text": "I cast Manifold Mouse paying its offspring cost. With the trigger on the stack, my opponent casts Unsummon on Manifold Mouse. Do I still get the token?",
+    "expect": [
+      "You get a 1/1 token copy of Manifold Mouse (offspring, 702.175a) even though Manifold Mouse has left the battlefield."
+    ],
+    "cite": [
+      "702.175a",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "nm20-descend",
+    "text": "I control Starving Revenant and my graveyard has four lands and four instants. I draw a card. Does descend 8 trigger?",
+    "expect": [
+      "No: only 4 permanent cards in your graveyard"
+    ],
+    "cite": [
+      "110.4a"
+    ]
+  },
+  {
+    "id": "nm21-boast",
+    "text": "Varragoth, Bloodsky Sire attacked this turn. In my second main phase, can I activate its boast ability?",
+    "expect": [
+      "Yes: Varragoth, Bloodsky Sire attacked this turn, so its boast ability can be activated now"
+    ],
+    "cite": [
+      "702.142a"
+    ]
+  },
+  {
+    "id": "nm22-casualty",
+    "text": "I control Monastery Swiftspear and a Grizzly Bears. I cast Rob the Archives with casualty, sacrificing the Grizzly Bears. How many times does prowess trigger?",
+    "expect": [
+      "Once: only the original spell was cast.",
+      "Monastery Swiftspear is 2/3 until end of turn."
+    ],
+    "cite": [
+      "702.153a",
+      "707.10"
+    ],
+    "notExpect": [
+      "Monastery Swiftspear is 3/4"
+    ]
+  },
+  {
+    "id": "nm23-mobilize",
+    "text": "I attack with Voice of Victory. How much damage does the opponent take, and what happens to the Warrior tokens?",
+    "expect": [
+      "Yes: opponent takes 3 damage in all.",
+      "You get 2 1/1 Warrior tokens, tapped and attacking"
+    ],
+    "cite": [
+      "702.181a",
+      "508.4"
+    ]
+  },
+  {
+    "id": "nm24-impending",
+    "text": "I cast Overlord of the Hauntwoods for its impending cost. Is it a creature?",
+    "expect": [
+      "No: Overlord of the Hauntwoods isn't a creature right now",
+      "You get an Everywhere"
+    ],
+    "cite": [
+      "702.176a"
+    ]
+  },
+  {
+    "id": "nm25-ring",
+    "text": "The Ring tempts me and I choose my Grizzly Bears as my Ring-bearer. Can their 3/3 block it?",
+    "expect": [
+      "a 3/3 creature can't block Grizzly Bears: a Ring-bearer can't be blocked by creatures with greater power (701.54c)."
+    ],
+    "cite": [
+      "701.54c"
+    ]
+  },
+  {
+    "id": "nm26-decayed",
+    "text": "I attack with Rot-Curse Rakshasa. What happens?",
+    "expect": [
+      "Rot-Curse Rakshasa will be sacrificed at end of combat",
+      "opponent takes 5 damage.",
+      "Rot-Curse Rakshasa: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "702.147a"
+    ]
+  },
+  {
+    "id": "nm27-afterlife",
+    "text": "Tithe Taker dies. What happens?",
+    "expect": [
+      "You get a Spirit token."
+    ],
+    "cite": [
+      "702.135a"
+    ]
+  },
+  {
+    "id": "nm28-ravenous",
+    "text": "I cast Jacked Rabbit with X=5. What happens?",
+    "expect": [
+      "Jacked Rabbit enters with 5 +1/+1 counters.",
+      "You draw 1 card."
+    ],
+    "cite": [
+      "702.156a"
+    ]
+  },
+  {
+    "id": "nm29-emerge",
+    "text": "I cast Elder Deep-Fiend with emerge, sacrificing my Burnished Hart. How much do I pay?",
+    "expect": [
+      "Elder Deep-Fiend costs {2}{U}{U} with emerge"
+    ],
+    "cite": [
+      "702.119a"
+    ]
+  },
+  {
+    "id": "nm30-compleated",
+    "text": "I cast Ajani, Sleeper Agent paying 2 life for the Phyrexian mana. How much loyalty does it have?",
+    "expect": [
+      "Ajani, Sleeper Agent has 2 loyalty."
+    ],
+    "cite": [
+      "702.150a"
+    ]
   }
 ]

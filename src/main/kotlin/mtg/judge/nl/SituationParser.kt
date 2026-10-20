@@ -1854,6 +1854,225 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /**
+     * Table talk about the newer keyword mechanics (see situation/NewMechanicAsks.kt): crew paid with several creatures,
+     * casting keywords said with a cast (offspring, gift, impending, prototype, casualty, bargain, emerge), manifest dread,
+     * explore and connive with the card revealed or discarded, the Ring, speed, exhaust, channel and boast.
+     * Each is turned into an "nmq …" marker that [readNewMechanicQuestions] reads as a clause of its own.
+     */
+    private fun newMechanicRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t.trim()
+        val who = """(i|we|they|he|she|my opponent|the opponent)"""
+        fun keywordOf(c: String, k: String) = m.cards[c]?.let { e -> Regex("""(?i)\b${Regex.escape(k)}\b""").containsMatchIn(e.keywords) } == true
+        fun objFor(c: String, owner: String = "me"): String? = m.cards[c]?.let { e -> objectIdFor(e, ctx) ?: addObject(e, owner, false, ctx) }
+        // Card names that are also the words of these mechanics: "manifests Dread", "I Channel Otawara", "the Ring tempts me".
+        t2 = Regex("""\bc\d+\b""").replace(t2) { r -> when (m.cards[r.value]?.display?.lowercase()) {
+            "dread" -> if (Regex("""manifests? ${r.value}\b""").containsMatchIn(t2)) "dread" else r.value
+            "channel" -> if (Regex("""^(?:i|we) ${r.value} c\d+""").containsMatchIn(t2)) "channel" else r.value
+            else -> if (Regex("""\bthe ${r.value} tempts\b""").containsMatchIn(t2) && m.cards[r.value]?.display?.contains("Ring", true) == true) "ring" else r.value } }
+        // "… and crew my Esika's Chariot with them": the creatures just named pay the crew cost together (702.122a).
+        t2 = t2.replace(Regex("""(?:,? and |,? then |^)(?:i |we )?crews? (?:my |the |our )?(c\d+) (?:with|using) (them|it|both|both of them|those|that|these)$"""), ", nmq crew $1 $2").trim().removePrefix(", ")
+        // "I cast two Grizzly Bears this turn, (crew …)": that many of the card, cast this turn and so summoning sick.
+        if (t2.contains("nmq crew")) t2 = t2.replace(Regex("""^(?:i|we) cast (\d+) (c\d+) this turn"""), "nmq castn $1 $2")
+        // "Can I saddle my Ornery Tumblewagg during my beginning of combat step?" (602.5d).
+        Regex("""^can (?:i|we) (saddle|reconfigure|craft with) (?:my )?(c\d+)(?: with .+?)? (?:during|in|at) (?:my |the |their |his |her )?(beginning of combat|declare attackers|declare blockers|combat damage|end|upkeep|draw|combat|opponent's turn)(?: step| phase)?$""").find(t2)?.let { r -> return "nmq sorcery ${r.groupValues[2]} ${r.groupValues[3].replace(' ', '_')}" }
+        // "I activate its adapt ability" (701.46a).
+        Regex("""^(?:i|we) activate (?:its|it's|(?:my )?(c\d+)'s) (adapt)(?: \d+)?(?: ability)?$""").find(t2)?.let { r -> return "nmq activatekw ${r.groupValues[2]} ${r.groupValues[1].ifEmpty { "-" }}" }
+        // "What color is it and what is its mana value?": one question, kept whole (the "and" would split it).
+        if (Regex("""^what colou?r is (?:it|c\d+),? and what(?:'s| is) its mana value$|^what(?:'s| is| are) its colou?r and mana value$""").matches(t2)) return "nmq colormv"
+        // "How much do I pay?" after an emerge cast: the emerge cost, reduced by the sacrificed creature's mana value.
+        if (ctx.events.any { it.verb == "cast" && it.to?.startsWith("kw:emerge") == true } && Regex("""^how much (?:do|did|would) (?:i|we) (?:pay|spend)(?: for it)?$""").matches(t2)) return "nmq answered paid"
+        // "Is it bargained?" after a bargain cast: the outcome says.
+        if (ctx.events.any { it.verb == "cast" && it.to?.startsWith("kw:bargain") == true } && Regex("""^(?:is|was) (?:it|the spell) (?:bargained|(c\d+))$""").find(t2)?.let { r -> r.groupValues[1].isEmpty() || m.cards[r.groupValues[1]]?.display?.startsWith("Bargain", true) == true } == true) return "nmq answered bargained"
+        // "In my second main phase, …": the timing, said before the question that needs it.
+        if (t2.contains("boast")) t2 = t2.replace(Regex("""^in my (?:second|postcombat|post-combat) main phase,? """), "")
+        // "Can I play Kozilek's Return in my mono-blue Commander deck?" (903.4, 903.5c).
+        Regex("""^(?:can|could|may) (?:i|we|you) (?:play|run|include|put|have) (c\d+) in (?:my |a |an |our )?((?:mono-?(?:white|blue|black|red|green))|colorless|(?:(?:white|blue|black|red|green)(?:[-/ ]| and )?)+)(?: commander| edh| cedh)? deck\??$""").find(t2)?.let { r ->
+            val cols = r.groupValues[2].let { s -> if (s == "colorless") "" else listOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G').filter { s.contains(it.first) }.map { it.second }.joinToString("") }
+            return "nmq identity ${r.groupValues[1]} ${cols.ifEmpty { "C" }}"
+        }
+        // "My graveyard has Ornithopter, a Forest and Lightning Bolt": named cards in a graveyard (delirium, descend).
+        Regex("""^(my|their|his|her) graveyard (?:has|contains|holds) ((?:(?:an? |the )?c\d+(?:,? and |, )?)+)$""").find(t2)?.let { r ->
+            val cs = Regex("""c\d+""").findAll(r.groupValues[2]).map { it.value }.toList()
+            if (cs.size >= 2) return "nmq gy ${if (r.groupValues[1] == "my") "me" else "opp"} ${cs.joinToString(" ")}"
+        }
+        // "Abhorrent Oculus manifests dread and I manifest a Lightning Bolt (face down)" (701.62a, 701.40a); "I cloak a Grizzly Bears" (701.58a).
+        Regex("""^(?:my )?(c\d+) manifests dread,? and (?:i|we) (?:manifest|put|choose|pick) (?:an? |the )?(c\d+)(?: face[- ]down)?(?: (?:as|onto) .*)?$""").find(t2)?.let { r -> return "nmq manifest dread ${r.groupValues[1]} ${r.groupValues[2]}" }
+        Regex("""^(?:i|we) (manifest|cloak) (?:an? |the |my )?(c\d+)(?: face[- ]down)?$""").find(t2)?.let { r -> return "nmq manifest ${r.groupValues[1]} - ${r.groupValues[2]}" }
+        // "My Merfolk Branchwalker explores and reveals a Forest" (701.44a); "Ledger Shredder connives and I discard a Forest" (701.50a).
+        Regex("""^(?:my )?(c\d+) explores,? and (?:i |we )?reveals? (?:an? |the |my )?(c\d+)$""").find(t2)?.let { r -> return "nmq explore ${r.groupValues[1]} ${r.groupValues[2]}" }
+        Regex("""^(?:my )?(c\d+) connives,? and (?:i|we) discard (?:an? |the |my )?(c\d+)$""").find(t2)?.let { r -> return "nmq connive ${r.groupValues[1]} ${r.groupValues[2]}" }
+        // "The Ring tempts me and I choose my Grizzly Bears (as my Ring-bearer)" (701.54a).
+        Regex("""^the ring tempts (me|us|you|them|him|her|my opponent),? and (?:i|we|they|he|she) chooses? (?:my |their |his |her )?(c\d+)(?: as (?:my |their |the )?ring-?bearer)?$""").find(t2)?.let { r -> return "nmq ring ${if (r.groupValues[1] in setOf("me", "us", "you")) "me" else "opp"} ${r.groupValues[2]}" }
+        // "My speed is 2" (702.179).
+        t2 = t2.replace(Regex("""(?:,? and |^)(my|their|his|her) speed is ([1-4])$"""), ", nmq speed $1 $2").trim().removePrefix(", ")
+        // "I activated Riverchurn Monument's exhaust ability, then it was bounced and I cast it again" (702.177a, 400.7).
+        Regex("""^(?:i|we) (?:already )?(?:activated|used|have activated|have used) (?:my )?(c\d+)'s exhaust ability(?:,? (?:then|and then|and) (?:it|c\d+) (?:was|got|is) (?:bounced|flickered|blinked|returned to (?:my )?hand|exiled and returned)(?:,? and (?:i|we) (?:cast|recast|replayed|played) it(?: again)?)?)?$""").find(t2)?.let { r ->
+            return "nmq exhausted ${r.groupValues[1]}" + if (r.value.contains(Regex("""bounced|flickered|blinked|returned"""))) ", nmq moved ${r.groupValues[1]}" else ""
+        }
+        if (ctx.events.any { it.verb == "nm" && it.to == "exhausted" }) Regex("""^(?:then |and then )?(?:it|c\d+) (?:was|got|is) (?:bounced|flickered|blinked|returned to (?:my )?hand|exiled and returned)(?:,? and (?:i|we) (?:cast|recast|replayed|played) it(?: again)?)?$""").find(t2)?.let { return "nmq moved it" }
+        // "I channel Otawara, Soaring City (targeting their creature)" (207.2c).
+        Regex("""^(?:i|we) channel (c\d+)(?: (?:targeting|on|at) .+)?$""").find(t2)?.let { r -> return "nmq channel ${r.groupValues[1]}" }
+        // "Varragoth attacked this turn" (702.142a).
+        Regex("""^(?:my )?(c\d+) (?:already )?attacked (?:this turn|earlier this turn|already)$""").find(t2)?.let { r -> return "nmq attacked ${r.groupValues[1]}" }
+        // "Lizard Blades is attached to my Grizzly Bears and the Bears die" (702.151b, 704.5n).
+        Regex("""^(?:my )?(c\d+) is (?:attached to|equipping|reconfigured onto) (?:my )?(c\d+),? and (?:the |my )?(?:c\d+|it|they) (?:dies|die|is destroyed|gets destroyed)$""").find(t2)?.let { r -> return "nmq attacheddies ${r.groupValues[1]} ${r.groupValues[2]}" }
+        // "I cast Trumpeting Carnosaur and discover into a Glorybringer" (701.57a).
+        Regex("""^(.*\bcasts? c\d+.*?),? and (?:i |we )?discover(?: \d+)? (?:into|and hit|hitting|and reveal|revealing) (?:an? |the )?(c\d+)$""").find(t2)?.let { r -> return "${r.groupValues[1]}, nmq discover ${r.groupValues[2]}" }
+        // Casting keywords said with the cast: "paying its offspring cost", "promising the gift", "for its impending cost", "prototyped",
+        // "with casualty, sacrificing my Grizzly Bears", "bargaining my Treasure", "with emerge sacrificing a Burnished Hart".
+        if (ctx.kwPending == null && Regex("""\bcasts?\b""").containsMatchIn(t2)) {
+            val castCard = Regex("""\bcasts? (c\d+)""").find(t2)?.groupValues?.get(1)
+            fun take(kind: String, re: Regex, arg: (MatchResult) -> String? = { null }): Boolean {
+                val r = re.find(t2) ?: return false
+                if (castCard == null || !keywordOf(castCard, kind)) return false
+                t2 = t2.replaceFirst(r.value, " ").replace(Regex("""\s+"""), " ").replace(" ,", ",").trim() + ", nmq castkw $kind ${arg(r) ?: "-"}"; return true
+            }
+            take("offspring", Regex(""",?\s*\b(?:paying|with|and pay|plus) (?:its |the )?offspring(?: cost)?(?: paid)?\b""")) ||
+            take("gift", Regex(""",?\s*\b(?:promising|and promise|with|giving|and give) (?:the |a |my )?gift(?: to (?:my |the )?opponent)?\b""")) ||
+            take("impending", Regex(""",?\s*\b(?:for|with|using|paying) (?:its |the )?impending(?: cost)?\b""")) ||
+            take("prototype", Regex(""",?\s*\b(?:prototyped|(?:for|with|using) (?:its |the )?prototype(?: cost)?|as a prototype)\b""")) ||
+            take("casualty", Regex(""",?\s*\b(?:with casualty(?: \d+)?,? )?(?:sacrificing|and sacrifice|saccing) (?:my |the |a |an )?(c\d+)(?: (?:for|to) (?:pay )?(?:its )?casualty)?""")) { r -> objFor(r.groupValues[1]) } ||
+            take("bargain", Regex(""",?\s*\b(?:bargaining|and bargain|sacrificing|saccing) (?:my |the |a |an )?(c\d+)(?: (?:for|to) bargain)?""")) { r -> objFor(r.groupValues[1]) } ||
+            take("emerge", Regex(""",?\s*\b(?:with|for its|using) emerge(?: cost)?,? (?:sacrificing|by sacrificing|saccing) (?:my |the |a |an )?(c\d+)""")) { r -> objFor(r.groupValues[1]) }
+            if (t2.contains("nmq castkw casualty")) t2 = t2.replace(Regex(""",?\s*\bwith casualty(?: \d+)?\b"""), "").trim()
+        }
+        return t2
+    }
+
+    /** The "nmq …" markers [newMechanicRewrites] leaves, and the questions about those mechanics. */
+    private fun readNewMechanicQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?', '.').trim()
+        fun who(w: String) = if (w in setOf("me", "i", "we", "my")) "me" else pronounPlayer(ctx, "their")
+        fun objFor(c: String, owner: String = "me", zone: String = "battlefield"): String? = m.cards[c]?.let { e -> (if (zone == "battlefield") objectIdFor(e, ctx) else null) ?: addObject(e, owner, false, ctx, zone = zone, allowDuplicate = zone != "battlefield") }
+        fun answered() { ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below." }
+        val parts = q.split(' ')
+        if (parts.firstOrNull() == "nmq") {
+            ctx.note("me")
+            when (parts.getOrNull(1)) {
+                "crew" -> {
+                    val vid = objFor(parts[2]) ?: return null
+                    val who = ctx.lastActor ?: "me"
+                    val crew = when (parts.getOrNull(3)) {
+                        "it", "that" -> listOfNotNull(ctx.lastMentioned?.takeIf { it in ctx.objects && it != vid })
+                        else -> ctx.objects.values.filter { it.id != vid && it.zone == "battlefield" && it.controller == who && isCreatureName(it.card.name) }.map { it.id }
+                    }
+                    if (crew.isEmpty()) return null
+                    ctx.events += EventSpec("activate", player = who, obj = vid, to = "crew:" + crew.joinToString("+")); ctx.events += EventSpec("resolveAll")
+                    ctx.lastMentioned = vid; ctx.lastActor = who; return true
+                }
+                "identity" -> { val card = m.cards[parts[2]] ?: return null
+                    ctx.asks += EventSpec("ask", player = "me", card = CardRef(name = card.display, oracleId = card.oracleId), to = "nm:identity:" + parts[3].replace("C", "")); return true }
+                "gy" -> { val owner = parts[2]; ctx.note(owner); parts.drop(3).forEach { c -> objFor(c, owner, "graveyard") }
+                    ctx.notes += "${if (owner == "me") "Your" else "Their"} graveyard holds ${parts.drop(3).mapNotNull { m.cards[it]?.display }.joinToString(", ")}."; return true }
+                "manifest" -> {
+                    val kind = if (parts[2] == "dread") "dread" else parts[2]
+                    if (parts[3] != "-") objFor(parts[3])
+                    val card = m.cards[parts[4]] ?: return null
+                    val id = addObject(card, "me", false, ctx, zone = "library", allowDuplicate = true)
+                    ctx.events += EventSpec("nm", player = "me", obj = id, to = kind); ctx.lastMentioned = id; ctx.faceDownSeen = true; return true
+                }
+                "explore", "connive" -> {
+                    val id = objFor(parts[2]) ?: return null; val card = m.cards[parts[3]] ?: return null
+                    ctx.events += EventSpec("nm", player = ctx.objects[id]?.controller ?: "me", obj = id, card = CardRef(name = card.display, oracleId = card.oracleId), to = parts[1]); ctx.lastMentioned = id; return true
+                }
+                "ring" -> { val w = parts[2]; val id = objFor(parts[3], w) ?: return null
+                    ctx.events += EventSpec("nm", player = w, obj = id, to = "ring"); ctx.lastMentioned = id; ctx.lastActor = w; return true }
+                "speed" -> { val w = who(parts[2]); ctx.note(w); ctx.events += EventSpec("nm", player = w, amount = parts[3].toInt(), to = "speed"); return true }
+                "exhausted", "moved", "attacked" -> { val id = (if (parts[2] == "it") ctx.events.lastOrNull { it.verb == "nm" && it.to == "exhausted" }?.obj else objFor(parts[2])) ?: return null
+                    ctx.events += EventSpec("nm", player = "me", obj = id, to = parts[1]); ctx.lastMentioned = id; return true }
+                "channel" -> { val card = m.cards[parts[2]] ?: return null
+                    ctx.events += EventSpec("nm", player = "me", card = CardRef(name = card.display, oracleId = card.oracleId), to = "channel"); return true }
+                "attacheddies" -> {
+                    val eq = objFor(parts[2]) ?: return null; val host = objFor(parts[3]) ?: return null
+                    ctx.objects[eq] = ctx.objects.getValue(eq).copy(attachedTo = host)
+                    ctx.events += EventSpec("leave", obj = host, to = "graveyard"); ctx.events += EventSpec("resolveAll"); ctx.lastMentioned = eq; return true
+                }
+                "castn" -> { val card = m.cards[parts[3]] ?: return null
+                    repeat(parts[2].toInt()) { val id = addObject(card, "me", false, ctx, allowDuplicate = true); ctx.objects[id] = ctx.objects.getValue(id).copy(summoningSick = true) }
+                    ctx.notes += "${parts[2]} ${card.display} cast this turn: on the battlefield and summoning sick."; ctx.lastActor = "me"; return true }
+                // "with casualty, sacrificing …", "promising the gift": the keyword goes on the cast just read (its targets included).
+                "castkw" -> { val at = ctx.events.indexOfLast { it.verb == "cast" }; if (at < 0) return null
+                    val e = ctx.events[at]; if (e.to == null) ctx.events[at] = e.copy(to = "kw:${parts[2]}" + (parts.getOrNull(3)?.takeIf { it != "-" }?.let { ":$it" } ?: "")); return true }
+                "colormv" -> { val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return null
+                    ctx.asks += EventSpec("ask", player = "me", card = cast.card, to = "nm:prototype"); ctx.notes += "\"What color is it and what is its mana value?\" is answered by the outcome below."; return true }
+                "answered" -> { ctx.notes += "\"${if (parts[2] == "paid") "How much do I pay" else "Is it ${parts[2]}"}?\" is answered by the outcome below."; return true }
+                "sorcery" -> { val id = objFor(parts[2]) ?: return null
+                    ctx.asks += EventSpec("ask", player = "me", obj = id, to = "nm:sorcery:${parts[3]}"); return true }
+                "activatekw" -> { val id = (if (parts[3] != "-") objFor(parts[3]) else null) ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return null
+                    ctx.events += EventSpec("nm", player = ctx.objects[id]?.controller ?: "me", obj = id, to = "activatekw:${parts[2]}"); ctx.lastMentioned = id; return true }
+                "discover" -> { val card = m.cards[parts[2]] ?: return null
+                    val src = ctx.events.lastOrNull { it.verb == "cast" }?.card
+                    ctx.asks += EventSpec("ask", player = "me", card = src, source = card.display, to = "nm:discover"); return true }
+            }
+            return null
+        }
+        // Questions.
+        val lastNm = ctx.events.lastOrNull { it.verb == "nm" }
+        // "Does Dragon's Rage Channeler have delirium?", "do I have delirium?"
+        Regex("""^(?:does|do|is) (?:my |the )?(c\d+|i|we) (?:have|has|got|get) delirium(?: on| active| now)?$|^is delirium (?:on|active)(?: for (?:my )?(c\d+))?$""").find(q)?.let { r ->
+            val c = r.groupValues[1].ifEmpty { r.groupValues[2] }
+            val id = if (c.startsWith("c")) objFor(c) else null
+            ctx.asks += EventSpec("ask", player = "me", obj = id, to = "nm:aword:delirium"); ctx.note("me"); answered(); return true
+        }
+        // "Does descend 8 trigger?", "does Starving Revenant's descend work?"
+        Regex("""^(?:does|is|will|would) (?:(?:my |the )?(c\d+)'s |its |the )?descend(?: (\d+))?(?: ability)? (?:trigger|on|work|apply|turned on)$""").find(q)?.let { r ->
+            val id = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { objFor(it) } ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && m.cards.values.any { e -> e.oracleId == it.card.oracleId && Regex("""(?i)descend""").containsMatchIn(e.keywords) } }?.id
+            ctx.asks += EventSpec("ask", player = "me", obj = id, to = "nm:aword:descend" + (r.groupValues[2].takeIf { it.isNotEmpty() }?.let { ":$it" } ?: "")); answered(); return true
+        }
+        // "Can I turn it face up?" after a manifest or cloak.
+        if (Regex("""^can (?:i|we) (?:turn|flip|unmanifest) (?:it|that|the face-down creature|the manifest(?:ed card)?|c\d+) (?:face[- ]up|over|up)(?: .*)?$""").matches(q)) {
+            val ev = ctx.events.lastOrNull { it.verb == "nm" && it.to in setOf("manifest", "cloak", "dread") } ?: return null
+            ctx.asks += EventSpec("ask", player = "me", obj = ev.obj, to = "nm:faceup"); answered(); return true
+        }
+        // "Does it get a (+1/+1) counter?" after explore or connive: the outcome says.
+        if (lastNm?.to in setOf("explore", "connive") && Regex("""^(?:does|will|do) (?:it|c\d+|my c\d+) (?:still )?get (?:a|the|any) (?:\+1/\+1 )?counters?$""").matches(q)) { answered(); return true }
+        // "Can I activate the exhaust ability again?"
+        Regex("""^can (?:i|we) (?:activate|use) (?:the |its |c\d+'s |that )?exhaust(?: ability)?(?: again| once more)?$""").find(q)?.let {
+            val id = ctx.events.lastOrNull { it.verb == "nm" && it.to in setOf("exhausted", "moved") }?.obj ?: return@let
+            ctx.asks += EventSpec("ask", player = "me", obj = id, to = "nm:exhaust"); answered(); return true
+        }
+        // "Can they counter it with Counterspell?" after a channel ability.
+        Regex("""^can (?:they|he|she|my opponent|the opponent) counter (?:it|that|the (?:channel )?ability) (?:with|using) (?:an? )?(c\d+)$""").find(q)?.let { r ->
+            val ch = ctx.events.lastOrNull { it.verb == "nm" && it.to == "channel" } ?: return@let
+            val counter = m.cards[r.groupValues[1]] ?: return@let
+            ctx.asks += EventSpec("ask", player = "me", card = ch.card, source = counter.display, to = "nm:channel"); answered(); return true
+        }
+        // "Can I saddle my Ornery Tumblewagg during my beginning of combat step?" (602.5d).
+        Regex("""^can (?:i|we) (saddle|reconfigure|craft with) (?:my )?(c\d+)(?: with .+?)? (?:during|in|at) (?:my |the |their |his |her )?(beginning of combat|declare attackers|declare blockers|combat damage|end|upkeep|draw|combat|opponent's turn)(?: step| phase)?$""").find(q)?.let { r ->
+            val id = objFor(r.groupValues[2]) ?: return@let
+            ctx.asks += EventSpec("ask", player = "me", obj = id, to = "nm:sorcery:" + r.groupValues[3].replace(' ', '_')); answered(); return true
+        }
+        // "Can I cast it for free?" after discover: answered by the discover question already asked.
+        if (ctx.asks.any { it.to == "nm:discover" } && Regex("""^can (?:i|we) cast (?:it|that|c\d+)(?: for free| without paying its mana cost| free)?$""").matches(q)) { answered(); return true }
+        // "Can I get a Lesson from my sideboard?" (701.48a, 400.11a).
+        if (Regex("""^can (?:i|we) (?:get|fetch|grab|take|tutor|learn) (?:a |an |my )?lesson(?: card)? (?:from|out of) (?:my |the )?sideboard$""").matches(q)) { ctx.asks += EventSpec("ask", player = "me", to = "nm:learn"); ctx.note("me"); answered(); return true }
+        // "In my second main phase, can I activate its boast ability?"
+        Regex("""^(?:in my (?:second|postcombat|post-combat) main phase,? |after combat,? )?can (?:i|we) (?:activate|use) (?:its|the|c\d+'s|my c\d+'s) boast(?: ability)?(?: now| again| in my (?:second|postcombat) main phase| after combat)?$""").find(q)?.let {
+            val id = ctx.events.lastOrNull { it.verb == "nm" && it.to == "attacked" }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            ctx.asks += EventSpec("ask", player = "me", obj = id, to = "nm:boast"); answered(); return true
+        }
+        // "What is my speed?"
+        if (Regex("""^what(?:'s| is) (?:my|our) speed(?: now)?$""").matches(q)) { ctx.asks += EventSpec("ask", player = "me", to = "nm:speed"); answered(); return true }
+        // "Is it a creature (again)?" after impending, reconfigure.
+        Regex("""^is (?:it|(c\d+)) (?:still )?a creature(?: again| now| yet)?$""").find(q)?.let { r ->
+            val id = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { c -> m.cards[c]?.let { objectIdFor(it, ctx) } }
+                ?: ctx.events.lastOrNull { it.verb == "leave" }?.let { lv -> ctx.objects.values.firstOrNull { it.attachedTo == lv.obj }?.id }
+            val castImpending = ctx.events.lastOrNull { it.verb == "cast" && it.to?.startsWith("kw:impending") == true }
+            if (id == null && castImpending == null) return@let
+            ctx.asks += EventSpec("ask", player = "me", obj = id, card = if (id == null) castImpending?.card else null, to = "nm:creature"); answered(); return true
+        }
+        // "Is it bargained?" after a bargain cast: the outcome says.
+        if (ctx.events.any { it.verb == "cast" && it.to?.startsWith("kw:bargain") == true } && Regex("""^(?:is|was) (?:it|c\d+|the spell) bargained$""").matches(q)) { answered(); return true }
+        // "How many times does prowess trigger?" after a casualty cast: the copy isn't cast.
+        if (ctx.events.any { it.verb == "cast" && it.to?.startsWith("kw:casualty") == true } && Regex("""^how many (?:times does|prowess triggers|triggers)\b.*$""").matches(q)) {
+            ctx.asks += EventSpec("ask", player = "me", to = "nm:casualty"); answered(); return true
+        }
+        // "What happens to the Warrior tokens?" after a mobilize attack: the outcome says.
+        if (Regex("""^(?:and )?what happens to (?:the |those |my )?(?:warrior )?tokens?(?: (?:later|at end of turn))?$""").matches(q) && ctx.events.any { it.verb == "attack" }) { answered(); return true }
+        return null
+    }
+
     private fun loopRewrite(t: String, m: Marked, ctx: Ctx): String {
         val withAnd = Regex("""^((?:i|we|they|my opponent|the opponent) (?:control|controls|have|has|got|'ve got) (?:(?:c\d+|and),? )*)(c\d+) with (c\d+)$""", RegexOption.IGNORE_CASE).find(t.trim().trimEnd('.'))?.let { r ->
             val tl = m.cards[r.groupValues[3]]?.typeLine ?: return@let null
@@ -2541,6 +2760,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = edhRewrites(t2, m, ctx)
+        t2 = newMechanicRewrites(t2, m, ctx)
         t2 = counterRewrites(t2, m, ctx)
         t2 = triggerRewrites(t2, m, ctx)
         t2 = auditRewrites(t2, m, ctx)
@@ -6927,6 +7147,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readEdhQuestions(clause0, m, ctx)?.let { return it }
+        readNewMechanicQuestions(clause0, m, ctx)?.let { return it }
         readCounterQuestions(clause0, m, ctx)?.let { return it }
         readTriggerQuestions(clause0, m, ctx)?.let { return it }
         readAuditQuestions(clause0, m, ctx)?.let { return it }

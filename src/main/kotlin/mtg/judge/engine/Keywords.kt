@@ -122,6 +122,7 @@ fun Engine.keywordUpkeep(playerId: String) {
 
 /** The beginning of the end step: unearthed permanents are exiled by their delayed trigger (702.84a). */
 fun Engine.keywordEndStep(playerId: String) {
+    NewMech.endStep(this, playerId)   // mobilize, impending (NewMechanics.kt)
     for (o in state.objects.values.toList().filter { it.isOnBattlefield() && it.kwf.dashed }) {
         o.kwf.dashed = false
         state.trace.step("It is the beginning of the end step, so the delayed trigger from ${o.name}'s dash cost triggers and returns it from the battlefield to its owner's hand.", "702.109a", "603.7")

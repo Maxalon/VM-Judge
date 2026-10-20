@@ -403,6 +403,7 @@ class GameState(
     /** The name of the ability keeping this permanent from being a creature right now, or null when it is one (or never was). */
     fun notACreatureBecause(o: GameObject): String? {
         if (!o.def.isCreature || !o.isOnBattlefield()) return null
+        NewMech.notACreature(this, o)?.let { return it }   // impending, reconfigure (NewMechanics.kt)
         val god = o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.NotACreatureUnlessDevotion>().firstOrNull() ?: return null
         val have = devotion(o.controller, god.colour)
         val colourName = when (god.colour) { 'W' -> "white"; 'U' -> "blue"; 'B' -> "black"; 'R' -> "red"; else -> "green" }

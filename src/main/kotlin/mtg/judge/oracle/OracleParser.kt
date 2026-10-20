@@ -177,7 +177,8 @@ object OracleParser {
                             else abilities += TriggeredAbility(Trigger.ThisEnters, Effect.Backup(TargetSpec(ObjFilter(setOf(Kind.CREATURE), raw = "creature"), "creature"), n, emptySet(), ""),
                                 "Backup $n (When this creature enters, put ${if (n == 1) "a +1/+1 counter" else "$n +1/+1 counters"} on target creature. If that's another creature, it gains the following abilities until end of turn.)")
                         }
-                        else -> abilities += StaticAbility(part, kw)
+                        // Mobilize, afterlife, decayed, ravenous: expanded into the abilities their rules define (NewMechanics.kt).
+                        else -> abilities += mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
                     }
                 }
                 // Animate Dead / Dance of the Dead: one paragraph holding the enters ability that returns the card it enchants
@@ -1400,6 +1401,8 @@ object OracleParser {
         mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
         mtg.judge.engine.EdhMech.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Ranger-Captain, Leadership Vacuum, Command Beacon (EdhMechanics.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
+        mtg.judge.engine.NewMech.parseSentence(s)?.let { return it }   // adapt, learn, discover, the Ring tempts you (NewMechanics.kt)
+        mtg.judge.engine.NewMech.stripWhereX(s)?.let { return parseSentence(it) }   // domain: "…, where X is the number of basic land types among lands you control"
         // Lavinia, Azorius Renegade: "if no mana was spent to cast it, counter that spell."
         if (Regex("""^if no mana was spent to cast it, counter that spell\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.CounterIfNoManaSpent
         // Skyclave Apparition: "the exiled card's owner creates an X/X blue Illusion creature token, where X is the mana value of the exiled card."

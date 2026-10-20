@@ -418,7 +418,7 @@ class Engine(val state: GameState) {
                 p.manaSpent += fb + (obj.taxesAtCast?.sumOf { it.second } ?: 0).coerceAtLeast(0)
             }
         }
-        val item = StackItem(state.newStackId(), StackKind.SPELL, playerId, obj, effect, targets, zonesOf(targets), card.oracleText, modes, x = x, kicked = kicked, evoked = evoked && card.has("evoke"), flashback = flashback && obj.has("flashback"), choice = copyChoice, targetsUnknown = targetsUnknown)
+        val item = StackItem(state.newStackId(), StackKind.SPELL, playerId, obj, effect, targets, zonesOf(targets), card.oracleText, modes, x = x ?: NewMech.impliedX(this, card, playerId), kicked = kicked, evoked = evoked && card.has("evoke"), flashback = flashback && obj.has("flashback"), choice = copyChoice, targetsUnknown = targetsUnknown)
         state.stack += item
         // "Snapcaster with Torpor Orb out. Can I still flash back Bolt?": the trigger that would have granted flashback never happened.
         if (flashback && !obj.has("flashback") && playerId !in state.castFromGraveyard && state.objects.values.any { o -> o.isOnBattlefield() && Regex("""(?i)entering(?: the battlefield)? don.t cause abilities to trigger""").containsMatchIn(o.rulesText) }) {
@@ -445,7 +445,7 @@ class Engine(val state: GameState) {
         if (item.evoked) trace.step("${card.name} is cast for its evoke cost, an alternative cost paid instead of its mana cost. It's still a creature spell and resolves normally; its evoke trigger will sacrifice it once it has entered.", "702.74a", "601.2b")
         if (kicked) trace.step("${card.name} is kicked: its controller paid the kicker cost as an additional cost, so its \"if this spell was kicked\" parts apply.", "702.33a", "702.33d")
         if (x != null) trace.step("X is $x, chosen as ${card.name} is cast; the mana cost includes X.", "107.3a", "601.2b")
-        else if (effect != null && usesX(effect)) state.clarifications += Clarification("${card.name}'s X", "${card.name} has X in its text; what was X? (assuming 0)")
+        else if (effect != null && usesX(effect) && item.x == null) state.clarifications += Clarification("${card.name}'s X", "${card.name} has X in its text; what was X? (assuming 0)")
         // "I'm at 3 life and cast Dismember paying 4 life": life can be paid only from a life total at least that big (119.4).
         run {
             val lifeNeeded = card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostText>().firstNotNullOfOrNull { c -> Regex("""(?i)\bpay (X|\d+) life\b""").find(c.text)?.groupValues?.get(1)?.let { n -> if (n.equals("X", true)) x else n.toIntOrNull() } } ?: payLife
@@ -475,7 +475,8 @@ class Engine(val state: GameState) {
         // life total for no reason.
         if (!lifeCostPaid && payLife != null && payLife > 0) {
             player.life = player.life?.minus(payLife)
-            val pips = Regex("""\{[WUBRG]/P\}""").findAll(card.manaCost ?: "").map { it.value }.toList()
+            NewMech.phyrexianLifePaid(obj, card, payLife)   // compleated (702.150a)
+            val pips = Regex("""\{[WUBRG](?:/[WUBRG])?/P\}""").findAll(card.manaCost ?: "").map { it.value }.toList()
             if (pips.isNotEmpty() && payLife == 2 * pips.size) trace.step("${player.subject} ${player.v("pays", "pay")} $payLife life while casting ${card.name}: ${if (pips.size == 1) "its ${pips[0]} is a Phyrexian mana symbol, paid" else "its ${pips.joinToString("")} are Phyrexian mana symbols, each paid"} with either that colour of mana or 2 life${player.life?.let { l -> " ($l life now)" } ?: ""}.", "107.4f", "601.2h")
             else if (pips.isNotEmpty()) trace.step("${player.subject} ${player.v("pays", "pay")} $payLife life while casting ${card.name}${player.life?.let { l -> " ($l)" } ?: ""}; its ${pips.joinToString("")} can be paid with 2 life each (107.4f), so $payLife life pays for ${payLife / 2} of ${if (pips.size == 1) "it" else "them"}.", "107.4f", "119.4")
             else trace.step("${player.subject} ${player.v("pays", "pay")} $payLife life while casting ${card.name}${player.life?.let { l -> " ($l)" } ?: ""}.", "119.4")
@@ -956,15 +957,17 @@ class Engine(val state: GameState) {
             trace.step("${p.subject} ${p.v("pays", "pay")} the cost by putting ${if (placed == n) "$n $kind counter${if (n == 1) "" else "s"}" else "$placed $kind counter${if (placed == 1) "" else "s"} (of the $n the cost names)"} on ${obj.name}${if (state.isCreature(obj)) "; it's now ${state.describePt(obj)}" else ""}.", "602.2b", *(if (placed != n) arrayOf("614.1a") else emptyArray()))
             if (placed > 0) onEvent(GameEvent.CountersPut(obj, kind, placed))
         }
-        // "Crew 1" paid with a named creature: it taps, and its power has to cover the crew number.
-        choice?.takeIf { it.startsWith("crew:") }?.removePrefix("crew:")?.let { cid -> state.objects[cid] }?.let { crew ->
+        // "Crew 1" paid with a named creature, "crew 4 with my two Bears": they tap, and their total power has to cover the crew number (702.122a).
+        choice?.takeIf { it.startsWith("crew:") }?.removePrefix("crew:")?.split('+')?.mapNotNull { cid -> state.objects[cid] }?.takeIf { it.isNotEmpty() }?.let { crews ->
             val n = Regex("""(?i)\bcrew (\d+)""").find(ability.cost)?.groupValues?.get(1)?.toIntOrNull() ?: 1
             val p = state.player(playerId)
-            if (crew.tapped == true) { trace.step("${crew.name} is already tapped, so it can't be tapped to crew ${obj.name}.", "702.122a"); state.outcomes += "${obj.name} can't be crewed with ${crew.name} (already tapped)."; return null }
-            if ((crew.power ?: 0) < n) { trace.step("${crew.name} has power ${crew.power ?: 0}, less than the crew number $n, so on its own it can't crew ${obj.name}.", "702.122a"); state.outcomes += "${obj.name} can't be crewed by ${crew.name} alone (power ${crew.power ?: 0} < crew $n)."; return null }
-            crew.tapped = true
-            trace.step("${p.subject} ${p.v("taps", "tap")} ${crew.name} (power ${crew.power}) to pay ${obj.name}'s crew $n cost. A tapped creature is out of attacking and blocking for the turn, and since crewing isn't a {T} ability a summoning-sick creature may crew.", "702.122a", "302.6")
-            state.outcomes += "${crew.name} is tapped (it crewed ${obj.name})."
+            val names = crews.joinToString(" and ") { it.name }; val total = crews.sumOf { it.power ?: 0 }
+            crews.firstOrNull { it.tapped == true }?.let { crew -> trace.step("${crew.name} is already tapped, so it can't be tapped to crew ${obj.name}.", "702.122a"); state.outcomes += "${obj.name} can't be crewed with ${crew.name} (already tapped)."; return null }
+            if (total < n) { trace.step("${names} ${if (crews.size == 1) "has power" else "have total power"} $total, less than the crew number $n, so ${if (crews.size == 1) "on its own it" else "together they"} can't crew ${obj.name}.", "702.122a"); state.outcomes += "${obj.name} can't be crewed by $names${if (crews.size == 1) " alone" else ""} (power $total < crew $n)."; return null }
+            crews.forEach { it.tapped = true }
+            val sick = crews.filter { it.summoningSick == true && !it.has("haste") }
+            trace.step("${p.subject} ${p.v("taps", "tap")} $names (${if (crews.size == 1) "power ${crews[0].power}" else "total power $total: ${crews.joinToString(" + ") { "${it.power}" }}"}) to pay ${obj.name}'s crew $n cost. A tapped creature is out of attacking and blocking for the turn, and since crewing isn't a {T} ability a summoning-sick creature may crew${if (sick.isNotEmpty()) " (${sick.joinToString(" and ") { it.name }} came under ${p.possessive} control this turn and still can)" else ""}. Whether ${obj.name} itself can attack depends only on how long ${p.subject.lowercase()} ${p.v("has", "have")} controlled it.", "702.122a", "302.6")
+            state.outcomes += "$names ${if (crews.size == 1) "is" else "are"} tapped (${if (crews.size == 1) "it" else "they"} crewed ${obj.name}${if (crews.size > 1) ": total power $total, crew $n" else ""})."
         }
         (ability.loyaltyCost ?: if (ability.loyaltyCostIsX) -(x ?: 0) else null)?.let { lc ->
             if (ability.loyaltyCostIsX) trace.step("X is ${x ?: 0}, so the −X costs ${x ?: 0} loyalty.", "107.3a", "606.4")
@@ -2039,6 +2042,7 @@ class Engine(val state: GameState) {
         if (a.has("intimidate") && !("Artifact" in state.typesOf(b) || state.colorsOf(b).intersect(state.colorsOf(a)).isNotEmpty())) return Triple("${a.name} has intimidate and can't be blocked except by artifact creatures and/or creatures that share a color with it.", listOf("702.13b"), "${b.name} can't block ${a.name} (intimidate).")
         if (a.has("horsemanship") && !b.has("horsemanship")) return Triple("${a.name} has horsemanship and can't be blocked except by creatures with horsemanship.", listOf("702.31b"), "${b.name} can't block ${a.name} (horsemanship).")
         if (a.has("shadow") != b.has("shadow")) return Triple("${a.name} ${if (a.has("shadow")) "has" else "doesn't have"} shadow and ${b.name} ${if (b.has("shadow")) "has" else "doesn't have"}; creatures with shadow can only block and be blocked by creatures with shadow.", listOf("702.28b"), "${b.name} can't block ${a.name} (shadow).")
+        NewMech.cantBlockWhy(state, a, b)?.let { return it }   // the Ring-bearer (701.54c)
         if (a.has("skulk") && (b.power ?: 0) > (a.power ?: 0)) return Triple("${a.name} has skulk and can't be blocked by creatures with greater power.", listOf("702.118b"), "${b.name} can't block ${a.name} (skulk).")
         (a.def.keywords.filter { state.abilitiesGone(a) == null }.firstOrNull { it.endsWith("walk") && it != "landwalk" } ?: a.abilities.filterIsInstance<StaticAbility>().map { it.text.trimEnd('.').lowercase() }.firstOrNull { it.endsWith("walk") && !it.contains(' ') })?.let { walk ->
             val landType = walk.removeSuffix("walk").replaceFirstChar { it.uppercase() }
@@ -2153,6 +2157,7 @@ class Engine(val state: GameState) {
             dealCombatDamage(attackers) { it.id !in struck || it.has("double strike") }
             state.combatDamageDealt = true
             trace.step("The active player receives priority.", "510.3")
+            NewMech.endOfCombat(this)
             return
         }
         val strikers = (attackers + attackers.flatMap { blockersOf(it) }).filter { it.has("first strike") || it.has("double strike") }
@@ -2167,6 +2172,7 @@ class Engine(val state: GameState) {
         }
         state.combatDamageDealt = true
         trace.step("The active player receives priority.", "510.3")
+        NewMech.endOfCombat(this)   // decayed (702.147a)
     }
 
     private fun blockersOf(a: GameObject) = state.objects.values.filter { (it.blocking == a.id || a.id in it.alsoBlocking) && it.isOnBattlefield() }
@@ -2317,7 +2323,7 @@ class Engine(val state: GameState) {
                 continue
             }
             val jailer = if (obj.zone == Zone.GRAVEYARD) graveyardAbilitiesGone() else null
-            for (ability in TriggerRules.lookBack(obj, event, obj.abilities).filterIsInstance<TriggeredAbility>() + grantedTriggers(obj) + GapMech.blitzTriggers(obj, event) + AuditMech.cascadeTriggers(obj, event)) {
+            for (ability in TriggerRules.lookBack(obj, event, obj.abilities).filterIsInstance<TriggeredAbility>() + grantedTriggers(obj) + GapMech.blitzTriggers(obj, event) + AuditMech.cascadeTriggers(obj, event) + NewMech.dynamicTriggers(obj, event)) {
                 val fromGy = obj.zone == Zone.GRAVEYARD && functionsFromGraveyard(ability)
                 if (fromGy && jailer != null) {
                     if (state.trace.steps.none { it.text.startsWith("${jailer.name} takes the abilities away") })
@@ -2896,6 +2902,7 @@ class Engine(val state: GameState) {
             is Effect.ExiledOwnerTokenMv -> AuditMech.exiledOwnerToken(this, state, item, effect.token)
             is Effect.CounterIfNoManaSpent -> if (AuditMech.noManaSpent(state, item)) applyEffect(Effect.CounterThatSpell, item)
             is Effect.Amass -> GapMech.amass(state, item, effect.subtype, effect.n) { onEvent(GameEvent.EntersBattlefield(it)) }
+            is Effect.NewMech -> NewMech.resolve(this, effect, item) { onEvent(GameEvent.EntersBattlefield(it)) }   // adapt, learn, mobilize, offspring, gift … (NewMechanics.kt)
             is Effect.CantCastThisTurn -> {
                 val who = when (effect.who) {
                     Who.EACH_PLAYER -> state.players.map { it.id }
@@ -4349,7 +4356,7 @@ class Engine(val state: GameState) {
     }
 
     /** Life a player lost: kept in the ledger (even when the total was never said) and announced to "whenever … loses life". */
-    private fun lifeLost(p: Player, n: Int) { p.lifeLedger -= n; if (n > 0) onEvent(GameEvent.LifeLost(p.id, n)) }
+    private fun lifeLost(p: Player, n: Int) { p.lifeLedger -= n; if (n > 0) { NewMech.lifeLost(state, p.id); onEvent(GameEvent.LifeLost(p.id, n)) } }
 
     /** "except it has haste" / "except it has flying and haste": keywords a copy exception adds, or none if it says anything else. */
     private fun copyExceptKeywords(except: String?): List<String> =
@@ -4583,7 +4590,7 @@ class Engine(val state: GameState) {
     private fun applyEntersReplacements(o: GameObject, choice: String? = null) {
         entersAbilitiesGone(o)
         applyEntersAsCopy(o, choice)
-        val startingLoyalty = o.def.loyalty
+        val startingLoyalty = o.def.loyalty?.let { NewMech.compleatedLoyalty(state, o, it) }
         if ("Saga" in o.def.subtypes && o.def.abilities.any { it is TriggeredAbility && it.trigger is Trigger.Chapter } && (o.counters["lore"] ?: 0) == 0) {
             // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (714.3a), not its rules text (305.7), but the chapter abilities are gone.
             val gone = state.abilitiesGone(o)
@@ -5554,7 +5561,7 @@ class Engine(val state: GameState) {
         return null
     }
 
-    private val keywordTriggerRules = mapOf("Afflict" to "702.130a", "Hideaway" to "702.75a", "Exalted" to "702.83a", "Prowess" to "702.108a", "Ward" to "702.21a", "Exploit" to "702.110a", "Mobilize" to "702.181a")
+    private val keywordTriggerRules = mapOf("Afflict" to "702.130a", "Hideaway" to "702.75a", "Exalted" to "702.83a", "Prowess" to "702.108a", "Ward" to "702.21a", "Exploit" to "702.110a", "Mobilize" to "702.181a", "Afterlife" to "702.135a", "Decayed" to "702.147a", "Ravenous" to "702.156a")
 
     private val castingKeywordRules = mapOf("kicker" to "702.33a", "flashback" to "702.34a", "madness" to "702.35a", "convoke" to "702.51a", "affinity" to "702.41a", "suspend" to "702.62a", "morph" to "702.37a", "improvise" to "702.126a", "cumulative upkeep" to "702.24a", "devoid" to "702.114a", "changeling" to "702.73a", "partner" to "702.124a", "evoke" to "702.74a", "echo" to "702.30a", "foretell" to "702.143a", "cascade" to "702.85a", "bestow" to "702.103a", "disguise" to "702.168a", "escape" to "702.138a", "mutate" to "702.140a", "companion" to "702.139a", "split second" to "702.61a", "buyback" to "702.27a", "overload" to "702.96a", "surge" to "702.117a", "emerge" to "702.119a", "spectacle" to "702.137a", "jump-start" to "702.133a", "retrace" to "702.81a", "delve" to "702.66a", "prototype" to "702.160a", "casualty" to "702.153a", "offspring" to "702.175a", "gift" to "702.174a", "impending" to "702.176a", "harmonize" to "702.180a")
     private val castingKeywordNotes = mapOf("kicker" to "its controller may pay the kicker cost as an additional cost while casting", "flashback" to "it may be cast from the graveyard for its flashback cost, then is exiled", "madness" to "it may be cast for its madness cost as it's discarded", "convoke" to "creatures may be tapped to help pay for it", "affinity" to "it costs less for each matching permanent", "suspend" to "it may be exiled with time counters instead of cast", "morph" to "it may be cast face down as a 2/2 for {3}", "improvise" to "artifacts may be tapped to help pay for it", "cumulative upkeep" to "at the beginning of its controller's upkeep an age counter is added and the cost paid per counter or it's sacrificed", "devoid" to "it is colorless", "changeling" to "it is every creature type", "partner" to "a deck can have two commanders with partner", "evoke" to "it may be cast for its evoke cost, then sacrificed when it enters", "echo" to "at the beginning of its controller's next upkeep they pay the echo cost or sacrifice it", "foretell" to "it may have been exiled face down for {2} earlier and cast later for its foretell cost", "cascade" to "when cast, exile cards from the top of the library until a cheaper nonland card is found and it may be cast free", "bestow" to "it may be cast as an Aura for its bestow cost", "disguise" to "it may be cast face down as a 2/2 with ward {2} for {3}", "escape" to "it may be cast from the graveyard by paying its escape cost", "mutate" to "it may be cast for its mutate cost to merge with a non-Human creature", "companion" to "it may start outside the game and be put into hand for {3}", "split second" to "while it's on the stack players can't cast spells or activate non-mana abilities", "buyback" to "its buyback cost may be paid to return it to hand as it resolves", "overload" to "it may be cast for its overload cost, changing 'target' to 'each'", "surge" to "it costs its surge cost if another spell was cast this turn", "emerge" to "it may be cast by sacrificing a creature for a reduced cost", "spectacle" to "it may be cast for its spectacle cost if an opponent lost life this turn", "jump-start" to "it may be cast from the graveyard by discarding a card", "retrace" to "it may be cast from the graveyard by discarding a land", "delve" to "cards may be exiled from the graveyard to pay generic mana", "prototype" to "it may be cast smaller for its prototype cost", "casualty" to "a creature may be sacrificed as it's cast to copy it", "offspring" to "its offspring cost may be paid to create a 1/1 token copy", "gift" to "a gift may be promised to an opponent as it's cast", "impending" to "it may be cast for its impending cost as a non-creature with time counters", "harmonize" to "it may be cast from the graveyard, tapping a creature to reduce the cost")
@@ -5827,6 +5834,7 @@ class Engine(val state: GameState) {
     private fun describeTargets(targets: List<Ref>) = if (targets.isEmpty()) "" else " targeting " + targets.joinToString(" and ") { state.nameOf(it) }
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
+        is Effect.NewMech -> NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"
