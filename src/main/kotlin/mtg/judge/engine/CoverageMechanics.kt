@@ -207,6 +207,7 @@ internal object CoverageMech {
                 val total = repeatCost(e.text, n)
                 t.step("Cumulative upkeep: an age counter is put on ${src.name} (${plural(n, "age counter")} now). Then ${p.subject.lowercase()} may pay ${e.text} for each age counter, $total in all; if ${p.subject.lowercase()} ${p.v("doesn't", "don't")}, ${src.name} is sacrificed. Partial payment isn't allowed.", "702.24a")
                 state.outcomes += "${src.name} gets its ${ordinal(n)} age counter; pay $total or sacrifice it (cumulative upkeep, 702.24a)."
+                if (PauperMech.upkeepDeclined(engine, item, "cumulative upkeep")) return   // "they don't pay the cumulative upkeep": sacrificed (PauperMechanics.kt)
             }
             "cr:destroycausing" -> {
                 val o = item.causedObject?.let { state.objects[it] }

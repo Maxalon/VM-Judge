@@ -298,7 +298,7 @@ sealed interface Effect {
     data class NarratedTargeted(val target: TargetSpec, val text: String, val rules: List<String>) : Effect
     data class Exile(val target: TargetSpec) : Effect
     /** "Exile two target nonartifact creatures" (Ashes to Ashes): the same words, two targets. */
-    data class ExileTwo(val target: TargetSpec) : Effect
+    data class ExileTwo(val target: TargetSpec, /** Ghostly Flicker: "then return those cards to the battlefield under your control". */ val thenReturn: Boolean = false) : Effect
     data class Tap(val target: TargetSpec) : Effect
     data class Untap(val target: TargetSpec) : Effect
     data class Pump(val target: TargetSpec, val power: Int, val toughness: Int) : Effect

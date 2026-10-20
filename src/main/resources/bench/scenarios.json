@@ -48577,5 +48577,380 @@
     "expect": [
       "You have 1 card in hand"
     ]
+  },
+  {
+    "id": "pc1",
+    "text": "I attack with Guardian of the Guildpact. Can my opponent block it with Ornithopter?",
+    "expect": [
+      "Ornithopter can block Guardian of the Guildpact: it's colorless, and protection from monocolored only stops monocolored creatures."
+    ],
+    "cite": [
+      "702.16f",
+      "105.2c"
+    ],
+    "notExpect": [
+      "can't block"
+    ]
+  },
+  {
+    "id": "pc2",
+    "text": "I control Mnemonic Wall and Archaeomancer. I cast Ghostly Flicker targeting Mnemonic Wall and Archaeomancer. Can Mnemonic Wall's trigger return Ghostly Flicker?",
+    "expect": [
+      "Ghostly Flicker: your graveyard → your hand.",
+      "Mnemonic Wall is exiled and returns as a new object"
+    ],
+    "cite": [
+      "603.3",
+      "608.2n"
+    ],
+    "notExpect": [
+      "Mnemonic Wall's trigger has nothing described to target"
+    ]
+  },
+  {
+    "id": "pc3",
+    "text": "I control Pestilence and Grizzly Bears. I activate Pestilence twice. Then my end step begins. What happens?",
+    "expect": [
+      "Pestilence is sacrificed at the beginning of the end step: no creatures are on the battlefield (603.4).",
+      "Grizzly Bears: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "603.4",
+      "120.3"
+    ]
+  },
+  {
+    "id": "pc4",
+    "text": "Prismatic Strands is in my graveyard. I cast Thraben Inspector this turn. Can I flash back Prismatic Strands by tapping Thraben Inspector?",
+    "expect": [
+      "Yes: tapping Thraben Inspector pays Prismatic Strands's flashback cost even if it entered this turn"
+    ],
+    "cite": [
+      "302.6",
+      "702.34a"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ]
+  },
+  {
+    "id": "pc5",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Fireblast by sacrificing two Mountains. Do I have to pay anything else?",
+    "expect": [
+      "Fireblast still costs {1} more (Thalia, Guardian of Thraben): a cost increase applies to an alternative cost too (601.2f).",
+      "You sacrifice 2 Mountains (Fireblast's alternative cost)."
+    ],
+    "cite": [
+      "118.9d",
+      "601.2h"
+    ]
+  },
+  {
+    "id": "pc6",
+    "text": "I control two Snow-Covered Forests and a Snow-Covered Mountain. I cast Skred targeting my opponent's Grizzly Bears. What happens?",
+    "expect": [
+      "Skred deals 3 damage to Grizzly Bears (3 snow permanents).",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "608.2h",
+      "110.1"
+    ]
+  },
+  {
+    "id": "pc7",
+    "text": "I control Faerie Miscreant. My opponent casts Grizzly Bears. I flash in Spellstutter Sprite and its trigger targets Grizzly Bears. In response my opponent casts Lightning Bolt on Faerie Miscreant. What happens?",
+    "expect": [
+      "Spellstutter Sprite's ability doesn't resolve: X is now 1, below Grizzly Bears's mana value 2, so its target is illegal (608.2b). Grizzly Bears isn't countered."
+    ],
+    "cite": [
+      "608.2b"
+    ],
+    "notExpect": [
+      "Grizzly Bears is countered"
+    ]
+  },
+  {
+    "id": "pc8",
+    "text": "I have 4 life and control a Swamp. Can I cast Snuff Out by paying 4 life?",
+    "expect": [
+      "Yes: Snuff Out can be cast.",
+      "You lose the game."
+    ],
+    "cite": [
+      "119.4",
+      "704.5a"
+    ],
+    "notExpect": [
+      "can't be cast"
+    ]
+  },
+  {
+    "id": "pc9",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I control three artifacts. How much does Frogmite cost?",
+    "expect": [
+      "Thalia, Guardian of Thraben taxes only noncreature spells, and Frogmite isn't one.",
+      "— 1 mana in all."
+    ],
+    "cite": [
+      "702.41a",
+      "601.2f"
+    ],
+    "notExpect": [
+      "Nothing on the battlefield changes it"
+    ]
+  },
+  {
+    "id": "pc10",
+    "text": "It's my precombat main phase. My opponent casts Lightning Bolt and I counter it with Mana Drain. When do I get the mana?",
+    "expect": [
+      "You get the {C} at the beginning of this turn's postcombat (second) main phase"
+    ],
+    "cite": [
+      "505.1a",
+      "106.4"
+    ]
+  },
+  {
+    "id": "pc11",
+    "text": "My opponent controls Humility. I cast Swords to Plowshares on their Shivan Dragon. How much life do they gain?",
+    "expect": [
+      "opponent gains 1 life in all."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "pc12",
+    "text": "It's my precombat main phase. I cast Upheaval and have {U} left floating. After Upheaval resolves, can I still use the floating mana?",
+    "expect": [
+      "Yes: the floating mana stays in your pool until the end of the phase (106.4, 500.5)"
+    ],
+    "cite": [
+      "106.4",
+      "500.5"
+    ]
+  },
+  {
+    "id": "pc13",
+    "text": "I control a Goblin token and Grizzly Bears. My opponent's graveyard has Shivan Dragon. I cast Living Death. What happens?",
+    "expect": [
+      "Goblin token ceases to exist",
+      "opponent gets Shivan Dragon back from exile onto the battlefield (Living Death)."
+    ],
+    "cite": [
+      "111.7"
+    ]
+  },
+  {
+    "id": "pc14",
+    "text": "I control Grizzly Bears and Recurring Nightmare, and Shivan Dragon is in my graveyard. I activate Recurring Nightmare targeting Shivan Dragon by sacrificing Grizzly Bears. In response, my opponent casts Disenchant on Recurring Nightmare. What happens?",
+    "expect": [
+      "Recurring Nightmare goes back to your hand as part of the cost, so it's safe from responses.",
+      "Shivan Dragon enters the battlefield."
+    ],
+    "cite": [
+      "602.2b",
+      "115.2"
+    ],
+    "notExpect": [
+      "Recurring Nightmare: the battlefield → your graveyard."
+    ]
+  },
+  {
+    "id": "pc15",
+    "text": "I cast Timetwister. Does Timetwister get shuffled into my library?",
+    "expect": [
+      "Timetwister isn't shuffled into the library: it's on the stack while it resolves and goes to its owner's graveyard afterwards (608.2n)."
+    ],
+    "cite": [
+      "608.2n",
+      "701.24a"
+    ],
+    "notExpect": [
+      "Timetwister: the battlefield"
+    ]
+  },
+  {
+    "id": "pc16",
+    "text": "My opponent attacks with Llanowar Elves. I block with Grizzly Bears and cast Berserk on Grizzly Bears. Is Grizzly Bears destroyed at the end step?",
+    "expect": [
+      "Grizzly Bears isn't destroyed at the end step: it didn't attack this turn (Berserk).",
+      "Grizzly Bears is 4/2 with trample until end of turn."
+    ],
+    "cite": [
+      "603.7",
+      "702.19a"
+    ]
+  },
+  {
+    "id": "pc17",
+    "text": "I activate Black Lotus. Can my opponent destroy it in response?",
+    "expect": [
+      "Black Lotus's mana ability: add three mana of any one color."
+    ],
+    "cite": [
+      "605.3b",
+      "601.2h"
+    ]
+  },
+  {
+    "id": "pc18",
+    "text": "I control Mishra's Workshop and Goblin Charbelcher. Can I use the mana from Mishra's Workshop to activate Goblin Charbelcher?",
+    "expect": [
+      "No: Mishra's Workshop's mana can be spent only to cast artifact spells (106.6)"
+    ],
+    "cite": [
+      "106.6"
+    ]
+  },
+  {
+    "id": "pc19",
+    "text": "I control Illusions of Grandeur. I cast Donate targeting Illusions of Grandeur and my opponent. Then my opponent's upkeep begins and they don't pay the cumulative upkeep. Who loses 20 life?",
+    "expect": [
+      "opponent loses 20 life."
+    ],
+    "cite": [
+      "603.3a",
+      "109.5"
+    ],
+    "notExpect": [
+      "You lose 20 life",
+      "can't be cast"
+    ]
+  },
+  {
+    "id": "pc20",
+    "text": "I activate Goblin Charbelcher targeting my opponent. My library has no lands and 12 cards. How much damage?",
+    "expect": [
+      "Goblin Charbelcher deals 12 damage to opponent (all 12 cards revealed, none a land; not doubled)."
+    ],
+    "cite": [
+      "701.20a"
+    ]
+  },
+  {
+    "id": "pc21",
+    "text": "My Morphling has 2 damage marked on it. I activate its +1/-1 ability once. What happens?",
+    "expect": [
+      "Morphling is 4/2 until end of turn.",
+      "Morphling: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "704.5g"
+    ],
+    "notExpect": [
+      "untapped"
+    ]
+  },
+  {
+    "id": "pc22",
+    "text": "I control 5 lands and 3 creatures and have 2 cards in hand besides Balance. My opponent controls 3 lands and 5 creatures and has 6 cards in hand. I cast Balance. What happens?",
+    "expect": [
+      "You sacrifice 2 lands (Balance).",
+      "opponent discards 4 cards (6 → 2 in hand).",
+      "opponent sacrifices 2 creatures (Balance)."
+    ],
+    "cite": [
+      "608.2c",
+      "701.21a"
+    ]
+  },
+  {
+    "id": "pc23",
+    "text": "I play Kjeldoran Outpost and I control no Plains. What happens?",
+    "expect": [
+      "Kjeldoran Outpost goes to the graveyard (no Plains to sacrifice), and you have still used your land play this turn."
+    ],
+    "cite": [
+      "614.1a",
+      "305.2a"
+    ],
+    "notExpect": [
+      "Kjeldoran Outpost enters the battlefield"
+    ]
+  },
+  {
+    "id": "pc24",
+    "text": "I control Fastbond. I play three lands this turn. How much damage do I take?",
+    "expect": [
+      "Yes: you take 2 damage in all."
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "pc25",
+    "text": "I control Standstill. I cast Lightning Bolt. What happens?",
+    "expect": [
+      "Standstill is sacrificed and opponent draws 3 cards."
+    ],
+    "cite": [
+      "118.12"
+    ],
+    "notExpect": [
+      "You draw"
+    ]
+  },
+  {
+    "id": "pc26",
+    "text": "I control Nether Void. I cast Lightning Bolt. What happens?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "701.6a"
+    ],
+    "notExpect": [
+      "opponent takes 3 damage"
+    ]
+  },
+  {
+    "id": "pc27",
+    "text": "I control The Abyss. My opponent controls Ornithopter and Grizzly Bears. Their upkeep begins. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's graveyard.",
+      "Ornithopter survives: it's an artifact creature, and The Abyss destroys only a nonartifact creature."
+    ],
+    "cite": [
+      "603.3d"
+    ]
+  },
+  {
+    "id": "pc28",
+    "text": "I control Birds of Paradise and Grizzly Bears. I cast Earthquake with X=2. What happens?",
+    "expect": [
+      "Birds of Paradise isn't dealt damage (flying).",
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "opponent takes 2 damage."
+    ],
+    "cite": [
+      "120.3",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "pc29",
+    "text": "I control Masticore and have no cards in hand. My upkeep begins. What happens?",
+    "expect": [
+      "Masticore is sacrificed: with an empty hand there's no card to discard (118.12a)."
+    ],
+    "cite": [
+      "118.12a",
+      "118.3"
+    ]
+  },
+  {
+    "id": "pc30",
+    "text": "My opponent controls Gladecover Scout. My graveyard has Pacifism and Glorious Anthem. I cast Replenish. What happens?",
+    "expect": [
+      "Pacifism returns attached to Gladecover Scout (no targeting, so hexproof doesn't stop it).",
+      "Glorious Anthem enters the battlefield."
+    ],
+    "cite": [
+      "303.4f"
+    ]
   }
 ]

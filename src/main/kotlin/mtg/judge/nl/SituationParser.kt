@@ -358,7 +358,7 @@ class SituationParser(private val names: NameIndex) {
         for (e in ctx.events) { e.player?.let { ctx.note(it) }; e.targets.forEach { if (it == "me" || it == "opp") ctx.note(it) } }
         for (o in ctx.objects.values) ctx.note(o.controller)
         ctx.tableSize?.let { pruneSeats(it, ctx) }
-        val turnSpec = TurnSpec(ctx.activePlayer, null, null, ctx.turnNumber)
+        val turnSpec = TurnSpec(pauperTurnStart(ctx) ?: ctx.activePlayer, null, null, ctx.turnNumber)
         val players = ctx.playerIds().map { id -> PlayerSpec(id, when (id) { "me" -> "me"; "opp" -> "opponent"; else -> ctx.players[id] ?: id }, ctx.life[id], ctx.poison[id], ctx.handSize[id], ctx.librarySize[id], ctx.commanderDamage[id] ?: emptyMap(), ctx.mana[id], ctx.devotion[id] ?: emptyMap(), ctx.spellsThisTurn[id], ctx.graveyardSize[id]) }
         if (ctx.players.isNotEmpty() && ctx.usesOpp && ctx.players.size >= 2) ctx.notes += "\"opponent\"/\"they\" was read as a separate player from ${ctx.players.values.joinToString(" and ")}; name the player instead if that's wrong."
         // Two "everything resolves" in a row (a counter cast, then "does it get countered?") are one resolution.
@@ -2253,6 +2253,118 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /** Table talk for the Pauper, cube and old-card calls (Fireblast, Snuff Out, Charbelcher): one place so parallel tracks don't collide. */
+    private fun pauperRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t.trim()
+        val who = """(?:can )?(?:i|we|they|he|she|my opponent|the opponent)"""
+        // "I cast Fireblast by sacrificing two Mountains": the card's own alternative cost, when it has one that sacrifices (118.9).
+        t2 = t2.replace(Regex("""^($who casts? (c\d+)) by sacrificing (a|an|one|two|three|\d+) (c\d+)s?\b(.*)$""")) { r -> "${r.groupValues[1]}${r.groupValues[5]}, altcostif-question sacrifice ${r.groupValues[3]} ${r.groupValues[4]}" }
+        // "Can I cast Snuff Out by paying 4 life?": the card's own alternative cost, when it has one that pays life.
+        t2 = t2.replace(Regex("""^($who casts? (c\d+)) by paying (\d+|two|three|four|five|six) life\b(.*)$""")) { r -> "${r.groupValues[1]}${r.groupValues[4]}, altcostif-question life" }
+        // "My library has no lands and 12 cards" (Goblin Charbelcher): its size, and that no land is left in it.
+        t2 = t2.replace(Regex("""^(my|their|his|her) library has no lands?(?: in it)?,? (?:and|with|but) (\d+) cards(?: in it)?$""")) { r -> "${r.groupValues[1]} library has ${r.groupValues[2]} cards, nolands-question ${r.groupValues[1]}" }
+        return t2
+    }
+
+    /**
+     * "I cast Donate … Then my opponent's upkeep begins": a sorcery-speed spell cast before the first turn-step said for the other
+     * player was cast on the caster's own turn, so the situation starts there and the later step is the next turn's (the engine
+     * then hands the turn over). Null when the stated turn stands.
+     */
+    private fun pauperTurnStart(ctx: Ctx): String? {
+        val first = ctx.events.indexOfFirst { it.verb == "step" }.takeIf { it > 0 } ?: return null
+        val step = ctx.events[first]
+        if (step.to !in setOf("untap", "upkeep", "draw", "cleanup") || step.player == null) return null
+        val earlier = ctx.events.take(first).lastOrNull { e -> e.verb == "cast" && e.player != null && e.player != step.player } ?: return null
+        val name = earlier.card?.name ?: earlier.obj?.let { ctx.objects[it]?.card?.name } ?: return null
+        val entry = names.lookup(Names.normalize(name)) ?: return null
+        val sorcerySpeed = !entry.hasFlash && !entry.typeLine.contains("Instant") && !entry.typeLine.contains("Land")
+        if (!sorcerySpeed) return null
+        if (step.to == "cleanup" && step.player != earlier.player) return null
+        return earlier.player
+    }
+
+    /** Question markers for the Pauper, cube and old-card calls; null when the clause isn't one of them. */
+    private fun readPauperQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim().trimEnd('.', '?')
+        fun player(w: String) = if (w in setOf("i", "we", "my")) "me" else "opp"
+        // The marker pauperRewrites leaves after "by sacrificing two Mountains" / "by paying 4 life".
+        Regex("""^altcostif-question (sacrifice|life)(?: (a|an|one|two|three|\d+) (c\d+))?$""").find(c)?.let { r ->
+            val i = ctx.events.indexOfLast { it.verb == "cast" }.takeIf { it >= 0 } ?: return true
+            val e = ctx.events[i]; val who = e.player ?: "me"
+            ctx.events[i] = e.copy(to = "altcost-if:" + r.groupValues[1], payLife = null, amount = if (r.groupValues[1] == "life") null else e.amount)
+            r.groupValues[3].takeIf { it.isNotEmpty() }?.let { ph -> m.cards[ph] }?.let { card ->
+                val n = when (r.groupValues[2]) { "a", "an", "one" -> 1; "two" -> 2; "three" -> 3; else -> r.groupValues[2].toIntOrNull() ?: 1 }
+                val have = ctx.objects.values.count { it.card.oracleId == card.oracleId && it.controller == who && it.zone == "battlefield" }
+                repeat(maxOf(0, n - have)) { addObject(card, who, false, ctx, allowDuplicate = true) }
+            }
+            ctx.payLife = null
+            ctx.notes += "The spell is cast for its alternative cost, if it has one (118.9)."; return true
+        }
+        Regex("""^nolands-question (my|their|his|her)$""").find(c)?.let { r -> ctx.events += EventSpec("pc", player = player(r.groupValues[1]), to = "nolands"); ctx.notes += "No land is left in that library."; return true }
+        // "I flash in Spellstutter Sprite and its trigger targets Divination": the creature has resolved and its enters trigger waits on the stack.
+        Regex("""^(?:its|the|that|(c\d+)'s) (?:enters |etb |enters-the-battlefield )?(?:trigger|triggered ability) (?:targets?|aims? at|is aimed at) (c\d+)$""").find(c)?.let { r ->
+            val last = ctx.events.lastOrNull()
+            if (last?.verb == "cast" && (last.card?.name ?: last.obj?.let { ctx.objects[it]?.card?.name })?.let { n -> names.lookup(Names.normalize(n))?.isSpellOnly == false } == true) ctx.events += EventSpec("resolve")
+            ctx.notes += "The creature has resolved and its enters trigger is on the stack, aimed at ${m.cards[r.groupValues[2]]?.display ?: "that spell"} (603.3)."; return true
+        }
+        // "Does Timetwister get shuffled into my library?": answered by the outcome, not an event.
+        if (Regex("""^(?:does|will|would|do) (?:c\d+|it) (?:get |be )?shuffled (?:back )?into (?:my|your|their|its owner's|his|her) library(?: too| as well)?$""").matches(c)) { ctx.notes += "Whether it's shuffled in is answered by the outcome below (608.2n)."; return true }
+        // "Can I flash back Prismatic Strands by tapping Thraben Inspector?" (a creature that came in this turn).
+        Regex("""^can (i|we|they|my opponent) (?:flash ?back (c\d+)|casts? (c\d+) with flashback) by tapping (?:my |their |a |an |the )?(c\d+)$""").find(c)?.let { r ->
+            val who = player(r.groupValues[1])
+            val spell = m.cards[r.groupValues[2].ifEmpty { r.groupValues[3] }] ?: return@let; val crit = m.cards[r.groupValues[4]] ?: return@let
+            val gy = ctx.objects.values.firstOrNull { it.card.oracleId == spell.oracleId && it.zone == "graveyard" }?.id ?: addObject(spell, who, false, ctx, zone = "graveyard")
+            val cid = objectIdFor(crit, ctx) ?: addObject(crit, who, false, ctx)
+            ctx.events += EventSpec("cast", player = who, obj = gy, to = "flashback")
+            ctx.asks += EventSpec("ask", player = who, obj = cid, card = CardRef(name = spell.display, oracleId = spell.oracleId), to = "pc:tapcost")
+            ctx.lastActor = who; ctx.lastVerb = "cast"; return true
+        }
+        // "Can I use the mana from Mishra's Workshop to activate Goblin Charbelcher?"
+        Regex("""^can (i|we|they|my opponent) (?:use|spend|tap) (?:the )?mana (?:from|of|made by|produced by) (c\d+) (?:to|for|on) (activate|cast|pay for) (?:my |their |a |an )?(c\d+)(?:'s ability| ability| abilities)?$""").find(c)?.let { r ->
+            val who = player(r.groupValues[1])
+            val src = m.cards[r.groupValues[2]] ?: return@let; val what = m.cards[r.groupValues[4]] ?: return@let
+            val sid = objectIdFor(src, ctx) ?: addObject(src, who, false, ctx)
+            ctx.asks += EventSpec("ask", player = who, obj = sid, card = CardRef(name = what.display, oracleId = what.oracleId), to = "pc:manaspend:" + if (r.groupValues[3] == "activate") "activate" else "cast")
+            return true
+        }
+        // "After Upheaval resolves, can I still use the floating mana?"
+        if (Regex("""^(?:after (?:it|c\d+|that|the spell) resolves,? )?can (?:i|we) (?:still )?(?:use|spend) (?:the |my |that )?(?:floating )?mana(?: (?:i have |i had |that's |left )?floating)?(?: after (?:it|c\d+|that) resolves)?$""").matches(c)) { ctx.asks += EventSpec("ask", player = "me", to = "pc:floating"); return true }
+        // "I activate its +1/-1 ability once" (Morphling): the ability named by what it does.
+        Regex("""^(i|we|they|my opponent) activates? (?:its|the|(c\d+)'s) ([+-]\d+/[+-]\d+) ability(?: (once|twice|three times|\d+ times))?$""").find(c)?.let { r ->
+            val who = player(r.groupValues[1])
+            val id = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) } ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            val n = when (r.groupValues[4]) { "", "once" -> 1; "twice" -> 2; "three times" -> 3; else -> r.groupValues[4].substringBefore(' ').toIntOrNull() ?: 1 }
+            repeat(n) { ctx.events += EventSpec("activate", player = who, obj = id, to = "pt:" + r.groupValues[3]) }
+            ctx.lastActor = who; ctx.lastVerb = "activate"; ctx.lastMentioned = id; return true
+        }
+        // "I have 2 cards in hand besides Balance": the hand size the spell's resolution sees, the spell itself left out.
+        Regex("""^(?:(i|we|they|my opponent) )?(?:have|has|hold|holds) (\d+|one|two|three|four|five|six|seven) (?:other )?cards? in (?:my |their )?hand (?:besides|other than|apart from|not counting|plus) (c\d+)$""").find(c)?.let { r ->
+            val who = if (r.groupValues[1].isEmpty()) (ctx.lastActor ?: "me") else player(r.groupValues[1])
+            ctx.handSize[who] = when (r.groupValues[2]) { "one" -> 1; "two" -> 2; "three" -> 3; "four" -> 4; "five" -> 5; "six" -> 6; "seven" -> 7; else -> r.groupValues[2].toInt() }
+            ctx.notes += "${m.cards[r.groupValues[3]]?.display ?: "The spell"} is left out of the hand count: once cast, it's on the stack."; return true
+        }
+        // "I cast Upheaval and have {U} left floating": the mana stays in the pool for now (106.4); the floating-mana question answers what it can do.
+        Regex("""^(?:(i|we) )?(?:have|has|keep|keeps|kept) (\{[wubrgc]\}|one|a|\d+|\w+ (?:white|blue|black|red|green|colorless)) ?(?:mana )?(?:left )?floating$""").find(c)?.let { ctx.notes += "That mana is floating in the pool."; return true }
+        // "In response, my opponent casts …": said as a clause of its own, the response is the next thing done.
+        if (c == "in response" && ctx.events.lastOrNull()?.verb in setOf("cast", "activate", "resolve")) return true
+        // "Is Grizzly Bears destroyed at the end step?": answered by the outcome once the end step is played out.
+        Regex("""^(?:is|does|will) (c\d+) (?:get |be )?destroyed(?: (?:at|in|during) (?:the )?(?:next )?(?:end step|end of (?:the )?turn))?$""").find(c)?.takeIf { r -> r.value.contains(" end") || ctx.events.any { it.verb == "step" && it.to == "end" } }?.let { r ->
+            if (ctx.events.none { it.verb == "step" && it.to == "end" }) ctx.events += EventSpec("step", player = ctx.activePlayer ?: "me", to = "end")
+            ctx.notes += "Whether ${m.cards[r.groupValues[1]]?.display ?: "it"} is destroyed at the end step is answered by the outcome below."; return true
+        }
+        // "I play three lands this turn" (Fastbond): that many basic lands played one after another.
+        Regex("""^(i|we|they|my opponent) (?:plays?|played) (two|three|four|five|\d+) lands(?: this turn)?$""").find(c)?.let { r ->
+            val who = player(r.groupValues[1])
+            val n = when (r.groupValues[2]) { "two" -> 2; "three" -> 3; "four" -> 4; "five" -> 5; else -> r.groupValues[2].toInt() }
+            val forest = names.lookup(Names.normalize("Forest")) ?: return@let
+            repeat(n) { ctx.events += EventSpec("cast", player = who, obj = addObject(forest, who, false, ctx, zone = "hand", allowDuplicate = true)) }
+            ctx.notes += "$n basic lands are played one after another (a Forest stands in for each)."
+            ctx.lastActor = who; ctx.lastVerb = "play"; return true
+        }
+        return null
+    }
+
     private fun auditRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = t.trim()
         val subj = """(?:i|we|they|he|she|my opponent|the opponent)"""
@@ -3561,6 +3673,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = pauperRewrites(t2, m, ctx)
         t2 = limitedRewrites(t2, m, ctx)
         t2 = coverageRewrites(t2, m, ctx)
         t2 = slangRewrites2(t2, m, ctx)
@@ -7961,6 +8074,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readPauperQuestions(clause0, m, ctx)?.let { return it }
         readLimitedQuestions(clause0, m, ctx)?.let { return it }
         readCoverageQuestions(clause0, m, ctx)?.let { return it }
         readEdhQuestions(clause0, m, ctx)?.let { return it }
