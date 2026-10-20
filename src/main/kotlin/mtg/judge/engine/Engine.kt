@@ -1343,6 +1343,7 @@ class Engine(val state: GameState) {
     }
 
     fun addPoison(playerId: String, count: Int) {
+        if (MoreEffects.poisonBlocked(this, playerId, count)) return   // Melira (MoreEffects.kt)
         val p = state.player(playerId)
         p.poison = (p.poison ?: 0) + count
         trace.step("${p.subject} ${p.v("gets", "get")} $count poison counter${if (count == 1) "" else "s"} (${p.poison} in all).", "122.1a", "704.5c")
@@ -2525,6 +2526,7 @@ class Engine(val state: GameState) {
         Trigger.YourCreaturesDealCombatDamageToPlayer -> event is GameEvent.CreaturesDealtCombatDamageToPlayer && event.playerId == obj.controller && onBf()
         is Trigger.Edh -> EdhMech.matches(state, obj, trigger, event)
         is Trigger.Unknown -> false
+        is MoreTrigger -> MoreEffects.triggerMatches(state, obj, trigger, event)   // Mikaeus (MoreEffects.kt)
         }
     }
 
@@ -3309,7 +3311,7 @@ class Engine(val state: GameState) {
                 // Rhythm of the Wild: a permanent its controller has says their creature spells can't be countered.
                 val shield = if (target.kind == StackKind.SPELL) state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.controller == target.controller && o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.SpellsCantBeCountered>().any { s -> spellMatches(s.filter, target.source.def) } } else null
                 if (shield != null) { trace.step("${shield.name} says ${state.player(target.controller).possessive} ${shield.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.SpellsCantBeCountered>().first().filter.raw}s can't be countered, so ${item.describe} has no effect on ${target.describe}.", "701.6a"); state.outcomes += "${target.describe} isn't countered (${shield.name}: it can't be)."; return@forEachLegalTarget }
-                if (target.kind == StackKind.SPELL && (cant(target.source, "be countered") || target.cantBeCountered)) { trace.step("${target.describe} can't be countered, so ${item.describe} has no effect on it.", "701.6a"); state.outcomes += "${target.describe} isn't countered (it can't be)."; return@forEachLegalTarget }
+                if (target.kind == StackKind.SPELL && (cant(target.source, "be countered") || target.cantBeCountered || MoreEffects.uncounterable(state, target))) { trace.step("${target.describe} can't be countered, so ${item.describe} has no effect on it.", "701.6a"); state.outcomes += "${target.describe} isn't countered (it can't be)."; return@forEachLegalTarget }
                 state.stack.remove(target); state.lastCountered = target.source
                 val instead = effect.insteadZone?.takeIf { target.kind == StackKind.SPELL }
                 if (target.kind == StackKind.SPELL) target.source.zone = when (instead) { "exile" -> Zone.EXILE; "hand" -> Zone.HAND; "library" -> Zone.LIBRARY; else -> Zone.GRAVEYARD }
@@ -3969,6 +3971,7 @@ class Engine(val state: GameState) {
                 if (LegacyMech.narrated(this, effect.text, item)) return   // Dreadnought phased out, Chrome Mox imprint (LegacyMechanics.kt)
                 LegacyMech.narratedAs(state, effect.text, item)?.let { applyEffect(it, item); return }   // Children of Korlis
                 if (ModernMech.narrated(this, state, effect.text, item)) return   // Undying Malice's return (ModernMechanics.kt)
+                if (MoreEffects.resolve(this, effect.text, item)) return   // searches, reveals, looks, scry, shuffles, extra turns (MoreEffects.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 // Devoted Druid's "Untap ~": the permanent really untaps, so its {T} ability can be activated again.
                 if (Regex("""(?i)^untap ~\.?$""").matches(effect.text.trim()) && item.source.isOnBattlefield()) {
@@ -5924,4 +5927,12 @@ class Engine(val state: GameState) {
         Zone.BATTLEFIELD -> "the battlefield"; Zone.GRAVEYARD -> "${obj?.let { state.player(it.owner).possessive } ?: "its owner's"} graveyard"; Zone.HAND -> "${obj?.let { state.player(it.owner).possessive } ?: "its owner's"} hand"
         Zone.LIBRARY -> "${obj?.let { state.player(it.owner).possessive } ?: "its owner's"} library"; Zone.EXILE -> "exile"; Zone.STACK -> "the stack"; Zone.COMMAND -> "the command zone"
     }
+
+    // MoreEffects.kt's way into the engine's own moves.
+    internal fun meMove(o: GameObject, to: Zone, text: String, vararg rules: String) = move(o, to, text, *rules)
+    internal fun meSearcher(text: String, item: StackItem) = searcherOf(text, item, item.controller)
+    internal fun meSearchNote(searcher: String, what: String) = searchLimitNote(searcher, what)
+    internal fun meApply(e: Effect, item: StackItem) = applyEffect(e, item)
+    internal fun meEnterBlockers(item: StackItem, text: String) = enterBlockersNote(item, text)
+    internal fun meDestroy(o: GameObject, text: String, vararg rules: String) = destroy(o, text, *rules)
 }

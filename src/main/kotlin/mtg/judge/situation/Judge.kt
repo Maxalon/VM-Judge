@@ -2052,7 +2052,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val p = state.player(e.player ?: "me")
                     val searched = state.trace.steps.any { Regex("""(?i)^${Regex.escape(p.subject)} (?:may )?(?:choose(?:s)? to )?search(?:es)? (?:your|their|${Regex.escape(p.possessive)}) library for a (?:basic )?land""").containsMatchIn(it.text) } ||
                         state.outcomes.any { Regex("""(?i)^${Regex.escape(p.subject)} choose(?:s)? to search""").containsMatchIn(it) && it.contains("land") }
-                    val reveal = state.outcomes.firstOrNull { it.contains("If it's a land card, that player puts it into their hand") }?.substringBefore(":")
+                    val reveal = state.outcomes.firstOrNull { it.contains("If it's a land card, that player puts it into their hand") || it.contains(": if the revealed card is a land card", true) }?.substringBefore(":")
                     if (reveal != null && !searched) { state.outcomes += "It depends on the top card of ${p.possessive} library: $reveal's trigger reveals it, and if it's a land card ${p.subject.lowercase()} ${p.v("puts", "put")} it into ${p.possessive} hand. The library's order isn't known here, so it can't be said either way."; return true }
                     val nothingLeft = state.outcomes.any { it.contains("find nothing (none left in") } || state.trace.steps.any { it.text.contains("finds nothing") || it.text.contains("find nothing") }
                     state.outcomes += if (nothingLeft) "No land: the search is ${if (p.you) "yours" else p.name + "'s"}, but there is no basic land card left in ${p.possessive} library to find, so nothing enters; the library is still shuffled (701.23a, 701.23c)."

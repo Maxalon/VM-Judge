@@ -76,6 +76,7 @@ fun Engine.keywordResolutionZone(item: StackItem): Zone? {
     // A spell that was spliced or cast as an Adventure has the text or characteristics it gained only while it's on the stack (702.47e, 715.4).
     if (src.def !== src.printedDef && (src.kwf.spliced.isNotEmpty() || src.kwf.castAsAdventure)) src.def = src.printedDef
     if (src.kwf.castAsAdventure) return Zone.EXILE
+    if (MoreEffects.selfShuffled(state, src)) return Zone.LIBRARY   // Green Sun's Zenith shuffled itself away (MoreEffects.kt)
     if (LegacyMech.exileOnResolve(src) != null) return Zone.EXILE   // Dreadhorde Arcanist: "exile it instead"
     if (src.kwf.jumpStarted) return Zone.EXILE
     if (src.kwf.boughtBack) return Zone.HAND

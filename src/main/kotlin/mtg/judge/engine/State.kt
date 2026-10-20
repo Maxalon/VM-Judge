@@ -563,6 +563,7 @@ class GameState(
     fun hasKeyword(obj: GameObject, keyword: String): Boolean {
         val k = keyword.lowercase()
         if (k in obj.lostKeywords) return false
+        if (MoreEffects.keywordLost(this, obj, k)) return false   // Melira: opponents' creatures lose infect (MoreEffects.kt)
         if (obj.isOnBattlefield() && k in charsOf(obj).keywords) return true   // given in layer 6 (Darksteel Mutation's indestructible)
         val stripped = abilitiesLostOn(obj) != null
         if (!stripped && (obj.def.has(k) || k in obj.tempKeywords)) return true

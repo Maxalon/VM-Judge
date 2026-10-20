@@ -3928,7 +3928,7 @@
     "id": "settle-how-many-lands",
     "text": "My opponent attacks with Grizzly Bears. I cast Settle the Wreckage. How many lands do they get?",
     "expect": [
-      "Search their library for 1 (that many) basic land cards"
+      "opponent searches their library for 1 (that many) basic land cards and puts it onto the battlefield tapped (Settle the Wreckage)."
     ],
     "cite": [
       "701.13a"
@@ -15139,7 +15139,7 @@
     "text": "Can I respond to a Sensei's Divining Top activation by killing the Top?",
     "expect": [
       "Sensei's Divining Top: the battlefield → opponent's graveyard.",
-      "Sensei's Divining Top: opponent looks at the top three cards of their library, then put them back in any order (not tracked in detail)."
+      "opponent looks at the top three cards of their library and puts them back in any order (Sensei's Divining Top)."
     ],
     "notExpect": [
       "Not understood",
@@ -15234,7 +15234,7 @@
     "id": "emrakul-extra-turn-narrated",
     "text": "I cast Emrakul, the Aeons Torn. Do I get an extra turn?",
     "expect": [
-      "Emrakul, the Aeons Torn: Take an extra turn after this one (not tracked in detail)."
+      "You take an extra turn after this one (Emrakul, the Aeons Torn)."
     ],
     "notExpect": [
       "Part of the triggered ability is not modeled: take an extra turn"
@@ -18018,7 +18018,7 @@
     "expect": [
       "You draw 1 card.",
       "You draw 2 cards.",
-      "Sylvan Library: For each of those two cards, you pay 4 life to keep it or put it back on top of your library; a card you keep costs 4 life, so keeping both costs 8 (not tracked in detail)."
+      "Sylvan Library: for each of the two cards, you pay 4 life to keep it or put it back on top of your library; keeping both costs 8 life (119.4)."
     ],
     "notExpect": [
       "Not understood"
@@ -20683,7 +20683,7 @@
     "id": "preordain-scry-not-keyword",
     "text": "I cast Preordain, what happens",
     "expect": [
-      "Preordain: Scry 2 (not tracked in detail).",
+      "You scry 2 (Preordain).",
       "You draw 1 card."
     ]
   },
@@ -20940,7 +20940,7 @@
     "text": "i have Viscera Seer and Grizzly Bears, i sacrifice the Seer to itself, do i scry",
     "expect": [
       "Viscera Seer: the battlefield → your graveyard.",
-      "Viscera Seer: Scry 1 (not tracked in detail)."
+      "You scry 1 (Viscera Seer)."
     ]
   },
   {
@@ -23700,7 +23700,7 @@
     "id": "ponder-how-many-cards",
     "text": "I cast Ponder. How many cards do I look at?",
     "expect": [
-      "Ponder: Look at the top three cards of your library, then put them back in any order (not tracked in detail).",
+      "You look at the top three cards of your library and put them back in any order (Ponder).",
       "You draw 1 card."
     ]
   },
@@ -24539,7 +24539,7 @@
     "id": "viscera-seer-sac-bears-in-response-to-doom-blade",
     "text": "I have Viscera Seer and Grizzly Bears. They Doom Blade the Bears. Can I sac it in response?",
     "expect": [
-      "Viscera Seer: Scry 1 (not tracked in detail).",
+      "You scry 1 (Viscera Seer).",
       "Doom Blade doesn't resolve (all targets illegal)."
     ]
   },
@@ -29239,7 +29239,7 @@
     "id": "chalice-zero-vs-land-grant",
     "text": "My opponent has Chalice of the Void on 0. Can I cast Land Grant?",
     "expect": [
-      "Land Grant: Search your library for a Forest card, reveal that card, put it into your hand, then shuffle (not tracked in detail)."
+      "You put a Forest card from your library into your hand, revealed, then shuffle (Land Grant)"
     ],
     "notExpect": [
       "Land Grant is countered."
@@ -29846,7 +29846,7 @@
     "expect": [
       "Wall of Omens has 2 damage marked.",
       "No: Wall of Omens is still on the battlefield.",
-      "Defending player reveals the top card"
+      "You reveal the top card of your library (Goblin Guide)."
     ],
     "notExpect": [
       "defendings"
@@ -30433,7 +30433,7 @@
     "id": "ponder-may-shuffle",
     "text": "I cast Ponder. Can I shuffle after looking?",
     "expect": [
-      "Ponder: Shuffle (not tracked in detail).",
+      "You shuffle your library (Ponder).",
       "You draw 1 card."
     ],
     "cite": []
@@ -42023,7 +42023,7 @@
     "id": "cm11",
     "text": "My opponent casts Chaos Warp on my commander. If I put it in the command zone, does Chaos Warp still reveal the top card of my library?",
     "expect": [
-      "Chaos Warp: its owner (you) reveals the top card of their library",
+      "You reveal the top card of your library (Chaos Warp).",
       "your library → the command zone"
     ],
     "notExpect": [
@@ -43253,7 +43253,7 @@
     "id": "wd23",
     "text": "opp chaos warps my cmdr. if i put it in the command zone does chaos warp still reveal the top card of my library",
     "expect": [
-      "Chaos Warp: its owner (you) reveals the top card of their library",
+      "You reveal the top card of your library (Chaos Warp).",
       "your library → the command zone"
     ],
     "notExpect": [
@@ -46527,6 +46527,300 @@
     ],
     "cite": [
       "701.6a"
+    ]
+  },
+  {
+    "id": "um1",
+    "text": "I control three Plains and Tarmogoyf. My opponent casts Path to Exile targeting Tarmogoyf. How many lands do I control?",
+    "expect": [
+      "You search your library for a basic land card and put it onto the battlefield tapped (Path to Exile).",
+      "You have 4 lands."
+    ],
+    "cite": [
+      "701.23a",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "um2",
+    "text": "I cast Demonic Tutor and find Lightning Bolt.",
+    "expect": [
+      "You put Lightning Bolt from your library into your hand (Demonic Tutor)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "701.23a",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "um3",
+    "text": "I cast Green Sun's Zenith with X equal to 2. Where does Green Sun's Zenith go?",
+    "expect": [
+      "Green Sun's Zenith is shuffled into your library, not put into the graveyard.",
+      "with mana value 2 or less (X = 2)"
+    ],
+    "notExpect": [
+      "put into its owner's graveyard"
+    ],
+    "cite": [
+      "107.3a",
+      "608.2n",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "um4",
+    "text": "A Mountain is on top of their library. I attack with Goblin Guide. What happens?",
+    "expect": [
+      "opponent reveals Mountain from the top of their library (Goblin Guide).",
+      "opponent puts Mountain into their hand (Goblin Guide)."
+    ],
+    "cite": [
+      "701.20a",
+      "121.5"
+    ]
+  },
+  {
+    "id": "um5",
+    "text": "I cast Gitaxian Probe targeting my opponent. What happens?",
+    "expect": [
+      "You look at opponent's hand (Gitaxian Probe).",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "701.20e",
+      "400.2"
+    ]
+  },
+  {
+    "id": "um6",
+    "text": "I cast Ponder. What happens?",
+    "expect": [
+      "You look at the top three cards of your library and put them back in any order (Ponder).",
+      "You shuffle your library (Ponder)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "701.20e",
+      "401.4",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "um7",
+    "text": "I sacrifice a creature to Viscera Seer. What happens?",
+    "expect": [
+      "You scry 1 (Viscera Seer)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "701.22a"
+    ]
+  },
+  {
+    "id": "um8",
+    "text": "I cast Time Walk. What happens?",
+    "expect": [
+      "You take an extra turn after this one (Time Walk)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "500.7"
+    ]
+  },
+  {
+    "id": "um9",
+    "text": "I cast Snapcaster Mage targeting Lightning Bolt in my graveyard. What is the flashback cost?",
+    "expect": [
+      "Lightning Bolt's flashback cost is {R}, its mana cost (Snapcaster Mage)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "702.34a",
+      "118.9"
+    ]
+  },
+  {
+    "id": "um10",
+    "text": "My opponent casts Yawgmoth's Will. What happens?",
+    "expect": [
+      "Until end of turn opponent may play lands and cast spells from their graveyard (Yawgmoth's Will)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "601.3",
+      "611.2a"
+    ]
+  },
+  {
+    "id": "um11",
+    "text": "I cast Faithless Looting. What happens?",
+    "expect": [
+      "You draw 2 cards.",
+      "You discard 2 cards."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "121.1",
+      "701.9a"
+    ]
+  },
+  {
+    "id": "um12",
+    "text": "My opponent controls Mikaeus, the Unhallowed. I attack with Thalia, Guardian of Thraben and my opponent doesn't block. What happens?",
+    "expect": [
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard.",
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "not modeled"
+    ],
+    "cite": [
+      "701.8a"
+    ]
+  },
+  {
+    "id": "um13",
+    "text": "I control Melira, Sylvok Outcast. My opponent attacks me with Plague Stinger and I don't block. How many poison counters do I have?",
+    "expect": [
+      "You take 1 damage."
+    ],
+    "notExpect": [
+      "poison counter",
+      "not modeled"
+    ],
+    "cite": [
+      "120.3a"
+    ]
+  },
+  {
+    "id": "um14",
+    "text": "Lightning Bolt is on top of my library. My upkeep begins with Delver of Secrets on the battlefield. What happens?",
+    "expect": [
+      "Delver of Secrets transforms into Insectile Aberration (3/2).",
+      "You reveal Lightning Bolt from the top of your library (Delver of Secrets)."
+    ],
+    "notExpect": [
+      "not modeled"
+    ],
+    "cite": [
+      "701.27a",
+      "701.20a",
+      "701.20e"
+    ]
+  },
+  {
+    "id": "um15",
+    "text": "I control Kiki-Jiki, Mirror Breaker and Grizzly Bears. I activate Kiki-Jiki targeting Grizzly Bears. What happens?",
+    "expect": [
+      "The Grizzly Bears token will be sacrificed at the beginning of the next end step (Kiki-Jiki, Mirror Breaker)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "603.7a"
+    ]
+  },
+  {
+    "id": "um16",
+    "text": "My opponent casts Thoughtseize. In response I cast Veil of Summer. What happens?",
+    "expect": [
+      "Spells you control can't be countered this turn (Veil of Summer).",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "611.2a",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "um17",
+    "text": "I cast Ad Nauseam. What happens?",
+    "expect": [
+      "You may keep revealing cards with Ad Nauseam"
+    ],
+    "notExpect": [
+      "not modeled"
+    ],
+    "cite": [
+      "608.2d"
+    ]
+  },
+  {
+    "id": "um18",
+    "text": "My opponent casts Surgical Extraction targeting Lightning Bolt in my graveyard. What happens?",
+    "expect": [
+      "You shuffle your library (Surgical Extraction)."
+    ],
+    "notExpect": [
+      "not modeled"
+    ],
+    "cite": [
+      "701.24a"
+    ]
+  },
+  {
+    "id": "um19",
+    "text": "I cast Vendilion Clique targeting my opponent. What happens?",
+    "expect": [
+      "opponent puts the chosen card from their hand on the bottom of their library (Vendilion Clique).",
+      "You look at opponent's hand (Vendilion Clique)."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "701.20e",
+      "701.20a"
+    ]
+  },
+  {
+    "id": "um20",
+    "text": "I activate Jace, the Mind Sculptor's +2. What happens?",
+    "expect": [
+      "You look at the top card of opponent's library (Jace, the Mind Sculptor).",
+      "You put the top card of opponent's library on the bottom (Jace, the Mind Sculptor)."
+    ],
+    "notExpect": [
+      "not modeled"
+    ],
+    "cite": [
+      "701.20e"
+    ]
+  },
+  {
+    "id": "um21",
+    "text": "Uro escapes. Is it sacrificed?",
+    "expect": [
+      "No: Uro, Titan of Nature's Wrath is not sacrificed."
+    ],
+    "notExpect": [
+      "Rules text not modeled"
+    ],
+    "cite": [
+      "702.138b"
     ]
   }
 ]

@@ -193,6 +193,7 @@ object OracleParser {
                     abilities += TriggeredAbility(Trigger.ThisLeavesBattlefield, Effect.SacrificeEnchanted, ltb)
                 }
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
+                mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef)!!   // Uro's escape, Mikaeus (MoreEffects.kt)
                 isSpell && WinLoss.isSpellLine(selfRef) -> spellLines += selfRef   // Pact of Negation's delayed trigger is part of the spell
                 selfRef.startsWith("When ", true) || selfRef.startsWith("Whenever ", true) || selfRef.startsWith("At ", true) || abilityWord.containsMatchIn(selfRef) -> abilities += parseTriggeredAll(selfRef)
                 isActivated(selfRef) -> abilities += parseActivated(selfRef)
@@ -692,6 +693,7 @@ object OracleParser {
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
+        mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
         mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
@@ -1923,6 +1925,7 @@ object OracleParser {
         if (Regex("^sacrifice (?:it|~) unless it escaped\\.?$", RegexOption.IGNORE_CASE).matches(s)) return Effect.SacrificeUnlessEscaped
         if (Regex("^investigate\\.?$", RegexOption.IGNORE_CASE).matches(s)) return Effect.Investigate
         Regex("^surveil (\\d+)\\.?$", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.Surveil(it.groupValues[1].toInt()) }
+        mtg.judge.engine.MoreEffects.parseSentence(s)?.let { return it }   // shuffles, loot spells, Jace's bottom (MoreEffects.kt)
         for ((re, rules) in narratedRes) if (re.matches(s)) return Effect.Narrated(s.trimEnd('.'), rules)
         // "You draw a card and you lose 1 life." / "Each opponent loses 1 life and you gain 1 life.": two effects joined by "and".
         Regex("""^(.+?)(?: and |, then |, and then )(you |each opponent |target player |that player |it |~ |create |draw |gain |lose |put |exile |destroy |sacrifice |tap |untap |return |scry |mill |discard |discards )(.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trimEnd('.'))?.let { m ->
