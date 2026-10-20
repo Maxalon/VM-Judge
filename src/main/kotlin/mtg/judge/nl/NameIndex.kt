@@ -106,7 +106,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             "consult" to "demonic consultation", "pact" to "demonic pact", "tim" to "prodigal sorcerer", "sad robot" to "solemn simulacrum", "solemn" to "solemn simulacrum",
             "esper sentinel" to "esper sentinel", "sentinel" to "esper sentinel", "mystic remora" to "mystic remora", "remora" to "mystic remora",
             "uro" to "uro titan of nature s wrath", "fierce guardianship" to "fierce guardianship", "deflecting swat" to "deflecting swat", "swat" to "deflecting swat",
-        )
+        ) + Slang.aliases
 
         /** Everyday words: a card name made only of these is not read as a card ("The End", "Wear", "Attacking"). */
         private val commonWords = setOf("the", "a", "an", "where", "why", "when", "which", "how", "who", "whom", "of", "thing", "things", "end", "start", "beginning", "turn", "step", "phase", "time", "game", "play", "attacking", "blocking", "wear", "tear", "begin", "hit", "run", "swing", "bolt", "away", "far", "right", "left", "return", "never", "blue", "red", "green", "white", "black", "colorless", "deal", "deals", "damage", "find", "finds", "take", "takes", "gain", "gains", "lose", "loses", "die", "dies", "survive", "trigger", "resolve", "work", "happen", "count", "still", "get", "gets", "win", "wins", "keep", "come", "back", "go", "goes", "stay", "stays", "does", "do", "did", "will", "would", "can", "could", "should",

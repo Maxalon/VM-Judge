@@ -150,7 +150,10 @@ class SituationParser(private val names: NameIndex) {
         "checkland" to "Glacial Fortress, Rootbound Crag, …", "fastland" to "Seachrome Coast, Blackcleave Cliffs, …",
         "manland" to "Celestial Colonnade, Raging Ravine, …", "creature land" to "Celestial Colonnade, Raging Ravine, …")
 
-    fun parse(text: String): Parsed {
+    /** Table talk first ("dont", "my guy", "swords"), then the ordinary reading. */
+    fun parse(text: String): Parsed = parseCore(Slang.normalize(text))
+
+    private fun parseCore(text: String): Parsed {
         val ctx = Ctx()
         ctx.fullText = text
         // "Can my opponent use the Top?" once Sensei's Divining Top has been named: the capitalised short form is the card.
@@ -173,7 +176,7 @@ class SituationParser(private val names: NameIndex) {
         }
         val short = shortNames(sentences)
         val named = playerNames(sentences)
-        for (sentence in sentences) {
+        for (sentence in sentences.map { slangPossessives(it, short) }) {
             val marked = mark(sentence, short, named)
             marked.cards.values.filter { it.alternatives.isNotEmpty() }.distinctBy { it.oracleId }.forEach { e -> val note = "\"${e.display.substringBefore(",")}\" is read as ${e.display}; it could also be ${e.alternatives.joinToString(" or ")}. Use the full name if you meant another."; if (note !in ctx.notes) ctx.notes += note }
             if (!readSentence(marked, ctx) && !isNoise(marked.text)) ctx.unread += sentence.trim()
@@ -1890,6 +1893,146 @@ class SituationParser(private val names: NameIndex) {
      * 5/5?" against menace, "my blocker" regenerated, "a 5/5 green trample", "a 2/2 without flanking", "they attack
      * my planeswalker" when its loyalty is said, "I attack Invasion of Gobakhan" (a Siege, so it's the attacker's own).
      */
+    /**
+     * Table-talk questions: "can i do this", "does that work" (the same question as "is that allowed": the outcome and its
+     * rules are the answer), and "is that lethal?" when their untapped creatures could still block: the attack is read
+     * against the worst case before asking whether they lose.
+     */
+    private fun readSlangQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        if (clause0 == "slangallowed-question") return readEarlyQuestions(if (ctx.events.any { it.verb == "cast" }) "tglegal-question" else "is that allowed", m, ctx)
+        if (clause0 == "do they die" && Regex("""\blethal\b""", RegexOption.IGNORE_CASE).containsMatchIn(ctx.fullText)) {
+            val attacks = ctx.events.filter { it.verb == "attack" && it.obj != null }
+            val attacker = attacks.firstOrNull()?.player ?: return null
+            if (ctx.events.any { it.verb == "block" }) return null
+            val defender = attacks.first().targets.firstOrNull { it in ctx.playerIds() } ?: ctx.other(attacker) ?: return null
+            val blockers = ctx.objects.values.filter { it.controller == defender && it.zone == "battlefield" && isCreatureName(it.card.name) && it.tapped != true }
+            if (blockers.isEmpty()) return null
+            readEarlyQuestions("what's the worst case", m, ctx)
+            ctx.notes += "\"Lethal?\" is read against their best blocks: each untapped creature of theirs blocks one attacker."
+            ctx.asks += EventSpec("ask", player = defender, to = "playerDie"); ctx.note(defender)
+            return true
+        }
+        return null
+    }
+
+    /** "does Reckoners trigger deal damage": a card's name with the apostrophe left off ("Goyfs power"). */
+    private fun slangPossessives(sentence: String, short: Map<String, NameIndex.Entry>): String =
+        Regex("""\b([A-Za-z]{4,})s (trigger|ability|power|toughness|controller|owner|p/t|text)\b""", RegexOption.IGNORE_CASE).replace(sentence) { r ->
+            val base = Names.normalize(r.groupValues[1])
+            if (short.containsKey(base) || names.lookup(base)?.isCard == true) "${r.groupValues[1]}'s ${r.groupValues[2]}" else r.value }
+
+    /**
+     * Table-talk sentence shapes, after card names are marked (c1, c2…): "can i still counterspell it now",
+     * "swords on my guy", "opp counters it", "i fireball for x=4". Each is turned into the wording the rest of the parser reads.
+     */
+    private fun slangRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val io = RegexOption.IGNORE_CASE
+        var t2 = t.trim()
+        val me = """(?:i|we|they|he|she|my opponent|opponent|opp)"""
+        // "i bolt it and they unsummon it in response": the response is the second sentence; "they unsummon it in response": the same, reordered.
+        t2 = t2.replace(Regex("""^(.+?),? and ((?:they|my opponent|opponent|opp|he|she|i|we) c\d+(?: (?:it|that|them))?),? in response$""", io)) { r -> "${r.groupValues[1]}, in response ${r.groupValues[2]}" }
+        // "leyline of sanctity is out on their side": the opponent's.
+        t2 = t2.replace(Regex("""^(c\d+) (?:is |are )?(?:out |in play |down |on the battlefield |on board )?on (their|his|her|the opponent's|my opponent's) side$""", io), "my opponent controls $1")
+        // "i have rip in play", "opp has platinum angel out": the player controls the card.
+        t2 = t2.replace(Regex("""\b(i|we|my opponent|opponent|they|he|she) (?:have|has|control|controls|got) (c\d+(?:,? and c\d+)*) (?:out|on board|on the board|on the field|down)\b""", io)) { r ->
+            "${r.groupValues[1]} ${if (r.groupValues[1].lowercase() in setOf("i", "we", "they")) "control" else "controls"} ${r.groupValues[2]}" }
+        // "goblin electromancer out", "rip is in play": the card is on the battlefield.
+        t2 = t2.replace(Regex("""^(c\d+(?:,? and c\d+)*) (?:is |are )?(?:out|on board|on the board|on the field|down)(?=$|,| and )""", io), "$1 is on the battlefield")
+        // "i thoracle with an empty library", "i stifle": a card used as the verb, alone.
+        t2 = t2.replace(Regex("""^(i|we|my opponent|opponent|they|he|she) (c\d+)(?= with\b| and\b| choosing\b| targeting\b| paying\b|$)""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            val aimed = Regex("""^ (?:choosing|targeting|paying|and (?:crack|cast|activate|tap|sacrifice|pay|play|draw)\b)""").containsMatchIn(t2.substring(r.range.last + 1))
+            if (card != null && (!card.isSpellOnly || aimed)) "${if (r.groupValues[1].lowercase() in setOf("i", "we", "they")) r.groupValues[1] + " cast" else r.groupValues[1] + " casts"} ${r.groupValues[2]}" else r.value }
+        // "use its mana to cast an elf": the creature spell of the type the Cavern names.
+        ctx.objects.values.firstOrNull { it.card.name == "Cavern of Souls" && it.named != null }?.named?.let { ty ->
+            t2 = t2.replace(Regex("""\bcast (an?) ${Regex.escape(ty)}s?\b(?! creature)""", io), "cast $1 ${ty.lowercase()} creature spell") }
+        // "i rampant growth and say i cant find a basic": the search, said the long way.
+        t2 = t2.replace(Regex("""^(i|we) (c\d+) and say (i|we) can't find\b""", io), "$1 search my library with $2 and say $3 can't find")
+        // "in response i sac the bears to the altar": no article before the sacrificed card.
+        t2 = t2.replace(Regex("""\b(sacrifice|sacrifices|sacrificed) the (c\d+)\b""", io), "$1 $2")
+        // "i bolt it and hold priority": the spell stays on the stack with its caster holding priority; nothing else to read.
+        t2 = t2.replace(Regex(""",? (?:and )?(?:hold|keep|holds|keeps|holding|keeping) priority$""", io), "")
+        // "while it is on the stack i cast giant growth": in response.
+        t2 = t2.replace(Regex("""^(?:while|when) (?:it|that|the spell|my c\d+|c\d+) (?:is|'s) (?:still )?on the stack,? """, io), "in response ")
+        // "i tick up jace": plus ability.
+        t2 = t2.replace(Regex("""\b(i|we) tick(?:s)? up (c\d+)\b""", io), "$1 +1 $2")
+        // "can i do this", "does that work", "is this a thing": is it allowed.
+        t2 = t2.replace(Regex("""^(?:(?:can|could|may) (?:i|we) (?:even |really |actually )?(?:do|try|make) (?:this|that|it)|(?:does|will|would|did) (?:this|that|it) (?:even |actually |really )?(?:work|fly|go through|stand|check out)|is (?:this|that|it) (?:even )?(?:a thing|a play|a valid play|valid)|(?:is|would) (?:this|that|it) (?:be )?(?:cool|ok to do))$""", io), "slangallowed-question")
+        // "when it resolves, which cards can they take": the question is the same without the lead-in.
+        t2 = t2.replace(Regex("""^when (?:it|that|the spell) resolves,? (?=(?:which|what) cards)""", io), "")
+        // "i activate mom to give itself pro black": the activation, giving it.
+        t2 = t2.replace(Regex("""\b(activate|activates|use|uses) (c\d+) to give (itself|it|them|the creature) """, io), "$1 $2 giving $3 ")
+        // "opp bolts my 2/2 with pro red", "opp fiend hunters my guy": a card used as the verb, with a described target.
+        val exilers = setOf("Fiend Hunter", "Banisher Priest", "Skyclave Apparition", "Brutal Cathar")
+        fun castBy(who: String) = if (who.lowercase() in setOf("i", "we", "they")) "$who cast" else if (who.lowercase() in setOf("opponent", "opp")) "my opponent casts" else "$who casts"
+        t2 = t2.replace(Regex("""^($me) (c\d+) ((?:my|their|his|her|the|an?|that|this)\b(?: own)?(?: \w+)? (?:\d+/\d+|creature|permanent|planeswalker|c\d+)\b(?:(?! and (?:i|we|they|he|she|my opponent|opp|it)\b)(?!, ).)*(?:\d+/\d+|\bwith\b|\bthat\b|\bown\b).*)$""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            val headCard = Regex("""^[^c]*\b(c\d+)\b""").find(r.groupValues[3])?.groupValues?.get(1)?.let { m.cards[it] }
+            when { card == null || (headCard != null && headCard.isSpellOnly) -> r.value
+                card.isSpellOnly -> "${castBy(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]}"
+                card.display in exilers -> "${castBy(r.groupValues[1])} ${r.groupValues[2]} exiling ${r.groupValues[3]}"
+                else -> r.value } }
+        // "in response they unsummon it": the spell, cast at "it".
+        t2 = t2.replace(Regex("""\bin response (?:,\s*)?($me) (c\d+) (it|that|them)$""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            if (card != null && card.isSpellOnly) "in response ${castBy(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]}" else r.value }
+        // "i snap back ponder on their turn" / "can i flashback ponder on their turn" after a Snapcaster cast on their turn: the same turn.
+        if (ctx.activePlayer == "opp") t2 = t2.replace(Regex("""^can (i|we) (?:still )?(?:flashback|flash back|flash) (c\d+)(?: back)? (?:on|during|in) (?:their|my opponent's|the opponent's) turn$""", io), "can $1 cast $2 with flashback during my opponent's turn")
+        // "can i murderous cut my own guy": can the spell target it.
+        t2 = t2.replace(Regex("""^can (i|we) (c\d+) ((?:my own|my|their|an?|the) (?:creature|permanent|planeswalker|\d+/\d+))$""", io)) { r ->
+            if (m.cards[r.groupValues[2]]?.isSpellOnly == true) "can ${r.groupValues[1]} target ${r.groupValues[3]} with ${r.groupValues[2]}" else r.value }
+        // "how much does opp take": damage.
+        t2 = t2.replace(Regex("""^how much (does|do) (my opponent|opponent|they|he|she|i|we) (take|get)$""", io), "how much damage $1 $2 take")
+        // "opp doom blades my guy, in response i give it hexproof": the spell, then the response.
+        t2 = t2.replace(Regex("""^($me) (c\d+) ((?:my|their|his|her) (?:creature|permanent|planeswalker|c\d+))(,? in response (?!to ).+)$""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            if (card != null && card.isSpellOnly) "${castBy(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]}${r.groupValues[4]}" else r.value }
+        t2 = t2.replace(Regex("""^($me) (c\d+) (my|their|his|her) (creature|permanent)$""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            if (card != null && card.display in exilers) "${castBy(r.groupValues[1])} ${r.groupValues[2]} exiling ${r.groupValues[3]} ${r.groupValues[4]}" else r.value }
+        // "can i still counterspell it now", "can i bolt it": a card used as the verb, aimed at "it".
+        t2 = t2.replace(Regex("""^(can|could|may) (i|we|they|he|she|my opponent|opponent|opp) (?:still |also |just |then |now )*(c\d+) (it|that|the spell)(?: now| then| still)?$""", io)) { r ->
+            val card = m.cards[r.groupValues[3]]
+            if (card != null && needsSpellTarget(card)) "can ${r.groupValues[2]} then cast ${r.groupValues[3]} targeting ${r.groupValues[4]}" else r.value }
+        // "swords on my guy": the sentence starts with the card; somebody cast it.
+        t2 = t2.replace(Regex("""^(c\d+) (on|at|targeting) (?=(?:my|their|his|her|the|a|an|that|this|c\d+)\b)""", io)) { r -> if (m.cards[r.groupValues[1]]?.isSpellOnly == true) "i cast ${r.groupValues[1]} ${r.groupValues[2]} " else r.value }
+        // "the Snake still counters": the article goes before a card in a question.
+        t2 = t2.replace(Regex("""^(does|do|did|will|would|can|could) the (c\d+)(?= (?:still |even )?(?:counter|trigger|do|draw|work|deal|destroy|exile|return|bounce|make|create)\b)""", io), "$1 $2")
+        // "opp counters it": the spell that was just cast.
+        t2 = t2.replace(Regex("""^($me) counters (?:it|that)$""", io), "$1 counters the spell")
+        // "do i keep the mana": the same worry as "do I get my mana back".
+        t2 = t2.replace(Regex("""^(do|will) (i|we) (?:still )?keep (?:the|my) mana$""", io), "do $2 get my mana back")
+        // "i fow by exiling a blue card": cast, for the alternative cost.
+        t2 = t2.replace(Regex("""^($me) (c\d+) by (exiling|paying)\b""", io)) { r -> "${r.groupValues[1]} cast ${r.groupValues[2]} by ${r.groupValues[3]}" }
+        // "i path a token": a creature token of theirs (an unnamed token is no creature).
+        t2 = t2.replace(Regex("""^(i|we) (c\d+) (?:a|the) token$""", io), "$1 $2 their token")
+        t2 = t2.replace(Regex("""^(my opponent|opponent|opp|they|he|she) (c\d+) (?:a|the) token$""", io), "$1 $2 my token")
+        // "i electrolyze their elves and their face": the spell, cast at both.
+        t2 = t2.replace(Regex("""^(i|we|my opponent|opponent|opp|they) (c\d+) ((?:their|my|his|her|the|my opponent's|opponent's) (?:c\d+|creature|[\w/ ]+?)) and (my opponent|them|me|him|her)$""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            if (card != null && card.isSpellOnly) "${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]} and ${r.groupValues[4]}" else r.value }
+        // "i give it double strike": the creature just talked about.
+        if (!t2.contains("in response", true)) t2 = t2.replace(Regex("""\b(i|we) give it (double strike|first strike|flying|trample|lifelink|deathtouch|haste|vigilance|menace|reach)$""", io), "$1 give my creature $2")
+        // "does the planeswalker die": the one just talked about.
+        t2 = t2.replace(Regex("""^(does|did|will) the (planeswalker|creature|permanent) (die|survive|get destroyed|get killed)$""", io), "$1 it $3")
+        // "opp for free", "i bolt face": the other player; "mindbreak trap for free": cast without paying.
+        t2 = t2.replace(Regex("""^($me) (c\d+) for free$""", io)) { r -> "${castBy(r.groupValues[1])} ${r.groupValues[2]} without paying its mana cost" }
+        t2 = t2.replace(Regex("""^(i|we) (c\d+) face\b""", io), "$1 $2 my opponent")
+        // "i fireball for x=4": a spell with X, cast.
+        t2 = t2.replace(Regex("""\b($me) (c\d+) (?:for )?x ?= ?(\d+)$""", io), "$1 cast $2 with x=$3")
+        // "opp mindbreak traps for free": cast without paying.
+        t2 = t2.replace(Regex("""^($me) (c\d+) without paying\b""", io)) { r -> "${castBy(r.groupValues[1])} ${r.groupValues[2]} without paying" }
+        // "i kill the persecutor": a destroy effect.
+        t2 = t2.replace(Regex("""^(i|we|my opponent|opponent|they) kills? ((?:the |my |their )?(?:c\d+|creature|it))$""", io), "$1 destroy $2")
+        // "i clone a face-down morph": the copy spell, copying it.
+        t2 = t2.replace(Regex("""^(i|we|my opponent|opponent|they) (c\d+) ((?:a|the|their|my) .+)$""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            if (card != null && card.display in setOf("Clone", "Phantasmal Image", "Phyrexian Metamorph", "Mirrorform", "Sakashima the Impostor")) "${castBy(r.groupValues[1])} ${r.groupValues[2]} copying ${r.groupValues[3]}" else r.value }
+        // "then in my second main phase i cast relentless assault": the phase goes last, as "i cast it in my second main phase".
+        t2 = t2.replace(Regex("""^(then )?in my (first|second) main phase,? (i|we) (.+)$""", io)) { r -> "${r.groupValues[1]}${r.groupValues[3]} ${r.groupValues[4]} in my ${r.groupValues[2]} main phase" }
+        return t2
+    }
+
     private fun combatRewrites(t: String, m: Marked, ctx: Ctx): String {
         val io = RegexOption.IGNORE_CASE
         var t2 = t.trim()
@@ -2237,6 +2380,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = counterRewrites(t2, m, ctx)
         t2 = triggerRewrites(t2, m, ctx)
         t2 = auditRewrites(t2, m, ctx)
+        t2 = slangRewrites(t2, m, ctx)
         t2 = lkiRewrites(t2, m, ctx)
         t2 = targetRewrites(t2, m, ctx)
         t2 = zoneRewrites(t2, m, ctx)
@@ -6249,7 +6393,8 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^resolvedfirst-question ?(c\d+)?$""").find(clause0)?.let { r ->
             val named = r.groupValues[1].takeIf { it.isNotEmpty() }?.let { m.cards[it]?.display }
             val casts = ctx.events.filter { it.verb == "cast" }
-            val discard = casts.lastOrNull { named == null || it.card?.name == named } ?: return@let
+            // "when it resolves, which cards can they take": with no card named, the spell that was answered ("it" is the first one cast, the one with a response).
+            val discard = (if (named != null) casts.lastOrNull { it.card?.name == named } else casts.firstOrNull { c -> casts.drop(casts.indexOf(c) + 1).any { it.player != c.player } } ?: casts.lastOrNull()) ?: return@let
             val caster = discard.player ?: return@let
             val target = discard.targets.firstOrNull { it in setOf("me", "opp") } ?: ctx.other(caster) ?: return@let
             val response = casts.drop(casts.indexOf(discard) + 1).lastOrNull { it.player == target }?.card?.name
@@ -6620,6 +6765,7 @@ class SituationParser(private val names: NameIndex) {
         readCounterQuestions(clause0, m, ctx)?.let { return it }
         readTriggerQuestions(clause0, m, ctx)?.let { return it }
         readAuditQuestions(clause0, m, ctx)?.let { return it }
+        readSlangQuestions(clause0, m, ctx)?.let { return it }
         readLkiQuestions(clause0, m, ctx)?.let { return it }
         readTargetQuestions(clause0, m, ctx)?.let { return it }
         readZoneQuestions(clause0, m, ctx)?.let { return it }

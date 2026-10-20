@@ -42974,5 +42974,2059 @@
     "notExpect": [
       "arbitrarily large"
     ]
+  },
+  {
+    "id": "wd1",
+    "text": "my 2/2 double striker swings and gets chump blocked by a 1/1. does it hit face?",
+    "expect": [
+      "No: a 2/2 creature with double strike dealt no damage to opponent"
+    ],
+    "cite": [
+      "509.1h",
+      "702.4b"
+    ]
+  },
+  {
+    "id": "wd2",
+    "text": "their 3/3 menace swings at me. can i block it with a single 5/5",
+    "expect": [
+      "No: a 3/3 creature with menace has menace and can't be blocked except by two or more creatures, and a 5/5 creature is the only one that could (702.111b)."
+    ],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "wd3",
+    "text": "they swing a 3/3 at my walker, it has 4 loyalty. does the 'walker die",
+    "expect": [
+      "a planeswalker has 1 loyalty.",
+      "No: a planeswalker is still on the battlefield."
+    ],
+    "notExpect": [
+      "You take 3 damage."
+    ],
+    "cite": [
+      "306.8",
+      "120.3c"
+    ]
+  },
+  {
+    "id": "wd4",
+    "text": "opp swings a 3/3 at my 'walker. it has 4 loyalty. does it die",
+    "expect": [
+      "a planeswalker has 1 loyalty.",
+      "No: a planeswalker is still on the battlefield."
+    ],
+    "notExpect": [
+      "You take 3 damage."
+    ],
+    "cite": [
+      "306.8",
+      "120.3c"
+    ]
+  },
+  {
+    "id": "wd5",
+    "text": "my guy w/ two instances of lifelink deals 3 damage. do i gain 6",
+    "expect": [
+      "No: you gain 3 life in all, not 6.",
+      "Multiple instances of lifelink on the same object are redundant (702.15f)"
+    ],
+    "notExpect": [
+      "You gain 6 life"
+    ],
+    "cite": [
+      "702.15f",
+      "702.15b"
+    ]
+  },
+  {
+    "id": "wd6",
+    "text": "my 2/2 infect hits opp. what happens",
+    "expect": [
+      "opponent has 2 poison counters."
+    ],
+    "notExpect": [
+      "opponent takes 2 damage."
+    ],
+    "cite": [
+      "702.90b"
+    ]
+  },
+  {
+    "id": "wd7",
+    "text": "opp's 4/4 wither is blocked by my 4/4. what happens to my guy",
+    "expect": [
+      "a 4/4 creature has 4 -1/-1 counter(s).",
+      "Yes: a 4/4 creature died"
+    ],
+    "cite": [
+      "702.80a",
+      "704.5f"
+    ]
+  },
+  {
+    "id": "wd8",
+    "text": "my 1/1 pro green blocks their 5/5 green trampler. how much goes thru",
+    "expect": [
+      "Damage to a 1/1 creature with protection from green from a 5/5 green creature with trample is prevented (protection).",
+      "Yes: you take 4 damage in all."
+    ],
+    "notExpect": [
+      "a 1/1 creature with protection from green: the battlefield"
+    ],
+    "cite": [
+      "702.19b",
+      "702.16e"
+    ]
+  },
+  {
+    "id": "wd9",
+    "text": "my 2/2 blocks a 2/2 and i regen my blocker. does it live? is it still blocking",
+    "expect": [
+      "a 2/2 creature regenerates.",
+      "Yes: your 2/2 creature is still on the battlefield.",
+      "No: regenerating a 2/2 creature tapped it, removed all damage from it and removed it from combat (701.19a), so it's no longer blocking."
+    ],
+    "cite": [
+      "701.19a",
+      "509.1h"
+    ]
+  },
+  {
+    "id": "wd10",
+    "text": "my 3/3 flanking swings and a 2/2 w/o flanking blocks it. does the blocker die",
+    "expect": [
+      "a 2/2 creature is 1/1 until end of turn.",
+      "Yes: a 2/2 creature died"
+    ],
+    "cite": [
+      "702.25a"
+    ]
+  },
+  {
+    "id": "wd11",
+    "text": "opp swings with a 5/5, i double block with two 2/2s. can they put all 5 on one guy",
+    "expect": [
+      "Yes. When two or more creatures block it, a 5/5 creature's controller divides its combat damage among them as they choose (510.1c)."
+    ],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "wd12",
+    "text": "opp swings w/ a 5/5 and i double block w/ two 2/2s. can they put all 5 on one guy",
+    "expect": [
+      "Yes. When two or more creatures block it, a 5/5 creature's controller divides its combat damage among them as they choose (510.1c)."
+    ],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "wd13",
+    "text": "my 2/2 w/ toxic 2 swings and isnt blocked. what happens",
+    "expect": [
+      "opponent takes 2 damage.",
+      "opponent has 2 poison counters."
+    ],
+    "cite": [
+      "702.164c"
+    ]
+  },
+  {
+    "id": "wd14",
+    "text": "my 2/2 first striker blocks their 2/2. after first strike damage opp pumps their guy w/ giant growth. what happens",
+    "expect": [
+      "a 2/2 creature: the battlefield → opponent's graveyard.",
+      "Giant Growth can't be cast: a 2/2 creature is already in the graveyard."
+    ],
+    "notExpect": [
+      "5/5 until end of turn"
+    ],
+    "cite": [
+      "510.4",
+      "702.7b"
+    ]
+  },
+  {
+    "id": "wd15",
+    "text": "ive cast my cmdr from the command zone twice already. how much to cast it again",
+    "expect": [
+      "The commander tax adds {4} to its mana cost (903.8)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "wd16",
+    "text": "ive cast my cmdr from the command zone twice before. how much to cast it again",
+    "expect": [
+      "The commander tax adds {4} to its mana cost (903.8)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "wd17",
+    "text": "opp swords my cmdr. can i put it in the command zone? do i gain life",
+    "expect": [
+      "a commander: exile → the command zone (its owner's choice, 903.9a).",
+      "You gain 2 life."
+    ],
+    "cite": [
+      "704.6d",
+      "903.9a"
+    ]
+  },
+  {
+    "id": "wd18",
+    "text": "i ephemerate my cmdr. is it still my cmdr",
+    "expect": [
+      "a commander is exiled and returns as a new object",
+      "Yes: a commander is still your commander"
+    ],
+    "notExpect": [
+      "exile → the command zone"
+    ],
+    "cite": [
+      "903.3"
+    ]
+  },
+  {
+    "id": "wd19",
+    "text": "opp control magics my cmdr. is it still my cmdr? does its combat damage to me count as cmdr damage",
+    "expect": [
+      "another player gaining control of it doesn't change that",
+      "combat damage it deals to you, its owner, counts against you too"
+    ],
+    "cite": [
+      "903.3",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wd20",
+    "text": "opp's clone copies my cmdr. is the clone a commander? does its combat damage count as cmdr damage",
+    "expect": [
+      "No: Clone (copying a commander) isn't a commander.",
+      "doesn't count toward commander damage"
+    ],
+    "cite": [
+      "903.3",
+      "707.2"
+    ]
+  },
+  {
+    "id": "wd21",
+    "text": "i have thrasios and tymna as partners. thrasios has dealt 11 combat damage and tymna has dealt 10 combat damage to opp. does opp lose",
+    "expect": [
+      "No: opponent is still in the game.",
+      "11 combat damage from Thrasios, Triton Hero and 10 from Tymna the Weaver",
+      "neither has reached 21"
+    ],
+    "cite": [
+      "903.10a",
+      "702.124d"
+    ]
+  },
+  {
+    "id": "wd22",
+    "text": "how much life do we start w/ in commander",
+    "expect": [
+      "40. In a Commander game each player's starting life total is 40"
+    ],
+    "cite": [
+      "103.4c",
+      "903.7"
+    ]
+  },
+  {
+    "id": "wd23",
+    "text": "opp chaos warps my cmdr. if i put it in the command zone does chaos warp still reveal the top card of my library",
+    "expect": [
+      "Chaos Warp: its owner (you) reveals the top card of their library",
+      "your library → the command zone"
+    ],
+    "notExpect": [
+      "opponent reveals"
+    ],
+    "cite": [
+      "903.9b"
+    ]
+  },
+  {
+    "id": "wd24",
+    "text": "i cast my cmdr w/ fist of suns paying wubrg. does the tax still apply",
+    "expect": [
+      "You pay {W}{U}{B}{R}{G} plus {2} for each earlier time"
+    ],
+    "cite": [
+      "118.9d",
+      "903.8"
+    ]
+  },
+  {
+    "id": "wd25",
+    "text": "i cast my cmdr from the command zone and its countered. where does it go and does the tax go up",
+    "expect": [
+      "a commander: your graveyard → the command zone",
+      "cast from the command zone once"
+    ],
+    "cite": [
+      "704.6d",
+      "903.8",
+      "601.2i"
+    ]
+  },
+  {
+    "id": "wd26",
+    "text": "my cmdr has dealt 21 damage to opp over several turns but 5 of it was from fling. does opp lose",
+    "expect": [
+      "16 counts toward the 21",
+      "No: opponent is still in the game."
+    ],
+    "notExpect": [
+      "opponent loses the game"
+    ],
+    "cite": [
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wd27",
+    "text": "can i mutate a creature onto my cmdr? is the merged permanent still my cmdr",
+    "expect": [
+      "the merged permanent is your commander (903.3c)"
+    ],
+    "cite": [
+      "903.3c",
+      "903.9c"
+    ]
+  },
+  {
+    "id": "wd28",
+    "text": "opp is at 5 life and has taken 15 cmdr damage from my 7/7 cmdr. i swing with it and they chump w/ a 1/1. do they lose",
+    "expect": [
+      "No: opponent is still in the game at 5 life.",
+      "taken 15 combat damage from a 7/7 creature"
+    ],
+    "cite": [
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wd29",
+    "text": "thrasios triton hero has dealt 21 combat damage to opp. does opp lose",
+    "expect": [
+      "opponent loses the game (commander damage)."
+    ],
+    "cite": [
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wd30",
+    "text": "trini is out and i gitaxian probe paying 2 life. how much mana do i pay",
+    "expect": [
+      "Gitaxian Probe costs {3} plus 2 life in all: {0} (its mana cost, with its Phyrexian symbol paid with 2 life), which Trinisphere raises to {3} (3 mana)."
+    ],
+    "cite": [
+      "601.2f",
+      "107.4f"
+    ]
+  },
+  {
+    "id": "wd31",
+    "text": "goblin electromancer out, i fireball for x=4. how much do i pay",
+    "expect": [
+      "Fireball costs {3}{R} in all: {4}{R} (its mana cost {X}{R} with X = 4) − {1} (Goblin Electromancer) = {3}{R}."
+    ],
+    "cite": [
+      "601.2f",
+      "118.7a"
+    ]
+  },
+  {
+    "id": "wd32",
+    "text": "goblin electromancer is out. i fireball x=4. how much do i pay",
+    "expect": [
+      "Fireball costs {3}{R} in all: {4}{R} (its mana cost {X}{R} with X = 4) − {1} (Goblin Electromancer) = {3}{R}."
+    ],
+    "cite": [
+      "601.2f",
+      "118.7a"
+    ]
+  },
+  {
+    "id": "wd33",
+    "text": "i got cavern of souls naming elf. can i use its mana to cast an elf so it cant be countered? what if i cast counterspell w/ it",
+    "expect": [
+      "Yes for an Elf creature spell",
+      "Counterspell isn't an Elf creature spell",
+      "Cavern of Souls can't help cast Counterspell."
+    ],
+    "cite": [
+      "106.6"
+    ]
+  },
+  {
+    "id": "wd34",
+    "text": "i crack led in response to my own spell. can i use the mana to pay for the spell on the stack",
+    "expect": [
+      "No: a spell's costs are paid while it is being cast (601.2g, 601.2h)"
+    ],
+    "cite": [
+      "601.2g",
+      "601.2h",
+      "500.5",
+      "605.3a"
+    ]
+  },
+  {
+    "id": "wd35",
+    "text": "trinisphere is out. i cast chord of calling x=0 and convoke tapping three guys. does it cost 3",
+    "expect": [
+      "Chord of Calling costs {G}{G}{G} in all",
+      "Trinisphere doesn't change it: it raises only a total below 3, and the total is already 3"
+    ],
+    "notExpect": [
+      "Chord of Calling costs 3 mana in all (Trinisphere"
+    ],
+    "cite": [
+      "702.51b",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "wd36",
+    "text": "opp has thalia out. i cast treasure cruise exiling 7 cards w/ delve. what do i pay",
+    "expect": [
+      "Treasure Cruise costs {8}{U} (9 mana, Thalia, Guardian of Thraben +{1} included); delving 7 cards out of the graveyard pays for 7 of the generic mana, so you pay {1}{U} (2 mana) (702.66a)."
+    ],
+    "cite": [
+      "702.66a",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "wd37",
+    "text": "i cast three spells this turn. opp mindbreak traps for free. which spells can it exile",
+    "expect": [
+      "Any spells still on the stack, as many as its caster wants",
+      "Exiling isn't countering"
+    ],
+    "cite": [
+      "601.2c",
+      "118.9"
+    ]
+  },
+  {
+    "id": "wd38",
+    "text": "i cast a spell with mana from lotus petal and dark ritual. opp counters it. do i keep the mana",
+    "expect": [
+      "a spell is countered.",
+      "No: the mana was spent paying the spell's cost as it was cast (601.2h).",
+      "so Lotus Petal and Dark Ritual stay used up."
+    ],
+    "cite": [
+      "601.2h",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "wd39",
+    "text": "i cast a spell w/ mana from lotus petal and dark ritual. opp counters it. do i keep my mana",
+    "expect": [
+      "a spell is countered.",
+      "No: the mana was spent paying the spell's cost as it was cast (601.2h).",
+      "so Lotus Petal and Dark Ritual stay used up."
+    ],
+    "cite": [
+      "601.2h",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "wd40",
+    "text": "opp has thalia. i gitaxian probe paying two life. how much do i pay in total",
+    "expect": [
+      "Gitaxian Probe costs {1} plus 2 life in all: {0} (its mana cost, with its Phyrexian symbol paid with 2 life) + {1} (Thalia, Guardian of Thraben) = {1}."
+    ],
+    "cite": [
+      "601.2f",
+      "107.4f"
+    ]
+  },
+  {
+    "id": "wd41",
+    "text": "opp bolts me. in response i vial in a mystic snake w/ 4 counters. does the snake counter the bolt",
+    "expect": [
+      "Yes: Lightning Bolt is countered (by Mystic Snake)."
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "wd42",
+    "text": "i got a creature card in my yard. opp has containment priest. i reanimate it",
+    "expect": [
+      "your graveyard → exile (replaced by Containment Priest)"
+    ],
+    "notExpect": [
+      "Containment Priest: the battlefield"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6"
+    ]
+  },
+  {
+    "id": "wd43",
+    "text": "i fireball x=3, then i copy my fireball w/ reverberate. whats the copys x",
+    "expect": [
+      "The copy's X is 3, the same as Fireball's",
+      "A copy of Fireball is put on the stack targeting opponent, with X = 3 like the original."
+    ],
+    "notExpect": [
+      "Battlefield:"
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "wd44",
+    "text": "i block w/ boros reckoner and opp bolts it. does reckoners trigger deal damage",
+    "expect": [
+      "Yes: Boros Reckoner's ability triggered.",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "603.3d",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "wd45",
+    "text": "my guy has 'if it would die, exile it instead' and i have a 'when this dies' trigger on it. does the trigger happen",
+    "expect": [
+      "No: You don't draw.",
+      "→ exile (replaced by"
+    ],
+    "notExpect": [
+      "You draw 1 card."
+    ],
+    "cite": [
+      "614.6",
+      "700.4"
+    ]
+  },
+  {
+    "id": "wd46",
+    "text": "i got a 2/2 w/ 'when this creature dies, draw a card'. it dies. do i draw",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ],
+    "cite": [
+      "603.10a",
+      "121.1"
+    ]
+  },
+  {
+    "id": "wd47",
+    "text": "i got a creature w/ 'at the beginning of your upkeep, sacrifice this unless you pay 2'. its my upkeep and i have no mana. what happens",
+    "expect": [
+      "is sacrificed.",
+      "you have only 0 mana available"
+    ],
+    "cite": [
+      "701.21a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "wd48",
+    "text": "i got dreadhorde invasion out. its my upkeep. what do i get from amass",
+    "expect": [
+      "You get a 0/0 Zombie Army token.",
+      "is 1/1 (0/0 base, 1 +1/+1 counter)"
+    ],
+    "cite": [
+      "701.47a",
+      "701.47b"
+    ]
+  },
+  {
+    "id": "wd49",
+    "text": "i got dreadhorde invasion. its my upkeep. i cast lazotep plating in response to the trigger. how big is my army",
+    "expect": [
+      "is 2/2 (0/0 base, 2 +1/+1 counters)"
+    ],
+    "cite": [
+      "701.47a"
+    ]
+  },
+  {
+    "id": "wd50",
+    "text": "lurrus is my companion. its opps turn. can i put lurrus into my hand",
+    "expect": [
+      "No: Lurrus of the Dream-Den can't be put into your hand now."
+    ],
+    "cite": [
+      "702.139a",
+      "116.2g"
+    ]
+  },
+  {
+    "id": "wd51",
+    "text": "my 2/2 first striker swings and nobody blocks. after first strike damage i give it double strike. how much does opp take",
+    "expect": [
+      "deals combat damage a second time",
+      "Yes: opponent takes 4 damage in all."
+    ],
+    "cite": [
+      "702.4d"
+    ]
+  },
+  {
+    "id": "wd52",
+    "text": "i got blood artist and three other dudes. wrath kills all of em. how many times does blood artist trigger",
+    "expect": [
+      "Blood Artist triggers 4 times: once for each creature that died, itself included.",
+      "opponent loses 1 life. (×4)"
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "wd53",
+    "text": "i got blood artist and three other guys. wrath kills all of em. how many times does blood artist trigger",
+    "expect": [
+      "Blood Artist triggers 4 times: once for each creature that died, itself included.",
+      "opponent loses 1 life. (×4)"
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "wd54",
+    "text": "opp paths my kitchen finks. does persist go off",
+    "expect": [
+      "No: Kitchen Finks was exiled, not put into a graveyard. \"Dies\" means put into a graveyard from the battlefield (700.4), so persist doesn't trigger"
+    ],
+    "notExpect": [
+      "comes back"
+    ],
+    "cite": [
+      "700.4",
+      "603.6c"
+    ]
+  },
+  {
+    "id": "wd55",
+    "text": "opp swords my finks. does persist go off",
+    "expect": [
+      "No: Kitchen Finks was exiled, not put into a graveyard. \"Dies\" means put into a graveyard from the battlefield (700.4), so persist doesn't trigger"
+    ],
+    "notExpect": [
+      "comes back"
+    ],
+    "cite": [
+      "700.4",
+      "603.6c"
+    ]
+  },
+  {
+    "id": "wd56",
+    "text": "opp has bears and a guy w/ 'when this creature dies, return target creature card from your graveyard to the battlefield'. i wrath. can they return the bears",
+    "expect": [
+      "Grizzly Bears is already in the graveyard then and can be the target.",
+      "Grizzly Bears enters the battlefield."
+    ],
+    "cite": [
+      "603.3d",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "wd57",
+    "text": "my cmdr is kokusho the evening star. it dies and i put it in the command zone. does its ability trigger",
+    "expect": [
+      "your graveyard → the command zone",
+      "opponent loses 5 life.",
+      "You gain 5 life."
+    ],
+    "cite": [
+      "603.10a",
+      "903.9a"
+    ]
+  },
+  {
+    "id": "wd58",
+    "text": "opp murders my mother of runes. in response i activate mom to give itself pro black. later that turn they doom blade it. does protection still apply",
+    "expect": [
+      "Yes: Mother of Runes still has protection from black until end of turn (611.2a), so Doom Blade can't target it (702.16b)."
+    ],
+    "notExpect": [
+      "Mother of Runes: the battlefield"
+    ],
+    "cite": [
+      "611.2a",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "wd59",
+    "text": "i got oko thief of crowns. i turn opp's kitchen finks into an elk w/ oko. then it dies. does persist trigger",
+    "expect": [
+      "No: as Kitchen Finks last existed on the battlefield it had no abilities (Oko, Thief of Crowns's effect)."
+    ],
+    "notExpect": [
+      "stops being a copy",
+      "comes back"
+    ],
+    "cite": [
+      "603.10a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "wd60",
+    "text": "my bears took 1 damage this turn then i blink it w/ cloudshift. is it still damaged",
+    "expect": [
+      "No: Grizzly Bears left the battlefield and returned as a new object with no memory of its previous existence (400.7)"
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "wd61",
+    "text": "opp swords my bears w/ a +1/+1 counter on it. how much life do i gain",
+    "expect": [
+      "You gain 3 life."
+    ],
+    "notExpect": [
+      "You gain 2 life."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "wd62",
+    "text": "my cmdr is kokusho the evening star. opp swords kokusho. in response i sac kokusho to viscera seer and put it in the command zone. do i get the life? does swords resolve",
+    "expect": [
+      "You gain 5 life.",
+      "Swords to Plowshares doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "603.10a",
+      "903.9a",
+      "608.2b"
+    ]
+  },
+  {
+    "id": "wd63",
+    "text": "humility is out. i clone opp's bears. what is clone",
+    "expect": [
+      "Clone doesn't copy anything: Humility takes its abilities away as it enters",
+      "Clone is 1/1"
+    ],
+    "notExpect": [
+      "a copy of Grizzly Bears"
+    ],
+    "cite": [
+      "614.12",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "wd64",
+    "text": "rip is out. opp's blood artist dies to my wrath along with my guys. does blood artist trigger",
+    "expect": [
+      "Blood Artist: the battlefield → exile (replaced by Rest in Peace)",
+      "so they never died and Blood Artist's ability doesn't trigger"
+    ],
+    "notExpect": [
+      "Yes: Blood Artist"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6",
+      "700.4"
+    ]
+  },
+  {
+    "id": "wd65",
+    "text": "rip is out. opp's blood artist dies to wrath along with my dudes. does blood artist trigger",
+    "expect": [
+      "Blood Artist: the battlefield → exile (replaced by Rest in Peace)",
+      "so they never died and Blood Artist's ability doesn't trigger"
+    ],
+    "notExpect": [
+      "Yes: Blood Artist"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6",
+      "700.4"
+    ]
+  },
+  {
+    "id": "wd66",
+    "text": "opp bolts my 2/2 w/ pro red. does it die",
+    "expect": [
+      "Lightning Bolt can't target a 2/2 creature with protection from red.",
+      "is still on the battlefield"
+    ],
+    "notExpect": [
+      "You take 3 damage"
+    ],
+    "cite": [
+      "702.16b"
+    ]
+  },
+  {
+    "id": "wd67",
+    "text": "furnace of rath is out and opp has a prevention shield for the next 3 damage. i bolt face. how much do they take",
+    "expect": [
+      "preventing first leaves 0 damage, doubling first leaves 3",
+      "No: opponent takes no damage."
+    ],
+    "notExpect": [
+      "takes 6 damage"
+    ],
+    "cite": [
+      "616.1",
+      "615.7"
+    ]
+  },
+  {
+    "id": "wd68",
+    "text": "leyline of sanctity is out on their side. i tseize opp. what happens",
+    "expect": [
+      "Thoughtseize can't target opponent."
+    ],
+    "notExpect": [
+      "discards"
+    ],
+    "cite": [
+      "702.11c"
+    ]
+  },
+  {
+    "id": "wd69",
+    "text": "phyrexian unlife is out, im at -3 life and take 2 from a shock. do i lose?",
+    "expect": [
+      "You have 2 poison counters.",
+      "No: You are still in the game at -3 life."
+    ],
+    "notExpect": [
+      "You lose 2 life"
+    ],
+    "cite": [
+      "702.90b",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wd70",
+    "text": "phyrexian unlife is out and im at -3. i take 2 from a shock. do i die",
+    "expect": [
+      "You have 2 poison counters.",
+      "No: You are still in the game at -3 life."
+    ],
+    "notExpect": [
+      "You lose 2 life"
+    ],
+    "cite": [
+      "702.90b",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wd71",
+    "text": "my thalia's lancers would enter and opp has hushbringer. does lancers etb trigger",
+    "expect": [
+      "No: Hushbringer stops it."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "wd72",
+    "text": "i got drannith magistrate out. can opp cast their cmdr from the command zone",
+    "expect": [
+      "No: opponent can't cast their commander from the command zone while Drannith Magistrate is on the battlefield"
+    ],
+    "notExpect": [
+      "Nothing changes."
+    ],
+    "cite": [
+      "903.8",
+      "101.2"
+    ]
+  },
+  {
+    "id": "wd73",
+    "text": "opp has containment priest. i reanimate a creature w/ reanimate",
+    "expect": [
+      "a creature: your graveyard → exile (replaced by Containment Priest)."
+    ],
+    "notExpect": [
+      "enters the battlefield"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6"
+    ]
+  },
+  {
+    "id": "wd74",
+    "text": "zealous conscripts steals my platinum angel and im at 0 life. do i lose",
+    "expect": [
+      "opponent controls Platinum Angel.",
+      "Yes: You have lost the game."
+    ],
+    "notExpect": [
+      "still in the game"
+    ],
+    "cite": [
+      "704.5a",
+      "613.1b"
+    ]
+  },
+  {
+    "id": "wd75",
+    "text": "opp thoughtseizes me. in response i brainstorm. when it resolves which cards can they take",
+    "expect": [
+      "Brainstorm resolves first (last in, first out, 405.5), so Thoughtseize sees your hand as it is after Brainstorm",
+      "You draw 3 cards."
+    ],
+    "cite": [
+      "405.5",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "wd76",
+    "text": "i bolt opp's bears. in response opp casts ranger's guile on the bears. what happens to my bolt",
+    "expect": [
+      "Lightning Bolt doesn't resolve (all targets illegal).",
+      "Grizzly Bears has hexproof until end of turn."
+    ],
+    "notExpect": [
+      "protection from red"
+    ],
+    "cite": [
+      "608.2b",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "wd77",
+    "text": "i electrolyze their llanowar elves and their face. they bounce the elves in response. do i still draw and still ping face for 1?",
+    "expect": [
+      "Electrolyze deals 1 damage to opponent, as divided when it was cast",
+      "Electrolyze still resolves: only some of its targets are illegal",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "opponent takes 2 damage",
+      "doesn't resolve"
+    ],
+    "cite": [
+      "608.2b",
+      "601.2d"
+    ]
+  },
+  {
+    "id": "wd78",
+    "text": "i float 2 mana in my first main phase. i move to combat. is the mana still there",
+    "expect": [
+      "No: the mana is gone.",
+      "empties as the main phase ends"
+    ],
+    "cite": [
+      "500.5",
+      "106.4"
+    ]
+  },
+  {
+    "id": "wd79",
+    "text": "opp swings w/ bears and hill giant. after attackers i settle the wreckage targeting opp. which creatures get exiled",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile.",
+      "Hill Giant: the battlefield → exile."
+    ],
+    "cite": []
+  },
+  {
+    "id": "wd80",
+    "text": "opp bolts. we both pass and it resolves. can i still counterspell it now",
+    "expect": [
+      "No: once both players pass priority in succession, Lightning Bolt resolves"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "117.4",
+      "608.1"
+    ]
+  },
+  {
+    "id": "wd81",
+    "text": "opp bolts. we both pass and it resolves. can i still counterspell it",
+    "expect": [
+      "No: once both players pass priority in succession, Lightning Bolt resolves"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "117.4",
+      "608.1"
+    ]
+  },
+  {
+    "id": "wd82",
+    "text": "i cast mystic snake, opp counterspells the snake. does the snake still counter",
+    "expect": [
+      "No: Mystic Snake was countered as a spell, so it never entered the battlefield"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "701.6a",
+      "603.6a"
+    ]
+  },
+  {
+    "id": "wd83",
+    "text": "i mystic snake. opp counterspells the snake. does the snake still counter",
+    "expect": [
+      "No: Mystic Snake was countered as a spell, so it never entered the battlefield"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "701.6a",
+      "603.6a"
+    ]
+  },
+  {
+    "id": "wd84",
+    "text": "i got junun efreet and two swamps. its my upkeep and the trigger resolves. can i tap my swamps for mana while it resolves to pay for it",
+    "expect": [
+      "Yes: when a resolving spell or ability asks for a mana payment",
+      "You pay {B}{B}"
+    ],
+    "cite": [
+      "605.3a"
+    ]
+  },
+  {
+    "id": "wd85",
+    "text": "i cast snapcaster on their turn targeting ponder. can i flashback ponder on their turn?",
+    "expect": [
+      "No: Ponder is a sorcery, so even with flashback it can be cast only during your main phase"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "307.1"
+    ]
+  },
+  {
+    "id": "wd86",
+    "text": "i snapcaster on their turn targeting ponder. can i flash ponder back on their turn",
+    "expect": [
+      "No: Ponder is a sorcery, so even with flashback it can be cast only during your main phase"
+    ],
+    "notExpect": [
+      "Yes:"
+    ],
+    "cite": [
+      "307.1"
+    ]
+  },
+  {
+    "id": "wd87",
+    "text": "swords on my own hexproof guy. is that legal",
+    "expect": [
+      "Yes: Swords to Plowshares can target a creature with hexproof. Hexproof only stops spells and abilities your opponents control (702.11b)"
+    ],
+    "cite": [
+      "702.11b",
+      "601.2c"
+    ]
+  },
+  {
+    "id": "wd88",
+    "text": "i cast electrolyze. can i pick the same guy twice",
+    "expect": [
+      "No: Electrolyze says \"target\" only once",
+      "choose that creature as its only target"
+    ],
+    "cite": [
+      "115.3",
+      "601.2c",
+      "601.2d"
+    ]
+  },
+  {
+    "id": "wd89",
+    "text": "i electrolyze. can i pick the same guy twice",
+    "expect": [
+      "No: Electrolyze says \"target\" only once",
+      "choose that creature as its only target"
+    ],
+    "cite": [
+      "115.3",
+      "601.2c",
+      "601.2d"
+    ]
+  },
+  {
+    "id": "wd90",
+    "text": "i cast cryptic command choosing counter target spell and draw a card but theres no spell on the stack. can i pick that mode",
+    "expect": [
+      "No: Cryptic Command can't be cast choosing \"Counter target spell\""
+    ],
+    "notExpect": [
+      "You draw 1 card"
+    ],
+    "cite": [
+      "700.2a",
+      "115.5"
+    ]
+  },
+  {
+    "id": "wd91",
+    "text": "opp has bears. i kcommand choosing 2 damage to bears and target player discards a card. they bounce the bears in response. does the discard still happen",
+    "expect": [
+      "Kolaghan's Command still resolves: only some of its targets are illegal",
+      "opponent discards"
+    ],
+    "cite": [
+      "608.2b",
+      "700.2a"
+    ]
+  },
+  {
+    "id": "wd92",
+    "text": "i pacify their guy. they give it pro white in response. what happens to pacifism",
+    "expect": [
+      "Pacifism doesn't resolve (all targets illegal).",
+      "Pacifism never enters the battlefield"
+    ],
+    "notExpect": [
+      "Pacifism enters the battlefield."
+    ],
+    "cite": [
+      "608.2b",
+      "608.3b",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "wd93",
+    "text": "opp doom blades my guy. i respond by giving it pro black. what happens",
+    "expect": [
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "608.2b",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "wd94",
+    "text": "opp has a guy w/ ward 2. i bolt it. in response i reverberate my bolt. does ward trigger for the copy",
+    "expect": [
+      "Yes: the copy is created with the warded creature as its target"
+    ],
+    "cite": [
+      "702.21a",
+      "707.10"
+    ]
+  },
+  {
+    "id": "wd95",
+    "text": "i mind control opp's guy. they respond by giving it hexproof. does mind control go to the yard",
+    "expect": [
+      "Yes: Mind Control's only target became illegal"
+    ],
+    "notExpect": [
+      "You control a creature"
+    ],
+    "cite": [
+      "608.3b",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "wd96",
+    "text": "can i target my own guy w/ murderous cut",
+    "expect": [
+      "Yes: Murderous Cut can target a creature"
+    ],
+    "cite": [
+      "601.2c",
+      "115.1a"
+    ]
+  },
+  {
+    "id": "wd97",
+    "text": "can i murderous cut my own guy",
+    "expect": [
+      "Yes: Murderous Cut can target a creature"
+    ],
+    "cite": [
+      "601.2c",
+      "115.1a"
+    ]
+  },
+  {
+    "id": "wd98",
+    "text": "opp attacks with a hexproof guy and i settle the wreckage. is it exiled",
+    "expect": [
+      "hexproof doesn't help: Settle the Wreckage targets only the player",
+      "a creature with hexproof: the battlefield → exile."
+    ],
+    "cite": [
+      "115.10a",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "wd99",
+    "text": "i cast wrath. does it kill creatures w/ hexproof and indestructible",
+    "expect": [
+      "a creature with hexproof: the battlefield → opponent's graveyard.",
+      "a creature with indestructible is indestructible and isn't destroyed."
+    ],
+    "cite": [
+      "702.11b",
+      "702.12b"
+    ]
+  },
+  {
+    "id": "wd100",
+    "text": "opp has bears. i cast a spell that says destroy target creature you dont control on their bears. in response i gain control of it. what happens",
+    "expect": [
+      "doesn't resolve (all targets illegal)"
+    ],
+    "notExpect": [
+      "Grizzly Bears: the battlefield"
+    ],
+    "cite": [
+      "608.2b"
+    ]
+  },
+  {
+    "id": "wd101",
+    "text": "i bolt opp's guy w/ ward 2 and dont pay. is the bolt countered",
+    "expect": [
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "702.21a"
+    ]
+  },
+  {
+    "id": "wd102",
+    "text": "opp doom blades my guy, in response i give it hexproof. what happens",
+    "expect": [
+      "Doom Blade doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "608.2b",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "wd103",
+    "text": "i activate sundial of the infinite in my end step w/ a creature from sneak attack. does the creature stay",
+    "expect": [
+      "stays on the battlefield: Sneak Attack's delayed trigger was exiled from the stack before it resolved, and it won't trigger again",
+      "Yes: a 2/2 creature is still on the battlefield."
+    ],
+    "cite": [
+      "603.7b",
+      "724.1b",
+      "603.7a"
+    ]
+  },
+  {
+    "id": "wd104",
+    "text": "stasis is out. do i skip my untap? does opp?",
+    "expect": [
+      "so you skip your untap step (it applies to every player, whoever controls it)",
+      "so opponent skips their untap step"
+    ],
+    "cite": [
+      "614.10",
+      "500.11"
+    ]
+  },
+  {
+    "id": "wd105",
+    "text": "i swing with two 2/2s and they dont block. then in main two i cast relentless assault. do my guys untap",
+    "expect": [
+      "a 2/2 creature untaps (Relentless Assault).",
+      "Yes: Relentless Assault untaps all creatures that attacked this turn (701.26b)",
+      "After this main phase you get an additional combat phase followed by an additional main phase"
+    ],
+    "cite": [
+      "701.26b",
+      "500.8"
+    ]
+  },
+  {
+    "id": "wd106",
+    "text": "i swing with two 2/2s, they dont block. in main 2 i cast relentless assault. do my guys untap",
+    "expect": [
+      "a 2/2 creature untaps (Relentless Assault).",
+      "Yes: Relentless Assault untaps all creatures that attacked this turn (701.26b)",
+      "After this main phase you get an additional combat phase followed by an additional main phase"
+    ],
+    "cite": [
+      "701.26b",
+      "500.8"
+    ]
+  },
+  {
+    "id": "wd107",
+    "text": "opp takes the initiative from me by attacking. when do i venture",
+    "expect": [
+      "Not until you take it back.",
+      "you stopped having it (726.3)"
+    ],
+    "cite": [
+      "726.2",
+      "726.3"
+    ]
+  },
+  {
+    "id": "wd108",
+    "text": "im the monarch. opp hits me with combat damage. who draws at eot",
+    "expect": [
+      "opponent is the monarch.",
+      "opponent draws 1 card."
+    ],
+    "cite": [
+      "725.2",
+      "725.3"
+    ]
+  },
+  {
+    "id": "wd109",
+    "text": "it becomes night. what happens to my daybound dude",
+    "expect": [
+      "It transforms to its nightbound face as it becomes night (702.145b)"
+    ],
+    "cite": [
+      "702.145b",
+      "702.145c"
+    ]
+  },
+  {
+    "id": "wd110",
+    "text": "i skip my next turn bc of chronatog. opp gives me an extra turn. do i take it",
+    "expect": [
+      "No: the extra turn from your opponent's effect is your next turn, and Chronatog said to skip the next turn, so it's skipped"
+    ],
+    "cite": [
+      "614.10",
+      "614.10a",
+      "500.7"
+    ]
+  },
+  {
+    "id": "wd111",
+    "text": "i got smokestack w/ 2 soot counters and 2 permanents. what happens on my upkeep",
+    "expect": [
+      "You sacrifice 2 permanents (Smokestack: one per soot counter, 2).",
+      "The order of Smokestack's two triggers is your choice (603.3b)",
+      "Smokestack has 3 soot counters."
+    ],
+    "cite": [
+      "701.21a",
+      "603.3b"
+    ]
+  },
+  {
+    "id": "wd112",
+    "text": "opp flashes in a creature in my beginning of combat. can it block",
+    "expect": [
+      "Yes: cast in the beginning of combat step, it resolves before attackers are declared",
+      "it doesn't stop blocking (302.6)"
+    ],
+    "cite": [
+      "509.1a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "wd113",
+    "text": "w/ paradox haze i have two upkeeps. does my dark confidant trigger twice",
+    "expect": [
+      "Yes, twice: Paradox Haze gives you an additional upkeep step after the first (500.9)"
+    ],
+    "cite": [
+      "500.6",
+      "500.9"
+    ]
+  },
+  {
+    "id": "wd114",
+    "text": "i got lab man and an empty library. i brainstorm. opp stifles the lab man trigger. do i win",
+    "expect": [
+      "Laboratory Maniac's ability can't be countered: it's a replacement effect",
+      "Yes: You have won the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "614.1a",
+      "121.6a",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wd115",
+    "text": "i got lab man and an empty library. i brainstorm. opp stifles lab man's trigger. do i win",
+    "expect": [
+      "Laboratory Maniac's ability can't be countered: it's a replacement effect",
+      "Yes: You have won the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "614.1a",
+      "121.6a",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wd116",
+    "text": "i thoracle w/ an empty library and opp stifles the trigger. do i win? do i lose?",
+    "expect": [
+      "Thassa's Oracle's triggered ability is countered.",
+      "No: You haven't won; you are still in the game.",
+      "An empty library isn't a loss by itself"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "wd117",
+    "text": "i thoracle w/ an empty library. in response to the trigger opp makes me draw a card. do i win",
+    "expect": [
+      "You lose the game (drew from an empty library).",
+      "No: You have lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.5b",
+      "121.4"
+    ]
+  },
+  {
+    "id": "wd118",
+    "text": "opp has platinum angel out. i thoracle with an empty library. do i win",
+    "expect": [
+      "You don't win the game: Platinum Angel (opponent's) says you can't.",
+      "No: You haven't won"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "104.2b",
+      "101.1"
+    ]
+  },
+  {
+    "id": "wd119",
+    "text": "phage the untouchable is in my yard. i reanimate it. what happens",
+    "expect": [
+      "You lose the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.4",
+      "104.3e"
+    ]
+  },
+  {
+    "id": "wd120",
+    "text": "i got abyssal persecutor and opp is at -5. i kill the persecutor. do they lose",
+    "expect": [
+      "Abyssal Persecutor: the battlefield → your graveyard.",
+      "Yes: opponent has lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wd121",
+    "text": "opp casts pact of negation on my brainstorm. on their next upkeep they dont pay. do they lose",
+    "expect": [
+      "opponent must pay {3}{U}{U} or lose the game (Pact of Negation)",
+      "Yes: opponent has lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "603.7a",
+      "104.3e"
+    ]
+  },
+  {
+    "id": "wd122",
+    "text": "in a four player game opp controls my bears when they lose the game. what happens to the bears",
+    "expect": [
+      "Grizzly Bears goes back to your control (800.4a)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "800.4a"
+    ]
+  },
+  {
+    "id": "wd123",
+    "text": "my cmdr has hit opp for 21 combat damage over the game. do they die",
+    "expect": [
+      "opponent loses the game (commander damage).",
+      "Yes: opponent has lost the game."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "704.6c",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "wd124",
+    "text": "i control gideon of the trials and i got its emblem. opp casts thassa's oracle w/ an empty library. do they win",
+    "expect": [
+      "opponent doesn't win the game: your Gideon of the Trials emblem says opponent can't.",
+      "No: opponent hasn't won"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "114.4",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "wd125",
+    "text": "i o-ring their tarmogoyf. in response to the etb they disenchant the o-ring. what happens",
+    "expect": [
+      "Oblivion Ring's leaves-the-battlefield ability resolves first and returns nothing",
+      "Tarmogoyf is exiled for good"
+    ],
+    "cite": [
+      "603.6c",
+      "405.5"
+    ]
+  },
+  {
+    "id": "wd126",
+    "text": "i o-ring their goyf. in response to the etb they disenchant the ring. what happens",
+    "expect": [
+      "Oblivion Ring's leaves-the-battlefield ability resolves first and returns nothing",
+      "Tarmogoyf is exiled for good"
+    ],
+    "cite": [
+      "603.6c",
+      "405.5"
+    ]
+  },
+  {
+    "id": "wd127",
+    "text": "i banishing light their tarmogoyf. in response to the etb they disenchant the banishing light. what happens",
+    "expect": [
+      "Nothing is exiled: Banishing Light had already left the battlefield.",
+      "Tarmogoyf doesn't move at all (610.3b)"
+    ],
+    "notExpect": [
+      "Tarmogoyf: the battlefield → exile"
+    ],
+    "cite": [
+      "610.3b"
+    ]
+  },
+  {
+    "id": "wd128",
+    "text": "i flickerwisp my own o-ring thats exiling their baneslayer. what happens",
+    "expect": [
+      "Baneslayer Angel: exile → the battlefield (opponent's control), returned by Oblivion Ring.",
+      "Oblivion Ring returns to the battlefield under your control at the beginning of the next end step",
+      "its target is chosen at that time"
+    ],
+    "cite": [
+      "603.7a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "wd129",
+    "text": "i flickerwisp my own o-ring that is exiling their baneslayer. what happens",
+    "expect": [
+      "Baneslayer Angel: exile → the battlefield (opponent's control), returned by Oblivion Ring.",
+      "Oblivion Ring returns to the battlefield under your control at the beginning of the next end step",
+      "its target is chosen at that time"
+    ],
+    "cite": [
+      "603.7a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "wd130",
+    "text": "my resto angel blinks my guy that has rancor on it. where does rancor go",
+    "expect": [
+      "Rancor: the battlefield → your graveyard.",
+      "Rancor: your graveyard → your hand."
+    ],
+    "cite": [
+      "704.5m"
+    ]
+  },
+  {
+    "id": "wd131",
+    "text": "opp blinks their clone that is copying my bears. what does it come back as",
+    "expect": [
+      "Clone's own \"enter as a copy\" ability applies again as it enters",
+      "Here it comes back as a copy of Grizzly Bears."
+    ],
+    "cite": [
+      "400.7",
+      "707.5"
+    ]
+  },
+  {
+    "id": "wd132",
+    "text": "i path a token. does it come back? do they get a land",
+    "expect": [
+      "it can't come back (111.8)",
+      "Yes: the search is opponent's."
+    ],
+    "cite": [
+      "704.5d",
+      "111.8"
+    ]
+  },
+  {
+    "id": "wd133",
+    "text": "my cmdr dies. do its when this dies triggers happen if i put it in the command zone",
+    "expect": [
+      "so its \"when this dies\" abilities trigger",
+      "a commander: your graveyard → the command zone"
+    ],
+    "cite": [
+      "903.9a",
+      "700.4",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "wd134",
+    "text": "my cmdr is kokusho the evening star. it dies. do its dies triggers happen if i put it in the command zone",
+    "expect": [
+      "Kokusho, the Evening Star: your graveyard → the command zone",
+      "opponent loses 5 life.",
+      "You gain 5 life."
+    ],
+    "cite": [
+      "903.9a"
+    ]
+  },
+  {
+    "id": "wd135",
+    "text": "i rampant growth and say i cant find a basic. is that allowed",
+    "expect": [
+      "Yes: Rampant Growth searches for a basic land card, a card with a stated quality"
+    ],
+    "cite": [
+      "701.23b"
+    ]
+  },
+  {
+    "id": "wd136",
+    "text": "i brainstorm and crack a fetch after. does the shuffle put back my two cards",
+    "expect": [
+      "Yes: the fetchland's search ends with a shuffle"
+    ],
+    "cite": [
+      "701.24a"
+    ]
+  },
+  {
+    "id": "wd137",
+    "text": "i brainstorm and crack a fetch in response. do the two cards i put back get shuffled away",
+    "expect": [
+      "No, they stay on top"
+    ],
+    "cite": [
+      "405.5",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "wd138",
+    "text": "opp fiend hunters my guy. i kill the fiend hunter in response to the etb. does my guy come back",
+    "expect": [
+      "Fiend Hunter's leaves-the-battlefield ability resolves first and returns nothing",
+      "a creature is exiled for good"
+    ],
+    "cite": [
+      "603.6c"
+    ]
+  },
+  {
+    "id": "wd139",
+    "text": "opp casts fiend hunter exiling my guy. i kill the fiend hunter in response to the etb. does my guy come back",
+    "expect": [
+      "Fiend Hunter's leaves-the-battlefield ability resolves first and returns nothing",
+      "a creature is exiled for good"
+    ],
+    "cite": [
+      "603.6c"
+    ]
+  },
+  {
+    "id": "wd140",
+    "text": "i cast banisher priest and opp bolts it in response to the trigger. does the exile happen",
+    "expect": [
+      "Nothing is exiled: Banisher Priest had already left the battlefield."
+    ],
+    "cite": [
+      "610.3b"
+    ]
+  },
+  {
+    "id": "wd141",
+    "text": "i clone a face-down morph. what does the clone copy",
+    "expect": [
+      "a 2/2 creature with no text, no name, no subtypes and no mana cost"
+    ],
+    "cite": [
+      "707.2",
+      "708.2a"
+    ]
+  },
+  {
+    "id": "wd142",
+    "text": "a guy i stole w/ act of treason dies. whose graveyard does it go to",
+    "expect": [
+      "a creature goes to opponent's graveyard, not yours"
+    ],
+    "cite": [
+      "400.3"
+    ]
+  },
+  {
+    "id": "wd143",
+    "text": "my pacifism is on their guy and it phases out. what happens to the aura",
+    "expect": [
+      "Pacifism phases out along with a creature (702.26g)"
+    ],
+    "notExpect": [
+      "Pacifism: the battlefield → "
+    ],
+    "cite": [
+      "702.26g",
+      "702.26d"
+    ]
+  },
+  {
+    "id": "wd144",
+    "text": "their guy gains hexproof in response to my o-ring trigger. what happens",
+    "expect": [
+      "Oblivion Ring's triggered ability doesn't resolve (all targets illegal).",
+      "Oblivion Ring stays on the battlefield exiling nothing"
+    ],
+    "cite": [
+      "608.2b"
+    ]
+  },
+  {
+    "id": "wd145",
+    "text": "i return a guy from my graveyard to the battlefield. it had +1/+1 counters and an aura before. does it keep them",
+    "expect": [
+      "No: when it left the battlefield it became a new object"
+    ],
+    "cite": [
+      "400.7",
+      "122.2",
+      "704.5m"
+    ]
+  },
+  {
+    "id": "wd146",
+    "text": "leyline of the void is out. opp's kitchen finks dies. do they get it back w/ persist",
+    "expect": [
+      "Kitchen Finks: the battlefield → exile (replaced by Leyline of the Void).",
+      "No: Kitchen Finks is in exile."
+    ],
+    "cite": [
+      "702.79a"
+    ]
+  },
+  {
+    "id": "wd147",
+    "text": "i reanimate a creature in opp's graveyard. who controls it and who owns it? if it dies where does it go",
+    "expect": [
+      "You control the creature",
+      "it goes to its owner's, your opponent's (400.3)"
+    ],
+    "cite": [
+      "400.3",
+      "110.2",
+      "108.3"
+    ]
+  },
+  {
+    "id": "wd148",
+    "text": "i reanimate griselbrand from opp's yard. who controls it and who owns it? if it dies where does it go",
+    "expect": [
+      "You control Griselbrand and your opponent owns it",
+      "To its owner's graveyard, your opponent's",
+      "You lose 8 life (Griselbrand's mana value)."
+    ],
+    "cite": [
+      "400.3",
+      "110.2"
+    ]
+  },
+  {
+    "id": "wd149",
+    "text": "their 3/3 menace swings. can i block with one 5/5",
+    "expect": [
+      "No: a 3/3 creature with menace has menace and can't be blocked except by two or more creatures, and a 5/5 creature is the only one that could (702.111b)."
+    ],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "wd150",
+    "text": "opp has thalia. i fow by pitching a blue card. do i have to pay 1",
+    "expect": [
+      "Force of Will was cast for its alternative cost, not its mana cost: pay 1 life and exile a blue card from your hand (601.2b).",
+      "so you pay {1} on top of that. Yes."
+    ],
+    "cite": [
+      "118.9d",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "wd151",
+    "text": "i got a 2/2 soldier token. i cast druid's deliverance. what do i get from populate",
+    "expect": [
+      "You get a token copy of Soldier token (populate, 701.36a)."
+    ],
+    "cite": [
+      "701.36a",
+      "707.2"
+    ]
+  },
+  {
+    "id": "wd152",
+    "text": "my bears took 1 damage this turn then i blink it with cloudshift. is it still damaged",
+    "expect": [
+      "No: Grizzly Bears left the battlefield and returned as a new object with no memory of its previous existence (400.7)"
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "wd153",
+    "text": "i got doubling season and hardened scales out, i cast walking ballista x=2. how many counters does it get?",
+    "expect": [
+      "Hardened Scales then Doubling Season gives 6; Doubling Season then Hardened Scales gives 5",
+      "Walking Ballista enters with 6 +1/+1 counters"
+    ],
+    "cite": [
+      "616.1",
+      "616.1e",
+      "614.1c"
+    ]
+  },
+  {
+    "id": "wd154",
+    "text": "blood moon is out. opp plays urza's saga. what happens",
+    "expect": [
+      "Urza's Saga is a Mountain with no abilities (Blood Moon).",
+      "Urza's Saga stays on the battlefield"
+    ],
+    "notExpect": [
+      "sacrifices Urza's Saga"
+    ],
+    "cite": [
+      "714.3a",
+      "714.4",
+      "305.7"
+    ]
+  },
+  {
+    "id": "wd155",
+    "text": "i bolt their bears, in response they ranger's guile the bears. what happens to my bolt",
+    "expect": [
+      "Lightning Bolt doesn't resolve (all targets illegal).",
+      "Grizzly Bears has hexproof until end of turn."
+    ],
+    "notExpect": [
+      "protection from red"
+    ],
+    "cite": [
+      "608.2b",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "wd156",
+    "text": "i cast time walk then time warp. what order do i take the extra turns",
+    "expect": [
+      "The extra turn from Time Warp comes first, then the one from Time Walk",
+      "the most recently created one is taken first (500.7)"
+    ],
+    "cite": [
+      "500.7"
+    ]
+  },
+  {
+    "id": "wd157",
+    "text": "im at 3 life. i cast ad nauseam. can i go below zero",
+    "expect": [
+      "Yes: you can keep going while Ad Nauseam resolves, and your life can drop below 0."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "107.1b",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wd158",
+    "text": "i cast brainstorm and crack a fetch after. does the shuffle put back my two cards",
+    "expect": [
+      "Yes: the fetchland's search ends with a shuffle"
+    ],
+    "cite": [
+      "701.24a"
+    ]
+  },
+  {
+    "id": "wd159",
+    "text": "opp is at 5 and has one 2/2 untapped. i swing with two 3/3s. is that lethal",
+    "expect": [
+      "No: opponent is still in the game at 2 life.",
+      "opponent goes from 5 to 2 life."
+    ],
+    "cite": [
+      "509.1a",
+      "510.1b"
+    ]
+  },
+  {
+    "id": "wd160",
+    "text": "i bolt my own bears. can i do that",
+    "expect": [
+      "Yes: Lightning Bolt can target Grizzly Bears; it says \"target any target\""
+    ],
+    "cite": [
+      "115.1a",
+      "601.2c"
+    ]
+  },
+  {
+    "id": "wd161",
+    "text": "my 2/2 and my 3/3 go face. they have no blockers. how much do they take",
+    "expect": [
+      "opponent takes 2 damage.",
+      "opponent takes 3 damage.",
+      "Yes: opponent takes 5 damage in all."
+    ],
+    "cite": [
+      "508.1a",
+      "510.1b"
+    ]
+  },
+  {
+    "id": "wd162",
+    "text": "i bolt face on their end step. opp is at 3. lethal",
+    "expect": [
+      "opponent loses the game.",
+      "Yes: opponent has lost the game."
+    ],
+    "cite": [
+      "120.3a",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "wd163",
+    "text": "i cast bolt on their bears and hold priority. i cast giant growth on their bears. what happens",
+    "expect": [
+      "Grizzly Bears is 5/5 until end of turn.",
+      "Grizzly Bears has 3 damage marked."
+    ],
+    "cite": [
+      "611.2a",
+      "120.3e"
+    ]
+  },
+  {
+    "id": "wd164",
+    "text": "they force my bolt. i pitch a blue card. what happens",
+    "expect": [
+      "opponent pays 1 life.",
+      "opponent exiles a blue card from opponent's hand (Force of Will's alternative cost).",
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "118.9",
+      "701.6a"
+    ]
   }
 ]
