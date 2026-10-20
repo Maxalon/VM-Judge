@@ -7395,13 +7395,16 @@
     "id": "an-unmodeled-ability-keeps-its-target",
     "text": "I control Thespian's Stage and copy their Dark Depths. What happens?",
     "expect": [
-      "names a target the engine can't model, so Dark Depths is kept as its target"
+      "Thespian's Stage is now a copy of Dark Depths with no ice counters on it.",
+      "Both copies of Dark Depths stay",
+      "You get a Marit Lage."
     ],
     "notExpect": [
-      "needs 0 target"
+      "names a target the engine can't model"
     ],
     "cite": [
-      "601.2c"
+      "707.2",
+      "704.5j"
     ]
   },
   {
@@ -36958,19 +36961,24 @@
     "text": "They have Spellskite. I cast Dismember on their Goyf and they redirect to Spellskite paying 2 life at 2 life. What happens?",
     "expect": [
       "opponent pays 2 life for Spellskite's Phyrexian mana symbol",
-      "Dismember now targets Spellskite instead of Tarmogoyf",
       "opponent loses the game"
     ],
     "cite": [
       "704.5a"
+    ],
+    "notExpect": [
+      "Dismember now targets Spellskite instead of Tarmogoyf"
     ]
   },
   {
     "id": "tt257-skite-at-two-redirect-paying-life",
     "text": "They have Spellskite at 2 life. I cast Dismember on their Goyf and they redirect it paying 2 life. What happens?",
     "expect": [
-      "Dismember now targets Spellskite instead of Tarmogoyf",
-      "opponent goes from 2 to 0 life"
+      "opponent goes from 2 to 0 life",
+      "opponent loses the game"
+    ],
+    "notExpect": [
+      "Dismember now targets Spellskite instead of Tarmogoyf"
     ]
   },
   {
@@ -45743,6 +45751,431 @@
     ],
     "cite": [
       "702.150a"
+    ]
+  },
+  {
+    "id": "lv1",
+    "text": "I cast Infernal Tutor with Lion's Eye Diamond on the battlefield and one other card in hand. In response I activate Lion's Eye Diamond discarding my hand. Does Infernal Tutor get hellbent?",
+    "expect": [
+      "Yes: hellbent is checked as Infernal Tutor resolves, not as it's cast (608.2c)."
+    ],
+    "cite": [
+      "608.2c",
+      "207.2c",
+      "117.3c"
+    ]
+  },
+  {
+    "id": "lv2",
+    "text": "I cast Chrome Mox imprinting Force of Will. My opponent casts Stifle targeting the imprint trigger. What mana can Chrome Mox make?",
+    "expect": [
+      "Chrome Mox's triggered ability is countered.",
+      "None: the imprint trigger was countered, so nothing was exiled with Chrome Mox"
+    ],
+    "cite": [
+      "106.5",
+      "607.2a",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "lv3",
+    "text": "I cast Mox Diamond and my opponent counters it with Force of Will. Do I have to discard a land?",
+    "expect": [
+      "No: Mox Diamond was countered, so it never would enter the battlefield"
+    ],
+    "cite": [
+      "614.1a",
+      "614.12"
+    ]
+  },
+  {
+    "id": "lv4",
+    "text": "My opponent controls Trinisphere. I cast Gush by returning two Islands. What do I pay?",
+    "expect": [
+      "Gush costs 3 mana in all (Trinisphere"
+    ],
+    "cite": [
+      "601.2f",
+      "118.9d"
+    ]
+  },
+  {
+    "id": "lv5",
+    "text": "My opponent activates Wasteland targeting my Tropical Island. Can I tap the Tropical Island for mana in response?",
+    "expect": [
+      "Tropical Island's mana ability: add {G}.",
+      "Tropical Island: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "605.3b"
+    ]
+  },
+  {
+    "id": "lv6",
+    "text": "My opponent controls Teferi, Time Raveler. Can I cast Daze on their spell?",
+    "expect": [
+      "Daze can't be cast (Teferi, Time Raveler: sorcery speed only)."
+    ],
+    "cite": [
+      "307.1"
+    ]
+  },
+  {
+    "id": "lv7",
+    "text": "I control Torpor Orb and cast Phyrexian Dreadnought. Do I have to sacrifice it?",
+    "expect": [
+      "No: Phyrexian Dreadnought's \"sacrifice it unless"
+    ],
+    "notExpect": [
+      "Yes, if a creature is there to sacrifice"
+    ],
+    "cite": [
+      "603.2",
+      "603.6a"
+    ]
+  },
+  {
+    "id": "lv8",
+    "text": "I cast Phyrexian Dreadnought. With its enters trigger on the stack, I cast Vision Charm to phase it out. Does it stay?",
+    "expect": [
+      "Phyrexian Dreadnought phases out.",
+      "Phyrexian Dreadnought isn't sacrificed: it's phased out as its trigger resolves"
+    ],
+    "cite": [
+      "702.26b",
+      "702.26d"
+    ]
+  },
+  {
+    "id": "lv9",
+    "text": "I have Delver of Secrets and reveal Brazen Borrower at upkeep. Does it flip?",
+    "expect": [
+      "No. In the library Brazen Borrower has only its normal characteristics"
+    ],
+    "notExpect": [
+      "Delver transforms into Insectile Aberration"
+    ],
+    "cite": [
+      "715.4"
+    ]
+  },
+  {
+    "id": "lv10",
+    "text": "I attack with Dreadhorde Arcanist and cast Lightning Bolt from my graveyard with its trigger. Where does Lightning Bolt go after it resolves?",
+    "expect": [
+      "Lightning Bolt: the stack → exile instead of the graveyard (Dreadhorde Arcanist, 614.1a).",
+      "Lightning Bolt is in exile"
+    ],
+    "notExpect": [
+      "doesn't have flashback"
+    ],
+    "cite": [
+      "614.1a",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "lv11",
+    "text": "I cast Snapcaster Mage targeting Force of Will in my graveyard. Can I cast Force of Will with flashback by exiling a blue card?",
+    "expect": [
+      "No: Force of Will can't be cast with flashback and its other alternative cost"
+    ],
+    "cite": [
+      "118.9a",
+      "702.34a"
+    ]
+  },
+  {
+    "id": "lv12",
+    "text": "I am at 1 life and cast Doomsday. What happens?",
+    "expect": [
+      "You lose 1 life.",
+      "You lose the game."
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "lv13",
+    "text": "I cast Flash putting Protean Hulk onto the battlefield and I don't pay. What happens?",
+    "expect": [
+      "Protean Hulk: the battlefield → your graveyard.",
+      "Protean Hulk: Search your library for any number of creature cards"
+    ],
+    "cite": [
+      "701.21a",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "lv14",
+    "text": "I cast Pyroblast targeting my opponent's Tarmogoyf. What happens?",
+    "expect": [
+      "Nothing happens from Pyroblast: Tarmogoyf isn't blue"
+    ],
+    "cite": [
+      "608.2c"
+    ]
+  },
+  {
+    "id": "lv15",
+    "text": "My graveyard has Uro, Titan of Nature's Wrath and four other cards. Can I cast Uro with escape?",
+    "expect": [
+      "No: escape needs 5 other cards exiled from the graveyard"
+    ],
+    "cite": [
+      "702.138a",
+      "118.3"
+    ]
+  },
+  {
+    "id": "lv16",
+    "text": "I cast Murktide Regent exiling Brainstorm, Ponder, Lightning Bolt, Wasteland and Delver of Secrets with delve. How big is it?",
+    "expect": [
+      "Murktide Regent enters with 3 +1/+1 counters",
+      "Murktide Regent is 6/6"
+    ],
+    "cite": [
+      "614.1c",
+      "702.66a"
+    ]
+  },
+  {
+    "id": "lv17",
+    "text": "I control Dark Depths with 3 ice counters and Thespian's Stage. I activate Thespian's Stage copying Dark Depths. What happens?",
+    "expect": [
+      "Thespian's Stage is now a copy of Dark Depths with no ice counters on it.",
+      "You get a Marit Lage."
+    ],
+    "cite": [
+      "707.2",
+      "707.9b",
+      "704.5j",
+      "603.8"
+    ]
+  },
+  {
+    "id": "lv18",
+    "text": "My opponent controls a Marit Lage token. I cast Swords to Plowshares on it. What happens?",
+    "expect": [
+      "opponent gains 20 life.",
+      "Marit Lage token ceases to exist"
+    ],
+    "cite": [
+      "704.5d"
+    ]
+  },
+  {
+    "id": "lv19",
+    "text": "My opponent controls a Marit Lage token. I activate Karakas targeting it. What happens?",
+    "expect": [
+      "Marit Lage: the battlefield → opponent's hand.",
+      "Marit Lage token ceases to exist"
+    ],
+    "cite": [
+      "704.5d",
+      "111.7"
+    ]
+  },
+  {
+    "id": "lv20",
+    "text": "I attack with Grizzly Bears equipped with Umezawa's Jitte and they block with a 3/3. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Umezawa's Jitte has 2 charge counters."
+    ],
+    "cite": [
+      "704.5g"
+    ]
+  },
+  {
+    "id": "lv21",
+    "text": "I activate Stoneforge Mystic putting Batterskull onto the battlefield. My opponent casts Stifle targeting the living weapon trigger. Do I get a Germ?",
+    "expect": [
+      "Batterskull's triggered ability is countered.",
+      "No: no Phyrexian Germ token was created."
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "lv22",
+    "text": "I control True-Name Nemesis choosing my opponent. My opponent casts Toxic Deluge paying 3 life. Does True-Name Nemesis die?",
+    "expect": [
+      "True-Name Nemesis is 0/-2 until end of turn.",
+      "Yes: True-Name Nemesis died"
+    ],
+    "cite": [
+      "704.5f"
+    ]
+  },
+  {
+    "id": "lv23",
+    "text": "I attack with Grizzly Bears and they block with Centaur Courser. I activate Mother of Runes giving the Bears protection from green. What happens?",
+    "expect": [
+      "Damage to Grizzly Bears from Centaur Courser is prevented (protection).",
+      "Centaur Courser has 2 damage marked."
+    ],
+    "notExpect": [
+      "Grizzly Bears: the battlefield"
+    ],
+    "cite": [
+      "702.16e",
+      "509.1h"
+    ]
+  },
+  {
+    "id": "lv24",
+    "text": "My opponent controls Pithing Needle naming Elvish Spirit Guide. Can I exile Elvish Spirit Guide from my hand for mana?",
+    "expect": [
+      "Yes: Pithing Needle doesn't stop mana abilities"
+    ],
+    "cite": [
+      "605.1a",
+      "602.5"
+    ]
+  },
+  {
+    "id": "lv25",
+    "text": "My opponent has Fire // Ice in hand. I cast Cabal Therapy naming Fire. What happens?",
+    "expect": [
+      "Fire // Ice: opponent's hand → opponent's graveyard."
+    ],
+    "cite": [
+      "709.4a",
+      "201.4b"
+    ]
+  },
+  {
+    "id": "lv26",
+    "text": "My opponent controls Chains of Mephistopheles. I cast Brainstorm with no other cards in hand. What happens?",
+    "expect": [
+      "Chains of Mephistopheles: 3 draws become a mill (no card in hand to discard).",
+      "You put back nothing (no cards in hand)."
+    ],
+    "notExpect": [
+      "You draw 3 cards."
+    ],
+    "cite": [
+      "614.1a",
+      "121.6b",
+      "614.5"
+    ]
+  },
+  {
+    "id": "lv27",
+    "text": "My opponent controls Null Rod. Can I tap Mox Sapphire for mana?",
+    "expect": [
+      "Mox Sapphire's ability can't be activated (Null Rod)."
+    ],
+    "cite": [
+      "602.5"
+    ]
+  },
+  {
+    "id": "lv28",
+    "text": "I control Counterbalance and the top card of my library is a Forest. My opponent casts Lotus Petal. What happens?",
+    "expect": [
+      "Counterbalance reveals Forest (mana value 0)",
+      "Lotus Petal is countered."
+    ],
+    "notExpect": [
+      "Lotus Petal enters the battlefield."
+    ],
+    "cite": [
+      "202.3a"
+    ]
+  },
+  {
+    "id": "lv29",
+    "text": "I played a land this turn and cast Expressive Iteration, exiling a Volcanic Island. Can I play it?",
+    "expect": [
+      "No: Volcanic Island is a land, and playing it from exile with Expressive Iteration is still your land play"
+    ],
+    "cite": [
+      "305.2a"
+    ]
+  },
+  {
+    "id": "lv30",
+    "text": "I control Griselbrand and Children of Korlis. I activate Griselbrand twice paying 14 life, then sacrifice Children of Korlis. How much life do I gain?",
+    "expect": [
+      "You gain 14 life."
+    ],
+    "cite": [
+      "119.4"
+    ]
+  },
+  {
+    "id": "lv31",
+    "text": "I cast Show and Tell and put Omniscience onto the battlefield. Then I cast Emrakul, the Aeons Torn without paying its mana cost. Do I get an extra turn?",
+    "expect": [
+      "Yes: you take an extra turn after this one."
+    ],
+    "cite": []
+  },
+  {
+    "id": "lv32",
+    "text": "I am at 7 life and control Griselbrand. I activate it paying 7 life. Do I draw seven cards?",
+    "expect": [
+      "You lose the game."
+    ],
+    "notExpect": [
+      "You draw 7 cards."
+    ],
+    "cite": [
+      "704.5a",
+      "119.4"
+    ]
+  },
+  {
+    "id": "lv33",
+    "text": "I cast Dark Ritual, then Brainstorm which my opponent counters with Spell Pierce, then Tendrils of Agony. How many copies of Tendrils do I get?",
+    "expect": [
+      "Brainstorm is countered.",
+      "Storm puts 3 copies of Tendrils of Agony on the stack"
+    ],
+    "cite": [
+      "702.40a"
+    ]
+  },
+  {
+    "id": "lv34",
+    "text": "I cast three spells and then Tendrils of Agony. With the storm trigger on the stack my opponent casts Mindbreak Trap exiling Tendrils of Agony. Do I get the copies?",
+    "expect": [
+      "Storm still puts 3 copies of Tendrils of Agony on the stack"
+    ],
+    "cite": [
+      "608.2h",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "lv35",
+    "text": "It's my turn. Can I cast Force of Negation by exiling a blue card?",
+    "expect": [
+      "No: Force of Negation can't be cast for its alternative cost"
+    ],
+    "cite": [
+      "118.9"
+    ]
+  },
+  {
+    "id": "lv36",
+    "text": "My opponent controls Ethersworn Canonist and has cast two spells this turn. I cast Empty the Warrens as my first spell this turn. How many Goblins do I get?",
+    "expect": [
+      "Storm puts 2 copies of Empty the Warrens on the stack",
+      "You get a Goblin token."
+    ],
+    "notExpect": [
+      "can't be cast"
+    ],
+    "cite": [
+      "702.40a",
+      "707.10"
     ]
   }
 ]

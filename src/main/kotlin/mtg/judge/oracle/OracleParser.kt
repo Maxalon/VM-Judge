@@ -887,6 +887,10 @@ object OracleParser {
         if (Regex("""^You control your opponents while they're searching their libraries\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("723.2", "723.5")))
         if (Regex("""^While an opponent is searching their library, they exile each card they find\. You may play those cards for as long as they remain exiled.*$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("723.2")))
         if (Regex("""^If ~ is in your opening hand, you may begin the game with it on the battlefield\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("103.6")))
+        // Chains of Mephistopheles: a draw replacement the engine applies where cards are drawn (LegacyMech.chainsReplacesDraws).
+        if (Regex("""^If a player would draw a card except the first one they draw in each of their draw steps, that player discards a card instead\..*$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("614.1a", "121.6")))
+        // Murktide Regent: its counters as it enters, counted from the cards delve exiled for it (LegacyMech.onEvent).
+        if (Regex("""^~ enters with a \+1/\+1 counter on it for each (instant and sorcery|instant|sorcery|creature) card exiled with it\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("614.1c", "702.66a")))
         // "If you control a commander, you may cast this spell without paying its mana cost" (Fierce Guardianship
         // and the rest of that cycle): permission to cast for an alternative cost, which is not an effect the
         // spell has on resolution. Read as a static ability of the card, the way it works from hand.
@@ -1420,6 +1424,14 @@ object OracleParser {
         // "(You may) have ~ deal 3 damage to any target" says what "~ deals 3 damage to any target" says.
         Regex("""^have (?:~|it) deal (.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return parseSentence("~ deals " + it.groupValues[1]) }
         Regex("""^target (player|opponent) reveals their hand\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "reveals their hand", listOf("701.20a")) }
+        // Children of Korlis: the life lost this turn, counted by the engine (LegacyMech.narratedAs).
+        if (Regex("""^you gain life equal to the (?:amount of )?life you've lost this turn\.?(?: \(.*\))?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Narrated(s.trim().substringBefore(" (").trimEnd('.'), listOf("119.3"))
+        // Thespian's Stage: "~ becomes a copy of target land, except it has this ability." (707.2, 707.9b; LegacyMech.becomeCopy)
+        Regex("""^~ becomes a copy of target (land|artifact|creature|permanent|nonland permanent)(?:,? except it has this ability)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "becomes a copy" + (if (s.contains("except it has this ability", true)) " keeping this ability" else ""), listOf("707.2")) }
+        // Protean Hulk: the search and what it finds, said rather than played out (the library isn't tracked).
+        if (Regex("""^search your library for any number of creature cards with total mana value \d+ or less, put them onto the battlefield, then shuffle\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Narrated(s.trim().trimEnd('.'), listOf("701.23a", "202.3"))
+        // Vision Charm, Oubliette-style "Target artifact phases out." (702.26b): the engine phases the target out (Zones.phaseOut).
+        Regex("""^target ((?:nonland )?(?:artifact|creature|permanent|nonland permanent|land))s? phases out\.?(?: \(.*\))?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "phases out", listOf("702.26b")) }
         // "If you control a commander as you cast this spell, you may choose both instead." / "Each mode must
         // target a different player.": riders on a modal spell's mode count, said rather than played out.
         Regex("""^if .+?, (?:you may )?choose (?:$modeCount|both) instead[.\u2014-]?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("700.2d")) }
@@ -1951,6 +1963,8 @@ object OracleParser {
         }
         counterRe.matchEntire(s)?.let { return Effect.Counter(target(it.groupValues[1], Kind.SPELL)) }
         Regex("""^exile (target spell(?: with mana value \d+ or less)?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.ExileSpell(target(it.groupValues[1], Kind.SPELL)) }
+        // Mindbreak Trap: "Exile any number of target spells." — played out for the spell named (one target each time it's said).
+        if (Regex("""^exile any number of target spells\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ExileSpell(target("target spell", Kind.SPELL))
         Regex("""^(all creatures|creatures your opponents control|creatures you control|all other creatures|other creatures) get -X/-X until end of turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val f = parseFilter(m.groupValues[1].removePrefix("all ").removePrefix("All "), Kind.CREATURE); if (f.verifiable) return Effect.PumpAll(f, 0, 0, x = true)
         }

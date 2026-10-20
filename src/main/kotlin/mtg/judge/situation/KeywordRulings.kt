@@ -109,6 +109,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 if (tc != null) n = minOf(if (said > 0) said else if (gy.isNotEmpty()) gy.size else (p.graveyardSize ?: 0), tc.generic)
                 obj.castCost.delved = n
                 gy.take(n).forEach { it.zone = Zone.EXILE }
+                mtg.judge.engine.LegacyMech.delved(obj, gy.take(n))   // Murktide Regent counts these
                 if (gy.size < n && p.graveyardSize != null) p.graveyardSize = (p.graveyardSize!! - (n - gy.size)).coerceAtLeast(0)
                 val left = if (tc != null) mtg.judge.engine.manaText(tc.generic - n, tc.symbols) else cost.replace(Regex("""\{(\d+)\}""")) { m -> val r = m.groupValues[1].toInt() - n; if (r > 0) "{$r}" else "" }
                 val taxNote = tc?.changes?.takeIf { it.isNotEmpty() }?.let { cs -> ", ${cs.joinToString(" and ") { c -> "${c.source} ${if (c.amount < 0) "−" else "+"}${c.shown}" }} included" } ?: ""

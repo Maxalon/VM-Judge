@@ -20,7 +20,8 @@ class Engine(val state: GameState) {
         obj.kwf.castFrom = if (flashback) Zone.GRAVEYARD else obj.zone   // rebound looks at where the spell was cast from (702.88a)
         obj.kwf.escaped = obj.kwf.escapeIntent && obj.kwf.castFrom == Zone.GRAVEYARD; val escapeCast = obj.kwf.escapeIntent || obj.kwf.jumpIntent; obj.kwf.escapeIntent = false; obj.kwf.jumpStarted = obj.kwf.jumpIntent; obj.kwf.jumpIntent = false   // escape (702.138b)
         // "I cast Lightning Bolt from my graveyard": only with permission (Yawgmoth's Will) or the card's own flashback.
-        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback") && !escapeCast) {
+        val legacyPermit = obj.zone == Zone.GRAVEYARD && LegacyMech.castFromGraveyardBy(state, playerId, obj, card)   // Dreadhorde Arcanist
+        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback") && !escapeCast && !legacyPermit) {
             trace.step("${card.name} is in ${player.possessive} graveyard, and nothing lets ${player.subject.lowercase()} cast it from there: a spell can be cast only from where a rule or effect allows, normally the hand (601.3, 601.2a). Yawgmoth's Will or a flashback cost would let it be cast from the graveyard.", "601.3", "601.2a")
             state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard (nothing allows it)."; return null
         }
@@ -56,6 +57,7 @@ class Engine(val state: GameState) {
             state.outcomes += "${card.name} can't be cast (${lock.name})."; return null
         }
         if (EdhMech.castBlocked(state, playerId, card)) return null   // Ranger-Captain of Eos: no noncreature spells this turn
+        if (LegacyMech.altCostRefused(state, playerId, card, alternative, flashback)) return null   // 118.9, 118.9a
         // Silence: a turn-long stop on casting, which ends in the cleanup step.
         if (playerId in state.cantCastThisTurn) {
             val p = state.player(playerId)
@@ -439,7 +441,7 @@ class Engine(val state: GameState) {
             trace.step("$mage's enters-the-battlefield trigger was countered, so it never gave ${card.name} flashback; ${card.name} has no flashback of its own and can't be cast from the graveyard.", "702.34a", "601.3")
             state.outcomes += "No: ${card.name} can't be cast from ${player.possessive} graveyard. $mage's trigger was countered, so it never gained flashback, and it has none itself (702.34a, 601.3)."; return null
         }
-        if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
+        if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn && !legacyPermit) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
         if (item.flashback) { obj.zone = Zone.STACK; trace.step("${card.name} is cast from ${player.possessive} graveyard for its flashback cost, an alternative cost paid instead of its mana cost.", "702.34a", "601.2b") }
         if (evoked && !card.has("evoke")) { state.clarifications += Clarification("${card.name}'s evoke", "${card.name} doesn't have evoke, so it can't be cast for an evoke cost; treating it as cast normally.") }
         if (item.evoked) trace.step("${card.name} is cast for its evoke cost, an alternative cost paid instead of its mana cost. It's still a creature spell and resolves normally; its evoke trigger will sacrifice it once it has entered.", "702.74a", "601.2b")
@@ -631,6 +633,7 @@ class Engine(val state: GameState) {
     }
 
     private fun drawCards(who: Player, count0: Int) {
+        if (LegacyMech.chainsReplacesDraws(state, who, count0) { p, n -> drawCards(p, n) }) return   // Chains of Mephistopheles (LegacyMechanics.kt)
         var count = count0
         var trimmed = false
         // Notion Thief: a draw an opponent would make is the Thief's controller's instead (614.1a). Only the
@@ -933,7 +936,7 @@ class Engine(val state: GameState) {
         Regex("""Pay (\d+) life""", RegexOption.IGNORE_CASE).find(ability.cost)?.let { m ->
             val n = m.groupValues[1].toInt(); val p = state.player(playerId)
             if (p.life != null && p.life!! < n) { trace.step("${p.subject} ${p.v("has", "have")} ${p.life} life and can't pay $n life, so the ability can't be activated.", "118.3", "119.4"); state.outcomes += "${obj.name}'s ability can't be activated (not enough life)."; return null }
-            p.life = p.life?.minus(n); trace.step("${p.subject} ${p.v("pays", "pay")} $n life${p.life?.let { " ($it)" } ?: ""} as part of the cost.", "119.4", "602.2b"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} $n life."
+            p.life = p.life?.minus(n); trace.step("${p.subject} ${p.v("pays", "pay")} $n life${p.life?.let { " ($it)" } ?: ""} as part of the cost.", "119.4", "602.2b"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} $n life."; lifeLost(p, n)   // paying life is losing it (119.4)
         }
         // "Remove a +1/+1 counter from ~:" (Walking Ballista, Triskelion): the counter comes off as the cost, before
         // the ability is even on the stack. Without this the Ballista pinged for free and kept its counters.
@@ -1616,6 +1619,9 @@ class Engine(val state: GameState) {
     }
 
     fun resolveTop() {
+        // "I'm at 7 and pay 7 life to Griselbrand": state-based actions are checked before anyone gets priority to pass (117.5,
+        // 704.3), so a player at 0 life loses with the ability still on the stack, before it can resolve.
+        if (state.stack.isNotEmpty() && !gameOver() && LegacyMech.lifeCostKills(state)) stateBasedActions()
         if (gameOver() && state.stack.isNotEmpty()) {
             if (state.trace.steps.none { it.text.startsWith("The game is over") }) trace.step("The game is over: a player has lost (104.2a), so nothing left on the stack resolves.", "104.2a", "104.3a")
             state.stack.clear(); return
@@ -2298,6 +2304,7 @@ class Engine(val state: GameState) {
     private var leavingTogether: Set<String> = emptySet()
 
     private fun onEvent(event: GameEvent) {
+        LegacyMech.onEvent(state, event)   // storm's last known information, life lost this turn (LegacyMechanics.kt)
         // Torpor Orb / Hushbringer: creatures entering (or dying) don't cause abilities to trigger.
         val hush = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.NoEtbTriggers>().map { o to it } }
         val muted = hush.firstOrNull { (_, e) -> (event is GameEvent.EntersBattlefield && state.isCreature(event.obj)) || (e.alsoDies && event is GameEvent.Dies && state.isCreature(event.obj)) }
@@ -3100,8 +3107,9 @@ class Engine(val state: GameState) {
             is Effect.StormCopy -> {
                 val you = state.player(item.controller)
                 val spell = state.stack.firstOrNull { it.source === item.source }
-                val prior = state.spellsThisTurn.values.sum() - 1
+                val prior = LegacyMech.stormCount(item.source) ?: (state.spellsThisTurn.values.sum() - 1)   // counted as it was cast (702.40a)
                 when {
+                    spell == null && prior > 0 && LegacyMech.stormFromLki(this, item, prior) -> Unit
                     spell == null -> trace.step("${item.source.name} isn't on the stack any more (it was countered or otherwise left), so the storm trigger copies nothing. The trigger is independent of the spell and still resolves.", "702.40a", "608.2b")
                     prior <= 0 -> {
                         trace.step("Storm counts every spell cast before ${item.source.name} this turn, by any player, whether or not it resolved. None were, so the trigger makes no copies.", "702.40a")
@@ -3427,7 +3435,8 @@ class Engine(val state: GameState) {
                         state.clarifications += Clarification("${p.possessive} hand", "${item.source.name} makes ${if (p.you) "you" else p.name} discard every $named; what is in ${if (p.you) "your" else "their"} hand?")
                         state.outcomes += "${item.source.name}: ${p.subject.lowercase()} ${p.v("discards", "discard")} every copy of $named (how many depends on ${p.possessive} hand)."
                     } else {
-                        val hits = hand.filter { it.name.equals(named, true) }
+                        val hits = hand.filter { it.name.equals(named, true) || it.name.split(" // ").any { h -> h.equals(named, true) } }
+                        LegacyMech.splitNameNote(state, hits, named)   // "naming Fire" hits Fire // Ice (709.4a)
                         if (hits.isEmpty()) { trace.step("No card in ${p.possessive} hand is named $named, so nothing is discarded.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} nothing (no $named in hand)." }
                         else {
                             trace.step("${hits.size} card${if (hits.size == 1) "" else "s"} named $named ${if (hits.size == 1) "is" else "are"} discarded, all at once; the rest of the hand stays.", "701.9a", "400.7")
@@ -3620,7 +3629,7 @@ class Engine(val state: GameState) {
                 if (o == null || who == null) trace.step("No creature or player to measure, so no life is gained.", "608.2h")
                 else { trace.step("${o.name}'s power is $amount${if (!o.isOnBattlefield()) " (its last known information, since it has left the battlefield)" else ""}.", "608.2h"); gainLife(who, amount) }
             }
-            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
+            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
             is Effect.Regenerate -> {
                 val put: (GameObject) -> Unit = { o -> state.shields += Shield(Replacement.Regenerate, o.id, null, 1, item.describe); trace.step("${o.name} gets a regeneration shield: the next time it would be destroyed this turn, it's instead tapped, its damage is removed, and it's removed from combat.", "701.19a", "614.8"); state.outcomes += "${o.name} has a regeneration shield this turn." }
                 if (effect.target == null) put(item.source) else forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let(put) }
@@ -3937,6 +3946,8 @@ class Engine(val state: GameState) {
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
                 if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
                 if (EdhMech.resolve(this, effect.text, item)) return   // Tergrid, Consultation, Expropriate, Leadership Vacuum (EdhMechanics.kt)
+                if (LegacyMech.narrated(this, effect.text, item)) return   // Dreadnought phased out, Chrome Mox imprint (LegacyMechanics.kt)
+                LegacyMech.narratedAs(state, effect.text, item)?.let { applyEffect(it, item); return }   // Children of Korlis
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 // Devoted Druid's "Untap ~": the permanent really untaps, so its {T} ability can be activated again.
                 if (Regex("""(?i)^untap ~\.?$""").matches(effect.text.trim()) && item.source.isOnBattlefield()) {
@@ -3994,6 +4005,8 @@ class Engine(val state: GameState) {
             is Effect.PutBackFromHand -> {
                 val p = state.player(item.controller)
                 val before = p.handSize
+                // "Brainstorm with an empty hand under Chains": only the cards there can be put back; an impossible part is ignored (614.6, 609.3).
+                if (before != null && before < effect.count) { trace.step("${p.subject} ${p.v("has", "have")} only $before card${if (before == 1) "" else "s"} in hand, so only ${if (before == 0) "nothing" else "$before"} can be put back; the rest of the instruction is impossible and ignored.", "609.3"); state.outcomes += "${p.subject} ${p.v("puts", "put")} back ${if (before == 0) "nothing (no cards in hand)" else "$before card${if (before == 1) "" else "s"} (all ${p.subject.lowercase()} ${p.v("has", "have")})"}."; p.librarySize = p.librarySize?.plus(before); p.handSize = 0; return }
                 p.handSize = before?.minus(effect.count)?.coerceAtLeast(0)
                 p.librarySize = p.librarySize?.plus(effect.count)
                 trace.step("${p.subject} ${p.v("puts", "put")} ${effect.count} card${if (effect.count == 1) "" else "s"} from ${p.possessive} hand on top of ${p.possessive} library${before?.let { " ($it → ${p.handSize} in hand)" } ?: ""}.", "401.1")
@@ -4041,7 +4054,9 @@ class Engine(val state: GameState) {
                     val spell = state.stack.firstOrNull { it.kind == StackKind.SPELL && it !== item }
                     val mv = spell?.source?.def?.manaValue?.toInt()
                     val top = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == item.controller && it.def.name == "Sensei's Divining Top" }
-                    state.outcomes += "${item.source.name}: ${spell?.source?.name ?: "the spell"}${mv?.let { " (mana value $it)" } ?: ""} is countered if the revealed top card's mana value ${mv?.let { "is $it" } ?: "matches it"} (a land on top has mana value 0).${top?.let { " With ${it.name} out, activate it in response to look at the top three cards and put one${mv?.let { n -> " with mana value $n" } ?: ""} on top first." } ?: ""}"
+                    val known = LegacyMech.counterbalance(state, item, spell)   // the top card was said: reveal it and compare (LegacyMechanics.kt)
+                    if (known == true) applyEffect(Effect.CounterThatSpell, item)
+                    if (known == null) state.outcomes += "${item.source.name}: ${spell?.source?.name ?: "the spell"}${mv?.let { " (mana value $it)" } ?: ""} is countered if the revealed top card's mana value ${mv?.let { "is $it" } ?: "matches it"} (a land on top has mana value 0).${top?.let { " With ${it.name} out, activate it in response to look at the top three cards and put one${mv?.let { n -> " with mana value $n" } ?: ""} on top first." } ?: ""}"
                 }
                 // Chain Lightning: "that player or that permanent's controller may pay {R}{R}. If the player does, they may copy ~…"
                 Regex("""^that player or that permanent's controller may pay (\{[^}]+\}(?:\{[^}]+\})*)\.?$""", RegexOption.IGNORE_CASE).find(effect.text)?.let { cc ->

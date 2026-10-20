@@ -76,6 +76,7 @@ fun Engine.keywordResolutionZone(item: StackItem): Zone? {
     // A spell that was spliced or cast as an Adventure has the text or characteristics it gained only while it's on the stack (702.47e, 715.4).
     if (src.def !== src.printedDef && (src.kwf.spliced.isNotEmpty() || src.kwf.castAsAdventure)) src.def = src.printedDef
     if (src.kwf.castAsAdventure) return Zone.EXILE
+    if (LegacyMech.exileOnResolve(src) != null) return Zone.EXILE   // Dreadhorde Arcanist: "exile it instead"
     if (src.kwf.jumpStarted) return Zone.EXILE
     if (src.kwf.boughtBack) return Zone.HAND
     if (src.def.has("rebound") && src.kwf.castFrom == Zone.HAND) return Zone.EXILE
@@ -97,6 +98,10 @@ fun Engine.keywordResolutionNote(item: StackItem, zone: Zone) {
         src.kwf.castAsAdventure = false; src.kwf.onAdventure = true
         state.trace.step("The Adventure spell finishes resolving. Instead of putting it into its owner's graveyard, its controller exiles it, and for as long as it stays in exile that player may cast the creature card from there.", "715.3d", "608.2n")
         state.outcomes += "${src.printedDef.name} goes to exile instead of the graveyard. Yes: ${owner.subject.lowercase()} may cast it as the creature from exile on a later turn (715.3d), but not as the Adventure again."
+    } else if (zone == Zone.EXILE && LegacyMech.exileOnResolve(src) != null) {
+        val by = LegacyMech.exileOnResolve(src)
+        state.trace.step("${def.name} finishes resolving and would be put into ${owner.possessive} graveyard, but $by's ability said \"If that spell would be put into your graveyard, exile it instead\", so it's exiled. It can't be cast from the graveyard again.", "614.1a", "608.2n")
+        state.outcomes += "${def.name}: the stack → exile instead of the graveyard ($by, 614.1a)."
     } else if (zone == Zone.EXILE && def.has("rebound")) {
         src.kwf.rebound = true; src.kwf.reboundDone = true
         state.trace.step("${def.name} was cast from ${owner.possessive} hand and has rebound, so instead of going to the graveyard as it finishes resolving it is exiled. At the beginning of ${owner.possessive} next upkeep ${owner.subject.lowercase()} may cast it from exile without paying its mana cost.", "702.88a", "608.2n")
