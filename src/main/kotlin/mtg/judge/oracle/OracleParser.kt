@@ -69,7 +69,8 @@ object OracleParser {
                 var j = i0 + 1; val parts = mutableListOf(l.trim())
                 while (j < rawLines.size && (Regex("""^\d+/\d+$""").matches(rawLines[j].trim()) || keywordsIn(rawLines[j]) != null)) { parts += rawLines[j].trim(); j++ }
                 lines += parts.joinToString(" "); i0 = j
-            } else { lines += l; i0++ }
+            // "Enchant creature, land, or planeswalker" (Imprisoned in the Moon): one enchant ability with three kinds, not three keywords.
+            } else { lines += mtg.judge.engine.DeepMech.splitLine(l.replace(Regex("""^(Enchant [a-z]+), ([a-z]+),? or ([a-z]+)$"""), "$1 or $2 or $3")); i0++ }
         }
         val abilities = mutableListOf<Ability>()
         var spellEffect: Effect? = null
@@ -93,7 +94,8 @@ object OracleParser {
                         "enchant" -> { val what = part.substring(7).trim().trimEnd('.'); enchant = if (what.equals("player", true)) ObjFilter(setOf(Kind.PLAYER), raw = what)
                             // Animate Dead: "Enchant creature card in a graveyard" — a card, not a permanent.
                             else if (Regex("""(?i)^(?:creature|permanent|artifact|enchantment|land|planeswalker) card in an? graveyard$""").matches(what)) ObjFilter(setOf(Kind.CARD), raw = what, inGraveyard = true)
-                            else parseFilter(what, Kind.PERMANENT); abilities += StaticAbility(part, kw) }
+                            // Imprisoned in the Moon: "Enchant creature, land, or planeswalker" is one filter of three kinds (702.5a).
+                            else parseFilter(what.replace(Regex(""",? or |, """), " or "), Kind.PERMANENT); abilities += StaticAbility(part, kw) }
                         "equip" -> abilities += ActivatedAbility(part.trimEnd('.'), Effect.Attach(TargetSpec(ObjFilter(setOf(Kind.CREATURE), controller = Who.YOU, raw = "creature you control"), "creature you control")), part, "Activate only as a sorcery")
                         "cycling" -> abilities += ActivatedAbility(part.trimEnd('.') + " (discard this card from your hand)", Effect.Draw(Who.YOU, 1), part, "Activate only while this card is in your hand")
                         // "Basic landcycling {1}{B}", "Plainscycling {2}": cycling that fetches a land (702.29b).
@@ -178,7 +180,7 @@ object OracleParser {
                                 "Backup $n (When this creature enters, put ${if (n == 1) "a +1/+1 counter" else "$n +1/+1 counters"} on target creature. If that's another creature, it gains the following abilities until end of turn.)")
                         }
                         // Mobilize, afterlife, decayed, ravenous: expanded into the abilities their rules define (NewMechanics.kt).
-                        else -> abilities += mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
+                        else -> abilities += mtg.judge.engine.DeepMech.keywordAbilities(kw, part) ?: mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
                     }
                 }
                 // Animate Dead / Dance of the Dead: one paragraph holding the enters ability that returns the card it enchants
@@ -696,6 +698,7 @@ object OracleParser {
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
+        mtg.judge.engine.DeepMech.parseStatic(line)?.let { return it }   // Song of the Dryads, Dryad of the Ilysian Grove, Animar (DeepMechanics.kt)
         mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
         mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
@@ -827,7 +830,7 @@ object OracleParser {
         Regex("""^you can't lose the game and your opponents can't win the game\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.CantLose) }
         Regex("""^you don't lose the game for having 0 or less life\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NoLossAtZeroLife) }
         Regex("""^as long as you have 0 or less life, all damage is dealt to you as though its source had infect\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.DamageAsInfectAtZeroLife) }
-        Regex("""^nonbasic lands are mountains\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NonbasicLandsAreMountains) }
+        Regex("""^nonbasic lands are (?:mountains|islands|plains|swamps|forests)\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NonbasicLandsAreMountains) }
         // "Creatures without flying can't attack" (Moat), "Non-Eye creatures you control can't block": a filter
         // and a restriction, the same shape the engine already checks for enchanted creatures.
         Regex("""^([a-z][a-z0-9' -]*) can't (attack|block|attack or block)(?: this turn)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -1102,7 +1105,7 @@ object OracleParser {
 
     private fun keywordsIn(text: String): Set<String>? {
         // "protection from colorless or from the color of your choice": one grant with a choice in it.
-        if (Regex("""^protection from colou?rless or from the colou?r of your choice$""", RegexOption.IGNORE_CASE).matches(text.trim().trimEnd('.')))
+        if (Regex("""^protection from (?:colou?rless|artifacts) or from the colou?r of your choice$""", RegexOption.IGNORE_CASE).matches(text.trim().trimEnd('.')))
             return setOf("protection from the color of your choice")
         val parts = text.lowercase().trimEnd('.').replace(" and from ", " and protection from ").split(Regex(""",\s*|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() }
         val ok = parts.isNotEmpty() && parts.all { it in keywordList || Regex("""^ward (?:\{[^}]+\})+$""").matches(it) ||
@@ -1116,6 +1119,7 @@ object OracleParser {
 
     fun parseEffect(text: String): Effect {
         WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
+        mtg.judge.engine.DeepMech.parseEffect(text)?.let { return it }   // Chandra's +1: cast it or take damage (DeepMechanics.kt)
         mtg.judge.engine.EdhMech.parseSpell(text) { parseEffect(it) }?.let { return it }   // Demonic Consultation, Expropriate (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseSpell(text.trim()) { target(it) }?.let { return it }   // Balance, Berserk, Goblin Charbelcher, Donate (PauperMechanics.kt)
         Regex("""^look at the top X cards of your library, where X is your devotion to (white|blue|black|red|green)\. Put up to one of them on top of your library and the rest on the bottom of your library in a random order\. If X is greater than or equal to the number of cards in your library, you win the game\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfDevotionCoversLibrary(mapOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G').getValue(it.groupValues[1].lowercase())) }
@@ -1413,6 +1417,7 @@ object OracleParser {
         mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
         mtg.judge.engine.EdhMech.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Ranger-Captain, Leadership Vacuum, Command Beacon (EdhMechanics.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
+        mtg.judge.engine.DeepMech.parseSentence(s) { target(it) }?.let { return it }   // Twisted Image, Mind Bend (DeepMechanics.kt)
         mtg.judge.engine.NewMech.parseSentence(s)?.let { return it }   // adapt, learn, discover, the Ring tempts you (NewMechanics.kt)
         mtg.judge.engine.NewMech.stripWhereX(s)?.let { return parseSentence(it) }   // domain: "…, where X is the number of basic land types among lands you control"
         // Lavinia, Azorius Renegade: "if no mana was spent to cast it, counter that spell."

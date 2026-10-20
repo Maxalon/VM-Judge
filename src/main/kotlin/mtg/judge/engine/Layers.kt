@@ -159,7 +159,7 @@ object Layers {
                     // Blood Moon, Magus of the Moon: nonbasic lands are Mountains (305.7: land types and rules-text abilities go).
                     StaticEffect.NonbasicLandsAreMountains -> LayerEffect(src, ts, src.name, listOf(4), true, eff,
                         { c -> c.obj.isOnBattlefield() && "Land" in c.types && "Basic" !in c.supertypes },
-                        { _, c -> c.subtypes.removeAll(landTypes); c.subtypes += "Mountain"; c.rulesTextLostTo = src })
+                        { _, c -> c.subtypes.removeAll(landTypes); c.subtypes += DeepMech.moonType(src); c.rulesTextLostTo = src })   // "Island" after Mind Bend (613.1c)
                     // Urborg: each land is a Swamp as well (305.7, last sentence: it keeps its own types and text).
                     is StaticEffect.LandsAlsoType -> LayerEffect(src, ts, src.name, listOf(4), true, eff,
                         { c -> c.obj.isOnBattlefield() && "Land" in c.types }, { _, c -> c.subtypes += eff.landType })
@@ -183,7 +183,7 @@ object Layers {
                     // Yixlid Jailer: cards in graveyards lose all abilities (layer 6).
                     StaticEffect.GraveyardCardsLoseAbilities -> LayerEffect(src, ts, src.name, listOf(6), true, eff,
                         { c -> c.obj.zone == Zone.GRAVEYARD }, { _, c -> c.abilitiesLostTo = src; c.abilitiesLostEffect = eff })
-                    else -> continue
+                    else -> DeepMech.layerEffect(state, src, eff) ?: continue   // Song of the Dryads, Dryad of the Ilysian Grove (DeepMechanics.kt)
                 }
             }
             // A leveler's band sets its base size (702.87b), its own static ability with its own timestamp.

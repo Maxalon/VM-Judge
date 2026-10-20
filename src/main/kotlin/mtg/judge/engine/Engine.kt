@@ -190,7 +190,7 @@ class Engine(val state: GameState) {
             trace.step("Revolt: a permanent left the battlefield under ${player.possessive} control this turn, so ${card.name} can destroy a creature with mana value 4 or less instead of 2 or less.", "207.2c")
             effect = d.copy(target = d.target.copy(filter = d.target.filter.copy(maxManaValue = 4, raw = "creature with mana value 4 or less"), raw = "creature with mana value 4 or less"))
         } }
-        val needed = effect?.targets() ?: emptyList()
+        val needed = DeepMech.anyNumber(card.oracleText, effect?.targets() ?: emptyList(), targets.size)   // Mindbreak Trap: "any number of target spells" (601.2c)
         // "they crack Polluted Delta and I Stifle it": a spell that targets an ability, aimed at a permanent whose
         // ability is on the stack, is aimed at that ability. Read as the land, Stifle's target was illegal.
         val targetsGiven = targets.mapIndexed { i, t ->
@@ -836,8 +836,9 @@ class Engine(val state: GameState) {
         val abilities = activatedAbilitiesOf(obj)
         state.moonOn(obj)?.let { moon ->
             val p = state.player(playerId)
-            if (state.trace.steps.none { it.text.startsWith("${moon.name} makes ${obj.name} a Mountain") })
-                trace.step("${moon.name} makes ${obj.name} a Mountain: it loses its other land types and all its printed abilities and has only \"{T}: Add {R}\" (a type-changing effect, layer 4).${CoverageMech.nonbasicNote(obj)}", "613.1d", "305.7", *CoverageMech.nonbasicCite(obj))
+            val mt = DeepMech.moonType(moon); val mm = DeepMech.manaOf(mt)
+            if (state.trace.steps.none { it.text.startsWith("${moon.name} makes ${obj.name} a $mt") })
+                trace.step("${moon.name} makes ${obj.name} a $mt: it loses its other land types and all its printed abilities and has only \"{T}: Add $mm\" (a type-changing effect, layer 4).${CoverageMech.nonbasicNote(obj)}", "613.1d", "305.7", *CoverageMech.nonbasicCite(obj))
             // Asked for one of the land's own abilities: under the moon there is no such ability any more.
             // "They Wasteland my Blood Moon": a target named means the land's own targeted ability, not the Mountain's mana.
             val asked = abilityIndex?.let { abilities.getOrNull(it) } ?: abilities.firstOrNull { targets.isNotEmpty() && !isManaEffect(it.effect) && it.effect.targets().isNotEmpty() }
@@ -850,7 +851,7 @@ class Engine(val state: GameState) {
                 state.outcomes += "${obj.name}'s own ability is gone under ${moon.name}, so it can't be activated."; return null
             }
             if (obj.tapped == true) { trace.step("${obj.name} is already tapped, so it can't be tapped for mana.", "118.3", "701.26a"); state.outcomes += "${obj.name} can't be tapped (already tapped)."; return null }
-            tap(obj); trace.step("${p.subject} ${p.v("taps", "tap")} ${obj.name} for {R}; that's the only mana it can make under ${moon.name}.", "605.1a", "605.3b"); state.outcomes += "${obj.name} adds {R} (only), because of ${moon.name}."; return null
+            tap(obj); trace.step("${p.subject} ${p.v("taps", "tap")} ${obj.name} for $mm; that's the only mana it can make under ${moon.name}.", "605.1a", "605.3b"); state.outcomes += "${obj.name} adds $mm (only), because of ${moon.name}."; return null
         }
         // "They have Dress Down; I animate Mutavault, can I still tap it for mana?" / Llanowar Elves under Humility: a creature
         // that has lost all its abilities (layer 6) has no ability left to activate, its mana ability included.
@@ -1041,7 +1042,7 @@ class Engine(val state: GameState) {
         val targetsAsGiven = if (needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && targetsAPlayer(ability.effect)) state.objects[(targets[0] as Ref.Obj).id]?.let { o ->
             trace.step("${obj.name}'s ability targets a player, so \"on ${o.name}\" is read as targeting its controller, ${state.player(o.controller).subject.lowercase()}.", "115.1"); listOf<Ref>(Ref.Player(o.controller)) } ?: targets else targets
         // "I activate Spellskite" with nothing named: the one legal target, as for spells.
-        val targets = if (targetsAsGiven.isEmpty() && needed.size == 1) inferTarget("${obj.name}'s ability", needed[0], playerId, harmful = isHarmful(ability.effect), source = obj, beneficial = isBeneficial(ability.effect))?.takeIf { it.isNotEmpty() } ?: targetsAsGiven else targetsAsGiven
+        val targets = if (targetsAsGiven.isEmpty() && needed.size == 1 && !DeepMech.upToNone(state, ability.text)) inferTarget("${obj.name}'s ability", needed[0], playerId, harmful = isHarmful(ability.effect), source = obj, beneficial = isBeneficial(ability.effect))?.takeIf { it.isNotEmpty() } ?: targetsAsGiven else targetsAsGiven
         // The ability's text names a target the parser couldn't model ("~ becomes a copy of target land"): keeping
         // the target and saying the text isn't modeled beats "the ability needs 0 targets but 1 given".
         var abilityTargetsUnknown = false
@@ -1050,6 +1051,7 @@ class Engine(val state: GameState) {
         val divided = ability.effect as? Effect.DamageDivided ?: (ability.effect as? Effect.Seq)?.effects?.filterIsInstance<Effect.DamageDivided>()?.firstOrNull()
         if (unmodeledTarget) trace.step("${obj.name}'s ability names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the ability does to it is reported as unsupported.", "601.2c")
         else if (divided != null && targets.isNotEmpty() && (divided.maxTargets == null || targets.size <= divided.maxTargets)) Unit
+        else if (targets.isEmpty() && DeepMech.upToNone(state, ability.text)) DeepMech.noTargetChosen(state, obj, ability.text)   // Yawgmoth: "up to one target", none chosen (601.2c)
         // Circle of Protection: "a source of your choice" is chosen as the ability resolves, not targeted; a source named
         // with the activation is that choice and rides along.
         else if (needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && ability.effect is Effect.CreateShield && obj.def.oracleText.contains("source of your choice", true)) Unit
@@ -1313,6 +1315,14 @@ class Engine(val state: GameState) {
 
     /** Spell Queller's enters trigger: the spell leaves the stack for exile without being countered. */
     private fun applyExileSpell(effect: Effect.ExileSpell, item: StackItem) {
+    // Mindbreak Trap: "any number of target spells" exiles each of the targets still legal (601.2c, 608.2b).
+    if (DeepMech.anyNumber(item.source.def.oracleText, listOf(effect.target), item.targets.size).size > 1) {
+        val legal = item.targets.filter { isTargetLegal(item, it) }
+        trace.step("${item.source.name} was cast with ${item.targets.size} targets (\"any number of target spells\": the number is chosen as it's cast); it exiles each that is still a legal target${if (legal.size < item.targets.size) " — ${item.targets.size - legal.size} of them no longer is" else ""}.", "601.2c", "608.2b")
+        val all = item.targets
+        try { for (ref in legal) { item.targets = listOf(ref); applyExileSpell(effect, item) } } finally { item.targets = all }
+        return
+    }
     forEachLegalTarget(item, effect.target) { ref ->
             val target = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: (ref as? Ref.Obj)?.let { r -> state.stack.firstOrNull { it.source.id == r.id } }
             if (target == null) { trace.step("${state.nameOf(ref)} is no longer on the stack, so there's nothing to exile.", "608.2b"); return@forEachLegalTarget }
@@ -1933,6 +1943,8 @@ class Engine(val state: GameState) {
                 if (!obj.isOnBattlefield()) continue
                 if (obj.def.isAura && state.players.any { it.id == obj.attachedTo && !it.lost }) continue   // "Enchant player" (Paradox Haze, curses): on a player in the game
                 val host = obj.attachedTo?.let { state.objects[it] }
+                // March of the Machines on an attached Bonesplitter (704.5p), an Aura that became a creature (303.4d), protection from artifacts (702.16d).
+                if (DeepMech.attachmentSba(this, obj, host, { h, o -> protectionHit(state.protections(h), qualitiesOf(o), o.controller)?.let { protectionName(it) } }) { o, t, r -> move(o, Zone.GRAVEYARD, t, *r) }) { changed = true; continue }
                 if (obj.def.isAura) {
                     val enchant = obj.def.enchant
                     // Animate Dead: once its card is back on the battlefield, it enchants "creature put onto the battlefield with ~".
@@ -2682,11 +2694,14 @@ class Engine(val state: GameState) {
     internal fun crEvent(e: GameEvent) = onEvent(e)
     /** Bridge for PauperMechanics.kt: damage from a source, with its replacement and prevention effects. */
     internal fun pcDamage(sourceName: String, target: Ref, amount: Int, source: GameObject?) = applyDamage(sourceName, target, amount, source)
+    /** Bridges for DeepMechanics.kt: draw cards. */
+    internal fun dpDraw(p: Player, n: Int) = drawCards(p, n)
+    internal fun dpDamage(sourceName: String, target: Ref, amount: Int, source: GameObject?) = applyDamage(sourceName, target, amount, source)
 
     /** Kira, Great Glass-Spinner: triggered abilities a permanent has because a static grants them to what it is (613.1f). */
     /** The activated abilities a permanent has: its own, plus any granted to it (Cryptolith Rite) while it is on the battlefield. */
     fun activatedAbilitiesOf(obj: GameObject): List<ActivatedAbility> {
-        val own = obj.def.abilities.filterIsInstance<ActivatedAbility>()
+        val own = obj.def.abilities.filterIsInstance<ActivatedAbility>() + DeepMech.chapterGrants(state, obj)   // Urza's Saga: "This Saga gains …" (DeepMechanics.kt)
         if (!obj.isOnBattlefield() || state.abilitiesLostOn(obj) != null) return own
         return own + state.objects.values.filter { it.isOnBattlefield() && state.abilitiesLostOn(it) == null }.flatMap { src ->
             src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.GrantActivated>()
@@ -3307,7 +3322,7 @@ class Engine(val state: GameState) {
                 val n = item.source.counters[effect.kind] ?: 0
                 if (n <= 0) trace.step("${item.source.name} had no ${effect.kind} counters when it left the battlefield, so none are moved.", "608.2h", "121.6")
                 else {
-                    trace.step("${item.source.name}'s $n ${effect.kind} counter${if (n == 1) "" else "s"} ${if (n == 1) "is" else "are"} put on ${t.name}. Counters aren't moved by any rule of their own; the ability puts that many new ones on.", "702.43b", "121.6")
+                    trace.step("${item.source.name}'s $n ${effect.kind} counter${if (n == 1) "" else "s"} ${if (n == 1) "is" else "are"} put on ${t.name}. Counters aren't moved by any rule of their own; the ability puts that many new ones on.", "702.43a", "122.8")
                     putCounters(t.id, n, effect.kind)
                     item.source.counters.remove(effect.kind)
                 }
@@ -3702,7 +3717,7 @@ class Engine(val state: GameState) {
                 if (o == null || who == null) trace.step("No creature or player to measure, so no life is gained.", "608.2h")
                 else { trace.step("${o.name}'s power is $amount${if (!o.isOnBattlefield()) " (its last known information, since it has left the battlefield)" else ""}.", "608.2h"); gainLife(who, amount) }
             }
-            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
+            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text.startsWith("deep:")) DeepMech.targeted(this, item, effect.text, ref) else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
             is Effect.Regenerate -> {
                 val put: (GameObject) -> Unit = { o -> state.shields += Shield(Replacement.Regenerate, o.id, null, 1, item.describe); trace.step("${o.name} gets a regeneration shield: the next time it would be destroyed this turn, it's instead tapped, its damage is removed, and it's removed from combat.", "701.19a", "614.8"); state.outcomes += "${o.name} has a regeneration shield this turn." }
                 if (effect.target == null) put(item.source) else forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let(put) }
@@ -3858,7 +3873,7 @@ class Engine(val state: GameState) {
                 val howMany = if (effect.x) (item.x ?: 0) else effect.count
                 if (effect.x && item.x == null) state.clarifications += Clarification("${item.source.name}'s X", "${item.source.name} puts X ${effect.kind} counters; what was X? (assuming 0)")
                 val put: (GameObject) -> Unit = { o ->
-                    val n = countersPlaced(o, howMany, effect.kind)
+                    val n = DeepMech.puttingAs(state, item.controller) { countersPlaced(o, howMany, effect.kind) }   // who puts them, for Vorinclex (122.6a)
                     if (n == 0) {
                         trace.step("No ${effect.kind} counter is put on ${o.name}${if (state.isCreature(o)) "; it stays ${o.power}/${o.toughness}" else ""}.", "122.6")
                         state.outcomes += "${o.name} gets no ${effect.kind} counters."
@@ -4019,6 +4034,7 @@ class Engine(val state: GameState) {
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
                 if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
                 if (EdhMech.resolve(this, effect.text, item)) return   // Tergrid, Consultation, Expropriate, Leadership Vacuum (EdhMechanics.kt)
+                if (DeepMech.narrated(this, effect.text, item)) return   // Show and Tell (DeepMechanics.kt)
                 if (LegacyMech.narrated(this, effect.text, item)) return   // Dreadnought phased out, Chrome Mox imprint (LegacyMechanics.kt)
                 if (PauperMech.narrated(this, effect.text, item)) return   // Masticore with an empty hand (PauperMechanics.kt)
                 LegacyMech.narratedAs(state, effect.text, item)?.let { applyEffect(it, item); return }   // Children of Korlis
@@ -5135,8 +5151,8 @@ class Engine(val state: GameState) {
      */
     private fun orderedCounterReplacements(o: GameObject, n: Int, kind: String): Int {
         val mods = state.objects.values.filter { it.isOnBattlefield() && it.controller == o.controller }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }
-            .filter { (it.factor > 1 || it.extra != 0) && (it.kind == null || it.kind.equals(kind, true)) }.map { src to it } }
-        fun apply(x: Int, m: Replacement.CounterMultiplier) = if (m.factor > 1) x * m.factor else (x + m.extra).coerceAtLeast(0)   // Vizier of Remedies: one fewer, never below none
+            .filter { (it.factor > 1 || it.extra != 0) && (it.kind == null || it.kind.equals(kind, true)) }.map { src to it } } + DeepMech.counterMods(state, o)   // Vorinclex, Monstrous Raider (122.6a)
+        fun apply(x: Int, m: Replacement.CounterMultiplier) = DeepMech.applyMod(x, m) ?: if (m.factor > 1) x * m.factor else (x + m.extra).coerceAtLeast(0)   // Vizier of Remedies: one fewer, never below none
         fun perms(l: List<Pair<GameObject, Replacement.CounterMultiplier>>): List<List<Pair<GameObject, Replacement.CounterMultiplier>>> = if (l.size <= 1) listOf(l) else l.indices.flatMap { i -> perms(l.filterIndexed { j, _ -> j != i }).map { listOf(l[i]) + it } }
         // Multipliers before adders was the old fixed order; it stays the order said when the order makes no difference.
         val orders = if (mods.size in 2..4) perms(mods.sortedBy { if (it.second.factor > 1) 0 else 1 }) else listOf(mods)
@@ -5237,8 +5253,9 @@ class Engine(val state: GameState) {
         }
         for (moon in moons) for (land in state.objects.values.filter { it.isOnBattlefield() && "Land" in it.def.types && "Basic" !in it.def.supertypes && (land == null || it === land) && state.moonOn(it) != null }) {
             val saga = "Saga" in land.def.subtypes
-            trace.step("${moon.name} makes ${land.name} a Mountain: it loses its other land types and every ability from its rules text${if (saga) ", chapter abilities included," else ""} and has only \"{T}: Add {R}\" (a type-changing effect, layer 4).${if (saga) " It's still an enchantment and a Saga; its lore counters stay, and with no chapter abilities it is neither sacrificed nor able to do anything." else ""}${CoverageMech.nonbasicNote(land)}", "613.1d", "305.7", *CoverageMech.nonbasicCite(land), *(if (saga) arrayOf("714.4") else emptyArray()))
-            state.outcomes += "${land.name} is a Mountain with no abilities (${moon.name})."
+            val mt = DeepMech.moonType(moon)
+            trace.step("${moon.name} makes ${land.name} ${if (mt == "Island") "an" else "a"} $mt: it loses its other land types and every ability from its rules text${if (saga) ", chapter abilities included," else ""} and has only \"{T}: Add ${DeepMech.manaOf(mt)}\" (a type-changing effect, layer 4).${if (saga) " It's still an enchantment and a Saga; its lore counters stay, and with no chapter abilities it is neither sacrificed nor able to do anything." else ""}${CoverageMech.nonbasicNote(land)}", "613.1d", "305.7", *CoverageMech.nonbasicCite(land), *(if (saga) arrayOf("714.4") else emptyArray()))
+            state.outcomes += "${land.name} is ${if (mt == "Island") "an" else "a"} $mt with no abilities (${moon.name})."
             if (land.def.isCreature) {
                 // "They have Blood Moon. I have Dryad Arbor.": a land type set doesn't touch card types or creature types (305.7).
                 val kept = state.subtypesOf(land).filter { it !in Layers.landTypes }
@@ -5282,6 +5299,7 @@ class Engine(val state: GameState) {
                 out(what)
             }
         }
+        DeepMech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })   // Song of the Dryads, Dryad of the Ilysian Grove (DeepMechanics.kt)
         // Type changes that make something a creature, or something else.
         for (e in view.applied[4].orEmpty()) {
             val eff = e.effect as? StaticEffect.BecomesType ?: continue
@@ -5511,6 +5529,7 @@ class Engine(val state: GameState) {
             is CountExpr.Unknown -> return 0 to ""
         }
         val what = (per as? CountExpr.Permanents)?.filter?.raw ?: "of them"
+        DeepMech.affinityNote(state, obj, n)   // Frogmite: affinity for artifacts (702.41a)
         return r.amount * n to "$n ${if (n == 1 || what.endsWith("s")) what else what + "s"}".trim()
     }
 
@@ -5834,7 +5853,7 @@ class Engine(val state: GameState) {
     private inline fun forEachLegalTarget(item: StackItem, spec: TargetSpec, block: (Ref) -> Unit) {
         val specs = effectiveEffect(item)?.targets() ?: emptyList()
         val idx = specs.indexOf(spec)
-        val ref = item.targets.getOrNull(idx) ?: run { state.unsupported += Unsupported(item.describe, "No target was given for \"${spec.raw}\"."); return }
+        val ref = item.targets.getOrNull(idx) ?: run { if (!DeepMech.noTargetPart(state, item, spec)) state.unsupported += Unsupported(item.describe, "No target was given for \"${spec.raw}\"."); return }
         if (isTargetLegal(item, ref)) block(ref) else trace.step("${state.nameOf(ref)} is an illegal target now, so that part of the effect doesn't affect it.", "608.2b")
     }
 

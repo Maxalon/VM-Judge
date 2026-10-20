@@ -2208,6 +2208,97 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /** Table talk for the engine-deep rules (text changes, P/T switches, type-setting Auras, counters by who puts them …). */
+    private fun deepRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t.trim()
+        val io = RegexOption.IGNORE_CASE
+        // "I cast Apostle's Blessing on my Bears choosing artifacts": the other half of "artifacts or the color of your choice".
+        Regex("""^(.*\bcasts? c\d+ (?:on|targeting) .+?),? (?:choosing|naming|picking|for) (artifacts)$""", io).find(t2)?.let { r -> return "${r.groupValues[1]}, dpchoice ${r.groupValues[2].lowercase()}" }
+        // "I activate Yawgmoth's ability with no target": said first, so the activation that follows knows (601.2c).
+        Regex("""^(.*\bactivates?\b.*?),? (?:with no targets?|choosing no targets?|targeting nothing|without (?:a |any )?targets?|and (?:choose|target) nothing)$""", io).find(t2)?.let { r -> return "dpnotarget, ${r.groupValues[1]}" }
+        // "Does Changeling Outcast get +1/+1?": a question about its size, not a pump.
+        t2 = t2.replace(Regex("""^(?:does|do|will|would) (?:my |their |the )?(c\d+|it) (?:still |also |really )?gets? \+\d+/\+\d+(?: from (?:my |their |the )?c\d+)?$""", io), "how big is $1")
+        return t2
+    }
+
+    /** Question markers for the engine-deep rules; null when the clause isn't one of them. */
+    private fun readDeepQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim().trimEnd('.', '?')
+        val textWords = setOf("plains", "island", "swamp", "mountain", "forest", "white", "blue", "black", "red", "green")
+        // "Island" may have been marked as a card named earlier ("Volcanic Island"): the land type word is what was said.
+        fun word(w: String) = (m.cards[w]?.display ?: w).lowercase().let { d -> if (d in textWords) d else d.split(' ').lastOrNull { it in textWords } ?: d }
+        // "I cast Mind Bend on Blood Moon, changing Mountain to Island": the words a text change replaces, chosen as it resolves (612.1).
+        Regex("""^(?:,? ?)(?:changing|to change|replacing|turning|switching) (?:the word |every |all )?"?(c\d+|[a-z]+)"? (?:to|with|into|for) "?(c\d+|[a-z]+)"?$""").find(c)?.let { r ->
+            val from = word(r.groupValues[1]); val to = word(r.groupValues[2])
+            if (from !in textWords && from.removeSuffix("s") !in textWords) return@let
+            val i = ctx.events.indexOfLast { it.verb == "cast" }
+            if (i < 0) return@let
+            ctx.events[i] = ctx.events[i].copy(to = "name:${from.replaceFirstChar { it.uppercase() }}>${to.replaceFirstChar { it.uppercase() }}")
+            ctx.notes += "The text change replaces \"$from\" with \"$to\"."; return true
+        }
+        // "I cast Show and Tell. I put Emrakul onto the battlefield and my opponent puts Grizzly Bears": the cards are chosen as it
+        // resolves and enter together (101.4), so the choice rides with the spell instead of being a separate event afterwards.
+        val lastCast = ctx.events.indexOfLast { it.verb == "cast" }
+        val lastCastName = ctx.events.getOrNull(lastCast)?.card?.name
+        Regex("""^(i|we|my opponent|the opponent|they|he|she) (?:(?:also |then )?puts? (?:in |down )?(?:my |their |his |her |an? )?(c\d+)(?: from (?:my|their|his|her) hand)? (?:onto|into) (?:the )?(?:battlefield|play)(?: with (?:it|c\d+))?|(c\d+) enters the battlefield)$""").find(c)?.let { r0 ->
+            val r = object { val groupValues = listOf(r0.value, r0.groupValues[1], r0.groupValues[2].ifEmpty { r0.groupValues[3] }) }
+            if (lastCastName != "Show and Tell" || ctx.events.drop(lastCast + 1).any { it.verb == "dp" && it.to == "putchoice" && it.player == (if (r.groupValues[1] in setOf("i", "we")) "me" else "opp") }) return@let
+            val card = m.cards[r.groupValues[2]] ?: return@let
+            val who = if (r.groupValues[1] in setOf("i", "we")) "me" else "opp"
+            val id = addObject(card, who, false, ctx, zone = "hand", allowDuplicate = true)
+            ctx.events.add(lastCast + 1, EventSpec("dp", player = who, obj = id, to = "putchoice"))
+            if (ctx.events.drop(lastCast + 1).none { it.verb == "resolve" || it.verb == "resolveAll" }) ctx.events += EventSpec("resolveAll")
+            return true
+        }
+        // "I cast Bribery, getting their Emrakul": the card found in their library (701.23a).
+        Regex("""^(?:and )?(?:getting|finding|taking|stealing|grabbing|searching (?:out|for)|(?:i )?(?:get|find|take|grab)(?: out)?) (?:their |his |her |my opponent's |the )?(c\d+)(?: from (?:their|his|her) library)?$""").find(c)?.let { r ->
+            if (lastCastName !in setOf("Bribery", "Acquire")) return@let
+            val card = m.cards[r.groupValues[1]] ?: return@let
+            val caster = ctx.events[lastCast].player ?: "me"
+            val id = addObject(card, if (caster == "me") "opp" else "me", false, ctx, zone = "library", allowDuplicate = true)
+            ctx.events[lastCast] = ctx.events[lastCast].copy(to = "name:$id"); return true
+        }
+        // "I +1 Chandra, exile Lightning Bolt and cast it" / "… and don't cast it": what was exiled and whether it was cast decide "if you don't".
+        val lastAct = ctx.events.lastOrNull()?.takeIf { it.verb == "activate" || (it.verb == "dp" && it.to?.startsWith("castordamage") == true) }
+        val actName = ctx.events.lastOrNull { it.verb == "activate" }?.obj?.let { ctx.objects[it]?.card?.name }
+        if (lastAct != null && actName == "Chandra, Torch of Defiance") {
+            Regex("""^(?:and )?(?:i |we )?(?:exile|exiles|exiling|flip|flips|flipping|reveal|reveals|hit|hits|hitting)(?: off| over)? (?:a |an )?(c\d+|land|land card|nonland card|spell)$""").find(c)?.let { r ->
+                val card = m.cards[r.groupValues[1]]
+                val id = card?.let { addObject(it, "me", false, ctx, zone = "library", allowDuplicate = true) } ?: if (r.groupValues[1].startsWith("land")) names.lookup(Names.normalize("Wastes"))?.let { addObject(it, "me", false, ctx, zone = "library", allowDuplicate = true) } else null
+                ctx.events += EventSpec("dp", obj = id, to = "castordamage"); return true
+            }
+            if (Regex("""^(?:and )?(?:i |we )?(?:cast|casts|play|plays) (?:it|that card|c\d+)(?: from exile)?$""").matches(c)) { ctx.events += EventSpec("dp", to = "castordamage:cast"); return true }
+            if (Regex("""^(?:and |but )?(?:i |we )?(?:don't|do not|didn't|did not|choose not to|decide not to|can't|cannot) (?:to )?(?:cast|play) (?:it|that card|c\d+)$""").matches(c)) { ctx.events += EventSpec("dp", to = "castordamage:nocast"); return true }
+        }
+        // "How big is the Construct?" / "the Elemental token": a token made while the situation plays out, asked by its creature type.
+        Regex("""^(?:so )?how (?:big|large) is (?:the |my |that |our )?(?:new )?([a-z]+)(?: token)?$""").find(c)?.let { r ->
+            val w = r.groupValues[1]
+            if (w in setOf("it", "that", "he", "she", "they", "creature", "token", "one") || ctx.objects.values.any { it.card.name?.lowercase()?.contains(w) == true }) return@let
+            ctx.asks += EventSpec("ask", obj = "dptoken", to = "dp:tokenpt:$w"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "I activate Yawgmoth with no target": an "up to one target" ability with none chosen (601.2c).
+        if (c == "dpnotarget") { ctx.events += EventSpec("dp", to = "notarget"); return true }
+        Regex("""^dpchoice (artifacts)$""").find(c)?.let { r ->
+            val i = ctx.events.indexOfLast { it.verb == "cast" }
+            if (i < 0) return@let
+            ctx.events[i] = ctx.events[i].copy(to = "name:${r.groupValues[1]}"); return true
+        }
+        // "Does Changeling Outcast have islandwalk?": landwalk granted by a lord, asked like any other keyword.
+        Regex("""^(?:does|do|will) (?:my |their |the )?(c\d+|it) (?:still |also )?(?:have|has|get|gain) ((?:island|swamp|forest|mountain|plains)walk)$""").find(c)?.let { r ->
+            val id = if (r.groupValues[1] == "it") ctx.asks.lastOrNull { it.obj in ctx.objects }?.obj ?: ctx.lastMentioned?.takeIf { it in ctx.objects } else m.cards[r.groupValues[1]]?.let { objectIdForOrCast(it, ctx) ?: addObject(it, "me", false, ctx) }
+            id ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "keyword:${r.groupValues[2]}"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        // "What types does Volcanic Island have?" / "What is Grizzly Bears now?": its card types and subtypes after the layers (613.1d).
+        Regex("""^what (?:(?:land |card |creature )?types?|subtypes?) (?:does|do) (?:my |their |the )?(c\d+|it) have(?: now)?$""").find(c)?.let { r ->
+            val w = r.groupValues[1]
+            val id = if (w == "it") ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull { it in ctx.objects } else m.cards[w]?.let { objectIdForOrCast(it, ctx) ?: addObject(it, "me", false, ctx) }
+            id ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "dp:types"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        return null
+    }
+
     /** Table talk for the rules the coverage audit added (120.6, 121.2b, 302.6, 401.4 …): one place so parallel tracks don't collide. */
     private fun coverageRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = t.trim()
@@ -3674,6 +3765,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = pauperRewrites(t2, m, ctx)
+        t2 = deepRewrites(t2, m, ctx)
         t2 = limitedRewrites(t2, m, ctx)
         t2 = coverageRewrites(t2, m, ctx)
         t2 = slangRewrites2(t2, m, ctx)
@@ -8075,6 +8167,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readPauperQuestions(clause0, m, ctx)?.let { return it }
+        readDeepQuestions(clause0, m, ctx)?.let { return it }
         readLimitedQuestions(clause0, m, ctx)?.let { return it }
         readCoverageQuestions(clause0, m, ctx)?.let { return it }
         readEdhQuestions(clause0, m, ctx)?.let { return it }

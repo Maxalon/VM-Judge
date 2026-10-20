@@ -157,7 +157,7 @@ class GameObject(
     val toughness: Int? get() = state?.toughnessOf(this) ?: def.toughness?.let { it + pumps.sumOf { p -> p.second } + (counters["+1/+1"] ?: 0) - (counters["-1/-1"] ?: 0) }
     fun has(keyword: String): Boolean = state?.hasKeyword(this, keyword) ?: (def.has(keyword) || keyword.lowercase() in tempKeywords)
     /** The abilities it has right now: the printed ones unless Humility, Darksteel Mutation or Blood Moon took them away (613.1f, 305.7). Copiable values and "card named" questions read [def] instead. */
-    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else def.abilities
+    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else DeepMech.live(this, def.abilities)   // Animar's reduction counted now (DeepMechanics.kt)
     /** The rules text it has right now: empty while its abilities are gone (613.1f). */
     val rulesText: String get() = if (state?.abilitiesGone(this) != null) "" else def.oracleText
     val name get() = def.name
@@ -553,10 +553,13 @@ class GameState(
         return out
     }
 
-    fun powerOf(obj: GameObject): Int? = basePower(obj)?.let { base ->
+    /** Layer 7d last: a switch (Twisted Image) swaps what 7a-7c left, whenever the other effects began (613.4d). */
+    fun powerOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) toughness7c(obj) else power7c(obj)
+    fun toughnessOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) power7c(obj) else toughness7c(obj)
+    private fun power7c(obj: GameObject): Int? = basePower(obj)?.let { base ->
         base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.power ?: 0 } + selfCountPt(obj) + obj.pumps.sumOf { it.first } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
-    fun toughnessOf(obj: GameObject): Int? = baseToughness(obj)?.let { base ->
+    private fun toughness7c(obj: GameObject): Int? = baseToughness(obj)?.let { base ->
         base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.toughness ?: 0 } + selfCountPt(obj, toughness = true) + obj.pumps.sumOf { it.second } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
     /** Keywords a keyword counter can be (122.1b). */
@@ -630,6 +633,7 @@ class GameState(
         if (obj.pumps.isNotEmpty()) parts += "${sign(obj.pumps.sumOf { it.first })}/${sign(obj.pumps.sumOf { it.second })} until end of turn"
         (obj.counters["+1/+1"] ?: 0).let { if (it > 0) parts += "$it +1/+1 counter${if (it > 1) "s" else ""}" }
         (obj.counters["-1/-1"] ?: 0).let { if (it > 0) parts += "$it -1/-1 counter${if (it > 1) "s" else ""}" }
+        if (DeepMech.switched(obj)) parts += "then power and toughness switched (layer 7d)"
         return if (parts.isEmpty()) "$p/$t" else "$p/$t (${basePower(obj)}/${baseToughness(obj)} base, ${parts.joinToString(", ")})"
     }
     private fun sign(n: Int) = if (n >= 0) "+$n" else "$n"

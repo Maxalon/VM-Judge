@@ -48952,5 +48952,340 @@
     "cite": [
       "303.4f"
     ]
+  },
+  {
+    "id": "dp1",
+    "text": "I control Volcanic Island. My opponent controls Blood Moon. I cast Mind Bend targeting Blood Moon, changing Mountain to Island. What happens to Volcanic Island?",
+    "expect": [
+      "Blood Moon's text now says \"Island\" where it said \"Mountain\"",
+      "Volcanic Island is an Island with no abilities (Blood Moon); it taps for {U} only."
+    ],
+    "notExpect": [
+      "Volcanic Island is a Mountain with no abilities"
+    ],
+    "cite": [
+      "612.1",
+      "613.1c",
+      "305.7"
+    ]
+  },
+  {
+    "id": "dp2",
+    "text": "I control Wall of Omens with a +1/+1 counter on it and Glorious Anthem. I cast Twisted Image targeting Wall of Omens, then I cast Giant Growth on Wall of Omens. How big is it?",
+    "expect": [
+      "Wall of Omens is 6/2 until end of turn",
+      "Wall of Omens is 9/5 (0/4 base, +1/+1 from Glorious Anthem, +3/+3 until end of turn, 1 +1/+1 counter, then power and toughness switched (layer 7d))."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "613.4d",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "dp3",
+    "text": "My Grizzly Bears is enchanted with my opponent's Pacifism. I cast Apostle's Blessing on Grizzly Bears choosing white. What happens?",
+    "expect": [
+      "Grizzly Bears has protection from white until end of turn.",
+      "Pacifism: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.16c",
+      "704.5m"
+    ]
+  },
+  {
+    "id": "dp4",
+    "text": "Bonesplitter is attached to my Grizzly Bears. I cast Apostle's Blessing on Grizzly Bears choosing artifacts. How big is it?",
+    "expect": [
+      "Grizzly Bears has protection from artifacts until end of turn.",
+      "Bonesplitter falls off Grizzly Bears (protection from artifacts) and stays on the battlefield, unattached.",
+      "Grizzly Bears is 2/2."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.16d",
+      "704.5n"
+    ]
+  },
+  {
+    "id": "dp5",
+    "text": "My Arcbound Ravager with three +1/+1 counters dies. I control Arcbound Worker. What happens?",
+    "expect": [
+      "Arcbound Worker has 4 +1/+1 counters."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.43a",
+      "122.8",
+      "608.2d"
+    ]
+  },
+  {
+    "id": "dp6",
+    "text": "I control four artifacts. What does Frogmite cost?",
+    "expect": [
+      "Frogmite costs {4} minus {4}",
+      "0 mana in all."
+    ],
+    "notExpect": [
+      "Nothing on the battlefield changes it"
+    ],
+    "cite": [
+      "702.41a",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "dp7",
+    "text": "I control Changeling Outcast and Lord of Atlantis. Does Changeling Outcast get +1/+1? Does it have islandwalk?",
+    "expect": [
+      "Changeling Outcast is 2/2 (1/1 base, +1/+1 from Lord of Atlantis).",
+      "Yes: Changeling Outcast has islandwalk."
+    ],
+    "notExpect": [
+      "until end of turn",
+      "Not modeled"
+    ],
+    "cite": []
+  },
+  {
+    "id": "dp8",
+    "text": "I control Bonesplitter attached to Grizzly Bears and cast March of the Machines. What happens to Bonesplitter?",
+    "expect": [
+      "Bonesplitter becomes unattached and stays on the battlefield as a creature; Grizzly Bears is 2/2 without it."
+    ],
+    "notExpect": [],
+    "cite": [
+      "704.5p",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "dp9",
+    "text": "I cast Imprisoned in the Moon on my opponent's Jace, the Mind Sculptor. What types does it have?",
+    "expect": [
+      "Jace, the Mind Sculptor is a colorless land (Imprisoned in the Moon).",
+      "Jace, the Mind Sculptor is Legendary Land (printed Legendary Planeswalker — Jace)."
+    ],
+    "notExpect": [
+      "Not modeled",
+      "needs 0 targets"
+    ],
+    "cite": [
+      "205.1a",
+      "613.1d",
+      "613.1e",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "dp10",
+    "text": "I cast Song of the Dryads on my opponent's Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears is a colorless Forest land, not a creature"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "205.1a",
+      "305.7",
+      "613.1e"
+    ]
+  },
+  {
+    "id": "dp11",
+    "text": "My opponent controls Vorinclex, Monstrous Raider. I cast Walking Ballista with X=3. How many counters does it have?",
+    "expect": [
+      "Walking Ballista enters with 1 +1/+1 counter."
+    ],
+    "notExpect": [],
+    "cite": [
+      "122.6a",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "dp12",
+    "text": "I control Vorinclex, Monstrous Raider and Hardened Scales. I cast Walking Ballista with X=1. How many counters does it have?",
+    "expect": [
+      "Hardened Scales then Vorinclex, Monstrous Raider gives 4",
+      "Walking Ballista enters with 4 +1/+1 counters."
+    ],
+    "notExpect": [],
+    "cite": [
+      "122.6a",
+      "616.1"
+    ]
+  },
+  {
+    "id": "dp13",
+    "text": "I control Doubling Season. I cast Chandra, Torch of Defiance. How much loyalty does it have?",
+    "expect": [
+      "Chandra, Torch of Defiance has 8 loyalty."
+    ],
+    "notExpect": [],
+    "cite": [
+      "306.5b",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "dp14",
+    "text": "I control Animar, Soul of Elements with three +1/+1 counters. What does Grizzly Bears cost?",
+    "expect": [
+      "Grizzly Bears costs {1}{G} minus {3} (Animar, Soul of Elements makes it cost {3} less) — 1 mana in all."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "dp15",
+    "text": "I control Voice of Resurgence and two Grizzly Bears. Voice of Resurgence dies. How big is the Elemental token?",
+    "expect": [
+      "You get an Elemental token.",
+      "The Elemental token is 3/3 (3/3 base, base set by its own ability (layer 7a))."
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "604.3",
+      "613.4a"
+    ]
+  },
+  {
+    "id": "dp16",
+    "text": "My opponent casts Lightning Bolt targeting me. In response they cast Fireblast targeting me. In response I cast Mindbreak Trap targeting Lightning Bolt and Fireblast. What happens?",
+    "expect": [
+      "Lightning Bolt: the stack → exile (Mindbreak Trap); it doesn't resolve.",
+      "Fireblast: the stack → exile (Mindbreak Trap); it doesn't resolve."
+    ],
+    "notExpect": [
+      "needs 1 target"
+    ],
+    "cite": [
+      "601.2c",
+      "701.13a"
+    ]
+  },
+  {
+    "id": "dp17",
+    "text": "My opponent controls Thought-Knot Seer. I cast Path to Exile targeting Thought-Knot Seer. What happens?",
+    "expect": [
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "115.1",
+      "603.3d"
+    ]
+  },
+  {
+    "id": "dp18",
+    "text": "I activate Chandra, Torch of Defiance's +1, exile Mountain. What happens?",
+    "expect": [
+      "Mountain is a land, which can't be cast (305.1)",
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "305.1",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "dp19",
+    "text": "I cast Show and Tell. I put Emrakul, the Aeons Torn onto the battlefield and my opponent puts Grizzly Bears onto the battlefield. What happens?",
+    "expect": [
+      "Emrakul, the Aeons Torn enters the battlefield.",
+      "Emrakul, the Aeons Torn wasn't cast, so its \"when you cast\" ability doesn't trigger.",
+      "Grizzly Bears enters the battlefield."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "101.4",
+      "110.2a"
+    ]
+  },
+  {
+    "id": "dp20",
+    "text": "I cast Bribery targeting my opponent, getting their Emrakul, the Aeons Torn. What happens?",
+    "expect": [
+      "Emrakul, the Aeons Torn enters under your control (opponent's card; Bribery)."
+    ],
+    "notExpect": [
+      "which wasn't said"
+    ],
+    "cite": [
+      "701.23a",
+      "110.2a"
+    ]
+  },
+  {
+    "id": "dp21",
+    "text": "I control Dryad of the Ilysian Grove and Volcanic Island. What types does Volcanic Island have?",
+    "expect": [
+      "Volcanic Island is Land — Island Mountain Plains Swamp Forest (printed Land — Island Mountain)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "305.7",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "dp22",
+    "text": "I control Urza's Saga with two lore counters and two Ornithopters. I activate Urza's Saga. How big is the Construct?",
+    "expect": [
+      "The Construct token is 3/3: 0/0 base, +3/+3 from its own ability (layer 7c), counting itself."
+    ],
+    "notExpect": [],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "dp23",
+    "text": "I control Yawgmoth, Thran Physician and Grizzly Bears. I activate Yawgmoth's first ability with no target. What happens?",
+    "expect": [
+      "No creature gets anything from Yawgmoth, Thran Physician's ability: none was targeted.",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "-1/-1 counter"
+    ],
+    "cite": [
+      "601.2c",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "dp24",
+    "text": "My opponent controls Forest. I cast Mind Bend targeting their Forest, changing Forest to Island. What types does Forest have?",
+    "expect": [
+      "Forest is Basic Land — Island (printed Basic Land — Forest)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "612.1",
+      "613.1c"
+    ]
   }
 ]

@@ -930,6 +930,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "lt" -> LimitedAsks.applyEvent(e, state, engine)
             "cr" -> CoverageAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             "pc" -> PauperAsks.applyEvent(e, state, engine)
+            "dp" -> DeepAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -2281,6 +2282,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("lt:") == true) return LimitedAsks.answer(e, state, engine)
                 if (e.to?.startsWith("cr:") == true) return CoverageAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("pc:") == true) return PauperAsks.answer(e, state, engine) { c -> cardDef(c, state) }
+                if (e.to?.startsWith("dp:") == true) return DeepAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {
