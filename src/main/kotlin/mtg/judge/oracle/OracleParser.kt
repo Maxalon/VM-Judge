@@ -178,7 +178,7 @@ object OracleParser {
                                 "Backup $n (When this creature enters, put ${if (n == 1) "a +1/+1 counter" else "$n +1/+1 counters"} on target creature. If that's another creature, it gains the following abilities until end of turn.)")
                         }
                         // Mobilize, afterlife, decayed, ravenous: expanded into the abilities their rules define (NewMechanics.kt).
-                        else -> abilities += mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
+                        else -> abilities += mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
                     }
                 }
                 // Animate Dead / Dance of the Dead: one paragraph holding the enters ability that returns the card it enchants
@@ -328,6 +328,7 @@ object OracleParser {
     /** "~ deals N damage to that creature" in a block trigger: the creature it blocks or is blocked by. */
     private fun causingEffect(effText: String): Effect? =
         Regex("""^~ deals (\d+) damage to that creature\.?$""", RegexOption.IGNORE_CASE).matchEntire(effText)?.let { Effect.DamageCausing(it.groupValues[1].toInt()) }
+            ?: mtg.judge.engine.CoverageMech.causingEffect(effText)   // Engulfing Slagwurm, Thicket Basilisk: destroy that creature
 
     /** In a trigger about ~ itself, a leading "it" is ~. */
     private fun selfEffText(t: String) = t.replace(Regex("""^it (gets|gains|deals) """), "~ $1 ")
@@ -345,8 +346,8 @@ object OracleParser {
         }
         // "Whenever ~ blocks or becomes blocked(, by a creature)" — the two halves are separate triggers, and the
         // "by a creature" half triggers once for each creature blocking it, so it keeps its own trigger.
-        Regex("""^~ blocks or becomes blocked( by a creature)?$""", RegexOption.IGNORE_CASE).matchEntire(cond)?.let { bm ->
-            val eff = causingEffect(selfEffText(m.groupValues[3])) ?: parseEffect(selfEffText(m.groupValues[3]))
+        Regex("""^~ blocks or becomes blocked( by a (?:non-Wall )?creature)?$""", RegexOption.IGNORE_CASE).matchEntire(cond)?.let { bm ->
+            val eff = (causingEffect(selfEffText(m.groupValues[3])) ?: parseEffect(selfEffText(m.groupValues[3]))).let { e -> if (cond.contains("non-Wall", true) && e is Effect.NewMech) e.copy(text = e.text + "|nonwall") else e }
             val blocked = if (bm.groupValues[1].isEmpty()) Trigger.ThisBecomesBlocked else Trigger.ThisBecomesBlockedByCreature
             return listOf(TriggeredAbility(Trigger.ThisBlocks, eff, line), TriggeredAbility(blocked, eff, line))
         }
@@ -1325,7 +1326,8 @@ object OracleParser {
         Regex("""^put up to (?:\w+|\d+) (.+?) cards from your hand onto the battlefield\.?$""", RegexOption.IGNORE_CASE) to listOf("608.2c"),
         Regex("""^surveil (\d+)\.?$""", RegexOption.IGNORE_CASE) to listOf("701.25a"),
         Regex("""^(?:you |target player |each player )?mills? (\w+|\d+) cards?\.?$""", RegexOption.IGNORE_CASE) to listOf("701.17a"),
-        Regex("""^look at the top (?:(\w+|\d+) )?cards? of your library.*$""", RegexOption.IGNORE_CASE) to listOf("701.22a"),
+        // Looking at the top cards isn't scrying: an effect lets the player see part of a library they normally can't (401.2).
+        Regex("""^look at the top (?:(\w+|\d+) )?cards? of your library.*$""", RegexOption.IGNORE_CASE) to listOf("401.2"),
         // Looking at a hidden zone: the engine doesn't track what is in one, so the answer says it happened and why nothing turns on it.
         Regex("""^look at (?:target player's|that player's|each opponent's|an opponent's) hand\.?$""", RegexOption.IGNORE_CASE) to listOf("400.2"),
         Regex("""^look at the top (?:(\w+|\d+) )?cards? of (?:target player's|that player's|an opponent's) library\.?$""", RegexOption.IGNORE_CASE) to listOf("400.2"),

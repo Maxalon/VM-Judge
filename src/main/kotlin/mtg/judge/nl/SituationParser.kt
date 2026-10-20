@@ -2208,6 +2208,51 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /** Table talk for the rules the coverage audit added (120.6, 121.2b, 302.6, 401.4 …): one place so parallel tracks don't collide. */
+    private fun coverageRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t.trim()
+        // "After combat damage, I Shock their Wall of Wood": the same as "after damage" (the instant comes after the combat damage step's damage).
+        t2 = t2.replace(Regex("""\bafter (?:the )?combat damage(?: is dealt| step)?\b""", RegexOption.IGNORE_CASE), "after damage")
+        return t2
+    }
+
+    /** Question markers for the coverage audit's calls; null when the clause isn't one of them. */
+    private fun readCoverageQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim().trimEnd('.')
+        // "I already drew a card this turn" (Spirit of the Labyrinth): draws before the situation count toward a draw limit (121.2b).
+        Regex("""^(i|my opponent|they|the opponent)(?: have| has|'ve)? (?:already )?(?:drew|draws|drawn|draw) (a|one|two|three|\d+) cards? (?:already )?this turn$""").find(c)?.let { r ->
+            val who = if (r.groupValues[1] == "i") "me" else "opp"
+            val n = when (r.groupValues[2]) { "a", "one" -> 1; "two" -> 2; "three" -> 3; else -> r.groupValues[2].toInt() }
+            ctx.events += EventSpec("cr", player = who, to = "drewthisturn", amount = n)
+            ctx.notes += "${if (who == "me") "You have" else "Your opponent has"} already drawn $n card${if (n == 1) "" else "s"} this turn."; return true
+        }
+        // "My opponent blocks with two Grizzly Bears" / "with both Grizzly Bears": that many copies of the card block the last attacker together.
+        Regex("""^(my opponent|the opponent|they|he|she|i|we) (?:double[- ]|triple[- ])?blocks? (?:it |that |the attacker )?with (2|3|4|two|three|four|both|all three)(?: of (?:my|their))? (c\d+)$""").find(c)?.let { r ->
+            val card = m.cards[r.groupValues[3]] ?: return@let
+            val who = if (r.groupValues[1] in setOf("i", "we")) "me" else "opp"
+            val n = when (r.groupValues[2]) { "2", "two", "both" -> 2; "3", "three", "all three" -> 3; else -> 4 }
+            val att = ctx.events.lastOrNull { it.verb == "attack" && it.player != who }?.obj ?: return@let
+            val have = ctx.objects.values.filter { it.card.oracleId == card.oracleId && it.controller == who && it.zone == "battlefield" }.map { it.id }.toMutableList()
+            while (have.size < n) have += addObject(card, who, false, ctx, allowDuplicate = true)
+            for (id in have.take(n)) ctx.events += EventSpec("block", player = who, obj = id, targets = listOf(att))
+            ctx.lastActor = who; ctx.lastVerb = "block"; return true
+        }
+        // "I control no legendary creatures or planeswalkers": nothing to add; the legendary-sorcery check finds none (205.4e).
+        if (Regex("""^(?:i|we) (?:control|have) no legendary (?:creatures?|planeswalkers?)(?: (?:or|and|nor) (?:legendary )?(?:creatures?|planeswalkers?))?$""").matches(c)) { ctx.notes += "You control no legendary creature or planeswalker."; return true }
+        // "Who chooses the order they go to the bottom of my library?": answered by the engine's own step (401.4).
+        if (Regex("""^who (?:chooses|decides|picks|gets to choose) (?:the )?order\b.*$""").matches(c)) { ctx.notes += "Who orders the cards is answered by the outcome below (401.4)."; return true }
+        // "I cast Control Magic on their Llanowar Elves. Can I tap it for mana this turn?": "it" is the creature the Aura took, not the Aura (302.6).
+        Regex("""^(?:can )?(i|my opponent) tap it for (?:mana|\{.*|[a-z]+ mana)(?: this turn| right now| now| yet)?$""").find(c)?.let { r ->
+            val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return@let
+            val aura = cast.card?.name?.let { names.lookup(Names.normalize(it)) }?.takeIf { "Aura" in it.typeLine } ?: return@let
+            val id = cast.targets.firstOrNull { it in ctx.objects } ?: return@let
+            if (ctx.events.none { it.verb == "resolveAll" } ) ctx.events += EventSpec("resolveAll")
+            ctx.events += EventSpec("activate", player = if (r.groupValues[1] == "i") "me" else "opp", obj = id, to = "mana")
+            ctx.notes += "\"It\" is ${ctx.objects.getValue(id).card.name}, the creature ${aura.display} enchants."; ctx.lastMentioned = id; return true
+        }
+        return null
+    }
+
     private fun auditRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = t.trim()
         val subj = """(?:i|we|they|he|she|my opponent|the opponent)"""
@@ -3405,6 +3450,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = limitedRewrites(t2, m, ctx)
+        t2 = coverageRewrites(t2, m, ctx)
         t2 = edhRewrites(t2, m, ctx)
         t2 = newMechanicRewrites(t2, m, ctx)
         t2 = legacyRewrites(t2, m, ctx)
@@ -7803,6 +7849,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readLimitedQuestions(clause0, m, ctx)?.let { return it }
+        readCoverageQuestions(clause0, m, ctx)?.let { return it }
         readEdhQuestions(clause0, m, ctx)?.let { return it }
         readNewMechanicQuestions(clause0, m, ctx)?.let { return it }
         readLegacyQuestions(clause0, m, ctx)?.let { return it }

@@ -173,6 +173,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             }
         }
         var attackBatchEnd = -1
+        var blockBatchEnd = -1   // consecutive blocks by one player are one declaration (509.1, 509.2a)
         val deferredAsks = mutableListOf<Pair<Int, EventSpec>>()
         // "they have one Mountain and Bolt it, can they?": asked whether the spell can be paid for, the lands described are all the mana there is.
         if (sit.events.any { it.verb == "ask" && (it.to == "spellCost" || it.to == "castAllowed") }) state.describedLandsAreTheBase = true
@@ -187,10 +188,15 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 attackBatchEnd = i; while (attackBatchEnd + 1 < sit.events.size && sit.events[attackBatchEnd + 1].verb in setOf("attack", "attackAll") && sit.events[attackBatchEnd + 1].player == e.player) attackBatchEnd++
                 engine.beginDeclaringAttackers()
             }
+            if (e.verb == "block" && i > blockBatchEnd) {
+                blockBatchEnd = i; while (blockBatchEnd + 1 < sit.events.size && sit.events[blockBatchEnd + 1].verb == "block" && sit.events[blockBatchEnd + 1].player == e.player) blockBatchEnd++
+                if (blockBatchEnd > i) engine.beginDeclaringBlockers()
+            }
             try {
                 understood += "Event ${i + 1}: " + describeEvent(e, state)
                 apply(e, state, engine)
                 if (i == attackBatchEnd) engine.finishDeclaringAttackers()
+                if (i == blockBatchEnd && e.verb == "block") engine.finishDeclaringBlockers()
             } catch (ex: JudgeException) {
                 state.unsupported += mtg.judge.engine.Unsupported("event ${i + 1} (${e.verb})", ex.message ?: "failed")
             }
@@ -921,6 +927,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "nm" -> NewMechanicAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             "md" -> ModernAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             "lt" -> LimitedAsks.applyEvent(e, state, engine)
+            "cr" -> CoverageAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1091,6 +1098,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         val text = "$by sets ${o.name}'s base power and toughness to ${set.first}/${set.second} (layer 7b)${if (lost != null) " and ${if (lost.name == by) "takes" else "${lost.name} takes"} all its abilities away (layer 6)" else ""}" +
             (if (mods) ". Effects that change power and toughness without setting them, +N/+N until end of turn and +1/+1 or -1/-1 counters, apply after that in layer 7c, so they still count: ${o.name} is ${o.power}/${o.toughness}." else ".")
         if (state.trace.steps.none { it.text == text }) state.trace.step(text, "613.4b", *(if (mods) arrayOf("613.4c") else emptyArray()), *(if (lost != null) arrayOf("613.1f") else emptyArray()))
+        CoverageAsks.cdaUnderSetter(o, state, by, lost != null)   // Tarmogoyf under Humility: the 7a CDA gives way to 7b (CoverageAsks.kt)
     }
 
     /** Questions the layer system answers (613): see SituationParser.layerRewrites for the table talk behind each. */
@@ -2269,6 +2277,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("lv:") == true) return LegacyAsks.answer(e, state, engine)
                 if (e.to?.startsWith("md:") == true) return ModernAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("lt:") == true) return LimitedAsks.answer(e, state, engine)
+                if (e.to?.startsWith("cr:") == true) return CoverageAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

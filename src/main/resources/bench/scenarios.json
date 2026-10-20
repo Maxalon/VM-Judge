@@ -4639,7 +4639,7 @@
       "Rules text not modeled: Each opponent can't draw"
     ],
     "cite": [
-      "121.3"
+      "121.2b"
     ]
   },
   {
@@ -47152,6 +47152,338 @@
     "cite": [
       "704.5n",
       "514.2"
+    ]
+  },
+  {
+    "id": "cr1",
+    "text": "My opponent controls Orcish Bowmasters. I cast Impulse. Does Bowmasters trigger?",
+    "expect": [
+      "No: Orcish Bowmasters's ability didn't trigger"
+    ],
+    "cite": [
+      "121.5"
+    ]
+  },
+  {
+    "id": "cr2",
+    "text": "It's my opponent's turn. My opponent controls Spirit of the Labyrinth. I already drew a card this turn. I cast Brainstorm. What happens?",
+    "expect": [
+      "You draw none of the 3 cards: you already drew 1 this turn (Spirit of the Labyrinth)."
+    ],
+    "cite": [
+      "121.2b"
+    ]
+  },
+  {
+    "id": "cr3",
+    "text": "I cast Vision Skeins. What happens?",
+    "expect": [
+      "You draw 2 cards.",
+      "opponent draws 2 cards."
+    ],
+    "cite": [
+      "121.2c"
+    ]
+  },
+  {
+    "id": "cr4",
+    "text": "I cast Fling sacrificing my Ornithopter targeting my opponent. What happens?",
+    "expect": [
+      "Fling deals no damage to opponent: 0 damage isn't dealt at all."
+    ],
+    "cite": [
+      "120.8"
+    ],
+    "notExpect": [
+      "takes 0 damage"
+    ]
+  },
+  {
+    "id": "cr5",
+    "text": "I cast Flame Spill targeting my opponent's Grizzly Bears. What happens?",
+    "expect": [
+      "2 excess damage goes to opponent (Flame Spill).",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "120.4a"
+    ]
+  },
+  {
+    "id": "cr6",
+    "text": "I attack with Grizzly Bears and my opponent blocks with Wall of Wood. After combat damage, I cast Shock targeting Wall of Wood. What happens?",
+    "expect": [
+      "Wall of Wood has 4 damage marked.",
+      "Wall of Wood: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "120.6"
+    ]
+  },
+  {
+    "id": "cr7",
+    "text": "I control no legendary creatures or planeswalkers. Can I cast Urza's Ruinous Blast?",
+    "expect": [
+      "Urza's Ruinous Blast can't be cast: you control no legendary creature or planeswalker"
+    ],
+    "cite": [
+      "205.4e"
+    ],
+    "notExpect": [
+      "Yes: Urza's Ruinous Blast can be cast"
+    ]
+  },
+  {
+    "id": "cr8",
+    "text": "My opponent controls Blood Moon. What mana can my Breeding Pool tap for?",
+    "expect": [
+      "Breeding Pool is a Mountain under Blood Moon, so it taps for {R} and nothing else."
+    ],
+    "cite": [
+      "205.4c"
+    ]
+  },
+  {
+    "id": "cr9",
+    "text": "I cast Control Magic targeting my opponent's Llanowar Elves. Can I tap it for mana this turn?",
+    "expect": [
+      "Llanowar Elves's {T} ability can't be activated (summoning sickness)."
+    ],
+    "cite": [
+      "302.6"
+    ]
+  },
+  {
+    "id": "cr10",
+    "text": "It's my opponent's turn. Can I equip Bonesplitter to my Grizzly Bears?",
+    "expect": [
+      "No: Bonesplitter's equip ability can be activated only as a sorcery, and it's opponent's turn, not yours."
+    ],
+    "cite": [
+      "307.5"
+    ]
+  },
+  {
+    "id": "cr11",
+    "text": "My opponent casts Terminus. I control Grizzly Bears and Llanowar Elves. Who chooses the order they go to the bottom of my library?",
+    "expect": [
+      "You choose the order of Grizzly Bears and Llanowar Elves on the bottom of your library"
+    ],
+    "cite": [
+      "401.4"
+    ]
+  },
+  {
+    "id": "cr12",
+    "text": "I attack with Grizzly Bears. My opponent activates Icy Manipulator targeting it. Does Grizzly Bears still deal combat damage?",
+    "expect": [
+      "Grizzly Bears stays attacking",
+      "opponent takes 2 damage."
+    ],
+    "cite": [
+      "506.4b"
+    ]
+  },
+  {
+    "id": "cr13",
+    "text": "I attack with Furtive Homunculus. My opponent controls Hill Giant. Can Hill Giant block it?",
+    "expect": [
+      "Hill Giant can't block Furtive Homunculus (skulk)."
+    ],
+    "cite": [
+      "702.118b"
+    ]
+  },
+  {
+    "id": "cr14",
+    "text": "I attack with Engulfing Slagwurm and my opponent blocks with two Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's graveyard. (×2)",
+      "You gain 2 life. (×2)"
+    ],
+    "cite": [
+      "509.3d"
+    ]
+  },
+  {
+    "id": "cr15",
+    "text": "I attack with Hill Giant and my opponent blocks with Thicket Basilisk. What happens?",
+    "expect": [
+      "Hill Giant will be destroyed at end of combat (Thicket Basilisk).",
+      "Hill Giant: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "511.2"
+    ]
+  },
+  {
+    "id": "cr16",
+    "text": "My opponent controls Humility. What are the power and toughness of my Tarmogoyf?",
+    "expect": [
+      "Tarmogoyf is 1/1"
+    ],
+    "cite": [
+      "613.4a",
+      "604.3"
+    ]
+  },
+  {
+    "id": "cr17",
+    "text": "I cast Overrun, then I cast Grizzly Bears. What is Grizzly Bears' power?",
+    "expect": [
+      "Grizzly Bears is 2/2."
+    ],
+    "cite": [
+      "611.2c"
+    ]
+  },
+  {
+    "id": "cr18",
+    "text": "I control Glorious Anthem. I cast Grizzly Bears. What is its power?",
+    "expect": [
+      "Grizzly Bears is 3/3 (2/2 base, +1/+1 from Glorious Anthem)."
+    ],
+    "cite": [
+      "611.3a"
+    ]
+  },
+  {
+    "id": "cr19",
+    "text": "My opponent has one card in hand. I cast Mind Rot targeting my opponent. What happens?",
+    "expect": [
+      "opponent discards 1 card (1 → 0 in hand)."
+    ],
+    "cite": [
+      "609.3"
+    ]
+  },
+  {
+    "id": "cr20",
+    "text": "My History of Benalia has two lore counters. My precombat main phase begins. What happens?",
+    "expect": [
+      "History of Benalia: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "704.5s"
+    ]
+  },
+  {
+    "id": "cr21",
+    "text": "I cast Opt. What happens?",
+    "expect": [
+      "You scry 1 (Opt).",
+      "You draw 1 card."
+    ],
+    "cite": [
+      "701.22a"
+    ]
+  },
+  {
+    "id": "cr22",
+    "text": "I attack with Craw Giant and my opponent blocks with three Grizzly Bears. What happens?",
+    "expect": [
+      "Craw Giant gets +4/+4 (rampage 2): 10/8.",
+      "opponent takes 4 damage."
+    ],
+    "cite": [
+      "702.23a",
+      "509.3c"
+    ]
+  },
+  {
+    "id": "cr23",
+    "text": "I attack with Ulamog's Crusher. My opponent controls Grizzly Bears and two Forests. What happens?",
+    "expect": [
+      "opponent sacrifices 2 permanents of their choice (annihilator 2), before blockers are declared."
+    ],
+    "cite": [
+      "702.86a"
+    ]
+  },
+  {
+    "id": "cr24",
+    "text": "I attack with Severed Legion. My opponent controls Grizzly Bears. Can Grizzly Bears block?",
+    "expect": [
+      "Grizzly Bears can't block Severed Legion (fear)."
+    ],
+    "cite": [
+      "702.36b"
+    ]
+  },
+  {
+    "id": "cr25",
+    "text": "I attack with Topan Freeblade. My opponent doesn't block. What happens?",
+    "expect": [
+      "Topan Freeblade has 1 +1/+1 counter.",
+      "Topan Freeblade is renowned."
+    ],
+    "cite": [
+      "702.112a"
+    ]
+  },
+  {
+    "id": "cr26",
+    "text": "My Mystic Remora has two age counters. My upkeep begins. What happens?",
+    "expect": [
+      "Mystic Remora gets its third age counter; pay {3} or sacrifice it"
+    ],
+    "cite": [
+      "702.24a"
+    ]
+  },
+  {
+    "id": "cr27",
+    "text": "I cast Avalanche Riders last turn. My upkeep begins. What happens?",
+    "expect": [
+      "You must pay Avalanche Riders's echo cost {3}{R} or sacrifice it"
+    ],
+    "cite": [
+      "702.30a"
+    ]
+  },
+  {
+    "id": "cr28",
+    "text": "My Grizzly Bears is enchanted with Hyena Umbra. My opponent casts Doom Blade targeting Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears isn't destroyed: Hyena Umbra's umbra armor destroys the Aura instead."
+    ],
+    "cite": [
+      "702.89a"
+    ],
+    "notExpect": [
+      "Grizzly Bears: the battlefield"
+    ]
+  },
+  {
+    "id": "cr29",
+    "text": "I attack with Goblin Wardriver and Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears is 3/2 until end of turn (battle cry).",
+      "opponent takes 3 damage."
+    ],
+    "cite": [
+      "702.91a"
+    ]
+  },
+  {
+    "id": "cr30",
+    "text": "I have 15 life and my opponent has 20 life. I attack my opponent with Marchesa's Infiltrator. What happens?",
+    "expect": [
+      "Marchesa's Infiltrator has 1 +1/+1 counter.",
+      "opponent takes 2 damage."
+    ],
+    "cite": [
+      "702.105a"
+    ]
+  },
+  {
+    "id": "cr31",
+    "text": "I attack with Vampire Nighthawk unblocked. What happens?",
+    "expect": [
+      "You gain 2 life."
+    ],
+    "cite": [
+      "120.3f"
     ]
   }
 ]
