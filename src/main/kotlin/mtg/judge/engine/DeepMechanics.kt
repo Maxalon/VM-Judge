@@ -4,9 +4,11 @@ import mtg.judge.oracle.OracleParser
 
 /**
  * Engine-deep rules the earlier audits narrated rather than played out: text-changing effects in layer 3 (612, 613.1c),
- * power/toughness switches in layer 7d (613.4d), Auras that set a permanent's types (205.1a, 613.1d), every basic land
- * type (305.7), affinity and "costs {1} less for each" reductions (702.41a, 601.2f), Vorinclex keyed on who puts the
- * counters (122.6a, 616.1), and permanents that can't stay attached once they are creatures (704.5p, 303.4d).
+ * power/toughness switches in layer 7d (613.4d), Auras that set a permanent's types (205.1a, 613.1d), affinity and
+ * "costs {1} less for each" reductions (702.41a, 601.2f), Vorinclex keyed on who puts the counters (122.6a, 616.1), and
+ * permanents that can't stay attached once they are creatures (704.5p, 303.4d). Show and Tell, Bribery, Chandra, Torch of
+ * Defiance's +1 and Dryad of the Ilysian Grove are played out in MoreEffects2.kt; the choices the asker states for them
+ * are kept here.
  */
 internal object DeepMech {
     private val I = RegexOption.IGNORE_CASE
@@ -23,14 +25,12 @@ internal object DeepMech {
      */
     fun parseSentence(s0: String, target: (String) -> TargetSpec): Effect? {
         val s = s0.trim()
-        parseNarrated(s)?.let { return it }
         // "Create a green and white Elemental creature token with "This token's power and toughness are each equal to …"": the
         // quoted ability is the token's own text (Voice of Resurgence, Urza's Saga's Construct).
         Regex("""^(?:you )?creates? (a|an|one|two|three) (.+? tokens?) with (["'].+["'])\.?$""", I).matchEntire(s)?.let { m ->
             val desc = "${m.groupValues[2]} with ${m.groupValues[3]}"
             if (tokenWithAbility(desc) != null) return Effect.CreateToken(Who.YOU, mapOf("a" to 1, "an" to 1, "one" to 1, "two" to 2, "three" to 3).getValue(m.groupValues[1].lowercase()), desc)
         }
-        parseBribery(s, target)?.let { return it }
         Regex("""^target opponent draws (a|one|two|three) cards?\.?$""", I).matchEntire(s)?.let { m ->
             return Effect.NarratedTargeted(target("opponent"), "deep:draw:${mapOf("a" to 1, "one" to 1, "two" to 2, "three" to 3)[m.groupValues[1].lowercase()]}", listOf("115.1")) }
         if (Regex("""^switch target creature's power and toughness until end of turn\.?$""", I).matches(s))
@@ -44,8 +44,6 @@ internal object DeepMech {
 
     /** "Enchanted permanent is a colorless Forest land." / "… is a colorless land with "{T}: Add {C}" and loses all other card types and abilities." */
     data class TypeSetAura(val types: Set<String>, val subtypes: Set<String>, val colorless: Boolean, val loseAll: Boolean, val mana: String?, val text: String) : StaticEffect
-    /** Dryad of the Ilysian Grove: "Lands you control are every basic land type in addition to their other types." (305.7, layer 4) */
-    data class LandsEveryBasicType(val yours: Boolean) : StaticEffect
     /** Animar: "Creature spells you cast cost {1} less to cast for each +1/+1 counter on ~." — the amount counted when it's asked for (601.2f). */
     data class CostPer(val filter: ObjFilter, val amount: Int, val per: CountExpr, val text: String) : StaticEffect
 
@@ -58,7 +56,6 @@ internal object DeepMech {
         }
         // Changeling Outcast: "This creature can't block and can't be blocked." (its own restriction and evasion)
         if (Regex("""^~ can't block and can't be blocked\.?$""", I).matches(line)) return listOf(StaticEffect.KeywordGrant(ObjFilter(emptySet(), raw = "~"), setOf("cant-block", "unblockable")))
-        if (Regex("""^lands you control are every basic land type in addition to their other types\.?$""", I).matches(line)) return listOf(LandsEveryBasicType(true))
         Regex("""^(creature|artifact|noncreature|instant and sorcery|enchantment)? ?spells you cast cost \{(\d+)\} less to cast for each (.+?)\.?$""", I).matchEntire(line)?.let { m ->
             val per = Regex("""^([+-]\d+/[+-]\d+|[a-z]+) counter on ~$""", I).matchEntire(m.groupValues[3])?.let { CountExpr.CountersOn(it.groupValues[1]) }
                 ?: OracleParser.parseCount("the number of ${m.groupValues[3]}").takeIf { it !is CountExpr.Unknown } ?: return@let
@@ -182,7 +179,6 @@ internal object DeepMech {
             e.state.trace.step("${item.source.name}'s ability targets an opponent of its controller, as its text says, and that player (${p.subject.lowercase()}) draws: a draw isn't always good for whoever gets it, and the target was chosen as the ability was put on the stack.", "115.1", "603.3d")
             e.dpDraw(p, n); return
         }
-        if (text == "deep:bribery" && ref is Ref.Player) { bribery(e, item, e.state.player(ref.id)); return }
         val o = (ref as? Ref.Obj)?.let { e.state.objects[it.id] } ?: return
         when {
             text == "deep:switch" -> switchPt(e, item, o)
@@ -190,7 +186,7 @@ internal object DeepMech {
         }
     }
 
-    // ---- layers 4-6: type-setting Auras, every basic land type ---------------------------------------------------
+    // ---- layers 4-6: type-setting Auras -------------------------------------------------------------------------
 
     fun layerEffect(state: GameState, src: GameObject, eff: StaticEffect): LayerEffect? = when (eff) {
         // Song of the Dryads, Imprisoned in the Moon: the new card type replaces the old ones (205.1a); a basic land type set this way
@@ -203,9 +199,6 @@ internal object DeepMech {
                 5 -> c.colors.clear()
                 6 -> { c.abilitiesLostTo = src; c.keywords.clear() }
             } })
-        // Dryad of the Ilysian Grove: every basic land type in addition (305.7, last sentence: it keeps its own types and text).
-        is LandsEveryBasicType -> LayerEffect(src, src.timestamp, src.name, listOf(4), true, eff,
-            { c -> c.obj.isOnBattlefield() && "Land" in c.types && (!eff.yours || c.obj.controller == src.controller) }, { _, c -> c.subtypes += basicTypes })
         else -> null
     }
 
@@ -226,12 +219,6 @@ internal object DeepMech {
                     step("${e.source.name} makes ${t.name} a $desc: the new card type replaces its old ones${if (lostTypes.isNotEmpty()) " (it's no longer ${lostTypes.joinToString(" or ") { it.lowercase() }})" else ""}, and so do the subtypes that went with them (layer 4); ${if (eff.colorless) "it's colorless (layer 5); " else ""}$abil. Its name, supertypes, counters and anything else on it stay.",
                         arrayOf("205.1a", "613.1d", *(if (eff.colorless) arrayOf("613.1e") else emptyArray()), *(if (eff.loseAll) arrayOf("613.1f") else arrayOf("305.7"))))
                     out("${t.name} is a $desc${if ("Creature" in lostTypes) ", not a creature: it can't attack or block and has no power or toughness" else ""} (${e.source.name}).")
-                }
-                is LandsEveryBasicType -> {
-                    val lands = view.targetsOf(e)
-                    if (lands.isEmpty()) continue
-                    step("${e.source.name} makes each land its controller controls every basic land type (Plains, Island, Swamp, Mountain and Forest) in addition to its other types (layer 4): each keeps its own types and rules text and gains the mana ability of each basic land type, so it can tap for any colour.", arrayOf("305.7", "305.6", "613.1d"))
-                    out("${lands.joinToString(", ") { it.name }} ${if (lands.size == 1) "is" else "are"} a Plains, Island, Swamp, Mountain and Forest in addition to ${if (lands.size == 1) "its" else "their"} other types, so ${if (lands.size == 1) "it taps" else "they tap"} for any colour (${e.source.name}).")
                 }
                 else -> {}
             }
@@ -349,66 +336,14 @@ internal object DeepMech {
             if (cda) "0" else base.power?.toString(), if (cda) "0" else base.toughness?.toString(), base.keywords, listOf(base.oracleText, ability).filter { it.isNotBlank() }.joinToString("\n"))
     }
 
-    /** Show and Tell: the cards each player said they put in, kept until the spell resolves (by object id, APNAP sorted then). */
+    /**
+     * The choices the asker states for spells MoreEffects2 plays out, kept from the situation until the spell resolves:
+     * Show and Tell's "I put Emrakul … and my opponent puts Grizzly Bears …" (object ids), and Chandra, Torch of Defiance's
+     * +1 "exile Mountain" / "and I cast it" (the exiled card's id, and whether it was cast).
+     */
     private val putChoices = java.util.WeakHashMap<GameState, MutableList<String>>()
     fun recordPut(state: GameState, objId: String) { putChoices.getOrPut(state) { mutableListOf() } += objId }
-
-    /** Spell sentences played out here as Narrated "deep:…" text. */
-    fun parseNarrated(s: String): Effect? {
-        if (Regex("""^each player may put an artifact, creature, enchantment, or land card from their hand onto the battlefield\.?$""", RegexOption.IGNORE_CASE).matches(s.trim()))
-            return Effect.Narrated("deep:putfromhand", listOf("101.4", "110.2a"))
-        return null
-    }
-
-    /** "Search target opponent's library for a creature card and put that card onto the battlefield under your control. Then that player shuffles." (Bribery) */
-    fun parseBribery(s: String, target: (String) -> TargetSpec): Effect? {
-        if (!Regex("""^search target opponent's library for an? (creature|artifact|enchantment|land|planeswalker) card and put that card onto the battlefield under your control\.?(?: then that player shuffles\.?)?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return null
-        return Effect.NarratedTargeted(target("opponent"), "deep:bribery", listOf("701.23a"))
-    }
-
-    /** True when [text] is a "deep:" narrated sentence and it has been played out. */
-    fun narrated(e: Engine, text: String, item: StackItem): Boolean {
-        if (castOrDamage(e, text, item)) return true
-        if (text != "deep:putfromhand") return false
-        val st = e.state
-        val chosen = putChoices.remove(st).orEmpty().mapNotNull { st.objects[it] }.filter { it.zone == Zone.HAND }
-        val ap = st.activePlayer ?: item.controller
-        val order = st.players.map { it.id }.let { ps -> val i = ps.indexOf(ap).coerceAtLeast(0); ps.drop(i) + ps.take(i) }
-        val said = order.map { pid -> st.player(pid) to chosen.filter { it.owner == pid } }
-        val legal = said.flatMap { it.second }.filter { o -> o.def.types.any { it in setOf("Artifact", "Creature", "Enchantment", "Land") } }
-        st.trace.step("${item.source.name} resolves: starting with the active player and going in turn order, each player chooses an artifact, creature, enchantment or land card from their own hand, or none (${said.joinToString("; ") { (p, l) -> "${p.subject.lowercase()}: ${l.joinToString(" and ") { it.name }.ifEmpty { "nothing said" }}" }}). Then all the chosen cards are put onto the battlefield at the same time, each under its owner's control as the player who put it there.", "101.4", "110.2a", "608.2c")
-        for (o in chosen - legal.toSet()) { st.trace.step("${o.name} isn't an artifact, creature, enchantment or land card, so it can't be put onto the battlefield this way.", "608.2c"); st.outcomes += "${o.name} stays in hand: ${item.source.name} puts only an artifact, creature, enchantment or land card." }
-        for (o in legal) {
-            o.controller = o.owner
-            e.enter(o.id, null)
-            val cast = o.def.abilities.filterIsInstance<TriggeredAbility>().firstOrNull { it.trigger is Trigger.ThisCast }
-            if (cast != null) { st.trace.step("${o.name} was put onto the battlefield, not cast, so its \"when you cast\" ability doesn't trigger.", "601.2", "603.2"); st.outcomes += "${o.name} wasn't cast, so its \"when you cast\" ability doesn't trigger." }
-        }
-        if (legal.isEmpty()) st.outcomes += "Nothing is put onto the battlefield (no card was named for ${item.source.name})."
-        else if (legal.size > 1) st.trace.step("${legal.joinToString(" and ") { it.name }} entered at the same time, so each one's enters-the-battlefield abilities see the others, and the triggered abilities wait until ${item.source.name} has finished resolving; then they're put on the stack, the active player's first (APNAP order).", "603.6a", "603.3b")
-        return true
-    }
-
-    /** Bribery resolving on [opp]: the card found in their library enters under the caster's control; that player shuffles. */
-    fun bribery(e: Engine, item: StackItem, opp: Player) {
-        val st = e.state; val me = st.player(item.controller)
-        val card = item.choice?.let { st.objects[it] }?.takeIf { it.zone == Zone.LIBRARY && it.owner == opp.id }
-        if (card == null) {
-            st.trace.step("${me.subject} ${me.v("searches", "search")} ${opp.possessive} library for a creature card and ${me.v("puts", "put")} it onto the battlefield under ${me.possessive} control; which card wasn't said. A search for a card with a stated quality may come up empty even if one is there, and then ${opp.subject.lowercase()} still shuffles.", "701.23a", "701.23b", "701.24a")
-            st.outcomes += "${me.subject} ${me.v("puts", "put")} a creature card from ${opp.possessive} library onto the battlefield under ${me.possessive} control (which wasn't said); ${opp.subject.lowercase()} then ${opp.v("shuffles", "shuffle")}."
-            return
-        }
-        if (!card.def.isCreature) { st.trace.step("${card.name} isn't a creature card, so ${item.source.name} can't find it.", "701.23a"); st.outcomes += "${card.name} can't be found: it isn't a creature card."; return }
-        st.trace.step("${me.subject} ${me.v("searches", "search")} ${opp.possessive} library, ${me.v("finds", "find")} ${card.name} and ${me.v("puts", "put")} it onto the battlefield under ${me.possessive} control: ${opp.subject.lowercase()} still ${opp.v("owns", "own")} it, but ${me.subject.lowercase()} ${me.v("controls", "control")} it and its enters abilities. It wasn't cast, so \"when you cast\" abilities don't trigger. Then ${opp.subject.lowercase()} ${opp.v("shuffles", "shuffle")}.", "701.23a", "110.2a", "701.24a")
-        card.controller = item.controller
-        e.enter(card.id, null)
-        st.outcomes += "${card.name} enters under ${me.possessive} control (${opp.possessive} card; ${item.source.name})."
-    }
-
-    /**
-     * Chandra, Torch of Defiance's +1: "Exile the top card of your library. You may cast that card. If you don't, Chandra deals
-     * 2 damage to each opponent." Whether the card was cast decides the "if you don't" (608.2c); a land can't be cast at all (305.1).
-     */
+    fun takePuts(state: GameState): List<String> = putChoices.remove(state).orEmpty()
     private class CastOrDamage(var exiled: String? = null, var cast: Boolean? = null)
     private val castOrDamage = java.util.WeakHashMap<GameState, CastOrDamage>()
     fun recordExiled(state: GameState, objId: String?, cast: Boolean?) {
@@ -416,41 +351,7 @@ internal object DeepMech {
         if (objId != null) c.exiled = objId
         if (cast != null) c.cast = cast
     }
-    fun parseEffect(text: String): Effect? {
-        Regex("""^exile the top card of your library\. you may cast (?:that card|it)\. if you don't, ~ deals (\d+) damage to each opponent\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { m ->
-            return Effect.Narrated("deep:castordamage:${m.groupValues[1]}", listOf("608.2c")) }
-        return null
-    }
-    fun castOrDamage(e: Engine, text: String, item: StackItem): Boolean {
-        if (!text.startsWith("deep:castordamage:")) return false
-        val st = e.state; val n = text.substringAfterLast(':').toInt(); val p = st.player(item.controller)
-        val said = castOrDamage.remove(st) ?: CastOrDamage()
-        val card = said.exiled?.let { st.objects[it] }
-        val opps = st.opponentsOf(item.controller)
-        fun damage(why: String, vararg rules: String) {
-            st.trace.step(why, *rules)
-            for (o in opps) e.dpDamage(item.source.name, Ref.Player(o.id), n, item.source)
-        }
-        if (card != null) { card.zone = Zone.EXILE; st.trace.step("${p.subject} ${p.v("exiles", "exile")} the top card of ${p.possessive} library: ${card.name}.", "406.3", "608.2c") }
-        else st.trace.step("${p.subject} ${p.v("exiles", "exile")} the top card of ${p.possessive} library (which card wasn't said).", "608.2c")
-        when {
-            card != null && "Land" in card.def.types -> {
-                st.outcomes += "${card.name} is a land, which can't be cast (305.1), so ${item.source.name}'s \"if you don't\" applies."
-                damage("${card.name} is a land card, and a land can't be cast: playing a land is a special action, not casting a spell. So ${p.subject.lowercase()} ${p.v("doesn't", "don't")} cast it, and the \"if you don't\" happens: ${item.source.name} deals $n damage to each opponent.", "305.1", "601.2", "608.2c") }
-            said.cast == true -> {
-                st.trace.step("${p.subject} ${p.v("casts", "cast")} ${card?.name ?: "the exiled card"} from exile while the ability is resolving, paying its costs; it goes on the stack and no one gets priority until the ability has finished. Because ${p.subject.lowercase()} cast it, \"if you don't\" does nothing: ${item.source.name} deals no damage.", "608.2g", "608.2c")
-                st.outcomes += "${item.source.name} deals no damage: ${p.subject.lowercase()} cast ${card?.name ?: "the exiled card"} (608.2c)."
-                if (card != null) e.cast(item.controller, card.def, emptyList(), card.id)
-            }
-            said.cast == false ->
-                damage("${p.subject} ${p.v("chooses", "choose")} not to cast ${card?.name ?: "the exiled card"}, so the \"if you don't\" happens: ${item.source.name} deals $n damage to each opponent. The card stays in exile; it can't be cast later.", "608.2c", "608.2d")
-            else -> {
-                st.trace.step("Whether ${p.subject.lowercase()} cast ${card?.name ?: "the exiled card"} wasn't said. Cast as the ability resolves, it means no damage; not cast (or a land, which can't be cast), ${item.source.name} deals $n damage to each opponent.", "608.2c", "608.2g")
-                st.outcomes += "If ${p.subject.lowercase()} cast ${card?.name ?: "the exiled card"}, ${item.source.name} deals no damage; if not, it deals $n damage to each opponent (608.2c)."
-            }
-        }
-        return true
-    }
+    fun takeExiled(state: GameState): Pair<String?, Boolean?>? = castOrDamage.remove(state)?.let { it.exiled to it.cast }
 
     /**
      * Urza's Saga: "I — This Saga gains "{T}: Add {C}."", "II — This Saga gains "{2}, {T}: Create a 0/0 … Construct …"". A chapter

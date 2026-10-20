@@ -157,7 +157,7 @@ class GameObject(
     val toughness: Int? get() = state?.toughnessOf(this) ?: def.toughness?.let { it + pumps.sumOf { p -> p.second } + (counters["+1/+1"] ?: 0) - (counters["-1/-1"] ?: 0) }
     fun has(keyword: String): Boolean = state?.hasKeyword(this, keyword) ?: (def.has(keyword) || keyword.lowercase() in tempKeywords)
     /** The abilities it has right now: the printed ones unless Humility, Darksteel Mutation or Blood Moon took them away (613.1f, 305.7). Copiable values and "card named" questions read [def] instead. */
-    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else DeepMech.live(this, def.abilities)   // Animar's reduction counted now (DeepMechanics.kt)
+    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else MoreEffects2.liveAbilities(this, DeepMech.live(this, def.abilities))   // Animar's reduction counted now (DeepMechanics.kt)
     /** The rules text it has right now: empty while its abilities are gone (613.1f). */
     val rulesText: String get() = if (state?.abilitiesGone(this) != null) "" else def.oracleText
     val name get() = def.name

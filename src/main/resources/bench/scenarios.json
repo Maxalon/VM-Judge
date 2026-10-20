@@ -19003,7 +19003,7 @@
     "id": "pw-karn-plus4-on-me",
     "text": "karn liberated +4 on me, what do i exile",
     "expect": [
-      "Karn Liberated: Target player exiles a card from their hand (not tracked in detail)."
+      "You exile a card of your choice from your hand (Karn Liberated); which card wasn't said."
     ],
     "notExpect": [
       "You target player"
@@ -40099,7 +40099,7 @@
     "id": "kw5-entwine-tooth-and-nail-second-mode-read",
     "text": "I cast Tooth and Nail with entwine. Does it put creatures onto the battlefield too?",
     "expect": [
-      "Tooth and Nail: Put up to two creature cards from your hand onto the battlefield"
+      "Tooth and Nail: you put up to two creature cards from your hand onto the battlefield"
     ],
     "notExpect": [
       "Not modeled"
@@ -49195,7 +49195,7 @@
     "id": "dp18",
     "text": "I activate Chandra, Torch of Defiance's +1, exile Mountain. What happens?",
     "expect": [
-      "Mountain is a land, which can't be cast (305.1)",
+      "Mountain can't be cast: it's a land (lands are played, not cast).",
       "opponent takes 2 damage."
     ],
     "notExpect": [
@@ -49226,7 +49226,7 @@
     "id": "dp20",
     "text": "I cast Bribery targeting my opponent, getting their Emrakul, the Aeons Torn. What happens?",
     "expect": [
-      "Emrakul, the Aeons Torn enters under your control (opponent's card; Bribery)."
+      "Emrakul, the Aeons Torn enters the battlefield under your control from opponent's library (Bribery); opponent still owns it."
     ],
     "notExpect": [
       "which wasn't said"
@@ -49287,5 +49287,522 @@
       "612.1",
       "613.1c"
     ]
+  },
+  {
+    "id": "un1",
+    "text": "I cast Stomp targeting my opponent. Then I attack with Grizzly Bears and my opponent casts Holy Day. Do they take damage?",
+    "expect": [
+      "Damage can't be prevented this turn (Stomp).",
+      "Holy Day can't prevent Grizzly Bears's damage (it can't be prevented)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "615.12"
+    ]
+  },
+  {
+    "id": "un2",
+    "text": "I cast Banefire with X=5 at my opponent. They control a Circle of Protection: Red and activate it. Do they take damage?",
+    "expect": [
+      "Circle of Protection: Red's activated ability can't prevent Banefire's damage (it can't be prevented).",
+      "opponent takes 5 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "615.12"
+    ]
+  },
+  {
+    "id": "un3",
+    "text": "I cast Ephemerate on my Thought-Knot Seer. What happens?",
+    "expect": [
+      "You exile a nonland card from opponent's hand (Thought-Knot Seer); which card wasn't said.",
+      "opponent draws 1 card."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.13a",
+      "121.1"
+    ]
+  },
+  {
+    "id": "un4",
+    "text": "My Voice of Resurgence dies. I control two other creatures. How big is the token?",
+    "expect": [
+      "You get an Elemental token.",
+      "The Elemental token is 3/3 now (equal to the number of creatures you control)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "604.3",
+      "613.4a"
+    ]
+  },
+  {
+    "id": "un5",
+    "text": "It's my turn. I control Voice of Resurgence. My opponent casts Lightning Bolt targeting me. What happens?",
+    "expect": [
+      "You get an Elemental token.",
+      "You take 3 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.2",
+      "604.3"
+    ]
+  },
+  {
+    "id": "un6",
+    "text": "I play Urza's Saga. Can I tap it for mana?",
+    "expect": [
+      "Urza's Saga now has \"{T}: Add {C}.\"",
+      "Urza's Saga's mana ability: add {C}."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "611.2a",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "un7",
+    "text": "I control Dryad of the Ilysian Grove and a Forest. What can the Forest tap for?",
+    "expect": [
+      "Forest is Forest Plains Island Swamp Mountain land and taps for {W} or {U} or {B} or {R} or {G} (Dryad of the Ilysian Grove)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "613.1d",
+      "305.7",
+      "305.6"
+    ]
+  },
+  {
+    "id": "un8",
+    "text": "I activate Chandra, Torch of Defiance's +1. The top card of my library is a Mountain. What happens?",
+    "expect": [
+      "Mountain is exiled from the top of your library (Chandra, Torch of Defiance).",
+      "Mountain can't be cast: it's a land (lands are played, not cast).",
+      "opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "406.3",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "un9",
+    "text": "I control Winding Constrictor. My opponent attacks me with Glistener Elf and I don't block. How many poison counters do I have?",
+    "expect": [
+      "You have 2 poison counters."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "614.1a",
+      "702.90b"
+    ]
+  },
+  {
+    "id": "un10",
+    "text": "Animar, Soul of Elements has two +1/+1 counters. How much does my Craterhoof Behemoth cost?",
+    "expect": [
+      "Craterhoof Behemoth costs {5}{G}{G}{G} minus {2} (Animar, Soul of Elements makes it cost {2} less) — 6 mana in all."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "un11",
+    "text": "I cast Kolaghan's Command choosing modes 3 and 4 targeting my opponent.",
+    "expect": [
+      "Kolaghan's Command can't choose \"Destroy target artifact\": there's no artifact to target (700.2a)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "700.2a"
+    ]
+  },
+  {
+    "id": "un12",
+    "text": "I cast Show and Tell. I have Griselbrand in my hand. What happens?",
+    "expect": [
+      "You put Griselbrand onto the battlefield with Show and Tell.",
+      "opponent may put an artifact, creature, enchantment, or land card from their hand onto the battlefield (Show and Tell); which, if any, wasn't said."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "101.4",
+      "110.2"
+    ]
+  },
+  {
+    "id": "un13",
+    "text": "I cast Bribery. What happens?",
+    "expect": [
+      "You put a creature card from opponent's library onto the battlefield under your control (Bribery); which card wasn't said.",
+      "opponent shuffles their library (Bribery)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.23a",
+      "110.2"
+    ]
+  },
+  {
+    "id": "un14",
+    "text": "I cast Chain Lightning at my opponent and they pay {R}{R} to copy it. What happens?",
+    "expect": [
+      "A copy of Chain Lightning is put on the stack, controlled by the player who paid; it may get a new target (707.10c)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "707.10c"
+    ]
+  },
+  {
+    "id": "un15",
+    "text": "I cast The One Ring. Then my opponent casts Lightning Bolt targeting me. What happens?",
+    "expect": [
+      "You have protection from everything until your next turn (The One Ring).",
+      "Lightning Bolt can't target you."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.4",
+      "702.16j"
+    ]
+  },
+  {
+    "id": "un16",
+    "text": "It's my turn and I control Voice of Victory. Can my opponent cast Counterspell?",
+    "expect": [
+      "Counterspell can't be cast (Voice of Victory: not during your turn)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "101.2"
+    ]
+  },
+  {
+    "id": "un17",
+    "text": "I cast Plaguecrafter. My opponent has no creatures. What happens?",
+    "expect": [
+      "opponent discards 1 card."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "un18",
+    "text": "I activate Mishra's Bauble. What happens?",
+    "expect": [
+      "You will draw a card at the beginning of the next turn's upkeep (Mishra's Bauble)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.7a"
+    ]
+  },
+  {
+    "id": "un19",
+    "text": "I control Lavinia, Azorius Renegade. My opponent controls two lands and casts Wrath of God. What happens?",
+    "expect": [
+      "Wrath of God can't be cast (Lavinia, Azorius Renegade: mana value 4, more than opponent's 2 lands)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "101.2"
+    ]
+  },
+  {
+    "id": "un20",
+    "text": "I control Tymna the Weaver and attack my opponent with Grizzly Bears. It isn't blocked. In my second main phase I cast Llanowar Elves. What happens?",
+    "expect": [
+      "You lose 1 life.",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "608.2h",
+      "119.4"
+    ]
+  },
+  {
+    "id": "un21",
+    "text": "I cast Tooth and Nail choosing mode 2. I have Craterhoof Behemoth and Avenger of Zendikar in my hand.",
+    "expect": [
+      "You put Craterhoof Behemoth and Avenger of Zendikar from your hand onto the battlefield (Tooth and Nail)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "110.2"
+    ]
+  },
+  {
+    "id": "un22",
+    "text": "The One Ring has two burden counters on it and I activate it. How many cards do I draw?",
+    "expect": [
+      "You draw 3 cards."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "122.1"
+    ]
+  },
+  {
+    "id": "un23",
+    "text": "Geralf's Messenger enters the battlefield. What happens?",
+    "expect": [
+      "opponent loses 2 life."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "119.3"
+    ]
+  },
+  {
+    "id": "un24",
+    "text": "I control Ledger Shredder. My opponent casts their second spell this turn. What happens?",
+    "expect": [
+      "Ledger Shredder connives: you draw a card and discard a card, and it gets a +1/+1 counter if the discard was a nonland card."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.50a",
+      "701.50f"
+    ]
+  },
+  {
+    "id": "un25",
+    "text": "My opponent controls Stranglehold. I cast Demonic Tutor. What happens?",
+    "expect": [
+      "You can't search your library (Demonic Tutor is stopped by Stranglehold); the library is still shuffled."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "101.2",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "un26",
+    "text": "I control Necropotence. My opponent casts Thoughtseize targeting me and I discard Lightning Bolt. What happens?",
+    "expect": [
+      "Lightning Bolt: your hand → your graveyard.",
+      "Lightning Bolt: your graveyard → exile."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.2",
+      "701.13a"
+    ]
+  },
+  {
+    "id": "un27",
+    "text": "I control Rhythm of the Wild and cast Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears enters the battlefield.",
+      "Grizzly Bears has riot"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.136a"
+    ]
+  },
+  {
+    "id": "un28",
+    "text": "It's my turn and I control Tithe Taker. How much does my opponent's Lightning Bolt cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Tithe Taker makes it cost {1} more) — 2 mana in all."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "un29",
+    "text": "My opponent activates Field of Ruin targeting my Steam Vents. What happens?",
+    "expect": [
+      "You get a basic land (Field of Ruin).",
+      "opponent gets a basic land (Field of Ruin)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.23a",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "un30",
+    "text": "I attack with Ulamog, the Ceaseless Hunger. What happens?",
+    "expect": [
+      "opponent exiles the top twenty cards of their library (Ulamog, the Ceaseless Hunger).",
+      "opponent takes 10 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.13a"
+    ]
+  },
+  {
+    "id": "un31",
+    "text": "I control seven lands and cast Avenger of Zendikar. What happens?",
+    "expect": [
+      "You get a Plant token. (×7)"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.7a",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "un32",
+    "text": "My opponent casts Collected Company. What happens?",
+    "expect": [
+      "opponent puts up to two creature cards with mana value 3 or less from among them onto the battlefield (Collected Company); which ones wasn't said.",
+      "opponent puts the rest on the bottom of their library (Collected Company)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "110.2",
+      "401.4"
+    ]
+  },
+  {
+    "id": "un33",
+    "text": "I control The Gitrog Monster and a Forest. My upkeep begins. What happens?",
+    "expect": [
+      "You must sacrifice a land or The Gitrog Monster (The Gitrog Monster); which wasn't said."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "608.2d"
+    ]
+  },
+  {
+    "id": "un34",
+    "text": "I activate Karn, the Great Creator's -2. What happens?",
+    "expect": [
+      "You put the card into your hand (Karn, the Great Creator); which card wasn't said."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "400.11a",
+      "400.11b"
+    ]
+  },
+  {
+    "id": "un35",
+    "text": "I cast Impulse. What happens?",
+    "expect": [
+      "You put one of those cards into your hand and the rest on the bottom (Impulse); which card wasn't said."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "121.5"
+    ]
+  },
+  {
+    "id": "un36",
+    "text": "I cast Infernal Tutor with Lion's Eye Diamond on the battlefield and one other card in hand. In response I activate Lion's Eye Diamond discarding my hand. Does Infernal Tutor get hellbent?",
+    "expect": [
+      "You put a card from your library into your hand, then shuffle (Infernal Tutor); which card wasn't said."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "608.2c",
+      "701.23d",
+      "118.3"
+    ]
+  },
+  {
+    "id": "un37",
+    "text": "I control Daybreak Coronet on my Slippery Bogle. Does it have lifelink?",
+    "expect": [
+      "Yes: Slippery Bogle has lifelink."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": []
   }
 ]

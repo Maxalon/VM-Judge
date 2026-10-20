@@ -196,6 +196,7 @@ object OracleParser {
                 }
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
                 mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef)!!   // Uro's escape, Mikaeus (MoreEffects.kt)
+                mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef)!!   // Voice of Resurgence (MoreEffects2.kt)
                 isSpell && WinLoss.isSpellLine(selfRef) -> spellLines += selfRef   // Pact of Negation's delayed trigger is part of the spell
                 selfRef.startsWith("When ", true) || selfRef.startsWith("Whenever ", true) || selfRef.startsWith("At ", true) || abilityWord.containsMatchIn(selfRef) -> abilities += parseTriggeredAll(selfRef)
                 isActivated(selfRef) -> abilities += parseActivated(selfRef)
@@ -698,8 +699,9 @@ object OracleParser {
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
-        mtg.judge.engine.DeepMech.parseStatic(line)?.let { return it }   // Song of the Dryads, Dryad of the Ilysian Grove, Animar (DeepMechanics.kt)
+        mtg.judge.engine.DeepMech.parseStatic(line)?.let { return it }   // Song of the Dryads, Animar (DeepMechanics.kt)
         mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
+        mtg.judge.engine.MoreEffects2.parseStatic(line)?.let { return it }   // Dryad of the Ilysian Grove, Animar (MoreEffects2.kt)
         mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
@@ -1119,7 +1121,6 @@ object OracleParser {
 
     fun parseEffect(text: String): Effect {
         WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
-        mtg.judge.engine.DeepMech.parseEffect(text)?.let { return it }   // Chandra's +1: cast it or take damage (DeepMechanics.kt)
         mtg.judge.engine.EdhMech.parseSpell(text) { parseEffect(it) }?.let { return it }   // Demonic Consultation, Expropriate (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseSpell(text.trim()) { target(it) }?.let { return it }   // Balance, Berserk, Goblin Charbelcher, Donate (PauperMechanics.kt)
         Regex("""^look at the top X cards of your library, where X is your devotion to (white|blue|black|red|green)\. Put up to one of them on top of your library and the rest on the bottom of your library in a random order\. If X is greater than or equal to the number of cards in your library, you win the game\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfDevotionCoversLibrary(mapOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G').getValue(it.groupValues[1].lowercase())) }
@@ -1412,6 +1413,7 @@ object OracleParser {
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
         mtg.judge.engine.PauperMech.parseSentence(s) { target(it) }?.let { return it }   // Pestilence, Earthquake, Skred, Ghostly Flicker, Timetwister (PauperMechanics.kt)
+        mtg.judge.engine.MoreEffects2.parseSentence(s)?.let { return it }   // Stomp, Banefire, "target opponent draws", Show and Tell (MoreEffects2.kt)
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
         mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)

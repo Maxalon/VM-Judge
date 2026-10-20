@@ -57,7 +57,8 @@ class Engine(val state: GameState) {
             state.outcomes += "${card.name} can't be cast (${lock.name})."; return null
         }
         if (EdhMech.castBlocked(state, playerId, card)) return null   // Ranger-Captain of Eos: no noncreature spells this turn
-        if (CoverageMech.castBlocked(state, playerId, card)) return null   // a legendary sorcery with no legendary creature or planeswalker (205.4e)
+        if (CoverageMech.castBlocked(state, playerId, card)) return null
+        if (MoreEffects2.castBlocked(this, playerId, card)) return null   // Lavinia, Azorius Renegade (MoreEffects2.kt)   // a legendary sorcery with no legendary creature or planeswalker (205.4e)
         if (LegacyMech.altCostRefused(state, playerId, card, alternative, flashback)) return null   // 118.9, 118.9a
         // Silence: a turn-long stop on casting, which ends in the cleanup step.
         if (playerId in state.cantCastThisTurn) {
@@ -400,6 +401,7 @@ class Engine(val state: GameState) {
                     } else null
             }
             if (picked.all { it != null }) targets = picked.map { it!! }
+            else MoreEffects2.picksBesideImpossible(this, modeEffect.targets(), picked, playerId, obj)?.let { targets = it }   // Kolaghan's Command with no artifact around (MoreEffects2.kt)
         }
         // "I copy their Grave Titan with Clone": the permanent named is what Clone copies, not a target it doesn't have.
         val copyChoice = if (needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && choice == null && card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.EntersAsCopy }) { trace.step("${card.name} has no targets; ${state.nameOf(targets[0])} named with it is what it will enter as a copy of.", "707.9", "614.1c"); "copy:" + (targets[0] as Ref.Obj).id } else choice
@@ -467,7 +469,7 @@ class Engine(val state: GameState) {
         }
         trace.step("${player.subject} ${player.v("casts", "cast")} ${card.name}${if (modes.isNotEmpty() && modal != null) " choosing " + modes.joinToString(" and ") { "\"${modal.modeTexts.getOrNull(it - 1)?.replace("~", card.name) ?: "?"}\"" } else ""}${describeTargets(targets)}. It goes on top of the stack.", "601.2a", "405.2", *(if (modal != null) arrayOf("601.2b", "700.2a") else emptyArray()))
         val playerTargetMode = targets.isNotEmpty() && targets.all { it is Ref.Player } && modes.any { modal?.modeTexts?.getOrNull(it - 1)?.lowercase()?.contains("target player") == true }
-        if (modeEffect != null && modeEffect.targets().size != targets.size && !playerTargetMode && !playerModeExtra) state.clarifications += Clarification("${card.name}'s target", "The chosen mode needs ${modeEffect.targets().size} target(s) (${modeEffect.targets().joinToString("; ") { it.raw }}) but ${targets.size} given.")
+        if (modeEffect != null && modeEffect.targets().size != targets.size && !playerTargetMode && !playerModeExtra && !(modal != null && MoreEffects2.modeWithoutTarget(this, item, modeEffect.targets(), modes.mapNotNull { modal.modeTexts.getOrNull(it - 1) }, targets.size))) state.clarifications += Clarification("${card.name}'s target", "The chosen mode needs ${modeEffect.targets().size} target(s) (${modeEffect.targets().joinToString("; ") { it.raw }}) but ${targets.size} given.")
         var lifeCostPaid = false
         card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostText>().forEach {
             val life = Regex("""(?i)\bpay (X|\d+) life\b""").find(it.text)?.groupValues?.get(1)?.let { n -> if (n.equals("X", true)) x else n.toIntOrNull() }
@@ -914,6 +916,7 @@ class Engine(val state: GameState) {
         if (ability.cost.contains("{T}") && obj.tapped == true) { trace.step("${obj.name} is already tapped, so its {T} ability can't be activated.", "118.3", "701.26a"); state.outcomes += "${obj.name}'s {T} ability can't be activated (already tapped)."; return null }
         if (ability.cost.contains("{T}") && state.isCreature(obj) && obj.summoningSick == true && !obj.has("haste")) { trace.step("${obj.name} hasn't been under ${state.player(playerId).possessive} control since the turn began and doesn't have haste, so its {T} ability can't be activated.", "302.6"); state.outcomes += "${obj.name}'s {T} ability can't be activated (summoning sickness)."; return null }
         if (!paySacrificeCosts(playerId, obj, ability, choice)) return null
+        MoreEffects2.payDiscardHand(this, playerId, ability)   // Lion's Eye Diamond's "Discard your hand" (MoreEffects2.kt)
         val isMana = isManaEffect(ability.effect)
         if (!isMana) state.stack.firstOrNull { it.kind == StackKind.SPELL && it.source.def.has("split second") }?.let { ss ->
             trace.step("${ss.source.name} has split second and is on the stack, so abilities that aren't mana abilities can't be activated. ${obj.name}'s ability can't be activated now.", "702.61a")
@@ -1362,7 +1365,7 @@ class Engine(val state: GameState) {
     }
 
     private fun searchLimitNote(searcher: String, what: String) {
-        val censor = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller != searcher && it.abilities.any { a -> a is UnparsedAbility && a.text.contains("searches the top four cards of that library instead", ignoreCase = true) } } ?: return
+        val censor = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller != searcher && it.abilities.any { a -> (a is UnparsedAbility || a is StaticAbility) && a.text.contains("searches the top four cards of that library instead", ignoreCase = true) } } ?: return
         val p = state.player(searcher)
         trace.step("${censor.name} is controlled by an opponent of ${p.subject.lowercase()}, so ${p.subject.lowercase()} ${p.v("searches", "search")} only the top four cards of ${p.possessive} library instead of the whole library: $what is found only if it's among them (the library is still shuffled).", "614.1a")
         state.outcomes += "${censor.name}: ${p.subject} ${p.v("looks", "look")} at only the top four cards of ${p.possessive} library for $what; if none is there, nothing is found."
@@ -1375,8 +1378,9 @@ class Engine(val state: GameState) {
         state.outcomes += "${p.subject} ${p.v("has", "have")} ${p.poison} poison counter${if (p.poison == 1) "" else "s"}."
     }
 
-    fun addPoison(playerId: String, count: Int) {
-        if (MoreEffects.poisonBlocked(this, playerId, count)) return   // Melira (MoreEffects.kt)
+    fun addPoison(playerId: String, count0: Int) {
+        if (MoreEffects.poisonBlocked(this, playerId, count0)) return   // Melira (MoreEffects.kt)
+        val count = MoreEffects2.playerCounters(this, playerId, count0, "poison")   // Winding Constrictor (MoreEffects2.kt)
         val p = state.player(playerId)
         p.poison = (p.poison ?: 0) + count
         trace.step("${p.subject} ${p.v("gets", "get")} $count poison counter${if (count == 1) "" else "s"} (${p.poison} in all).", "122.1a", "704.5c")
@@ -2576,6 +2580,7 @@ class Engine(val state: GameState) {
         is Trigger.Edh -> EdhMech.matches(state, obj, trigger, event)
         is Trigger.Unknown -> false
         is MoreTrigger -> MoreEffects.triggerMatches(state, obj, trigger, event)   // Mikaeus (MoreEffects.kt)
+        is MoreTrigger2 -> MoreEffects2.triggerMatches(state, obj, trigger, event)   // Voice of Resurgence (MoreEffects2.kt)
         }
     }
 
@@ -2701,7 +2706,7 @@ class Engine(val state: GameState) {
     /** Kira, Great Glass-Spinner: triggered abilities a permanent has because a static grants them to what it is (613.1f). */
     /** The activated abilities a permanent has: its own, plus any granted to it (Cryptolith Rite) while it is on the battlefield. */
     fun activatedAbilitiesOf(obj: GameObject): List<ActivatedAbility> {
-        val own = obj.def.abilities.filterIsInstance<ActivatedAbility>() + DeepMech.chapterGrants(state, obj)   // Urza's Saga: "This Saga gains …" (DeepMechanics.kt)
+        val own = obj.def.abilities.filterIsInstance<ActivatedAbility>() + (DeepMech.chapterGrants(state, obj) + MoreEffects2.gainedActivated(state, obj)).distinct()   // Urza's Saga: "This Saga gains …" (DeepMechanics.kt)
         if (!obj.isOnBattlefield() || state.abilitiesLostOn(obj) != null) return own
         return own + state.objects.values.filter { it.isOnBattlefield() && state.abilitiesLostOn(it) == null }.flatMap { src ->
             src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.GrantActivated>()
@@ -2981,6 +2986,7 @@ class Engine(val state: GameState) {
     }
 
     private fun applyEffect(effect: Effect, item: StackItem) {
+        if (MoreEffects2.apply(this, effect, item)) return   // "target opponent draws a card" (MoreEffects2.kt)
         val you = state.player(item.controller)
         when (effect) {
             is Effect.ShuffleGraveyardIntoLibrary, is Effect.ReturnExiledCard, is Effect.SacrificeEnchanted, is Effect.GainLifeThatMuch, is Effect.TapOrUntap, is Effect.CreateTokenCopy, is Effect.OpponentMayTakeDamage, is Effect.DamageCausing, is Effect.DoublePower, is Effect.PumpCount, is Effect.LoseHalfLife, is Effect.ExileUntilLeaves, is Effect.SacrificeTarget, is Effect.GainLifeEqualTo, is Effect.FreezeUntap, is Effect.RemoveCounters, is Effect.SetBasePtTarget, is Effect.LoseLifeEqual -> applyEffectMore(effect, item)
@@ -3947,7 +3953,7 @@ class Engine(val state: GameState) {
                 if (chosen.isEmpty()) {
                     state.clarifications += Clarification("${item.describe}'s mode", "${item.describe} is modal (choose ${effect.count}): " + effect.modeTexts.mapIndexed { i, t -> "[${i + 1}] ${t.replace("~", item.source.name)}" }.joinToString("; ") + ". Which mode(s)? (700.2a: chosen as it's cast)")
                     trace.step("${item.describe} is modal; its mode was chosen as it was cast. Not told which, so its effect isn't applied.", "700.2a", "601.2b")
-                } else for (mi in chosen) { effect.modes.getOrNull(mi - 1)?.let { trace.step("Mode ${mi}: ${effect.modeTexts[mi - 1].replace("~", item.source.name)}.", "700.2a"); applyEffect(it, item) } ?: run { state.clarifications += Clarification("mode", "Mode $mi doesn't exist on ${item.describe}.") } }
+                } else for (mi in chosen) { if (MoreEffects2.modeDropped(state, item, effect.modeTexts.getOrNull(mi - 1))) continue; effect.modes.getOrNull(mi - 1)?.let { trace.step("Mode ${mi}: ${effect.modeTexts[mi - 1].replace("~", item.source.name)}.", "700.2a"); applyEffect(it, item) } ?: run { state.clarifications += Clarification("mode", "Mode $mi doesn't exist on ${item.describe}.") } }
             }
             is Effect.CantLoseThisTurn -> {
                 val p = state.player(item.controller)
@@ -4034,12 +4040,12 @@ class Engine(val state: GameState) {
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
                 if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
                 if (EdhMech.resolve(this, effect.text, item)) return   // Tergrid, Consultation, Expropriate, Leadership Vacuum (EdhMechanics.kt)
-                if (DeepMech.narrated(this, effect.text, item)) return   // Show and Tell (DeepMechanics.kt)
                 if (LegacyMech.narrated(this, effect.text, item)) return   // Dreadnought phased out, Chrome Mox imprint (LegacyMechanics.kt)
                 if (PauperMech.narrated(this, effect.text, item)) return   // Masticore with an empty hand (PauperMechanics.kt)
                 LegacyMech.narratedAs(state, effect.text, item)?.let { applyEffect(it, item); return }   // Children of Korlis
                 if (ModernMech.narrated(this, state, effect.text, item)) return   // Undying Malice's return (ModernMechanics.kt)
                 CoverageMech.notADraw(state, effect.text, item)   // Impulse with Orcish Bowmasters out: into the hand isn't a draw (CoverageMechanics.kt)
+                if (MoreEffects2.resolve(this, effect.text, item)) return   // unpreventable damage, gained abilities, Chandra's exile-and-cast (MoreEffects2.kt)
                 if (MoreEffects.resolve(this, effect.text, item)) return   // searches, reveals, looks, scry, shuffles, extra turns (MoreEffects.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
                 // Devoted Druid's "Untap ~": the permanent really untaps, so its {T} ability can be activated again.
@@ -4143,6 +4149,7 @@ class Engine(val state: GameState) {
                 if (ModernMech.unparsed(this, state, effect.text, item)) return   // Undying Malice, Not Dead After All (ModernMechanics.kt)
                 if (LimitedMech.unparsed(this, state, effect.text, item)) return   // Cytoshape, Preeminent Captain (LimitedMechanics.kt)
                 if (CoverageMech.unparsed(this, state, effect.text, item)) return   // Flame Spill's excess damage (CoverageMechanics.kt)
+                if (MoreEffects2.resolve(this, effect.text, item)) return   // (MoreEffects2.kt)
                 trace.step("(Not modeled: \"${effect.text}\")")
                 enterBlockersNote(item, effect.text)
                 // Counterbalance: the spell is countered if the revealed card's mana value matches it.
@@ -4704,6 +4711,7 @@ class Engine(val state: GameState) {
         applyEntersAsCopy(o, choice)
         ModernMech.entersWithExiled(state, o)   // Murktide Regent's counters for the cards delve exiled (ModernMechanics.kt)
         LimitedMech.asEnters(state, o)   // Ixidron turns the other creatures face down (LimitedMechanics.kt)
+        MoreEffects2.asEnters(this, o)   // riot (MoreEffects2.kt)
         val startingLoyalty = o.def.loyalty?.let { NewMech.compleatedLoyalty(state, o, it) }
         if ("Saga" in o.def.subtypes && o.def.abilities.any { it is TriggeredAbility && it.trigger is Trigger.Chapter } && (o.counters["lore"] ?: 0) == 0) {
             // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (714.3a), not its rules text (305.7), but the chapter abilities are gone.
@@ -5017,6 +5025,7 @@ class Engine(val state: GameState) {
             state.outcomes += "${prevention.joinToString(" and ") { it.first }} can't prevent $sourceName's damage (${qb.name})."
             prevention = emptyList()
         }
+        if (prevention.isNotEmpty() && MoreEffects2.damageCantBePrevented(this, source, sourceName, amount, prevention.map { it.first })) prevention = emptyList()   // Stomp, Banefire (MoreEffects2.kt)
         // "Furnace of Rath, and they have a shield preventing the next 3: I Bolt them": the affected player or the
         // affected object's controller orders them (616.1). Prevent 3 then double is 0; double then prevent 3 is 3.
         if (doublers.isNotEmpty() && prevention.isNotEmpty()) {
@@ -5088,7 +5097,8 @@ class Engine(val state: GameState) {
         when (target) {
             is Ref.Player -> { val p = state.player(target.id)
                 if (amount > 0) p.damagedThisTurn = true
-                if (infect) { p.poison += amount; trace.step("$sourceName ${if (unlifeInfect != null && source?.has("infect") != true) "is treated as having infect" else "has infect"}, so instead of losing life ${if (p.you) "you get" else p.name + " gets"} $amount poison counter${if (amount > 1) "s" else ""} (${p.poison} total).", "702.90b", "120.3b"); poisonLine(p) }
+                if (amount > 0 && inCombatDamage) MoreEffects2.combatDamaged(state, p.id)   // Tymna (MoreEffects2.kt)
+                if (infect) { val got = MoreEffects2.playerCounters(this, p.id, amount, "poison"); p.poison += got; trace.step("$sourceName ${if (unlifeInfect != null && source?.has("infect") != true) "is treated as having infect" else "has infect"}, so instead of losing life ${if (p.you) "you get" else p.name + " gets"} $got poison counter${if (got > 1) "s" else ""} (${p.poison} total).", "702.90b", "120.3b"); poisonLine(p) }
                 else { p.life = p.life?.minus(amount); trace.step("$sourceName deals $amount damage to ${if (p.you) "you" else p.name}, ${if (p.you) "and you lose" else "who loses"} $amount life${p.life?.let { " ($it)" } ?: ""}.", "120.3a"); state.outcomes += "${p.subject} ${p.v("takes", "take")} $amount damage."; lifeLost(p, amount) }
                 val toxic = source?.takeIf { inCombatDamage }?.let { src -> Regex("""\bToxic (\d+)""").findAll(src.rulesText).sumOf { it.groupValues[1].toInt() } } ?: 0
                 if (source?.commander == true && inCombatDamage) { val total = (p.commanderDamage[source.id] ?: 0) + amount; p.commanderDamage[source.id] = total; trace.step("${source.name} is a commander: ${if (p.you) "you have" else p.name + " has"} now been dealt $total combat damage by it this game (21 or more loses the game).", "903.10a"); state.outcomes += "${p.subject} ${p.v("has", "have")} taken $total commander damage from ${source.name}." }
@@ -5299,11 +5309,12 @@ class Engine(val state: GameState) {
                 out(what)
             }
         }
-        DeepMech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })   // Song of the Dryads, Dryad of the Ilysian Grove (DeepMechanics.kt)
+        DeepMech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })   // Song of the Dryads (DeepMechanics.kt)
         // Type changes that make something a creature, or something else.
         for (e in view.applied[4].orEmpty()) {
             val eff = e.effect as? StaticEffect.BecomesType ?: continue
             if (!relevant(e)) continue
+            if (MoreEffects2.narrateSubtypesAdded(state, e.source, eff, view.targetsOf(e), ::step, ::out)) continue   // Dryad of the Ilysian Grove (MoreEffects2.kt)
             val ts = view.targetsOf(e)
             val sizeWord = if (eff.ptManaValue) "base power and toughness each equal to its mana value" else "base power and toughness ${eff.power}/${eff.toughness}"
             if (ts.isEmpty()) step("${e.source.name}'s ability applies to ${eff.filter.raw.removePrefix("each ")}s, and there's none on the battlefield, so it makes nothing a creature right now.", "613.1d", "604.2")
@@ -5635,6 +5646,7 @@ class Engine(val state: GameState) {
             }
             // Whatever was attached to it, or it was attached to, is checked by state-based actions (704.5m/n).
         } else if (to == Zone.GRAVEYARD) onEvent(GameEvent.PutIntoGraveyard(obj))
+        if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects2.discarded(this, obj)   // Necropotence (MoreEffects2.kt)
     
         // A commander put into a graveyard or exile may go to the command zone at the next state-based action check
         // (903.9a); one that would go to hand or library may go there instead (903.9b). See CommanderRules.kt.
@@ -5844,7 +5856,7 @@ class Engine(val state: GameState) {
     private fun effectiveEffect(item: StackItem): Effect? = substituteModes(item.effect, item)
     /** A Modal, possibly behind a rider sentence that makes the spell a Seq, with the chosen modes in its place. */
     private fun substituteModes(e: Effect?, item: StackItem): Effect? = when {
-        e is Effect.Modal -> item.modes.mapNotNull { i -> e.modes.getOrNull(i - 1) }.let { if (it.isEmpty()) e else Effect.Seq(it) }
+        e is Effect.Modal -> item.modes.filterNot { i -> MoreEffects2.modeDropped(state, item, e.modeTexts.getOrNull(i - 1)) }.mapNotNull { i -> e.modes.getOrNull(i - 1) }.let { if (it.isEmpty()) e else Effect.Seq(it) }
         e is Effect.Seq && e.effects.any { it is Effect.Modal } -> Effect.Seq(e.effects.map { substituteModes(it, item) ?: it })
         else -> e
     }
@@ -5853,7 +5865,7 @@ class Engine(val state: GameState) {
     private inline fun forEachLegalTarget(item: StackItem, spec: TargetSpec, block: (Ref) -> Unit) {
         val specs = effectiveEffect(item)?.targets() ?: emptyList()
         val idx = specs.indexOf(spec)
-        val ref = item.targets.getOrNull(idx) ?: run { if (!DeepMech.noTargetPart(state, item, spec)) state.unsupported += Unsupported(item.describe, "No target was given for \"${spec.raw}\"."); return }
+        val ref = item.targets.getOrNull(idx) ?: run { if (!DeepMech.noTargetPart(state, item, spec) && !MoreEffects2.targetlessModeSaid(state, item, spec)) state.unsupported += Unsupported(item.describe, "No target was given for \"${spec.raw}\"."); return }
         if (isTargetLegal(item, ref)) block(ref) else trace.step("${state.nameOf(ref)} is an illegal target now, so that part of the effect doesn't affect it.", "608.2b")
     }
 
@@ -6021,4 +6033,6 @@ class Engine(val state: GameState) {
     internal fun meApply(e: Effect, item: StackItem) = applyEffect(e, item)
     internal fun meEnterBlockers(item: StackItem, text: String) = enterBlockersNote(item, text)
     internal fun meDestroy(o: GameObject, text: String, vararg rules: String) = destroy(o, text, *rules)
+    // MoreEffects2.kt's.
+    internal fun me2ForEachLegal(item: StackItem, spec: TargetSpec, block: (Ref) -> Unit) = forEachLegalTarget(item, spec, block)
 }

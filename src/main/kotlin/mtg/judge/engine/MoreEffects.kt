@@ -201,7 +201,8 @@ internal object MoreEffects {
         Regex("""^search your library for (up to (\w+) |an? )?(.+?) cards?, (reveal (?:it|them|that card|those cards),? (?:and )?)?put (?:it|them|that card|those cards) into your hand, then shuffle$""", I).matchEntire(t)?.let { r ->
             val upTo = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { num(it) }
             val n = upTo ?: 1
-            val what = r.groupValues[3].trim()
+            // Demonic Tutor's "for a card": the article is all there is, so it's any card.
+            val what = r.groupValues[3].trim().let { if (r.groupValues[1].isEmpty() && (it.equals("a", true) || it.equals("an", true))) "" else it }
             val any = what.equals("card", true) || what.isEmpty()
             val reveal = r.groupValues[4].isNotEmpty()
             val desc = if (n == 1) (if (what.isEmpty()) "a card" else "${article(what)} $what card") else "up to $n $what cards"

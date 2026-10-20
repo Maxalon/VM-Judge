@@ -22,16 +22,18 @@ object Generic {
         val kwWords = subWords.filter { it in tokenKeywordWords }
         val subs = (subWords - kwWords.toSet()).joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
         // "a Spirit token" with no size: the token that type usually is (Lingering Souls' 1/1 flier, a 2/2 Zombie), so it counts as a creature.
-        val typical = tokenDefaults[subs]?.takeIf { m.groupValues[1].isEmpty() && !m.groupValues[5].contains("artifact") && m.groupValues[5] != "enchantment" }
+        // Voice of Resurgence's Elemental: 'with "~'s power and toughness are each equal to …"' is an ability the token has (604.3a's (2)).
+        val quoted = Regex("""^"(.+?)"?$""").matchEntire(m.groupValues[6].trim())?.groupValues?.get(1)?.trimEnd('"')
+        val typical = tokenDefaults[subs]?.takeIf { m.groupValues[1].isEmpty() && !m.groupValues[5].contains("artifact") && m.groupValues[5] != "enchantment" && quoted?.contains("power and toughness", true) != true }
         val pw = m.groupValues[1].ifEmpty { typical?.first ?: "" }; val tn = m.groupValues[2].ifEmpty { typical?.second ?: "" }
         val creature = m.groupValues[1].isNotEmpty() || m.groupValues[5].contains("creature") || typical != null
         val artifact = m.groupValues[5].contains("artifact") || subs in setOf("Treasure", "Food", "Clue", "Blood", "Powerstone", "Map")
         val typeLine = "Token " + (if (legendary) "Legendary " else "") + listOfNotNull(if (artifact) "Artifact" else null, if (creature) "Creature" else null, if (m.groupValues[5] == "enchantment") "Enchantment" else null).joinToString(" ").ifEmpty { "Permanent" } + (if (subs.isEmpty()) "" else " — $subs")
-        val keywords = kwWords + m.groupValues[6].split(Regex("""\s*,\s*|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() } + (typical?.third ?: emptyList()).filter { k -> k !in kwWords }
+        val keywords = kwWords + (if (quoted != null) "" else m.groupValues[6]).split(Regex("""\s*,\s*|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() } + (typical?.third ?: emptyList()).filter { k -> k !in kwWords }
         val text = when (subs) { "Treasure" -> "{T}, Sacrifice this token: Add one mana of any color."; "Food" -> "{2}, {T}, Sacrifice this token: You gain 3 life."; "Clue" -> "{2}, Sacrifice this token: Draw a card."; else -> "" }
         val kwLine = keywords.joinToString(", ") { it.replaceFirstChar { c -> c.uppercase() } }
         return OracleParser.parse("generic-token-$n", named?.let { it.split(' ').joinToString(" ") { w -> w.replaceFirstChar { c -> c.uppercase() } } } ?: if (subs.isNotEmpty()) "$subs token" else if (m.groupValues[1].isNotEmpty()) "a ${m.groupValues[1]}/${m.groupValues[2]} token" else "a token", typeLine, null, 0.0, colors,
-            pw.ifEmpty { null }, tn.ifEmpty { null }, keywords, listOf(kwLine, text).filter { it.isNotEmpty() }.joinToString("\n"))
+            pw.ifEmpty { if (quoted != null && creature) "*" else null }, tn.ifEmpty { if (quoted != null && creature) "*" else null }, keywords, listOfNotNull(kwLine, text, quoted?.let { it.replace(Regex("""(?i)\bthis (?:token|creature)\b"""), "~").let { q -> if (q.endsWith(".")) q else "$q." } }).filter { it.isNotEmpty() }.joinToString("\n"))
     }
 
     /** The size (and keywords) a token of a given type usually has, for a token named only by its type. */
@@ -193,7 +195,7 @@ object Generic {
         if (n in setOf("burn spell", "burn")) return OracleParser.parse("generic-burn", "a burn spell", "Instant", "{R}", 1.0, "R", null, null, emptyList(), "This spell deals 3 damage to any target.")
         // "my creature with an Aura on it dies": which Aura it is doesn't matter to the question — that it is an
         // Aura does, because an Aura with nothing to enchant goes to the graveyard while an Equipment stays.
-        if (n in setOf("aura", "aura card", "enchantment aura")) return OracleParser.parse("generic-aura", "an Aura", "Enchantment — Aura", "{1}{W}", 2.0, "W", null, null, emptyList(), "Enchant creature")
+        if (n in setOf("aura", "aura card", "enchantment aura")) return OracleParser.parse("generic-aura", "an Aura", "Enchantment — Aura", "{1}{W}", 2.0, "W", null, null, listOf("Enchant"), "Enchant creature")
         // "I have 2 permanents": what they are doesn't matter to the question (Torment of Hailfire counts them).
         if (n in setOf("permanent", "a permanent", "nonland permanent", "a nonland permanent")) return OracleParser.parse("generic-permanent", "a permanent", "Artifact", "{1}", 1.0, "", null, null, emptyList(), "")
         if (n in setOf("equipment", "equipment card")) return OracleParser.parse("generic-equipment", "an Equipment", "Artifact — Equipment", "{2}", 2.0, "", null, null, emptyList(), "")
