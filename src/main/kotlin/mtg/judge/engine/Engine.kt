@@ -174,6 +174,7 @@ class Engine(val state: GameState) {
         if ("Land" in card.types && !card.isInstantOrSorcery) {
             // Lands aren't cast: playing one is a special action that doesn't use the stack.
             emptyStackFirst("playing a land")
+            if (ExamMech.landPlayRefused(this, playerId, obj)) return null   // the land play is used, from the hand or the top of the library (ExamMechanics.kt)
             trace.step("${player.subject} ${player.v("plays", "play")} ${card.name}. Playing a land is a special action: it doesn't use the stack, can't be responded to, and is only possible during ${player.possessive} own main phase with an empty stack, once per turn unless an effect allows more.", "305.1", "116.2a", "305.2")
             // enter() already says it entered; saying it again here printed the line twice.
             obj.controller = playerId
@@ -335,7 +336,7 @@ class Engine(val state: GameState) {
         CommanderRules.cast(obj, fromZone)   // 903.8: this cast counts toward the next one's commander tax
         ModernMech.leftHand(state, obj, fromZone)   // a card counted in a stated hand size leaves the hand (ModernMechanics.kt)
         obj.zone = Zone.STACK
-        obj.x = x
+        obj.x = x ?: ExamMech.freeX(obj, card)   // cascading into Hydroid Krasis: X is 0 (107.3b)
         obj.wasKicked = kicked
         state.spellsCast[card.name] = (state.spellsCast[card.name] ?: 0) + 1
         state.spellsThisTurn[playerId] = (state.spellsThisTurn[playerId] ?: 0) + 1
@@ -428,7 +429,7 @@ class Engine(val state: GameState) {
                 p.manaSpent += fb + (obj.taxesAtCast?.sumOf { it.second } ?: 0).coerceAtLeast(0)
             }
         }
-        val item = StackItem(state.newStackId(), StackKind.SPELL, playerId, obj, effect, targets, zonesOf(targets), card.oracleText, modes, x = x ?: NewMech.impliedX(this, card, playerId), kicked = kicked, evoked = evoked && card.has("evoke"), flashback = flashback && obj.has("flashback"), choice = copyChoice, targetsUnknown = targetsUnknown)
+        val item = StackItem(state.newStackId(), StackKind.SPELL, playerId, obj, effect, targets, zonesOf(targets), card.oracleText, modes, x = x ?: ExamMech.freeX(obj, card) ?: NewMech.impliedX(this, card, playerId), kicked = kicked, evoked = evoked && card.has("evoke"), flashback = flashback && obj.has("flashback"), choice = copyChoice, targetsUnknown = targetsUnknown)
         state.stack += item
         // "Snapcaster with Torpor Orb out. Can I still flash back Bolt?": the trigger that would have granted flashback never happened.
         if (flashback && !obj.has("flashback") && playerId !in state.castFromGraveyard && state.objects.values.any { o -> o.isOnBattlefield() && Regex("""(?i)entering(?: the battlefield)? don.t cause abilities to trigger""").containsMatchIn(o.rulesText) }) {
@@ -535,14 +536,17 @@ class Engine(val state: GameState) {
     }
 
     /** Proliferate: one more of each kind of counter already there, on whatever its controller would pick (701.34a). */
+    /** Inside an effect sequence, the parts before the last: placing counters doesn't check state-based actions yet. */
+    private var seqHold = 0
     fun proliferate(playerId: String) {
         val you = state.player(playerId)
-        val objs = state.objects.values.filter { it.isOnBattlefield() && it.counters.values.any { n -> n > 0 } && it.controller == playerId }
+        // An opponent's permanent whose only counters are -1/-1 counters is one the proliferating player wants more on.
+        val objs = state.objects.values.filter { it.isOnBattlefield() && it.counters.values.any { n -> n > 0 } && (it.controller == playerId || it.counters.filterValues { n -> n > 0 }.keys == setOf("-1/-1")) }
         val players = state.players.filter { it.poison > 0 && it.id != playerId }
         if (objs.isEmpty() && players.isEmpty()) { trace.step("Nothing ${you.subject.lowercase()} would want to proliferate has a counter.", "701.34a"); state.outcomes += "Proliferate does nothing: nothing ${you.subject.lowercase()} would choose has a counter on it." }
         for (o in objs) { o.counters.keys.toList().forEach { k -> o.counters[k] = o.counters.getValue(k) + 1 }; trace.step("${you.subject} ${you.v("proliferates", "proliferate")} ${o.name}: one more of each kind of counter it has (${o.counters.entries.joinToString(", ") { "${it.value} ${it.key}" }}).", "701.34a"); state.outcomes += "${o.name} has ${o.counters.entries.joinToString(", ") { "${it.value} ${it.key}" }} counters." }
         for (p in players) { p.poison += 1; trace.step("${p.subject} ${p.v("gets", "get")} another poison counter (${p.poison}).", "701.34a"); poisonLine(p) }
-        if (objs.isNotEmpty() || players.isNotEmpty()) state.assumptions += "Proliferate: ${you.subject.lowercase()} ${you.v("chooses", "choose")} all ${you.possessive} own permanents with counters${if (players.isNotEmpty()) " and each opponent with poison counters" else ""} (701.34a lets ${you.subject.lowercase()} choose any number)."
+        if (objs.isNotEmpty() || players.isNotEmpty()) state.assumptions += "Proliferate: ${you.subject.lowercase()} ${you.v("chooses", "choose")} all ${you.possessive} own permanents with counters${if (objs.any { it.controller != playerId }) ", each opponent's permanent with -1/-1 counters" else ""}${if (players.isNotEmpty()) " and each opponent with poison counters" else ""} (701.34a lets ${you.subject.lowercase()} choose any number)."
         stateBasedActions()
     }
 
@@ -1874,7 +1878,7 @@ class Engine(val state: GameState) {
                 }
             }
             // 704.5j, the "legend rule": one legendary permanent with a given name per player.
-            state.objects.values.filter { it.isOnBattlefield() && "Legendary" in state.supertypesOf(it) }.groupBy { it.controller to it.name }.values.filter { it.size > 1 }.forEach { group ->
+            state.objects.values.filter { it.isOnBattlefield() && "Legendary" in state.supertypesOf(it) }.groupBy { it.controller to it.name }.values.filter { it.size > 1 && ExamMech.legendRuleApplies(state, it) }.forEach { group ->
                 val keep = group.maxByOrNull { it.timestamp }!!
                 val p = state.player(keep.controller)
                 for (o in group) if (o !== keep) { move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("controls", "control")} two legendary permanents named ${o.name}; ${p.subject.lowercase()} ${p.v("chooses", "choose")} one and the other is put into its owner's graveyard (the \"legend rule\", a state-based action).", "704.3", "704.5j"); changed = true }
@@ -1916,7 +1920,7 @@ class Engine(val state: GameState) {
                 if (!obj.isOnBattlefield()) continue
                 if (state.hasCreatureType(obj)) {
                     val t = obj.toughness
-                    if (t != null && t <= 0) { move(obj, Zone.GRAVEYARD, "${obj.name} has toughness $t and is put into its owner's graveyard (state-based action).", "704.3", "704.5f"); changed = true; continue }
+                    if (t != null && t <= 0) { ExamMech.zeroToughnessNote(state, obj); move(obj, Zone.GRAVEYARD, "${obj.name} has toughness $t and is put into its owner's graveyard (state-based action).", "704.3", "704.5f"); changed = true; continue }
                     val lethal = t != null && obj.damage >= t && obj.damage > 0
                     if ((lethal || obj.dealtDeathtouchDamage) && obj.has("indestructible")) {
                         trace.step("${obj.name} has lethal damage but is indestructible, so it isn't destroyed.", "702.12b"); obj.dealtDeathtouchDamage = false
@@ -2298,7 +2302,13 @@ class Engine(val state: GameState) {
         for (h in hits) {
             h.dealt = applyDamage(h.source.name, h.target, h.amount, h.source)
             if (h.source.has("deathtouch")) (h.target as? Ref.Obj)?.let { state.objects[it.id]?.dealtDeathtouchDamage = true }
-            if (h.source.has("lifelink") && h.dealt > 0) { val c = state.player(h.source.controller); trace.step("${h.source.name} has lifelink, so its controller gains life equal to the damage dealt, in addition to the damage's other results.", "702.15b", "120.3f"); gainLife(c, h.dealt) }
+        }
+        // Lifelink: everything one source dealt at once is one life-gain event of the total (510.2, 702.15e), so a 5/5 lifelinker
+        // blocked by two creatures gains 5 life once and an Ajani's Pridemate triggers once.
+        for ((src, hs) in hits.filter { it.source.has("lifelink") && it.dealt > 0 }.groupBy { it.source }) {
+            val c = state.player(src.controller); val total = hs.sumOf { it.dealt }
+            trace.step(if (hs.size == 1) "${src.name} has lifelink, so its controller gains life equal to the damage dealt, in addition to the damage's other results." else "${src.name} has lifelink and dealt ${hs.joinToString(" + ") { it.dealt.toString() }} = $total damage to ${hs.size} recipients at the same time, so its controller gains $total life in a single life-gain event.", "702.15b", "120.3f", *(if (hs.size > 1) arrayOf("510.2", "702.15e") else emptyArray()))
+            gainLife(c, total)
         }
         inCombatDamage = false
         hits.filter { it.target is Ref.Player }.map { it.source.controller }.distinct().forEach { onEvent(GameEvent.CreaturesDealtCombatDamageToPlayer(it)) }
@@ -2990,7 +3000,8 @@ class Engine(val state: GameState) {
         val you = state.player(item.controller)
         when (effect) {
             is Effect.ShuffleGraveyardIntoLibrary, is Effect.ReturnExiledCard, is Effect.SacrificeEnchanted, is Effect.GainLifeThatMuch, is Effect.TapOrUntap, is Effect.CreateTokenCopy, is Effect.OpponentMayTakeDamage, is Effect.DamageCausing, is Effect.DoublePower, is Effect.PumpCount, is Effect.LoseHalfLife, is Effect.ExileUntilLeaves, is Effect.SacrificeTarget, is Effect.GainLifeEqualTo, is Effect.FreezeUntap, is Effect.RemoveCounters, is Effect.SetBasePtTarget, is Effect.LoseLifeEqual -> applyEffectMore(effect, item)
-            is Effect.Seq -> effect.effects.forEach { applyEffect(it, item) }
+            // "Put a -1/-1 counter on target creature, then proliferate": state-based actions wait for the whole spell (704.3).
+            is Effect.Seq -> effect.effects.forEachIndexed { i, it -> val last = i == effect.effects.size - 1; if (!last) seqHold++; try { applyEffect(it, item) } finally { if (!last) seqHold-- } }
             is Effect.Populate -> GapMech.populate(state, item) { onEvent(GameEvent.EntersBattlefield(it)) }
             is Effect.Cascade -> AuditMech.cascade(this, state, item)
             is Effect.ExiledOwnerTokenMv -> AuditMech.exiledOwnerToken(this, state, item, effect.token)
@@ -2998,6 +3009,7 @@ class Engine(val state: GameState) {
             is Effect.Amass -> GapMech.amass(state, item, effect.subtype, effect.n) { onEvent(GameEvent.EntersBattlefield(it)) }
             is Effect.NewMech -> if (effect.kind.startsWith("pc:")) PauperMech.resolve(this, effect, item)   // Pestilence, Balance, Timetwister, The Abyss … (PauperMechanics.kt)
                 else if (effect.kind.startsWith("cr:")) CoverageMech.resolve(this, effect, item)   // battle cry, annihilator, rampage, renown … (CoverageMechanics.kt)
+                else if (effect.kind.startsWith("ex:")) ExamMech.resolve(this, effect, item)   // Rabid Elephant, Hydroid Krasis (ExamMechanics.kt)
                 else NewMech.resolve(this, effect, item) { onEvent(GameEvent.EntersBattlefield(it)) }   // adapt, learn, mobilize, offspring, gift … (NewMechanics.kt)
             is Effect.CantCastThisTurn -> {
                 val who = when (effect.who) {
@@ -3894,7 +3906,7 @@ class Engine(val state: GameState) {
                 if (effect.all != null) { val affected = state.objects.values.filter { state.matches(effect.all, it, item.controller, item.source) }; if (affected.isEmpty()) trace.step("No permanents match \"${effect.all.raw}\", so no counters are put anywhere.", "122.6") else affected.forEach(put) }
                 else if (effect.target == null) { if (item.source.isOnBattlefield()) put(item.source) else trace.step("${item.source.name} isn't on the battlefield, so no counters are put on it.", "122.6") }
                 else forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let(put) }
-                if (effect.kind == "+1/+1" || effect.kind == "-1/-1") stateBasedActions()
+                if ((effect.kind == "+1/+1" || effect.kind == "-1/-1") && seqHold == 0) stateBasedActions()
             }
             is Effect.RemoveAllCounters -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 val had = o.counters.filterValues { it > 0 }
@@ -4629,6 +4641,7 @@ class Engine(val state: GameState) {
             chosen.pumps.takeIf { it.isNotEmpty() }?.let { ps -> val sg = { n: Int -> if (n >= 0) "+$n" else "$n" }; "${sg(ps.sumOf { it.first })}/${sg(ps.sumOf { it.second })} until end of turn" },
             "its damage".takeIf { chosen.damage > 0 })
         if (notCopied.isNotEmpty()) state.outcomes += "$was doesn't get ${chosen.name}'s ${notCopied.joinToString(" or ")}: counters and pump effects aren't copiable values, so it's ${chosen.name} as printed."
+        ExamMech.copyLeavesBehind(state, was, chosen)   // Clone copying a creature under Darksteel Mutation (ExamMechanics.kt)
         o.def = chosen.def
         if (e.tapped) o.tapped = true
         e.except?.let { ex -> applyCopyExceptions(o, was, ex) }
@@ -5012,7 +5025,7 @@ class Engine(val state: GameState) {
             state.outcomes += "$amount combat damage ${if (source?.id in state.combatDamageMuted) "from $who" else "to $who"} is prevented."; return 0
         }
         // Replacement effects that modify damage (614.2, 609.7): doublers from the battlefield.
-        val doublers = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.DamageMultiplier }.filter { d -> d.sourceControl == null || source == null || (d.sourceControl == Who.YOU) == (source.controller == o.controller) }.map { o to it } }
+        var doublers = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.DamageMultiplier }.filter { d -> d.sourceControl == null || source == null || (d.sourceControl == Who.YOU) == (source.controller == o.controller) }.map { o to it } }
         var prevention = preventionFor(source, target, inCombatDamage)
         // "I have Fog. Does it save me from Lava Spike?": a combat-damage-only effect leaves a spell's damage alone.
         if (prevention.isEmpty() && !inCombatDamage) state.shields.firstOrNull { sh -> (sh.replacement as? Replacement.PreventDamage)?.combatOnly == true && (sh.remaining ?: 1) > 0 && (sh.playerId == null || sh.playerId == (target as? Ref.Player)?.id) && (sh.objectId == null || sh.objectId == (target as? Ref.Obj)?.id) }
@@ -5026,6 +5039,11 @@ class Engine(val state: GameState) {
             prevention = emptyList()
         }
         if (prevention.isNotEmpty() && MoreEffects2.damageCantBePrevented(this, source, sourceName, amount, prevention.map { it.first })) prevention = emptyList()   // Stomp, Banefire (MoreEffects2.kt)
+        // Torbran's "plus 2" with Furnace of Rath and a prevention shield: the affected player orders all three (ExamMechanics.kt).
+        ExamMech.plusDamage(state, source, sourceName, target, amount, doublers, prevention)?.let { n ->
+            if (n <= 0) { state.outcomes += "Damage to ${state.nameOf(target)} from $sourceName is prevented."; return 0 }
+            amount = n; prevention = emptyList(); doublers = emptyList()
+        }
         // "Furnace of Rath, and they have a shield preventing the next 3: I Bolt them": the affected player or the
         // affected object's controller orders them (616.1). Prevent 3 then double is 0; double then prevent 3 is 3.
         if (doublers.isNotEmpty() && prevention.isNotEmpty()) {
@@ -5974,7 +5992,7 @@ class Engine(val state: GameState) {
     private fun describeTargets(targets: List<Ref>) = if (targets.isEmpty()) "" else " targeting " + targets.joinToString(" and ") { state.nameOf(it) }
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
-        is Effect.NewMech -> if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
+        is Effect.NewMech -> if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"

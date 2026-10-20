@@ -700,6 +700,7 @@ object OracleParser {
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
         mtg.judge.engine.DeepMech.parseStatic(line)?.let { return it }   // Song of the Dryads, Animar (DeepMechanics.kt)
+        mtg.judge.engine.ExamMech.parseStatic(line)?.let { return it }   // Mirror Gallery, Torbran, High Ground, Lure (ExamMechanics.kt)
         mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
         mtg.judge.engine.MoreEffects2.parseStatic(line)?.let { return it }   // Dryad of the Ilysian Grove, Animar (MoreEffects2.kt)
         mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
@@ -1422,6 +1423,7 @@ object OracleParser {
         mtg.judge.engine.DeepMech.parseSentence(s) { target(it) }?.let { return it }   // Twisted Image, Mind Bend (DeepMechanics.kt)
         mtg.judge.engine.NewMech.parseSentence(s)?.let { return it }   // adapt, learn, discover, the Ring tempts you (NewMechanics.kt)
         mtg.judge.engine.NewMech.stripWhereX(s)?.let { return parseSentence(it) }   // domain: "…, where X is the number of basic land types among lands you control"
+        mtg.judge.engine.ExamMech.parseSentence(s) { parseSentence(it) }?.let { return it }   // Grim Affliction's "then proliferate", Rabid Elephant (ExamMechanics.kt)
         // Lavinia, Azorius Renegade: "if no mana was spent to cast it, counter that spell."
         if (Regex("""^if no mana was spent to cast it, counter that spell\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.CounterIfNoManaSpent
         // Skyclave Apparition: "the exiled card's owner creates an X/X blue Illusion creature token, where X is the mana value of the exiled card."

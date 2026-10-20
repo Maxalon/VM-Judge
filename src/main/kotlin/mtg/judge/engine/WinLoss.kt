@@ -248,6 +248,7 @@ fun Engine.leaveGame(p: Player) {
     }
     tr.step("${p.subject} ${p.v("leaves", "leave")} the game. Every object ${p.subject.lowercase()} ${p.v("owns", "own")} leaves the game with ${if (p.you) "you" else "them"}${if (gone.isNotEmpty()) " (${gone.joinToString(", ")})" else ""}, any effects giving ${if (p.you) "you" else "them"} control of objects end, abilities ${p.subject.lowercase()} controlled on the stack cease to exist, and anything ${p.subject.lowercase()} still controlled would be exiled. This isn't a state-based action; it happens at once.", "800.4a", "104.5")
     st.outcomes += "${p.subject} ${p.v("leaves", "leave")} the game: ${if (gone.isEmpty()) "everything ${p.subject.lowercase()} ${p.v("owns", "own")}" else gone.joinToString(", ")} ${if (gone.size > 1) "leave" else "leaves"} the game with ${if (p.you) "you" else "them"}; borrowed permanents go back to their owners, and ${p.possessive} spells and abilities on the stack are gone (800.4a)."
+    ExamMech.gameGoesOn(st, p)   // three or more players: the rest play on (800.4)
 }
 
 /** Pact of Negation's delayed trigger: at the beginning of its controller's next upkeep (603.7). */

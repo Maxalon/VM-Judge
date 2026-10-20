@@ -49804,5 +49804,466 @@
       "Not modeled"
     ],
     "cite": []
+  },
+  {
+    "id": "ex1",
+    "text": "My opponent's Grizzly Bears is enchanted with Darksteel Mutation. I cast Clone copying Grizzly Bears. What is my Clone?",
+    "expect": [
+      "Clone doesn't copy what Darksteel Mutation does to Grizzly Bears",
+      "Clone (copying Grizzly Bears) is 2/2."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "707.2",
+      "613.2c"
+    ]
+  },
+  {
+    "id": "ex2",
+    "text": "Humility is on the battlefield. My Grizzly Bears has a +1/+1 counter on it. I cast Fists of the Anvil on it, then Twisted Image on it. What are its power and toughness?",
+    "expect": [
+      "Grizzly Bears is 2/6 (1/1 base, base set to 1/1 by Humility"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "613.4b",
+      "613.4c",
+      "613.4d"
+    ]
+  },
+  {
+    "id": "ex3",
+    "text": "My opponent controls Torbran, Thane of Red Fell and Furnace of Rath. I have a prevention shield from Healing Salve that prevents the next 3 damage to me. My opponent casts Lightning Bolt targeting me. How much damage do I take?",
+    "expect": [
+      "You choose the order of Torbran, Thane of Red Fell, Furnace of Rath, Healing Salve (616.1): Healing Salve",
+      "No: you take no damage"
+    ],
+    "notExpect": [
+      "You take 3 damage",
+      "You take 5 damage",
+      "Not modeled"
+    ],
+    "cite": [
+      "616.1",
+      "616.1e",
+      "616.1f"
+    ]
+  },
+  {
+    "id": "ex4",
+    "text": "It's my upkeep. I have 41 life and control Felidar Sovereign. My opponent controls Sulfuric Vortex. Do I win the game?",
+    "expect": [
+      "You take 2 damage.",
+      "Nothing happens from Felidar Sovereign's triggered ability",
+      "No: You haven't won; you are still in the game at 39 life."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.4",
+      "603.3b"
+    ]
+  },
+  {
+    "id": "ex5",
+    "text": "I attack with Rabid Elephant and my opponent blocks with Boros Reckoner. What happens?",
+    "expect": [
+      "Rabid Elephant gets +2/+2 until end of turn (blocked by 1 creature): it's 5/6.",
+      "Boros Reckoner has 5 damage marked.",
+      "Rabid Elephant has 3 damage marked.",
+      "You take 5 damage."
+    ],
+    "notExpect": [
+      "Rabid Elephant: the battlefield",
+      "Not modeled"
+    ],
+    "cite": [
+      "509.3c",
+      "509.2a"
+    ]
+  },
+  {
+    "id": "ex6",
+    "text": "I attack with Colossal Dreadmaw equipped with Basilisk Collar. My opponent blocks with Mirran Crusader. How much damage does my opponent take and how much life do I gain?",
+    "expect": [
+      "Damage to Mirran Crusader from Colossal Dreadmaw is prevented (protection).",
+      "opponent takes 5 damage.",
+      "You gain 5 life in all."
+    ],
+    "notExpect": [
+      "Mirran Crusader: the battlefield",
+      "Not modeled"
+    ],
+    "cite": [
+      "702.2c",
+      "702.19b",
+      "702.16e",
+      "702.15b"
+    ]
+  },
+  {
+    "id": "ex7",
+    "text": "I attack with Moldering Karok and my opponent blocks with two Grizzly Bears. How much life do I gain?",
+    "expect": [
+      "You gain 3 life.",
+      "You gain 3 life in all."
+    ],
+    "notExpect": [
+      "You gain 2 life.",
+      "You gain 1 life.",
+      "Not modeled"
+    ],
+    "cite": [
+      "702.15b",
+      "702.15e",
+      "510.2"
+    ]
+  },
+  {
+    "id": "ex8",
+    "text": "I attack with Grizzly Bears and my opponent blocks with Hill Giant. After blockers are declared I cast Jump on Grizzly Bears. Is it still blocked?",
+    "expect": [
+      "Grizzly Bears has flying until end of turn.",
+      "Grizzly Bears has 3 damage marked.",
+      "Yes: Grizzly Bears is blocked by Hill Giant."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "ex9",
+    "text": "I cast Giant Growth on my Grizzly Bears and then my opponent casts Flame Slash on it. Does Grizzly Bears survive the turn?",
+    "expect": [
+      "Grizzly Bears has 4 damage marked.",
+      "Yes: Grizzly Bears survives the turn.",
+      "(514.2)"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "514.2"
+    ]
+  },
+  {
+    "id": "ex10",
+    "text": "I attack my opponent's Liliana of the Veil with 3 loyalty with Grizzly Bears. It's unblocked and I cast Battlegrowth on Grizzly Bears. What happens to Liliana?",
+    "expect": [
+      "Grizzly Bears has 1 +1/+1 counter.",
+      "Liliana of the Veil has 0 loyalty.",
+      "Liliana of the Veil: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "120.3c",
+      "306.8",
+      "704.5i"
+    ]
+  },
+  {
+    "id": "ex11",
+    "text": "My opponent has 9 poison counters and their Grizzly Bears has a -1/-1 counter on it. I cast Grim Affliction targeting Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears has 3 -1/-1 counters.",
+      "opponent has 10 poison counters.",
+      "Grizzly Bears: the battlefield → opponent's graveyard.",
+      "opponent loses the game (poison)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.34a",
+      "704.3",
+      "704.5c",
+      "704.5f"
+    ]
+  },
+  {
+    "id": "ex12",
+    "text": "I control Mirror Gallery and Thalia, Guardian of Thraben. I cast a second Thalia, Guardian of Thraben. What happens?",
+    "expect": [
+      "Both legendary permanents named Thalia, Guardian of Thraben stay on the battlefield: Mirror Gallery turns off the legend rule (704.5j)."
+    ],
+    "notExpect": [
+      "Thalia, Guardian of Thraben: the battlefield → your graveyard.",
+      "Not modeled"
+    ],
+    "cite": [
+      "704.5j",
+      "101.2"
+    ]
+  },
+  {
+    "id": "ex13",
+    "text": "I cast Bloodbraid Elf and cascade into Hydroid Krasis. What happens?",
+    "expect": [
+      "Hydroid Krasis is cast from exile without paying its mana cost",
+      "You gain no life and draw no cards (Hydroid Krasis's X is 0).",
+      "Hydroid Krasis: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "what was X",
+      "Not modeled"
+    ],
+    "cite": [
+      "107.3b",
+      "702.85a",
+      "704.5f"
+    ]
+  },
+  {
+    "id": "ex14",
+    "text": "My opponent controls Chalice of the Void with 2 charge counters. I cast Stomp from Bonecrusher Giant. What happens?",
+    "expect": [
+      "Stomp is countered.",
+      "Bonecrusher Giant is in your graveyard now."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "715.3b"
+    ]
+  },
+  {
+    "id": "ex15",
+    "text": "What is the mana value of Emeria's Call in my hand, and of Emeria, Shattered Skyclave after I play it as a land?",
+    "expect": [
+      "Emeria's Call has mana value 7 in the hand",
+      "Emeria, Shattered Skyclave has mana value 0 on the battlefield"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "712.8a",
+      "712.8f",
+      "202.3a"
+    ]
+  },
+  {
+    "id": "ex16",
+    "text": "My opponent controls a face-down creature. I cast Fatal Push targeting it. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → opponent's graveyard.",
+      "The face-down creature has mana value 0"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "708.2a",
+      "202.3a"
+    ]
+  },
+  {
+    "id": "ex17",
+    "text": "My opponent controls Chalice of the Void with 1 charge counter. I cast Burst Lightning with kicker. What happens?",
+    "expect": [
+      "Burst Lightning is countered."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.33a"
+    ]
+  },
+  {
+    "id": "ex18",
+    "text": "My opponent casts Carnage Tyrant. I cast Mindbreak Trap targeting it. What happens?",
+    "expect": [
+      "Carnage Tyrant: the stack → exile (Mindbreak Trap); it doesn't resolve."
+    ],
+    "notExpect": [
+      "Carnage Tyrant enters the battlefield",
+      "Not modeled"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ex19",
+    "text": "I control Courser of Kruphix and the top card of my library is a Forest. I already played a land this turn. Can I play the Forest from the top of my library?",
+    "expect": [
+      "No: you can't play Forest from the top of your library"
+    ],
+    "notExpect": [
+      "Forest enters the battlefield.",
+      "Not modeled"
+    ],
+    "cite": [
+      "305.2a",
+      "305.2b"
+    ]
+  },
+  {
+    "id": "ex20",
+    "text": "I control Lotus Cobra. My opponent casts Path to Exile targeting my Grizzly Bears and I search for a Forest. Does Lotus Cobra trigger?",
+    "expect": [
+      "Yes: Lotus Cobra's ability triggered."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "ex21",
+    "text": "I control Azusa, Lost but Seeking. I cast Rampant Growth and put a Forest onto the battlefield. How many lands can I still play this turn?",
+    "expect": [
+      "You can still play 3 lands this turn: 3 allowed (Azusa, Lost but Seeking adds 2), 0 played."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "305.2a",
+      "305.4"
+    ]
+  },
+  {
+    "id": "ex22",
+    "text": "In a three-player game my opponent has no cards in their library and draws a card. What happens?",
+    "expect": [
+      "opponent loses the game (drew from an empty library).",
+      "The game continues for you and opponent 2 (800.4)."
+    ],
+    "notExpect": [
+      "You draw 1 card.",
+      "Not modeled"
+    ],
+    "cite": [
+      "704.5b",
+      "800.4"
+    ]
+  },
+  {
+    "id": "ex23",
+    "text": "I attack with Boros Swiftblade and it's unblocked. After first-strike damage my opponent casts Fog. How much damage does my opponent take?",
+    "expect": [
+      "opponent takes 1 damage.",
+      "Damage to opponent from Boros Swiftblade is prevented.",
+      "Yes: opponent takes 1 damage in all."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "510.4"
+    ]
+  },
+  {
+    "id": "ex24",
+    "text": "My Invisible Stalker is enchanted with Lure. I attack with Invisible Stalker and Grizzly Bears. Can my opponent's Hill Giant block Grizzly Bears?",
+    "expect": [
+      "Yes: Hill Giant can block Grizzly Bears. Lure asks nothing of Hill Giant"
+    ],
+    "notExpect": [
+      "opponent attacks",
+      "Not modeled"
+    ],
+    "cite": [
+      "509.1c"
+    ]
+  },
+  {
+    "id": "ex25",
+    "text": "I control Goblin War Drums and attack with Charging Rhino. Can it be blocked?",
+    "expect": [
+      "No: Charging Rhino can't be blocked."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "509.1b",
+      "702.111b"
+    ]
+  },
+  {
+    "id": "ex26",
+    "text": "My opponent controls High Ground and two Grizzly Bears. I attack with Wayward Giant and Alley Strangler. Can both be blocked?",
+    "expect": [
+      "Yes: both can be blocked at once"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "509.1a",
+      "702.111b"
+    ]
+  },
+  {
+    "id": "ex27",
+    "text": "My River Boa has a regeneration shield and I control Darksteel Myr. My opponent casts Languish. What happens?",
+    "expect": [
+      "River Boa isn't saved by its regeneration shield",
+      "Darksteel Myr isn't saved by being indestructible",
+      "Darksteel Myr: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "704.5f",
+      "702.12b",
+      "701.19a"
+    ]
+  },
+  {
+    "id": "ex28",
+    "text": "My opponent controls only Darksteel Myr. I cast Diabolic Edict targeting them. What happens?",
+    "expect": [
+      "Darksteel Myr: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.21a"
+    ]
+  },
+  {
+    "id": "ex29",
+    "text": "I control Blood Artist and three Grizzly Bears. My opponent casts Wrath of God. How many times does Blood Artist trigger?",
+    "expect": [
+      "Blood Artist triggers 4 times",
+      "opponent loses 1 life. (×4)"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "ex30",
+    "text": "I control Perilous Myr and my opponent controls Hill Giant. My opponent casts Wrath of God. Can Perilous Myr's trigger target Hill Giant?",
+    "expect": [
+      "No: Hill Giant died at the same time as Perilous Myr"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.3d",
+      "115.4"
+    ]
   }
 ]

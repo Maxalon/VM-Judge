@@ -3764,6 +3764,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = examRewrites(t2, m, ctx)
         t2 = pauperRewrites(t2, m, ctx)
         t2 = deepRewrites(t2, m, ctx)
         t2 = limitedRewrites(t2, m, ctx)
@@ -7667,6 +7668,156 @@ class SituationParser(private val names: NameIndex) {
         return true
     }
 
+    // ---- judge-exam board states (track exam): see situation/ExamAsks.kt and engine/ExamMechanics.kt ----
+
+    /** Judge-exam table talk put in words the clause reader knows, or turned into this track's question markers. */
+    private fun examRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('?', '.', '!').trim()
+        val ci = RegexOption.IGNORE_CASE
+        val poss = """(?:my opponent's|their|his|her|the opponent's|an opponent's)"""
+        // Markers pass through later rewrites, which spell "opp" out; "mine"/"theirs" survive them.
+        fun whoOf(w: String) = if (w.lowercase() in setOf("i", "we", "my", "me")) "mine" else "theirs"
+        // "I have a prevention shield from Healing Salve that prevents the next 3 damage to me": a shield named for its source.
+        Regex("""^(i|we|my opponent|they|he|she) (?:have|has) a (?:damage )?prevention shield from (c\d+) (?:that prevents|preventing|that will prevent) the next (\d+) damage(?: that would be dealt)?(?: to (?:me|us|them|him|her|my opponent))?(?: this turn)?$""", ci).find(q)?.let { r ->
+            return "exshield-question ${whoOf(r.groupValues[1])} ${r.groupValues[2]} ${r.groupValues[3]}"
+        }
+        // "I attack my opponent's Liliana of the Veil with 3 loyalty with Grizzly Bears": the loyalty is the planeswalker's.
+        Regex("""^(i|we|my opponent|they) attacks? ($poss|my) (c\d+) with (\d+) loyalty(?: counters?)? with (c\d+|an? \d+/\d+|(?:my|their) c\d+)$""", ci).find(q)?.let { r ->
+            val owner = r.groupValues[2]
+            return "$owner ${r.groupValues[3]} has ${r.groupValues[4]} loyalty, ${r.groupValues[1]} attack${if (r.groupValues[1].lowercase() in setOf("i", "we", "they")) "" else "s"} ${r.groupValues[3]} with ${r.groupValues[5]}"
+        }
+        // "In a three-player game my opponent has no cards in their library and draws a card": the drawer is that opponent.
+        Regex("""^((?:in an? (?:\d+|three|four|five|six|multi)-?player (?:game|pod),? )?)(my opponent|the opponent|they|he|she) (?:has|have) (?:no|0|zero) cards (?:left )?in (?:their|his|her) library and (?:then )?draws? (a|one|\d+) cards?$""", ci).find(q)?.let { r ->
+            return "${r.groupValues[1]}${r.groupValues[2]} has no cards in their library, ${r.groupValues[2]} draws ${r.groupValues[3]} card"
+        }
+        // "Can my opponent's Hill Giant block Grizzly Bears?" about my attacker: a question about the declared attack, not a new one.
+        Regex("""^can ($poss|my) (c\d+) block (?:my |their |the )?(c\d+)$""", ci).find(q)?.let { r ->
+            val atk = m.cards[r.groupValues[3]]?.display ?: return@let
+            if (ctx.events.none { e -> e.verb == "attack" && e.obj?.let { ctx.objects[it]?.card?.name } == atk }) return@let
+            return "exblock-question ${whoOf(r.groupValues[1])} ${r.groupValues[2]} ${r.groupValues[3]}"
+        }
+        // "Can it be blocked?" / "Can both be blocked?" after an attack: the blocking rules for the attackers (509.1b-c).
+        Regex("""^can (it|c\d+|both|they|they both|both of them|either|either of them) (?:still )?be blocked(?: at all| by (?:them|my opponent|their creatures))?$""", ci).find(q)?.let { r ->
+            if (ctx.events.none { it.verb == "attack" }) return@let
+            return when (val w = r.groupValues[1].lowercase()) { "it" -> "exblocked-question it"; else -> if (w.startsWith("c")) "exblocked-question $w" else "exblocked-question all" }
+        }
+        // "Does Grizzly Bears survive the turn?" after damage and a pump: damage and "until end of turn" end together (514.2).
+        Regex("""^(?:does|will|would) (it|c\d+) (?:survive|live through|make it (?:through|to)) (?:the turn|until (?:the )?end of (?:the )?turn|the end of (?:the )?turn|the cleanup step|cleanup|to (?:my|their|the) next turn)$""", ci).find(q)?.let { r ->
+            return "exsurviveturn-question ${r.groupValues[1]}"
+        }
+        // "What is the mana value of Emeria's Call in my hand, and of Emeria, Shattered Skyclave after I play it as a land?"
+        Regex("""^what(?:'s| is| are) (?:the )?(?:mana values?|converted mana costs?|cmc|mv) of (c\d+)(.*)$""", ci).find(q)?.let { r ->
+            val parts = mutableListOf<String>()
+            var rest = r.groupValues[2]; var card = r.groupValues[1]
+            while (true) {
+                val next = Regex("""^(.*?),? and (?:of |what about )?(c\d+)(.*)$""", ci).find(rest)
+                parts += "$card:${mvZone(next?.groupValues?.get(1) ?: rest)}"
+                if (next == null) break
+                card = next.groupValues[2]; rest = next.groupValues[3]
+            }
+            return "exmv-question " + parts.joinToString(";")
+        }
+        // "I cast Rampant Growth and put a Forest onto the battlefield": the land the spell's search found, not a second one.
+        Regex("""^(i|we|my opponent|they) (casts?|activates?) (c\d+) and (?:put|puts|get|gets|find|finds|fetch|fetches) an? (c\d+)(?: (?:onto|into) (?:the battlefield|play))?(?: tapped)?$""", ci).find(q)?.let { r ->
+            if (m.cards[r.groupValues[4]]?.typeLine?.contains("Land") != true) return@let
+            return "${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]} and search for a ${r.groupValues[4]}"
+        }
+        // "They control a face-down creature. I cast Fatal Push targeting it.": its mana value is 0 (708.2a, 202.3a).
+        if (ctx.faceDownSeen) Regex("""^(?:i|we|my opponent|they) casts? (c\d+) (?:targeting|on|at) (?:it|that|the face-down (?:creature|one|morph)|their face-down (?:creature|one|morph))$""", ci).find(q)?.let { r ->
+            return "$q, exfacedown-question ${r.groupValues[1]}"
+        }
+        // "I already played a land this turn": the land play is used (305.2a), so another one needs an extra land drop.
+        Regex("""^(i|we|my opponent|they) (?:have |has )?already played (?:a|my|their|one) land(?: this turn)?$""", ci).find(q)?.let { r ->
+            ctx.notes += "A land was already played this turn (305.2)."
+            return "exlandsplayed-question ${whoOf(r.groupValues[1])}"
+        }
+        // "How many lands can I still play this turn?"
+        Regex("""^how many (?:more |other |additional )?lands (?:can|may) (i|we|my opponent|they) (?:still )?play(?: this turn)?(?: now)?$""", ci).find(q)?.let { r ->
+            return "exlandsleft-question ${whoOf(r.groupValues[1])}"
+        }
+        // "Can Perilous Myr's trigger target Hill Giant?" after both died to one sweeper.
+        Regex("""^can (c\d+)(?:'s| 's) (?:trigger|triggered ability|death trigger|dies trigger|ability) target (?:my |their |the )?(c\d+)$""", ci).find(q)?.let { r ->
+            return "extrigtarget-question ${r.groupValues[1]} ${r.groupValues[2]}"
+        }
+        return t
+    }
+
+    /** "in my hand", "on the stack", "after I play it as a land": the zone a mana value question is about. */
+    private fun mvZone(s: String): String {
+        val t = s.lowercase()
+        return when {
+            Regex("""\bas a land\b|\bplay(?:ed|s)? it as\b|\bon the battlefield\b|\bin play\b""").containsMatchIn(t) -> "battlefield"
+            Regex("""\bon the stack\b|\bwhile (?:i'm |it's )?cast|\bwhen (?:i )?cast""").containsMatchIn(t) -> "stack"
+            Regex("""\blibrary\b""").containsMatchIn(t) -> "library"
+            Regex("""\bgraveyard\b""").containsMatchIn(t) -> "graveyard"
+            Regex("""\bexile\b""").containsMatchIn(t) -> "exile"
+            else -> "hand"
+        }
+    }
+
+    /** The markers [examRewrites] leaves, answered by ExamAsks in the judge. */
+    private fun readExamQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        if (!c.startsWith("ex")) return null
+        fun idOf(ph: String, controller: String? = null): String? {
+            if (ph == "it") return ctx.lastMentioned
+            val e = m.cards[ph] ?: return null
+            ctx.objects.values.lastOrNull { it.card.name == e.display && it.zone == "battlefield" && (controller == null || it.controller == controller) }?.let { return it.id }
+            return addObject(e, controller ?: "opp", false, ctx)
+        }
+        fun answered() { ctx.notes += "The question is answered by the outcome below." }
+        fun pl(w: String) = if (w == "mine") "me" else "opp"
+        Regex("""^exshield-question (mine|theirs) (c\d+) (\d+)$""").find(c)?.let { r ->
+            val e = m.cards[r.groupValues[2]]
+            ctx.events += EventSpec("ex", player = pl(r.groupValues[1]), card = e?.let { CardRef(name = it.display, oracleId = it.oracleId) }, to = "shield", amount = r.groupValues[3].toInt()); return true
+        }
+        Regex("""^exblock-question (mine|theirs) (c\d+) (c\d+)$""").find(c)?.let { r ->
+            val atk = idOf(r.groupValues[3]) ?: return null
+            val blocker = idOf(r.groupValues[2], pl(r.groupValues[1])) ?: return null
+            ctx.asks += EventSpec("ask", obj = blocker, targets = listOf(atk), to = "ex:canblock"); answered(); return true
+        }
+        Regex("""^exblocked-question (it|all|c\d+)$""").find(c)?.let { r ->
+            val attackers = ctx.events.filter { it.verb == "attack" }.mapNotNull { it.obj }.distinct()
+            val which = when (val w = r.groupValues[1]) { "all" -> attackers; "it" -> listOfNotNull(ctx.lastMentioned?.takeIf { it in attackers } ?: attackers.lastOrNull()); else -> listOfNotNull(idOf(w)) }
+            if (which.isEmpty()) return null
+            ctx.asks += EventSpec("ask", targets = which, to = "ex:blockable"); answered(); return true
+        }
+        Regex("""^exsurviveturn-question (it|c\d+)$""").find(c)?.let { r ->
+            val id = idOf(r.groupValues[1]) ?: return null
+            ctx.asks += EventSpec("ask", obj = id, to = "ex:surviveturn"); answered(); return true
+        }
+        Regex("""^exmv-question (.+)$""").find(c)?.let { r ->
+            val seen = mutableMapOf<String, Int>()
+            for (part in r.groupValues[1].split(';')) {
+                val (ph, zone) = part.split(':').let { it[0] to it.getOrElse(1) { "hand" } }
+                val e = m.cards[ph] ?: continue
+                val full = names.fullNameOf(e.oracleId) ?: e.display
+                // The face as typed ("Emeria, Shattered Skyclave"), which the index files under the card's front face: the
+                // faces named in the question, in the order they were said, matched to the parts asked about.
+                val said = full.split(" // ").flatMap { f -> Regex(Regex.escape(f), RegexOption.IGNORE_CASE).findAll(ctx.fullText).map { it.range.first to f }.toList() }.sortedBy { it.first }.map { it.second }
+                val k = seen.merge(e.oracleId, 1, Int::plus)!! - 1
+                ctx.asks += EventSpec("ask", card = CardRef(name = full, oracleId = e.oracleId), to = "ex:mv:$zone:${said.getOrNull(k) ?: e.display}")
+            }
+            answered(); return true
+        }
+        Regex("""^exfacedown-question (c\d+)$""").find(c)?.let { r ->
+            val e = m.cards[r.groupValues[1]] ?: return null
+            ctx.asks += EventSpec("ask", card = CardRef(name = e.display, oracleId = e.oracleId), to = "ex:facedownmv"); return true
+        }
+        Regex("""^exlandsplayed-question (mine|theirs)$""").find(c)?.let { r ->
+            ctx.events += EventSpec("ex", player = pl(r.groupValues[1]), to = "landsplayed", amount = 1); return true
+        }
+        Regex("""^exlandsleft-question (mine|theirs)$""").find(c)?.let { r ->
+            ctx.asks += EventSpec("ask", player = pl(r.groupValues[1]), to = "ex:landsleft"); answered(); return true
+        }
+        Regex("""^extrigtarget-question (c\d+) (c\d+)$""").find(c)?.let { r ->
+            val src = idOf(r.groupValues[1]) ?: return null
+            val tgt = idOf(r.groupValues[2]) ?: return null
+            ctx.asks += EventSpec("ask", obj = src, targets = listOf(tgt), to = "ex:trigtarget"); answered(); return true
+        }
+        return null
+    }
+
     /** The markers [stackRewrites] leaves: stack, priority and timing questions, answered by StackAsks in the judge. */
     // ---- triggered abilities in depth (603, 605.1b, 607): see situation/TriggerAsks.kt ----
 
@@ -8166,6 +8317,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readExamQuestions(clause0, m, ctx)?.let { return it }
         readPauperQuestions(clause0, m, ctx)?.let { return it }
         readDeepQuestions(clause0, m, ctx)?.let { return it }
         readLimitedQuestions(clause0, m, ctx)?.let { return it }
