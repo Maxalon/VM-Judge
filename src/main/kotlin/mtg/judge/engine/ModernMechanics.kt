@@ -34,7 +34,7 @@ internal object ModernMech {
     private val thirdTimeRe = Regex("""^if it's the third time, ~ deals (\d+) damage to each opponent and each planeswalker you don't control\.?$""", RegexOption.IGNORE_CASE)
 
     /** True for spell or ability text [unparsed] plays out, so it isn't reported as not modeled. */
-    fun handles(text: String): Boolean = text.split(" | ").all { t -> listOf(diesReturnRe, firstTimeRe, secondTimeRe, thirdTimeRe, gainsHasteRe, returnAtEndRe, manaCostSearchRe, subtletyChooseRe, subtletyPutRe).any { it.matches(t.trim()) } }
+    fun handles(text: String): Boolean = text.split(" | ").all { t -> LimitedMech.handlesPart(t) || listOf(diesReturnRe, firstTimeRe, secondTimeRe, thirdTimeRe, gainsHasteRe, returnAtEndRe, manaCostSearchRe, subtletyChooseRe, subtletyPutRe).any { it.matches(t.trim()) } }
 
     /** Nahiri, the Harbinger's −8, Sneak Attack-style: "It gains haste. Return it to your hand at the beginning of the next end step." */
     /** Urza's Saga chapter III: "Search your library for an artifact card with mana cost {0} or {1}, put it onto the battlefield, then shuffle." */

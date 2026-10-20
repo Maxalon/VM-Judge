@@ -307,6 +307,8 @@ class GameState(
     val cascadeHits = mutableListOf<CardDef>()
     /** The Modern track's per-situation memory (ModernMechanics.kt). */
     val md = ModernState()
+    /** The Limited track's per-situation memory (LimitedMechanics.kt). */
+    internal val lt = LimitedMech.Table()
     /** A spell being cast while another spell or ability resolves (cascade): timing permissions don't apply (608.2g). */
     var castDuringResolution = false
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */

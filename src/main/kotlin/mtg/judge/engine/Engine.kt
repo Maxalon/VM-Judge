@@ -2120,7 +2120,7 @@ class Engine(val state: GameState) {
         state.step = "combat_damage"
         for (a in attackers) if (a.has("menace")) {
             val bs = blockersOf(a)
-            if (bs.size == 1) { trace.step("${a.name} has menace and can't be blocked except by two or more creatures; blocking it with only ${bs[0].name} isn't a legal block, so ${a.name} is unblocked.", "702.111b", "509.1a"); bs[0].blocking = null; a.wasBlocked = false }
+            if (bs.size == 1) { trace.step("${a.name} has menace and can't be blocked except by two or more creatures; blocking it with only ${bs[0].name} isn't a legal block, so ${a.name} is unblocked.", "702.111b", "509.1a"); LimitedMech.dropBlock(bs[0], a); a.wasBlocked = false }
         }
         trace.step("At least one creature has first strike or double strike, so there is an extra combat damage step in which only those creatures deal damage.", "510.4", "702.7b")
         dealCombatDamage(attackers) { it.has("first strike") || it.has("double strike") }
@@ -2139,10 +2139,11 @@ class Engine(val state: GameState) {
         }
         val attackers = state.objects.values.filter { it.attacking != null && it.isOnBattlefield() }
         if (attackers.isEmpty()) { trace.step("No creatures are attacking, so there is no combat damage step.", "506.1"); return }
+        LimitedMech.tappedBlockers(state)   // a blocker tapped after blocks still deals damage (506.4b)
         // Menace: a single blocker is not a legal block.
         for (a in attackers) if (a.has("menace")) {
             val bs = blockersOf(a)
-            if (bs.size == 1) { trace.step("${a.name} has menace and can't be blocked except by two or more creatures; blocking it with only ${bs[0].name} isn't a legal block, so ${a.name} is unblocked.", "702.111b", "509.1a"); state.outcomes += "${bs[0].name} can't block ${a.name} on its own (menace)." + (state.objects.values.count { it.isOnBattlefield() && it.controller == bs[0].controller && state.isCreature(it) && it.tapped != true && it.id != bs[0].id }.takeIf { it > 0 }?.let { " Another creature blocking alongside it would be a legal block." } ?: ""); bs[0].blocking = null; a.wasBlocked = false }
+            if (bs.size == 1) { trace.step("${a.name} has menace and can't be blocked except by two or more creatures; blocking it with only ${bs[0].name} isn't a legal block, so ${a.name} is unblocked.", "702.111b", "509.1a"); state.outcomes += "${bs[0].name} can't block ${a.name} on its own (menace)." + (state.objects.values.count { it.isOnBattlefield() && it.controller == bs[0].controller && state.isCreature(it) && it.tapped != true && it.id != bs[0].id }.takeIf { it > 0 }?.let { " Another creature blocking alongside it would be a legal block." } ?: ""); LimitedMech.dropBlock(bs[0], a); a.wasBlocked = false }
         }
         // "Whenever ~ attacks and isn't blocked": the condition is checked once blockers are declared, so the
         // trigger goes on the stack then and resolves before any combat damage.
@@ -2162,6 +2163,7 @@ class Engine(val state: GameState) {
                 if (o.has("double strike") && id !in state.doubleStrikersAtStart) { trace.step("${o.name} had first strike and dealt its combat damage in the first step; it has double strike now, so it assigns combat damage again in this second step.", "702.4d"); state.outcomes += "${o.name} deals combat damage a second time: gaining double strike after the first-strike damage step lets it assign damage in the regular step (702.4d)." }
                 else if (!o.has("double strike") && id in state.doubleStrikersAtStart) { trace.step("${o.name} had double strike as the first combat damage step began but no longer has it, so it assigns no combat damage in the second step.", "702.4c"); state.outcomes += "${o.name} deals no more combat damage: losing double strike during the first-strike step stops its second damage (702.4c)." }
             }
+            LimitedMech.lateFirstStrike(state, struck)   // first strike given after the first-strike step (702.7c)
             dealCombatDamage(attackers) { it.id !in struck || it.has("double strike") }
             state.combatDamageDealt = true
             trace.step("The active player receives priority.", "510.3")
@@ -2197,6 +2199,7 @@ class Engine(val state: GameState) {
             val blockers = blockersOf(a)
             if (deals(a)) {
                 val power = combatPower(a)
+                if (a.has("trample") && blockers.isNotEmpty()) LimitedMech.noteTrample(state, a, blockers, power)   // "how much tramples over?" (LimitedMechanics.kt)
                 if (byToughness != null) trace.step("${a.name} is ${a.power ?: 0}/${a.toughness ?: 0}: with ${byToughness.name} it assigns $power combat damage (its toughness).", "510.1a")
                 if (power <= 0) trace.step("${a.name} has power $power and assigns no combat damage.", "510.1a")
                 else if (blockers.isEmpty() && a.wasBlocked) {
@@ -3284,7 +3287,7 @@ class Engine(val state: GameState) {
             is Effect.DealsPowerTo -> {
                 val a = item.targets.getOrNull(0)?.let { objOf(it) }; val b = item.targets.getOrNull(1)?.let { objOf(it) }
                 if (a == null || b == null || !a.isOnBattlefield() || !b.isOnBattlefield()) trace.step("One of the creatures is no longer on the battlefield, so no damage is dealt.", "608.2b")
-                else { val pw = a.power ?: 0; trace.step("${a.name}'s power is $pw, so it deals $pw damage to ${b.name}. This isn't a fight: ${b.name} deals none back.", "701.14a"); applyDamage(a.name, Ref.Obj(b.id), pw, a); stateBasedActions() }
+                else { val pw = a.power ?: 0; trace.step("${a.name}'s power is $pw as ${item.source.name} resolves (its power is checked now, not when it was cast), so it deals $pw damage to ${b.name}. This isn't a fight: ${b.name} deals none back.", "608.2h", "701.14a"); applyDamage(a.name, Ref.Obj(b.id), pw, a); stateBasedActions() }
             }
             is Effect.RedirectToSelf -> forEachLegalTarget(item, effect.target) { ref ->
                 val target = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: (ref as? Ref.Obj)?.let { r -> state.stack.firstOrNull { it.source.id == r.id } }
@@ -3582,6 +3585,8 @@ class Engine(val state: GameState) {
                         val host = chosen.attachedTo?.let { state.objects[it] }
                         if (chosen.def.isAura && host != null) trace.step("${chosen.name} is an Aura entering without being cast: ${you.subject.lowercase()} ${you.v("chooses", "choose")} what it enchants as it enters (it doesn't target, so hexproof and shroud don't stop it): ${host.name}.", "303.4f")
                         else if (chosen.def.isAura) { chosen.attachedTo = null; state.clarifications += Clarification("${chosen.name}'s host", "${chosen.name} enters the battlefield without being cast; what does it enchant? (303.4f)") }
+                        // The Eldest Reborn, Reanimate: "from a graveyard onto the battlefield under your control" — whoever owns the card.
+                        if (fromZone == Zone.GRAVEYARD && chosen.controller != item.controller && !item.text.contains("under its owner's control", true)) chosen.controller = item.controller
                         // enter() already says it entered; only the attachment needs adding, or the line is doubled.
                         enter(chosen.id); if (chosen.def.isAura && host != null) applyControlEnchanted(chosen)
                         host?.let { state.outcomes += "${chosen.name} enters the battlefield attached to ${it.name}." }
@@ -4072,6 +4077,7 @@ class Engine(val state: GameState) {
             is Effect.Unparsed -> {
                 if (Turns.resolve(this, effect.text, item)) return
                 if (ModernMech.unparsed(this, state, effect.text, item)) return   // Undying Malice, Not Dead After All (ModernMechanics.kt)
+                if (LimitedMech.unparsed(this, state, effect.text, item)) return   // Cytoshape, Preeminent Captain (LimitedMechanics.kt)
                 trace.step("(Not modeled: \"${effect.text}\")")
                 enterBlockersNote(item, effect.text)
                 // Counterbalance: the spell is countered if the revealed card's mana value matches it.
@@ -4631,6 +4637,7 @@ class Engine(val state: GameState) {
         entersAbilitiesGone(o)
         applyEntersAsCopy(o, choice)
         ModernMech.entersWithExiled(state, o)   // Murktide Regent's counters for the cards delve exiled (ModernMechanics.kt)
+        LimitedMech.asEnters(state, o)   // Ixidron turns the other creatures face down (LimitedMechanics.kt)
         val startingLoyalty = o.def.loyalty?.let { NewMech.compleatedLoyalty(state, o, it) }
         if ("Saga" in o.def.subtypes && o.def.abilities.any { it is TriggeredAbility && it.trigger is Trigger.Chapter } && (o.counters["lore"] ?: 0) == 0) {
             // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (714.3a), not its rules text (305.7), but the chapter abilities are gone.

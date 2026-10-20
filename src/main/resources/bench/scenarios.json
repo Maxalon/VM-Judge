@@ -46822,5 +46822,336 @@
     "cite": [
       "702.138b"
     ]
+  },
+  {
+    "id": "lt1",
+    "text": "My Grizzly Bears enchanted with Rancor attacks and my opponent blocks with Typhoid Rats. After blockers I cast Giant Growth on my Bears. Does my Bears survive?",
+    "expect": [
+      "No: Grizzly Bears is in the graveyard.",
+      "Rancor: your graveyard → your hand."
+    ],
+    "cite": [
+      "702.2b",
+      "704.5h",
+      "702.19b"
+    ]
+  },
+  {
+    "id": "lt2",
+    "text": "My 5/5 trample attacks. My opponent blocks with a 3/3 and a 4/4. How much damage can I trample over to my opponent?",
+    "expect": [
+      "None: a 5/5 creature with trample has 5 power and has to assign lethal damage to every blocker first (7 in all)"
+    ],
+    "cite": [
+      "702.19b"
+    ]
+  },
+  {
+    "id": "lt3",
+    "text": "My 1/1 flier attacks and my opponent blocks with a 1/3 reach creature. I cast Unsummon on the blocker. Does my flier deal damage to my opponent?",
+    "expect": [
+      "a 1/1 creature with flying deals no combat damage: its blocker left combat and it stays blocked."
+    ],
+    "cite": [
+      "509.1h",
+      "510.1c"
+    ]
+  },
+  {
+    "id": "lt4",
+    "text": "My Grizzly Bears is enchanted with Arcane Flight. My opponent controls Hill Giant. I cast Cytoshape choosing Hill Giant and targeting my Grizzly Bears. Does it still have flying, and how big is it?",
+    "expect": [
+      "Grizzly Bears is a copy of Hill Giant until end of turn (Cytoshape).",
+      "Yes: Hill Giant has flying.",
+      "is 4/4 (3/3 base, +1/+1 from Arcane Flight)"
+    ],
+    "cite": [
+      "707.2",
+      "613.2a"
+    ]
+  },
+  {
+    "id": "lt5",
+    "text": "My Grizzly Bears is equipped with Bonesplitter. My opponent casts Ixidron and turns it face down. What happens to Bonesplitter, and how big is my face-down creature?",
+    "expect": [
+      "Bonesplitter stays attached",
+      "is 4/2 (2/2 base, +2/+0 from Bonesplitter)"
+    ],
+    "cite": [
+      "708.2a",
+      "301.5c"
+    ]
+  },
+  {
+    "id": "lt6",
+    "text": "My opponent attacks with a creature enchanted with Lure. I control Goblin Raider. Does Goblin Raider have to block?",
+    "expect": [
+      "No: Goblin Raider isn't able to block"
+    ],
+    "cite": [
+      "509.1c"
+    ]
+  },
+  {
+    "id": "lt7",
+    "text": "I control Ajani's Pridemate and two 2/2 lifelink creatures. Both attack unblocked and deal combat damage at the same time. How many counters does Pridemate get?",
+    "expect": [
+      "Ajani's Pridemate gets 2 +1/+1 counters"
+    ],
+    "cite": [
+      "119.9"
+    ]
+  },
+  {
+    "id": "lt8",
+    "text": "I attack with Preeminent Captain and put Vicious Conquistador onto the battlefield tapped and attacking. Does my opponent lose 1 life from Vicious Conquistador?",
+    "expect": [
+      "No: Vicious Conquistador was put onto the battlefield tapped and attacking"
+    ],
+    "cite": [
+      "508.3a",
+      "508.4"
+    ]
+  },
+  {
+    "id": "lt9",
+    "text": "My 2/2 first strike blocks my opponent's 3/3. After first-strike damage my opponent casts Kindled Fury on their 3/3. Does it still deal damage to my creature?",
+    "expect": [
+      "a 3/3 creature still deals combat damage in the regular step",
+      "a 2/2 creature with first strike: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "702.7c"
+    ]
+  },
+  {
+    "id": "lt10",
+    "text": "My Grizzly Bears is enchanted with Unholy Strength. I cast Rabid Bite targeting my Bears and my opponent's 4/4. In response my opponent casts Naturalize on Unholy Strength. Does the 4/4 die?",
+    "expect": [
+      "a 4/4 creature has 2 damage marked.",
+      "No: a 4/4 creature is still on the battlefield."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "lt11",
+    "text": "My 3/3 blocks my opponent's 2/2 and takes 2 damage. In their second main phase my opponent casts Weakness on my 3/3. Does it die?",
+    "expect": [
+      "Yes: a 3/3 creature died",
+      "a 3/3 creature has 2 damage marked."
+    ],
+    "cite": [
+      "704.5g"
+    ],
+    "notExpect": [
+      "4 damage marked"
+    ]
+  },
+  {
+    "id": "lt12",
+    "text": "I cast Stomp and my opponent counters it with Cancel. Can I cast Bonecrusher Giant later?",
+    "expect": [
+      "No: the Adventure was countered, so Bonecrusher Giant went to your graveyard"
+    ],
+    "cite": [
+      "715.3d"
+    ]
+  },
+  {
+    "id": "lt13",
+    "text": "I have The Eldest Reborn on chapter 2. Hill Giant is in my opponent's graveyard. My precombat main phase begins. Is The Eldest Reborn sacrificed before chapter III resolves?",
+    "expect": [
+      "No: The Eldest Reborn isn't sacrificed while its chapter III ability is on the stack",
+      "The Eldest Reborn: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "714.4"
+    ]
+  },
+  {
+    "id": "lt14",
+    "text": "My Bloodrock Cyclops is tapped by Frost Breath. Do I have to attack with it?",
+    "expect": [
+      "No: Bloodrock Cyclops attacks each combat only if able"
+    ],
+    "cite": [
+      "508.1d"
+    ]
+  },
+  {
+    "id": "lt15",
+    "text": "My opponent attacks with Charging Rhino. Can I block it with my two 2/2s?",
+    "expect": [
+      "No: Charging Rhino can't be blocked by more than one creature"
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "lt16",
+    "text": "My opponent attacks with a 2/2 menace and a 3/3. Can my Palace Guard block both of them by itself?",
+    "expect": [
+      "No: by itself Palace Guard can't block a 2/2 creature with menace"
+    ],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "lt17",
+    "text": "My opponent's 5/5 trample attacks and I block with Darksteel Myr. How much damage do I take?",
+    "expect": [
+      "Yes: you take 4 damage in all.",
+      "Darksteel Myr is indestructible"
+    ],
+    "cite": [
+      "702.19b",
+      "702.12b"
+    ]
+  },
+  {
+    "id": "lt18",
+    "text": "My opponent's Plague Stinger attacks and I cast Holy Day. Do I get a poison counter?",
+    "expect": [
+      "No: the damage to you from Plague Stinger is prevented"
+    ],
+    "cite": [
+      "702.90b",
+      "615.1"
+    ]
+  },
+  {
+    "id": "lt19",
+    "text": "My 2/2 blocks my opponent's 3/3. After combat damage, can I cast Giant Growth to save my 2/2?",
+    "expect": [
+      "No: a 2/2 creature is destroyed by state-based actions as soon as combat damage is dealt"
+    ],
+    "cite": [
+      "704.3"
+    ]
+  },
+  {
+    "id": "lt20",
+    "text": "I activate Bonesplitter's equip ability targeting my Grizzly Bears. In response my opponent casts Unsummon on Grizzly Bears. What happens to Bonesplitter, and do I get my mana back?",
+    "expect": [
+      "Bonesplitter's activated ability doesn't resolve",
+      "No: the mana was spent paying the cost"
+    ],
+    "cite": [
+      "608.2b",
+      "601.2h"
+    ]
+  },
+  {
+    "id": "lt21",
+    "text": "I cast Ranger's Guile on my Grizzly Bears. Can I then cast Rancor on it?",
+    "expect": [
+      "Yes: hexproof only stops spells and abilities your opponents control"
+    ],
+    "cite": [
+      "702.11b"
+    ]
+  },
+  {
+    "id": "lt22",
+    "text": "I cast Serra Angel this turn. Can it attack, since it has vigilance?",
+    "expect": [
+      "No: vigilance only keeps Serra Angel from tapping"
+    ],
+    "cite": [
+      "302.6",
+      "702.20b"
+    ]
+  },
+  {
+    "id": "lt23",
+    "text": "I control a legendary creature and create a token that's a copy of it. What happens?",
+    "expect": [
+      "You get a token copy of a legendary creature.",
+      "a legendary creature: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "704.5j"
+    ]
+  },
+  {
+    "id": "lt24",
+    "text": "My opponent's Banishing Light exiles my 1/1 Soldier token. I destroy Banishing Light with Naturalize. Does my token come back?",
+    "expect": [
+      "No: Soldier token ceased to exist once it was exiled"
+    ],
+    "cite": [
+      "111.8",
+      "704.5d"
+    ]
+  },
+  {
+    "id": "lt25",
+    "text": "My Grizzly Bears is enchanted with my opponent's Pacifism. I cast Gods Willing on it choosing white. Can it attack?",
+    "expect": [
+      "Pacifism: the battlefield → opponent's graveyard.",
+      "opponent takes 2 damage."
+    ],
+    "cite": [
+      "702.16c",
+      "704.5m"
+    ]
+  },
+  {
+    "id": "lt26",
+    "text": "I cast Prey Upon: my 1/1 deathtouch creature fights my opponent's 5/5. What happens?",
+    "expect": [
+      "a 5/5 creature: the battlefield → opponent's graveyard.",
+      "a 1/1 creature with deathtouch: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "701.14a",
+      "702.2b"
+    ]
+  },
+  {
+    "id": "lt27",
+    "text": "My opponent attacks with a 2/2. After blockers are declared, I flash in Ambush Viper. Can it block?",
+    "expect": [
+      "No: blockers were already declared"
+    ],
+    "cite": [
+      "509.1"
+    ]
+  },
+  {
+    "id": "lt28",
+    "text": "My 3/3 blocks my opponent's 2/2. My opponent casts Pressure Point tapping my blocker. Does my 3/3 still deal damage?",
+    "expect": [
+      "a 3/3 creature still deals and receives combat damage",
+      "a 2/2 creature: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "506.4b"
+    ]
+  },
+  {
+    "id": "lt29",
+    "text": "I cast Pacifism targeting my opponent's Hill Giant. In response they cast Unsummon on Hill Giant. Where does Pacifism go?",
+    "expect": [
+      "Pacifism is in your graveyard."
+    ],
+    "cite": [
+      "608.3b"
+    ]
+  },
+  {
+    "id": "lt30",
+    "text": "My Smuggler's Copter is crewed and equipped with Bonesplitter. What happens to Bonesplitter at end of turn?",
+    "expect": [
+      "Bonesplitter stays on the battlefield, unattached."
+    ],
+    "cite": [
+      "704.5n",
+      "514.2"
+    ]
   }
 ]
