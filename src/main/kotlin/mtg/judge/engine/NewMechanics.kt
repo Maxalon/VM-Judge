@@ -147,7 +147,7 @@ internal object NewMech {
             // Adapt N (701.46a): "If this permanent has no +1/+1 counters on it, put N +1/+1 counters on it."
             "adapt" -> {
                 val have = src.counters["+1/+1"] ?: 0
-                if (!src.isOnBattlefield()) state.trace.step("${src.name} isn't on the battlefield any more, so adapt puts no counters on it.", "701.46a", "608.2b")
+                if (!src.isOnBattlefield()) state.trace.step("${src.name} isn't on the battlefield any more, so adapt puts no counters on it.", "701.46a", "609.3")
                 else if (have > 0) {
                     state.trace.step("Adapt ${e.n} puts counters on ${src.name} only if it has no +1/+1 counters on it. It already has ${plural(have, "+1/+1 counter")} (where they came from doesn't matter), so adapt does nothing; the ability still resolved.", "701.46a")
                     state.outcomes += "Adapt ${e.n} does nothing: ${src.name} already has ${plural(have, "+1/+1 counter")}, so it still has ${plural(have, "+1/+1 counter")} (701.46a)."

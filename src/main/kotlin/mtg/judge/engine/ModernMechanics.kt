@@ -258,7 +258,7 @@ internal object ModernMech {
     fun narrated(engine: Engine, state: GameState, text: String, item: StackItem): Boolean {
         Regex("""^~md-untap:(.+)~$""").find(text)?.let { r ->
             val o = state.objects[r.groupValues[1]]
-            if (o == null || !o.isOnBattlefield()) state.trace.step("The permanent ${item.source.name}'s trigger would untap has left the battlefield, so it does nothing.", "608.2b")
+            if (o == null || !o.isOnBattlefield()) state.trace.step("The permanent ${item.source.name}'s trigger would untap has left the battlefield, so it does nothing.", "609.3")
             else { o.tapped = false; state.trace.step("${item.source.name}'s ability resolves: ${o.name} untaps. It's untapped now, so it can be tapped for mana while any other trigger is still on the stack (a mana ability can be activated whenever its controller has priority, or when mana is asked for).", "701.26b", "605.3a"); state.outcomes += "${o.name} is untapped (${item.source.name})." }
             return true
         }
@@ -267,7 +267,7 @@ internal object ModernMech {
         val (tapped, with) = spec.split(';', limit = 2).let { (it[0] == "tapped") to it.getOrElse(1) { "" } }
         val obj = item.source
         if (obj.zone != Zone.GRAVEYARD || obj.successor != null) {
-            state.trace.step("${obj.name} is no longer in the graveyard, so the ability does nothing: there is no card there to return.", "400.7", "608.2b")
+            state.trace.step("${obj.name} is no longer in the graveyard, so the ability does nothing: there is no card there to return.", "400.7", "609.3")
             state.outcomes += "${obj.name} doesn't come back: it left the graveyard before the ability resolved."
             return true
         }

@@ -461,7 +461,7 @@ internal object MoreEffects3 {
             }
             "class-level" -> {
                 val o = item.source; val have = classLevel(o)
-                if (!o.isOnBattlefield()) { st.trace.step("$src has left the battlefield, so its level doesn't change.", "716.2a", "608.2b"); return true }
+                if (!o.isOnBattlefield()) { st.trace.step("$src has left the battlefield, so its level doesn't change.", "716.2a", "609.3"); return true }
                 if (have != effect.n - 1) { st.trace.step("$src is level $have, and its level ${effect.n} bar can be activated only while it's level ${effect.n - 1}.", "716.2a"); st.outcomes += "$src stays level $have."; return true }
                 synchronized(classLevels) { classLevels[o] = effect.n }
                 st.trace.step("$src's level becomes ${effect.n}: from now on it has the abilities printed in its level ${effect.n} section as well as those above (a level isn't a counter, and it isn't copied).", "716.2a", "716.2b")

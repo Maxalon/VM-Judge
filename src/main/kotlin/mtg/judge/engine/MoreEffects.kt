@@ -423,7 +423,7 @@ internal object MoreEffects {
         if (text.trim() == "~um:destroy-damage-source~") {
             val id = m.damageSources[item.source.id]?.removeFirstOrNull()
             val o = id?.let { state.objects[it] }
-            if (o == null || !o.isOnBattlefield()) { tr.step("The permanent that dealt the damage is no longer on the battlefield, so there is nothing to destroy.", "608.2b"); return true }
+            if (o == null || !o.isOnBattlefield()) { tr.step("The permanent that dealt the damage is no longer on the battlefield, so there is nothing to destroy.", "609.3"); return true }
             e.meDestroy(o, "$src's ability resolves: ${o.name}, which dealt damage to ${you.subject.lowercase()}, is destroyed.", "701.8a", "603.2")
             return true
         }

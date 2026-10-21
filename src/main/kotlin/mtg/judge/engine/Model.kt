@@ -133,12 +133,12 @@ sealed interface Trigger {
     data class Chapter(val n: Int) : Trigger
     /** Battalion: "~ and at least two other creatures attack" — ~ has to be one of them (702.101a). */
     data class ThisAndNOthersAttack(val others: Int) : Trigger
-    /** "Whenever this creature becomes saddled (for the first time each turn)" (702.166b). */
+    /** "Whenever this creature becomes saddled (for the first time each turn)" (702.171b). */
     data class ThisBecomesSaddled(val firstEachTurn: Boolean = false) : Trigger
     /** "Whenever ~ becomes the target of a spell or ability". */
     /** "Whenever ~ becomes the target of a spell or ability (an opponent controls) (for the first time each turn)". */
     data class ThisBecomesTarget(val opponentsOnly: Boolean = false, val firstEachTurn: Boolean = false) : Trigger
-    /** "When ~ becomes monstrous" (701.31a). */
+    /** "When ~ becomes monstrous" (701.37). */
     data object ThisBecomesMonstrous : Trigger
     /** Gemrazer: "Whenever this creature mutates" (702.140d): a spell merged with it. */
     data object ThisMutates : Trigger
@@ -203,7 +203,7 @@ sealed interface Effect {
     data class Mentor(val target: TargetSpec) : Effect
     /** Evolve: a +1/+1 counter if the creature that entered is bigger in either direction (702.100a). */
     data object Evolve : Effect
-    /** "Monstrosity N": N +1/+1 counters and it becomes monstrous, once only (701.31a). */
+    /** "Monstrosity N": N +1/+1 counters and it becomes monstrous, once only (701.37a). */
     data class Monstrosity(val amount: Int) : Effect
     /** Teferi's Protection: "Until your next turn, your life total can't change and you gain protection from everything." */
     data object ProtectionUntilNextTurn : Effect
@@ -361,7 +361,7 @@ sealed interface Effect {
     data object TapAttached : Effect
     /** Mutavault, Celestial Colonnade: "Until end of turn, ~ becomes a 4/4 Elemental creature with flying. It's still a land." (Layers 4, 5 and 7b.) */
     data class AnimateSelf(val power: Int, val toughness: Int, val subtypes: List<String>, val colors: Set<Char>, val keywords: List<String>, val allCreatureTypes: Boolean, val stillALand: Boolean) : Effect
-    /** Saddle: the Mount becomes saddled until end of turn (702.166a). The cost is paid by tapping other creatures. */
+    /** Saddle: the Mount becomes saddled until end of turn (702.171a). The cost is paid by tapping other creatures. */
     data object SaddleSelf : Effect
     /** Bloodghast, Gravecrawler: "return ~ from your graveyard to the battlefield." The ability functions while the card is in the graveyard (603.6e). */
     data class ReturnSelfFromGraveyard(val tapped: Boolean = false) : Effect

@@ -94,7 +94,7 @@ class GameObject(
     var animatedAs: Animation? = null
         set(v) { field = v; animatedTs = state?.tick() ?: 0 }
     var animatedTs: Int = 0
-    /** Saddled until end of turn (702.166a). A Mount is a creature either way; only its own triggers care. */
+    /** Saddled until end of turn (702.171a). A Mount is a creature either way; only its own triggers care. */
     var saddled: Boolean = false
     /** How many times it has been saddled this turn, for "becomes saddled for the first time each turn". */
     var saddledThisTurn: Int = 0
@@ -146,7 +146,7 @@ class GameObject(
     var transformed: Boolean = false
     /** The cost-raising permanents that applied as it was cast (name to amount), for "how much did it cost?" asked once they have left. */
     var taxesAtCast: List<Pair<String, Int>>? = null
-    /** Monstrous: set by monstrosity and never unset while the permanent stays on the battlefield (701.31b). */
+    /** Monstrous: set by monstrosity and never unset while the permanent stays on the battlefield (701.37b). */
     var monstrous: Boolean = false
     /** Phased out (702.26b): still in the battlefield zone, but treated as though it doesn't exist until it phases in. */
     var phasedOut: Boolean = false
@@ -313,7 +313,7 @@ class GameState(
     var castDuringResolution = false
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */
     val ceased = mutableMapOf<String, String>()
-    /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.19b). */
+    /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.23b). */
     val noBasicsInLibrary = mutableSetOf<String>()
     /** Commanders put into a graveyard or exile since state-based actions were last checked (903.9a, 704.6d), by object id. */
     val commanderPending = mutableMapOf<String, Zone>()

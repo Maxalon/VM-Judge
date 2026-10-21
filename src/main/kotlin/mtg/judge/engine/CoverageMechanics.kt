@@ -211,7 +211,7 @@ internal object CoverageMech {
             }
             "cr:destroycausing" -> {
                 val o = item.causedObject?.let { state.objects[it] }
-                if (o == null || !o.isOnBattlefield()) { t.step("The creature that blocked or was blocked isn't on the battlefield any more, so there is nothing to destroy.", "608.2b"); return }
+                if (o == null || !o.isOnBattlefield()) { t.step("The creature that blocked or was blocked isn't on the battlefield any more, so there is nothing to destroy.", "609.3"); return }
                 if ("nonwall" in e.text && "Wall" in state.subtypesOf(o)) { t.step("${o.name} is a Wall, so ${src.name}'s ability doesn't apply to it.", "603.2"); return }
                 // Two Grizzly Bears block Engulfing Slagwurm: "becomes blocked by a creature" triggers once for each blocker (509.3d).
                 val blockers = state.objects.values.count { it.blocking == src.id || src.id in it.alsoBlocking }

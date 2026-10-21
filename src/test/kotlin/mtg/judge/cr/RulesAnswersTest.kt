@@ -26,7 +26,7 @@ class RulesAnswersTest {
         "What does sorcery speed mean?" to "307.1",
         "Can I activate two loyalty abilities in one turn?" to "606.3",
         "Can I use a loyalty ability twice?" to "606.3",
-        "Does my mana empty between phases?" to "500.4",
+        "Does my mana empty between phases?" to "500.5",
         "I draw from an empty library, when do I lose?" to "121.4",
         "In the untap step do I untap everything?" to "502.3",
         "Can I respond to a mana ability?" to "605.3a",

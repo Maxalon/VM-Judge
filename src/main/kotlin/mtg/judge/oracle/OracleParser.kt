@@ -156,7 +156,7 @@ object OracleParser {
                             abilities += ActivatedAbility(part.trimEnd('.') + " (tap any number of other untapped creatures you control with total power N or more)", eff, part)
                         }
                         // Saddle works like crew, but the Mount is already a creature: saddling only turns on
-                        // what its own text does while saddled (702.166a).
+                        // what its own text does while saddled (702.171a).
                         "saddle" -> abilities += ActivatedAbility(part.trimEnd('.') + " (tap any number of other untapped creatures you control with total power N or more)", Effect.SaddleSelf, part)
                         // Extort (702.101a): each spell cast triggers a payment of {W/B}; if it's paid, a one-life drain.
                         "extort" -> abilities += TriggeredAbility(Trigger.SpellCast(Who.YOU), Effect.IfYouDo(Effect.Narrated("pay {W/B}", listOf("702.101a")), Effect.Seq(listOf(Effect.LoseLife(Who.EACH_OPPONENT, 1), Effect.GainLifeLostThisWay)), "{W/B}"),
@@ -520,7 +520,7 @@ object OracleParser {
         Regex("""^~ has no ([a-z+/0-9-]+) counters on it$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             return Trigger.NoCountersOnThis(m.groupValues[1].lowercase())
         }
-        // "~ attacks while saddled" / "~ becomes saddled (for the first time each turn)" (702.166b).
+        // "~ attacks while saddled" / "~ becomes saddled (for the first time each turn)" (702.171b).
         if (Regex("""^~ attacks while saddled$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisAttacksSaddled
         Regex("""^~ becomes saddled( for the first time each turn)?$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             return Trigger.ThisBecomesSaddled(m.groupValues[1].isNotEmpty())
@@ -1355,7 +1355,7 @@ object OracleParser {
         Regex("""^surveil (\d+)\.?$""", RegexOption.IGNORE_CASE) to listOf("701.25a"),
         Regex("""^(?:you |target player |each player )?mills? (\w+|\d+) cards?\.?$""", RegexOption.IGNORE_CASE) to listOf("701.17a"),
         // Looking at the top cards isn't scrying: an effect lets the player see part of a library they normally can't (401.2).
-        Regex("""^look at the top (?:(\w+|\d+) )?cards? of your library.*$""", RegexOption.IGNORE_CASE) to listOf("401.2"),
+        Regex("""^look at the top (?:(\w+|\d+) )?cards? of your library.*$""", RegexOption.IGNORE_CASE) to listOf("701.20e"),
         // Looking at a hidden zone: the engine doesn't track what is in one, so the answer says it happened and why nothing turns on it.
         Regex("""^look at (?:target player's|that player's|each opponent's|an opponent's) hand\.?$""", RegexOption.IGNORE_CASE) to listOf("400.2"),
         Regex("""^look at the top (?:(\w+|\d+) )?cards? of (?:target player's|that player's|an opponent's) library\.?$""", RegexOption.IGNORE_CASE) to listOf("400.2"),
@@ -1486,7 +1486,7 @@ object OracleParser {
         // Sylvan Library: the two extra cards are kept for 4 life each or put back.
         Regex("""^choose two cards in your hand drawn this turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated("you choose two cards in your hand drawn this turn", listOf("608.2c")) }
         Regex("""^for each of those cards, pay 4 life or put the card on top of your library\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated("for each of those two cards, you pay 4 life to keep it or put it back on top of your library; a card you keep costs 4 life, so keeping both costs 8", listOf("608.2c", "119.4")) }
-        Regex("""^each mode must target a different (player|opponent|creature|permanent)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("700.2c")) }
+        Regex("""^each mode must target a different (player|opponent|creature|permanent)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("700.2f")) }
         // "You can't lose the game this turn and your opponents can't win the game this turn." (Angel's Grace)
         Regex("""^you can't lose the game(?: this turn)?(?: and your opponents can't win the game(?: this turn)?)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.CantLoseThisTurn }
         // "Until end of turn, creatures your opponents control lose hexproof and indestructible and can't have hexproof or indestructible." (Arcane Lighthouse)

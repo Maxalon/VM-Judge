@@ -36,7 +36,7 @@ object Zones {
         val st = e.state
         val src = item.source.name
         val o = item.targets.filterIsInstance<Ref.Obj>().mapNotNull { st.objects[it.id] }.firstOrNull { it.zone == Zone.EXILE }
-        if (o == null) { st.trace.step("$src's ability would return the card it exiled at the beginning of the next end step, but nothing was exiled, so there's nothing to return.", "603.7a", "608.2b"); return true }
+        if (o == null) { st.trace.step("$src's ability would return the card it exiled at the beginning of the next end step, but nothing was exiled, so there's nothing to return.", "603.7a", "609.3"); return true }
         st.turns.delayed += DelayedTrigger(o.id, "return", item.source, item.controller, createdInEndStep = st.step == "end")
         val owner = st.player(o.owner)
         st.trace.step("$src creates a delayed triggered ability: at the beginning of the next end step, ${o.name} returns to the battlefield under ${owner.possessive} control${if (st.step == "end") " (this end step has already begun, so it waits for the next turn's end step)" else ""}. It will be a new object, with no memory of the one that was exiled.", "603.7a", "400.7")
@@ -96,7 +96,7 @@ object Zones {
         val st = e.state
         if (item.kind != StackKind.TRIGGERED || !exiles(item.effect) || !item.source.isOnBattlefield()) return
         if (item.source.abilities.none { it is TriggeredAbility && it.effect == Effect.ReturnExiledCard }) return
-        st.trace.step("${item.source.name} stays on the battlefield, but its enters ability did nothing, so it isn't exiling anything; if it leaves the battlefield later, its leaves ability has nothing to return.", "608.2b", "603.6c")
+        st.trace.step("${item.source.name} stays on the battlefield, but its enters ability did nothing, so it isn't exiling anything; if it leaves the battlefield later, its leaves ability has nothing to return.", "607.2a", "603.6c")
         st.outcomes += "${item.source.name} stays on the battlefield exiling nothing: its enters ability was its only chance to exile something, and it won't trigger again unless ${item.source.name} leaves and re-enters the battlefield."
     }
 

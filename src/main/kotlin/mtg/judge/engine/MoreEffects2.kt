@@ -888,7 +888,7 @@ internal object MoreEffects2 {
             val mine = state.objects.values.filter { it.isOnBattlefield() && it.controller == you.id && it !== o && (!f.verifiable || state.matches(f, it, you.id)) }
             val gave = state.lastSacrificed?.takeIf { it.owner == you.id && it.zone != Zone.BATTLEFIELD && (!f.verifiable || state.matches(f, it, you.id, anyZone = true)) }
             when {
-                !o.isOnBattlefield() -> tr.step("${o.name} has already left the battlefield, so there's nothing to keep or sacrifice.", "608.2b")
+                !o.isOnBattlefield() -> tr.step("${o.name} has already left the battlefield, so there's nothing to keep or sacrifice.", "609.3")
                 gave != null -> { tr.step("${you.subject} sacrificed ${gave.name} for it, so ${o.name} stays.", "608.2d", "701.21a"); state.outcomes += "${o.name} stays: ${you.subject.lowercase()} sacrificed ${gave.name} to its upkeep trigger." }
                 mine.isEmpty() -> e.sacrifice(you.id, o.id)
                 else -> { tr.step("${you.subject} ${you.v("chooses", "choose")} as it resolves: sacrifice ${article(r.groupValues[1])} ${r.groupValues[1]} (${mine.joinToString(", ") { it.name }}), or sacrifice ${o.name}. Which wasn't said.", "608.2d", "701.21a"); state.outcomes += "${you.subject} must sacrifice ${article(r.groupValues[1])} ${r.groupValues[1]} or ${o.name} ($src); which wasn't said." }

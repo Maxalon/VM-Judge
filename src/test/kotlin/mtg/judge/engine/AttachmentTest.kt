@@ -31,7 +31,7 @@ class AttachmentTest {
         e.resolveAll()
         val r = s.objects.values.first { it.name == "Rancor" }
         assertEquals("bears", r.attachedTo); assertEquals(4, s.obj("bears").power); assertTrue(s.obj("bears").has("trample"))
-        assertTrue("303.4a" in s.cited() && "608.3b" in s.cited())
+        assertTrue("303.4a" in s.cited() && "608.3c" in s.cited())
         e.cast("opp", swords, listOf(Ref.Obj("bears"))); e.resolveAll()
         assertTrue("704.5m" in s.cited(), "Aura goes to the graveyard when its creature leaves (704.5m)")
         assertEquals(Zone.HAND, r.zone, "and Rancor's own trigger then returns it to hand")

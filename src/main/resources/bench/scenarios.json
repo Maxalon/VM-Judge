@@ -5645,7 +5645,7 @@
       "Nothing changes"
     ],
     "cite": [
-      "603.6e",
+      "113.6m",
       "400.7"
     ]
   },
@@ -7020,7 +7020,7 @@
     ],
     "notExpect": [],
     "cite": [
-      "603.6e"
+      "113.6m"
     ]
   },
   {
@@ -7031,7 +7031,7 @@
     ],
     "notExpect": [],
     "cite": [
-      "701.13a"
+      "701.17a"
     ]
   },
   {
@@ -9307,7 +9307,7 @@
       "Not modeled"
     ],
     "cite": [
-      "701.31a"
+      "701.37a"
     ]
   },
   {
@@ -9321,7 +9321,7 @@
       "Not understood"
     ],
     "cite": [
-      "701.31b"
+      "701.37b"
     ]
   },
   {
@@ -11951,7 +11951,7 @@
       "add {G}"
     ],
     "cite": [
-      "602.1a"
+      "602.2"
     ]
   },
   {
@@ -13362,7 +13362,7 @@
       "Not understood"
     ],
     "cite": [
-      "702.166a"
+      "702.171a"
     ]
   },
   {
@@ -15347,7 +15347,7 @@
     "text": "Does Solitude's evoke trigger if it's countered?",
     "expect": [
       "Solitude is countered.",
-      "No: Solitude was countered, so it never entered the battlefield. Its enters-the-battlefield ability triggers only on entering, and a countered spell goes to the graveyard instead (701.5a, 603.6a)."
+      "No: Solitude was countered, so it never entered the battlefield. Its enters-the-battlefield ability triggers only on entering, and a countered spell goes to the graveyard instead (701.6a, 603.6a)."
     ],
     "notExpect": [
       "Solitude enters the battlefield"
@@ -15388,7 +15388,7 @@
       "Rules text not modeled"
     ],
     "cite": [
-      "614.1b"
+      "614.1a"
     ]
   },
   {
@@ -17142,7 +17142,7 @@
       "Nothing changes"
     ],
     "cite": [
-      "702.69a"
+      "202.3"
     ]
   },
   {
@@ -18142,7 +18142,7 @@
     "text": "My Snapcaster Mage is countered. Does its ability still trigger?",
     "expect": [
       "Snapcaster Mage is countered.",
-      "No: Snapcaster Mage was countered, so it never entered the battlefield. Its enters-the-battlefield ability triggers only on entering, and a countered spell goes to the graveyard instead (701.5a, 603.6a)."
+      "No: Snapcaster Mage was countered, so it never entered the battlefield. Its enters-the-battlefield ability triggers only on entering, and a countered spell goes to the graveyard instead (701.6a, 603.6a)."
     ],
     "notExpect": [
       "Not understood"
@@ -19438,7 +19438,7 @@
     "id": "counterspell-creature-to-graveyard",
     "text": "they cast counterspell on my creature spell, does the creature go to the graveyard",
     "expect": [
-      "Yes. A countered spell is put into its owner's graveyard (701.5a) unless the counterspell says otherwise (some exile it or put it into the library). A countered creature spell never entered the battlefield, so it didn't \"die\": nothing that triggers on a creature dying or leaving the battlefield sees it, and it can be reanimated from the graveyard like any other creature card."
+      "Yes. A countered spell is put into its owner's graveyard (701.6a) unless the counterspell says otherwise (some exile it or put it into the library). A countered creature spell never entered the battlefield, so it didn't \"die\": nothing that triggers on a creature dying or leaving the battlefield sees it, and it can be reanimated from the graveyard like any other creature card."
     ]
   },
   {
@@ -19659,7 +19659,7 @@
     "id": "counter-war-1-vs-2",
     "text": "i cast a spell and they have 2 counterspells, can i win the counter war with 1 counterspell",
     "expect": [
-      "No. Each counterspell answers one spell: they counter your spell, you counter that counterspell, and they counter yours with their next one. With 1 counterspell against their 2, their last one resolves and your spell is countered (701.5a). You would need at least as many counterspells as they have, or a spell that can't be countered."
+      "No. Each counterspell answers one spell: they counter your spell, you counter that counterspell, and they counter yours with their next one. With 1 counterspell against their 2, their last one resolves and your spell is countered (701.6a). You would need at least as many counterspells as they have, or a spell that can't be countered."
     ]
   },
   {
@@ -26446,7 +26446,7 @@
     "text": "My opponent casts Path to Exile on my Grizzly Bears. Do I have to search for the land?",
     "expect": [
       "Grizzly Bears: the battlefield → exile.",
-      "No: Path to Exile says \"may search\", so you choose whether to search at all (you usually should: the land is free). If you do search, you may also fail to find, since the card looked for isn't revealed until chosen (701.19b)."
+      "No: Path to Exile says \"may search\", so you choose whether to search at all (you usually should: the land is free). If you do search, you may also fail to find, since the card looked for isn't revealed until chosen (701.23b)."
     ]
   },
   {
@@ -26989,7 +26989,7 @@
     "text": "I attack with two 2/2s and my opponent casts Settle the Wreckage. How many lands do I get?",
     "expect": [
       "a 2/2 creature: the battlefield → exile. (×2)",
-      "You get 2 basic lands: one for each creature exiled this way, put onto the battlefield tapped (you may search for fewer or none, 701.19b)."
+      "You get 2 basic lands: one for each creature exiled this way, put onto the battlefield tapped (you may search for fewer or none, 701.23b)."
     ]
   },
   {
@@ -27342,7 +27342,7 @@
     "id": "move-equipment-in-response-no",
     "text": "I have a 2/2 with Bonesplitter and my opponent casts Doom Blade on it. Can I move the Bonesplitter in response?",
     "expect": [
-      "No. Equip is an activated ability that can be activated only as a sorcery: in your own main phase, with the stack empty (702.6a, 702.6b)."
+      "No. Equip is an activated ability that can be activated only as a sorcery: in your own main phase, with the stack empty (702.6a)."
     ],
     "cite": [
       "702.6a"
@@ -27362,7 +27362,7 @@
     "text": "My opponent blocks my 3/3 with a 1/1 and then equips Bonesplitter to their 1/1. Is that legal?",
     "expect": [
       "a 1/1 creature: the battlefield → opponent's graveyard.",
-      "No, that isn't legal: Equip can be activated only as a sorcery — in its controller's main phase with the stack empty (702.6a, 702.6b) — so nothing can be equipped during combat."
+      "No, that isn't legal: Equip can be activated only as a sorcery — in its controller's main phase with the stack empty (702.6a) — so nothing can be equipped during combat."
     ],
     "cite": [
       "702.6a"
@@ -27829,7 +27829,7 @@
     "text": "My opponent casts Krosan Grip on my Lightning Greaves. Can I respond by equipping to a different creature?",
     "expect": [
       "Lightning Greaves: the battlefield → your graveyard.",
-      "No. Equip can be activated only as a sorcery — in your main phase with the stack empty (702.6a, 702.6b) — so with Krosan Grip on the stack the Equipment can't be moved; it stays where it is while Krosan Grip resolves. Krosan Grip's split second would stop the activation too (702.61a)."
+      "No. Equip can be activated only as a sorcery — in your main phase with the stack empty (702.6a) — so with Krosan Grip on the stack the Equipment can't be moved; it stays where it is while Krosan Grip resolves. Krosan Grip's split second would stop the activation too (702.61a)."
     ]
   },
   {
@@ -31474,7 +31474,7 @@
       "finds nothing (none left in opponent's library); the library is shuffled anyway"
     ],
     "cite": [
-      "701.19b"
+      "701.23b"
     ]
   },
   {
@@ -31504,7 +31504,7 @@
       "Insectile Aberration turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8)"
     ],
     "cite": [
-      "712.8a"
+      "712.8e"
     ]
   },
   {
@@ -32491,7 +32491,7 @@
       "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities"
     ],
     "cite": [
-      "714.2b"
+      "714.3c"
     ]
   },
   {
@@ -33133,7 +33133,7 @@
     "text": "They Stifle my Stoneforge Mystic trigger. Do I still get to search?",
     "expect": [
       "No. The search was part of Stoneforge Mystic's triggered ability",
-      "701.5a"
+      "701.6a"
     ],
     "cite": []
   },
@@ -33874,7 +33874,7 @@
       "You take 14 damage"
     ],
     "cite": [
-      "104.3a"
+      "104.5"
     ]
   },
   {
@@ -34292,7 +34292,7 @@
       "No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities"
     ],
     "cite": [
-      "714.2b"
+      "714.3c"
     ]
   },
   {
@@ -36767,11 +36767,11 @@
     "id": "tt255-countered-creature-not-died",
     "text": "I cast Grizzly Bears. They counter it. Does it die?",
     "expect": [
-      "No: Grizzly Bears didn't die; it was countered, so the card went from the stack to the graveyard without ever being on the battlefield (701.5a, 700.4)"
+      "No: Grizzly Bears didn't die; it was countered, so the card went from the stack to the graveyard without ever being on the battlefield (701.6a, 700.4)"
     ],
     "cite": [
       "700.4",
-      "701.5a"
+      "701.6a"
     ]
   },
   {
@@ -39604,7 +39604,7 @@
     ],
     "cite": [
       "702.52a",
-      "701.13a"
+      "701.17a"
     ]
   },
   {
@@ -40581,7 +40581,7 @@
       "Not understood"
     ],
     "cite": [
-      "614.1b"
+      "614.1a"
     ]
   },
   {
@@ -42809,7 +42809,7 @@
     ],
     "cite": [
       "118.3",
-      "608.2g"
+      "118.12a"
     ]
   },
   {
@@ -47735,7 +47735,7 @@
     ],
     "cite": [
       "118.3",
-      "608.2g"
+      "118.12a"
     ]
   },
   {
@@ -50552,7 +50552,7 @@
       "escape Underworld Breach gives it"
     ],
     "cite": [
-      "113.6c"
+      "101.2"
     ]
   },
   {

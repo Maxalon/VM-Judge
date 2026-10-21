@@ -82,7 +82,7 @@ object RulesAnswers {
             "606.3"),
         e("mana + empty",
             "Mana pools empty at the end of every step and phase, so mana never carries from one step to the next.",
-            "500.4", "106.4"),
+            "500.5", "106.4"),
         e("draw + empty library + when",
             "Not at the moment you draw. Drawing from an empty library doesn't do anything by itself; you lose the game the next time a player would receive priority, as a state-based action.",
             "121.4", "704.5b"),

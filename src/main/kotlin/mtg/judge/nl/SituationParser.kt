@@ -6929,7 +6929,7 @@ class SituationParser(private val names: NameIndex) {
         // "does the creature go to the graveyard?" after a counter: a countered spell goes to its owner's graveyard.
         Regex("""^(?:does|will|would) (?:the|my|that|it|the countered) ?(?:creature|spell|card)? ?(?:go|get put|end up) (?:to|in|into) (?:the|my|its owner's) graveyard$""").find(clause0)?.let {
             if (ctx.events.none { it.verb == "cast" }) return@let
-            ctx.asks += EventSpec("ask", to = "text:Yes. A countered spell is put into its owner's graveyard (701.5a) unless the counterspell says otherwise (some exile it or put it into the library). A countered creature spell never entered the battlefield, so it didn't \"die\": nothing that triggers on a creature dying or leaving the battlefield sees it, and it can be reanimated from the graveyard like any other creature card.")
+            ctx.asks += EventSpec("ask", to = "text:Yes. A countered spell is put into its owner's graveyard (701.6a) unless the counterspell says otherwise (some exile it or put it into the library). A countered creature spell never entered the battlefield, so it didn't \"die\": nothing that triggers on a creature dying or leaving the battlefield sees it, and it can be reanimated from the graveyard like any other creature card.")
             return true
         }
         // "I have 4 poison counters, how many more do I need to lose?": ten is the number.
@@ -6963,7 +6963,7 @@ class SituationParser(private val names: NameIndex) {
             // "they have 2 Counterspells": instants a player has are in hand whatever zone the statement left them in.
             val theirs = (ctx.inHand[foe]?.count { it.isSpellOnly } ?: 0).takeIf { it > 0 } ?: ctx.objects.values.count { o -> o.controller == foe && (o.zone == "hand" || names.lookup(Names.normalize(o.card.name ?: ""))?.isSpellOnly == true) }
             if (theirs == 0) return@let
-            ctx.asks += EventSpec("ask", to = if (mine >= theirs) "text:Yes, if you answer each of theirs. They counter your spell, you counter their counterspell, and so on: each counterspell can counter one spell, so with $mine to their $theirs the last counterspell cast is yours and your spell resolves (a countered spell goes to the graveyard, 701.5a; the stack resolves top down, 608.1)." else "text:No. Each counterspell answers one spell: they counter your spell, you counter that counterspell, and they counter yours with their next one. With $mine counterspell${if (mine == 1) "" else "s"} against their $theirs, their last one resolves and your spell is countered (701.5a). You would need at least as many counterspells as they have, or a spell that can't be countered.")
+            ctx.asks += EventSpec("ask", to = if (mine >= theirs) "text:Yes, if you answer each of theirs. They counter your spell, you counter their counterspell, and so on: each counterspell can counter one spell, so with $mine to their $theirs the last counterspell cast is yours and your spell resolves (a countered spell goes to the graveyard, 701.6a; the stack resolves top down, 608.1)." else "text:No. Each counterspell answers one spell: they counter your spell, you counter that counterspell, and they counter yours with their next one. With $mine counterspell${if (mine == 1) "" else "s"} against their $theirs, their last one resolves and your spell is countered (701.6a). You would need at least as many counterspells as they have, or a spell that can't be countered.")
             return true
         }
         // "who has more lands after?", "who has more creatures now?": the two players' counts, compared.
@@ -7504,7 +7504,7 @@ class SituationParser(private val names: NameIndex) {
             val mv = entry.manaValue
             val onStack = mySpell != null && (mySpell.card?.name == cardName || mySpell.obj?.let { ctx.objects[it]?.card?.name } == cardName)
             val counterName = countered?.card?.name ?: "the counterspell"
-            val text = if (onStack) "No, not that one. $cardName is a spell on the stack, and Aether Vial puts a creature card from your hand onto the battlefield (its ability can be activated in response, 602.1, 117.1); it can't touch the copy $counterName is aimed at, which is countered when $counterName resolves (701.5a). " +
+            val text = if (onStack) "No, not that one. $cardName is a spell on the stack, and Aether Vial puts a creature card from your hand onto the battlefield (its ability can be activated in response, 602.1, 117.1); it can't touch the copy $counterName is aimed at, which is countered when $counterName resolves (701.6a). " +
                     (if (mv == counters) "With $counters counters the Vial could put a different $cardName from your hand in, uncounterable since it's never cast (608.3)." else "And with $counters counter${if (counters == 1) "" else "s"} the Vial only puts in a creature with mana value $counters; $cardName's is $mv.")
                 else if (mv == counters) "Yes: Aether Vial's ability can be activated any time you have priority (602.1), so in response you may put $cardName (mana value $mv) onto the battlefield; it's never cast and can't be countered (608.3)."
                 else "No: Aether Vial with $counters counter${if (counters == 1) "" else "s"} puts in only a creature card with mana value exactly $counters, and $cardName's mana value is $mv."
@@ -8878,7 +8878,7 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "sagachapter-question") {
             val saga = ctx.objects.values.lastOrNull { it.card.name == "Urza's Saga" } ?: return false
             val moon = ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") }
-            ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (714.2b), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (714.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
+            ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (714.3c), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (714.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
             return true
         }
         // "Does it stay a creature?": the animated land, whatever was cast after it.
@@ -9376,7 +9376,7 @@ class SituationParser(private val names: NameIndex) {
         // "Where do I search?" after a fetch: the whole library, or the top four under Aven Mindcensor (the outcome says which).
         if (Regex("""^where do (?:i|we) (?:search|look|fetch from|search from)\??$""").matches(clause0)) {
             val censor = ctx.objects.values.any { o -> o.zone == "battlefield" && o.card.name == "Aven Mindcensor" }
-            ctx.asks += EventSpec("ask", to = "text:" + (if (censor) "Only the top four cards of your library: Aven Mindcensor says that if an opponent would search a library, that player searches the top four cards of that library instead (614.1a); the rest is off limits, and if the land isn't among those four the search finds nothing (701.19b)." else "Your whole library: a search lets you look at every card in it for what the effect names (701.19a)."))
+            ctx.asks += EventSpec("ask", to = "text:" + (if (censor) "Only the top four cards of your library: Aven Mindcensor says that if an opponent would search a library, that player searches the top four cards of that library instead (614.1a); the rest is off limits, and if the land isn't among those four the search finds nothing (701.23b)." else "Your whole library: a search lets you look at every card in it for what the effect names (701.23a)."))
             return true
         }
         Regex("""^pair-question (?:(theirs) )?(c\d+) (\d+) (\d+)$""").find(clause0)?.let { r0 ->
@@ -9411,10 +9411,10 @@ class SituationParser(private val names: NameIndex) {
             val name = src?.card?.name ?: src?.obj?.let { ctx.objects[it]?.card?.name } ?: ctx.objects.values.lastOrNull { it.card.name in setOf("Field of Ruin", "Ghost Quarter", "Path to Exile", "Assassin's Trophy", "Swords to Plowshares") }?.card?.name ?: return true.also { ctx.notes += "\"Do I get a basic?\" needs the land or spell that offers the search." }
             val text = when (name) {
                 "Field of Ruin" -> "Yes. Field of Ruin has each player search their library for a basic land card and put it onto the battlefield untapped, then shuffle: you get a basic to replace the land, and its controller gets one too, so it's a one-for-one that fixes both players' mana."
-                "Ghost Quarter" -> "Yes, if you want it: Ghost Quarter lets the destroyed land's controller search for a basic land card and put it onto the battlefield (\"may\", 701.19a). Ghost Quarter's own controller gets nothing back."
+                "Ghost Quarter" -> "Yes, if you want it: Ghost Quarter lets the destroyed land's controller search for a basic land card and put it onto the battlefield (\"may\", 608.2d). Ghost Quarter's own controller gets nothing back."
                 "Assassin's Trophy" -> "Yes: Assassin's Trophy has the permanent's controller search for a basic land card and put it onto the battlefield. It's the destroyed permanent's controller who gets the land, not the caster."
-                "Path to Exile", "Swords to Plowshares" -> if (name == "Path to Exile") "Yes, if you want it: Path to Exile lets the exiled creature's controller search for a basic land card and put it onto the battlefield tapped (\"may\", 701.19a). The caster gets nothing." else "No: Swords to Plowshares gives the creature's controller life equal to its power, not a land."
-                else -> "It depends on $name's text: the search goes to whoever the card names (\"its controller may search\", \"each player searches\"), and a \"may\" makes it optional (701.19a)."
+                "Path to Exile", "Swords to Plowshares" -> if (name == "Path to Exile") "Yes, if you want it: Path to Exile lets the exiled creature's controller search for a basic land card and put it onto the battlefield tapped (\"may\", 608.2d). The caster gets nothing." else "No: Swords to Plowshares gives the creature's controller life equal to its power, not a land."
+                else -> "It depends on $name's text: the search goes to whoever the card names (\"its controller may search\", \"each player searches\"), and a \"may\" makes it optional (701.23a)."
             }
             ctx.asks += EventSpec("ask", to = "text:$text"); return true
         }
@@ -9486,7 +9486,7 @@ class SituationParser(private val names: NameIndex) {
         }
         if (clause0 == "ownflashback-question") {
             val card = ctx.lastMentioned?.takeIf { it in ctx.objects }?.let { ctx.objects.getValue(it).card.name } ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull()?.let { ctx.objects[it]?.card?.name } ?: "the card"
-            ctx.asks += EventSpec("ask", to = "text:Yes. $card keeps its own flashback, and Snapcaster Mage's trigger gives it a second one (flashback for its mana cost). Each instance of flashback is a separate alternative cost, so you choose which one to pay when you cast it from your graveyard (702.34b, 601.2b): $card's printed flashback cost, or its mana cost. Either way it's exiled as it resolves.")
+            ctx.asks += EventSpec("ask", to = "text:Yes. $card keeps its own flashback, and Snapcaster Mage's trigger gives it a second one (flashback for its mana cost). Each instance of flashback is a separate alternative cost, so you choose which one to pay when you cast it from your graveyard (702.34a, 118.9a): $card's printed flashback cost, or its mana cost. Either way it's exiled as it resolves.")
             return true
         }
         if (clause0 == "ownleyline-question") {
@@ -9609,7 +9609,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", obj = skite, card = CardRef(name = card.display, oracleId = card.oracleId), to = "skiteStops"); return true
         }
         if (clause0 == "flipondemand-question") {
-            ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets transforms only when its own upkeep trigger resolves and reveals an instant or sorcery card (701.28a: a permanent transforms only when a spell or ability instructs it to); nothing lets you transform it at instant speed or in response. Said as the trigger itself (\"at my upkeep I reveal Lightning Bolt\"), the transform is played out.")
+            ctx.asks += EventSpec("ask", to = "text:No. Delver of Secrets transforms only when its own upkeep trigger resolves and reveals an instant or sorcery card (701.27a: a permanent transforms only when a spell or ability instructs it to); nothing lets you transform it at instant speed or in response. Said as the trigger itself (\"at my upkeep I reveal Lightning Bolt\"), the transform is played out.")
             return true
         }
         // "Can I exile my own creature cards from my graveyard?" (Scavenging Ooze): any graveyard, yours included.
@@ -9741,7 +9741,7 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         if (clause0 == "equip-in-response-question") {
-            ctx.asks += EventSpec("ask", to = "text:No. Equip is an activated ability that can be activated only as a sorcery: in your own main phase, with the stack empty (702.6a, 702.6b). With a spell on the stack, or during combat, the Equipment can't be moved; ${ctx.lastCastEntry?.display ?: "the spell"} resolves first.")
+            ctx.asks += EventSpec("ask", to = "text:No. Equip is an activated ability that can be activated only as a sorcery: in your own main phase, with the stack empty (702.6a). With a spell on the stack, or during combat, the Equipment can't be moved; ${ctx.lastCastEntry?.display ?: "the spell"} resolves first.")
             return true
         }
         Regex("""^sweepscope-question-([a-z_]+)$""").find(clause0)?.let { r -> ctx.asks += EventSpec("ask", player = "me", to = "sweepScope:${r.groupValues[1].replace("_", " ")}"); return true }
@@ -9803,7 +9803,7 @@ class SituationParser(private val names: NameIndex) {
             ctx.notes += "Cracking a fetchland finds a land and puts it onto the battlefield; that land entering is what landfall and similar abilities see, and the fetch itself leaving doesn't matter to them (the search is not tracked)."
             // Aven Mindcensor across the table: the search looks at only the top four cards.
             ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.controller != "me" && o.card.name == "Aven Mindcensor" }?.let { c ->
-                ctx.asks += EventSpec("ask", to = "text:${c.card.name} changes the search: you look at only the top four cards of your library instead of the whole library (614.1a). If none of those is a land the fetch can find, you get nothing, though the fetchland is still sacrificed and the life still paid; either way you shuffle afterwards (701.19a).")
+                ctx.asks += EventSpec("ask", to = "text:${c.card.name} changes the search: you look at only the top four cards of your library instead of the whole library (614.1a). If none of those is a land the fetch can find, you get nothing, though the fetchland is still sacrificed and the life still paid; either way you shuffle afterwards (701.24a).")
             }
             return true
         }
@@ -10453,13 +10453,13 @@ class SituationParser(private val names: NameIndex) {
         // "they Krosan Grip my Greaves; can I respond by equipping it to another creature?": equip is sorcery-speed.
         if (Regex("""^(?:then |and then |and )?(?:in response,? )?(?:casts? |pays? |uses? |activates? )?(?:re-?)?equips? """).containsMatchIn(c) && ctx.events.lastOrNull { it.verb != "manaNow" }?.let { it.verb == "cast" && it.player != (actor ?: subject ?: "me") } == true) {
             val spell = ctx.lastCastEntry?.display ?: "the spell"
-            ctx.asks += EventSpec("ask", to = "text:No. Equip can be activated only as a sorcery — in your main phase with the stack empty (702.6a, 702.6b) — so with $spell on the stack the Equipment can't be moved; it stays where it is while $spell resolves.${if (spell.contains("Krosan Grip")) " Krosan Grip's split second would stop the activation too (702.61a)." else ""}")
+            ctx.asks += EventSpec("ask", to = "text:No. Equip can be activated only as a sorcery — in your main phase with the stack empty (702.6a) — so with $spell on the stack the Equipment can't be moved; it stays where it is while $spell resolves.${if (spell.contains("Krosan Grip")) " Krosan Grip's split second would stop the activation too (702.61a)." else ""}")
             ctx.notes += "\"${restore(c, m)}\" with a spell on the stack is ruled out."
             return true
         }
         // "they block with a 1/1 and then equip Bonesplitter to it": equip is sorcery-speed, so it can't happen in combat.
         if (Regex("""^(?:then |and then |and )?(?:casts? |pays? |uses? |activates? )?equips? """).containsMatchIn(c) && ctx.events.any { it.verb == "block" || it.verb == "attack" || it.verb == "attackAll" } && ctx.events.none { it.verb == "step" && ctx.events.indexOf(it) > ctx.events.indexOfLast { e -> e.verb == "block" || e.verb == "attack" || e.verb == "attackAll" } }) {
-            ctx.asks += EventSpec("ask", to = "text:No, that isn't legal: Equip can be activated only as a sorcery — in its controller's main phase with the stack empty (702.6a, 702.6b) — so nothing can be equipped during combat. The block stands as it was declared, and the Equipment stays where it is until a main phase.")
+            ctx.asks += EventSpec("ask", to = "text:No, that isn't legal: Equip can be activated only as a sorcery — in its controller's main phase with the stack empty (702.6a) — so nothing can be equipped during combat. The block stands as it was declared, and the Equipment stays where it is until a main phase.")
             ctx.notes += "\"${restore(c, m)}\" during combat is ruled out; the combat is shown without it."
             return true
         }

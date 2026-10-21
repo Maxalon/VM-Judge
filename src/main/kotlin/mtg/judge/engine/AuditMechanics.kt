@@ -62,7 +62,7 @@ internal object AuditMech {
      */
     fun noManaSpent(state: GameState, item: StackItem): Boolean {
         val spell = item.causedObject?.let { id -> state.stack.firstOrNull { it.id == id } } ?: run {
-            state.trace.step("The spell that made ${item.source.name} trigger is no longer on the stack, so there is nothing to counter.", "608.2b"); return false }
+            state.trace.step("The spell that made ${item.source.name} trigger is no longer on the stack, so there is nothing to counter.", "609.3"); return false }
         val o = spell.source; val tc = o.castCost.locked
         val mana = if (tc != null) (tc.generic + tc.symbols.size - o.castCost.delved - o.castCost.convoked).coerceAtLeast(0) else if (o.castCost.free || o.castForAlternativeCost != null) 0 else null
         return when {

@@ -112,9 +112,9 @@ internal object EdhMech {
                 tr.step("${o.name} is $where, and its ability says it works there, so it triggered and its \"if\" still holds as it resolves.", "113.6b", "603.4")
             }
             t.equals("put that card from a graveyard onto the battlefield under your control", true) -> {
-                val first = item.causedObject?.let { state.objects[it] } ?: run { tr.step("The sacrificed card can't be found, so nothing is put onto the battlefield.", "608.2b"); return true }
+                val first = item.causedObject?.let { state.objects[it] } ?: run { tr.step("The sacrificed card can't be found, so nothing is put onto the battlefield.", "609.3"); return true }
                 val card = generateSequence(first) { o -> o.successor?.let { state.objects[it] } }.last()
-                if (card.zone != Zone.GRAVEYARD) { tr.step("${card.name} is no longer in a graveyard, so ${item.source.name}'s ability does nothing.", "608.2b"); return true }
+                if (card.zone != Zone.GRAVEYARD) { tr.step("${card.name} is no longer in a graveyard, so ${item.source.name}'s ability does nothing.", "609.3"); return true }
                 val from = state.player(card.owner)
                 tr.step("${item.source.name}'s ability resolves: ${nm(you)} ${you.v("puts", "put")} ${card.name} from ${from.possessive} graveyard onto the battlefield under ${you.possessive} control. ${from.subject} still ${from.v("owns", "own")} it.", "603.10a", "108.3")
                 engine.reanimateObject(card, you.id)
@@ -141,7 +141,7 @@ internal object EdhMech {
             }
             Regex("""^put your commander into your hand from the command zone$""", I).matches(t) -> {
                 val c = state.objects.values.firstOrNull { it.commander && it.owner == you.id && it.zone == Zone.COMMAND }
-                if (c == null) { tr.step("${you.possessive.replaceFirstChar { it.uppercase() }} commander isn't in the command zone, so nothing happens.", "608.2b"); return true }
+                if (c == null) { tr.step("${you.possessive.replaceFirstChar { it.uppercase() }} commander isn't in the command zone, so nothing happens.", "609.3"); return true }
                 c.zone = Zone.HAND; you.handSize = you.handSize?.plus(1)
                 tr.step("${c.name} goes from the command zone to ${you.possessive} hand. It's still ${you.possessive} commander, but the commander tax is an additional cost only for casting it from the command zone, so cast from ${you.possessive} hand it costs just its mana cost${if (c.commanderCasts > 0) ", whatever the ${c.commanderCasts} earlier cast${if (c.commanderCasts == 1) "" else "s"} from the command zone" else ""}.", "903.8", "903.3")
                 state.outcomes += "${c.name} is put into ${you.possessive} hand: cast from there it costs ${c.def.manaCost?.takeIf { it.isNotEmpty() && !c.name.startsWith("a ") } ?: "just its mana cost"} with no commander tax (903.8)${if (c.commanderCasts > 0) "; the tax of {${2 * c.commanderCasts}} applies only if it's cast from the command zone again" else ""}."
