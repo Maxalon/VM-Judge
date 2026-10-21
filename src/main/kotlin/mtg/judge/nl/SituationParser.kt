@@ -176,10 +176,15 @@ class SituationParser(private val names: NameIndex) {
         }
         val short = shortNames(sentences)
         val named = playerNames(sentences)
-        for (sentence in sentences.map { slangPossessives(it, short) }) {
+        val read = sentences.map { slangPossessives(it, short) }
+        var ynPrev = 0 to 0
+        for ((si, sentence) in read.withIndex()) {
             val marked = mark(sentence, short, named)
             marked.cards.values.filter { it.alternatives.isNotEmpty() }.distinctBy { it.oracleId }.forEach { e -> val note = "\"${e.display.substringBefore(",")}\" is read as ${e.display}; it could also be ${e.alternatives.joinToString(" or ")}. Use the full name if you meant another."; if (note !in ctx.notes) ctx.notes += note }
+            val ynMark = ctx.events.size to ctx.asks.size
             if (!readSentence(marked, ctx) && !isNoise(marked.text)) ctx.unread += sentence.trim()
+            if (si == read.lastIndex) yesNoTrial(sentence, marked, ynMark, ynPrev, ctx)
+            ynPrev = ynMark
         }
         // Cards the text put in a hand become objects in that hand, unless they were already used for something.
         for ((who, cards) in ctx.inHand) for ((n, card) in cards.withIndex()) {
@@ -364,6 +369,118 @@ class SituationParser(private val names: NameIndex) {
         // Two "everything resolves" in a row (a counter cast, then "does it get countered?") are one resolution.
         val events = ctx.events.filterIndexed { i, e -> !(e.verb == "resolveAll" && i > 0 && ctx.events[i - 1].verb == "resolveAll") && !(e.verb == "block" && i > 0 && ctx.events[i - 1].verb == "block" && ctx.events[i - 1].obj == e.obj && ctx.events[i - 1].targets == e.targets) }
         return Parsed(Situation(players, turnSpec, ctx.objects.values.toList(), emptyList(), events, enteredOrder = ctx.enteredOrder.distinct()), ctx.unread, ctx.notes)
+    }
+
+    /**
+     * "Can I tap it for mana?" / "Can I Bolt it?" / "Can I attack?": a "can" question read as the action it asks
+     * about. Nothing asked for an answer, so the outcome only narrated the attempt. A "yn:can" marker goes in front
+     * of the actions the question was read as, and the judge answers Yes or No from how they went (YesNoAsks.kt).
+     */
+    /**
+     * "Can I tap it for mana?" / "Can I Bolt it?" / "Can I attack?": a "can" question read as the action it asks
+     * about. Nothing asked for an answer, so the outcome only narrated the attempt. A "yn:can" marker goes in front
+     * of the actions the question was read as, and the judge answers Yes or No from how they went (YesNoAsks.kt).
+     * "I play a second land. Is that legal?" / "…, can I?": the question is about the sentence before it.
+     * "Does Pacifism stop Serra Angel from attacking?": the same, turned round (yes when the attack is refused).
+     * A yes/no question that did get an ask of its own gets a "yn:q" marker in front of its asks, so an answer that came out as
+     * narration ("Grizzly Bears is tapped.") gets its Yes or No from what the ask found.
+     */
+    private fun yesNoTrial(sentence: String, marked: Marked, here: Pair<Int, Int>, prev: Pair<Int, Int>, ctx: Ctx) {
+        if (!ctx.fullText.trimEnd().endsWith("?")) return
+        val q = sentence.trim().lowercase().replace(Regex("""^(?:(?:and|so|but|then|now|also|ok|okay|wait|ok so)\s*,?\s+)"""), "")
+        val yesNoWord = Regex("""^(?:can|could|does|do|did|is|are|was|were|will|would|should|has|have|may|must|am)\b""")
+        if (yesNoWord.containsMatchIn(q) && ctx.asks.size > here.second) { yesNoBracket(q, here.second, ctx); return }
+        val stops = Regex("""^(?:does|do|will|would) .+? (?:stop|prevent) .+? from (attacking|blocking)\b|^(?:does|do|will) protection from \w+ stop\b""").find(q)
+        val tapsFor = Regex("""^(?:does|do|will) .{1,40}? (?:still )?tap for (?:mana|white|blue|black|red|green|colorless)\b""").containsMatchIn(q)
+        // Read as nothing but a note ("answered by the outcome below"): the shapes that have an ask of their own get it now.
+        val bare = Regex("""^(?:(?:can|could|may) (?:i|we|they|he|she|my opponent|the opponent)(?: still| even| really| actually)?(?: do (?:that|it|this))?|is (?:that|this|it) (?:legal|allowed|fine|ok|okay|possible)(?: to do)?)$""").matches(q)
+        if (!bare && yesNoWord.containsMatchIn(q) && ctx.asks.size == here.second && ctx.events.drop(here.first).none { it.verb.lowercase() in setOf("cast", "activate", "attack", "attackall", "block", "playland", "sacrifice") }) {
+            readYesNoQuestions(marked.text.trim().lowercase(), marked, ctx); return
+        }
+        if (!bare && stops == null && !tapsFor && !Regex("""^(?:can|could|may|am i able to|is it legal (?:for me )?to|am i allowed to|are they allowed to)\s""").containsMatchIn(q)) return
+        val before = if (bare && ctx.asks.size == here.second && ctx.events.size == here.first) prev else here
+        if (ctx.asks.size > before.second || before.first > ctx.events.size) return
+        val added = ctx.events.subList(before.first, ctx.events.size)
+        if (added.any { it.verb == "ask" }) return
+        val i = added.indexOfFirst { it.verb.lowercase() in setOf("cast", "activate", "attack", "attackall", "block", "playland", "sacrifice") }
+        if (i < 0) return
+        // Whose actions the question is about, and which kind: "can my opponent respond …" is about their spell, "can it block" about the block.
+        val subj = Regex("""^(?:can|could|may|am i able to|is it legal (?:for me )?to|am i allowed to|are they allowed to) (i|we|they|he|she|my opponent|the opponent|opponent)\b(?!'s)""").find(q)?.groupValues?.get(1)?.let { if (it == "i" || it == "we") "me" else "notme" }
+            ?: if (Regex("""^(?:am i able to|is it legal (?:for me )?to|am i allowed to)\b""").containsMatchIn(q)) "me" else null
+        val verb = stops?.groupValues?.get(1)?.takeIf { it.isNotEmpty() }?.let { if (it == "blocking") "block" else "attack" }
+            ?: Regex("""\b(attack|attacks|swing|swings|block|blocks)\b""").find(q)?.groupValues?.get(1)?.let { if (it.startsWith("block")) "block" else "attack" }
+            ?: Regex("""^\S+(?: \S+)?? (?:i|we|they|he|she|my opponent|the opponent|opponent) (?:still |even |also |just |then |afterward )*(?:activate|tap|untap|use|equip|level up|ultimate|plus|minus|crew|animate)\b""").find(q)?.let { "activate" }
+            ?: if (tapsFor) "activate" else if (bare) "any" else null
+        val colour = Regex("""\bfor (white|blue|black|red|green|colorless|\{[wubrgc]\})(?: mana)?\b""").find(q)?.groupValues?.get(1)?.let { c -> mapOf("white" to "W", "blue" to "U", "black" to "B", "red" to "R", "green" to "G", "colorless" to "C")[c] ?: c.trim('{', '}').uppercase() }
+        ctx.events.add(before.first + i, EventSpec("ask", to = "yn:can" + (subj?.let { " s=$it" } ?: "") + (verb?.let { " v=$it" } ?: "") + (colour?.let { " c=$it" } ?: "") + (if (stops != null) " inv=1" else "")))
+    }
+
+    /**
+     * Yes/no questions the parser read as nothing but a note ("answered by the outcome below"), so the outcome only
+     * narrated: "Is she countered?", "Does Bolt fizzle?", "Do I get a Beast?", "Does the 4/4 deal damage to me?",
+     * "Is it still a creature?", "Does my creature come back?". Each gets the ask that answers it.
+     */
+    private fun readYesNoQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim().removeSuffix("?").replace(Regex("""^(?:and|so|but|then|now|also|ok|okay|wait),?\s+"""), "")
+        if (!Regex("""^(?:is|was|does|do|did|will|would)\b""").containsMatchIn(c)) return null
+        fun lastCastCard(): CardRef? = ctx.lastCastEntry?.let { CardRef(name = it.display, oracleId = it.oracleId) } ?: ctx.events.lastOrNull { it.verb == "cast" }?.let { ev -> ev.card ?: ev.obj?.let { ctx.objects[it]?.card } }
+        fun cardOf(w: String): CardRef? = Regex("""c\d+""").find(w)?.value?.let { ph -> m.cards[ph]?.let { CardRef(name = it.display, oracleId = it.oracleId) } } ?: if (Regex("""^(?:it|that|she|he|the spell|that spell)$""").matches(w)) lastCastCard() else null
+        fun objOf(w: String): String? = Regex("""c\d+""").find(w)?.value?.let { ph -> m.cards[ph]?.let { objectIdFor(it, ctx) } }
+            ?: Regex("""(\d+/\d+)""").find(w)?.groupValues?.get(1)?.let { pt -> val owner = if (Regex("""^(?:their|his|her)\b""").containsMatchIn(w)) pronounPlayer(ctx, "their") else null
+                ctx.objects.values.lastOrNull { o -> (owner == null || o.controller == owner) && (o.card.name ?: "").startsWith("a $pt") }?.id }
+            // "They Swords my Tarmogoyf. Is it exiled?": "it" is what the spell just cast was aimed at.
+            ?: if (Regex("""^(?:it|that|he|she)$""").matches(w)) ctx.lastMentioned?.takeIf { it in ctx.objects } ?: ctx.events.lastOrNull { it.verb == "cast" }?.targets?.firstOrNull { it in ctx.objects } else null
+        fun note() { ctx.notes += "\"${restore(clause0, m)}?\" is answered first in the outcome, Yes or No." }
+        val subj = """(it|that|she|he|(?:my |the |their |his |her )?(?:c\d+|\d+/\d+(?: creature)?))"""
+        // "Is she countered?" / "Is it countered anyway?" / "Does Thalia get countered?"
+        Regex("""^(?:is|was|does|will) $subj(?: spell)? (?:still |also |then )?(?:get |be |gets )?countered(?: anyway| too| as well| then| by it| by that)?$""").find(c)?.let { r ->
+            val card = cardOf(r.groupValues[1]) ?: return@let
+            if (ctx.asks.none { it.to == "countered" && it.card?.name == card.name }) ctx.asks += EventSpec("ask", card = card, to = "countered")
+            note(); return true
+        }
+        // "Does Bolt fizzle?" / "Does it fizzle?": whether the spell resolves or is removed for having no legal target (608.2b).
+        Regex("""^(?:does|will|did) $subj (?:still |then |just )?fizzle$""").find(c)?.let { r ->
+            val card = cardOf(r.groupValues[1]) ?: return@let
+            ctx.asks += EventSpec("ask", card = card, to = "yn:fizzle"); note(); return true
+        }
+        // "Do I get a Beast?" / "Do I get zombies?" / "Does my opponent get a Spirit token?"
+        Regex("""^(?:do|does|will|would) (i|we|they|he|she|my opponent|the opponent) (?:still |also |even )?get (?:a |an |any |the |two |three |four |\d+ )?([a-z]+?)(?:s)?(?: tokens?)?$""").find(c)?.let { r ->
+            val type = r.groupValues[2].let { if (it.endsWith("ie")) it.dropLast(2) + "y" else it }
+            if (type !in setOf("zombie", "beast", "vampire", "spirit", "soldier", "germ", "elk", "goblin", "angel", "treasure", "clue", "food", "saproling", "thopter", "servo", "elemental", "knight", "cat", "bird", "squirrel", "insect", "wolf", "plant", "rat", "faerie", "dragon", "human", "construct", "golem", "illusion", "eldrazi", "scion", "spawn", "warrior", "ape", "bear", "ox", "snake", "drake", "phyrexian")) return@let
+            val who = when (r.groupValues[1]) { "i", "we" -> "me"; else -> ctx.other("me") ?: "opp" }
+            ctx.asks += EventSpec("ask", player = who, to = "yn:token ${type.replaceFirstChar { it.uppercase() }}"); note(); return true
+        }
+        // "Does the 4/4 deal damage to me?" / "Does Grizzly Bears still deal combat damage?"
+        Regex("""^(?:does|will|did) $subj (?:still |even |also )?deal (?:any )?(?:combat )?damage(?: to (me|us|you|my opponent|the opponent|them|him|her|my face|their face))?$""").find(c)?.let { r ->
+            val id = objOf(r.groupValues[1]) ?: return@let
+            val ctl = ctx.objects[id]?.controller ?: "me"
+            val to = when (r.groupValues[2]) { "" -> ctx.other(ctl) ?: if (ctl == "me") "opp" else "me"; "me", "us", "my face" -> "me"; else -> ctx.other("me") ?: "opp" }
+            ctx.asks += EventSpec("ask", obj = id, targets = listOf(to), to = "damage"); note(); return true
+        }
+        // "Is it exiled?" / "Does Path still exile it?" / "Is it sacrificed?" / "Does it still get sacrificed?"
+        Regex("""^(?:is|was|does|will) $subj (?:still |also |then )?(?:get |be |gets )?(exiled|sacrificed)(?: anyway| too| then)?$|^(?:does|will) (?:c\d+|it|that) (?:still )?(exile)s? (it|that|(?:my |the |their )?c\d+)$""").find(c)?.let { r ->
+            val (who, what) = if (r.groupValues[2].isNotEmpty()) r.groupValues[1] to r.groupValues[2] else r.groupValues[4] to "exiled"
+            val id = objOf(who) ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "yn:zone ${if (what == "sacrificed") "sacrificed" else "exile"}"); note(); return true
+        }
+        // "Is it still a creature?"
+        Regex("""^(?:is|are) $subj (?:still )?a creature(?: now| anymore)?$""").find(c)?.let { r ->
+            val id = objOf(r.groupValues[1]) ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "isCreature"); note(); return true
+        }
+        // "Does my creature come back?" / "Does it come back?"
+        Regex("""^(?:does|will) (it|that|(?:my |the |their )?(?:c\d+|creature)) (?:still )?come back$""").find(c)?.let { r ->
+            val id = (if (r.groupValues[1].endsWith("creature")) ctx.objects.values.lastOrNull { o -> o.controller == (if (r.groupValues[1].startsWith("their")) pronounPlayer(ctx, "their") else "me") && isCreatureName(o.card.name) }?.id else objOf(r.groupValues[1])) ?: return@let
+            ctx.asks += EventSpec("ask", obj = id, to = "comesBack"); note(); return true
+        }
+        return null
+    }
+
+    /** "Is it tapped?": a marker in front of the asks this yes/no question made, carrying the first ask's subject and the question. */
+    private fun yesNoBracket(q: String, from: Int, ctx: Ctx) {
+        val first = ctx.asks.getOrNull(from) ?: return
+        if (first.to?.startsWith("text:") == true || first.to?.startsWith("yn:") == true) return
+        ctx.asks.add(from, first.copy(to = "yn:q ${first.to}|${q.replace('|', ' ')}"))
     }
 
     // ---- sentence handling -----------------------------------------------------------------
@@ -7046,7 +7163,7 @@ class SituationParser(private val names: NameIndex) {
         }
         if (clause0 == "spellskite-already-question") {
             val lc = ctx.events.lastOrNull { it.verb == "cast" }; val spell = lc?.card?.name ?: lc?.obj?.let { ctx.objects[it]?.card?.name } ?: "the spell"
-            ctx.asks += EventSpec("ask", to = "text:There's nothing to redirect: $spell already targets Spellskite. You could still activate Spellskite (choosing the same target again is legal, 115.7), but it changes nothing; Spellskite is 0/4, so 3 damage doesn't kill it. About paying with life: at 2 life you may pay 2 life for {U/P} (119.4), but that leaves you at 0 and you lose as soon as state-based actions are checked (704.5a), so pay {U} if you activate it at all.")
+            ctx.asks += EventSpec("ask", to = "text:No: there's nothing to redirect: $spell already targets Spellskite. You could still activate Spellskite (choosing the same target again is legal, 115.7), but it changes nothing; Spellskite is 0/4, so 3 damage doesn't kill it. About paying with life: at 2 life you may pay 2 life for {U/P} (119.4), but that leaves you at 0 and you lose as soon as state-based actions are checked (704.5a), so pay {U} if you activate it at all.")
             return true
         }
         Regex("""^vialin-question (it|that|c\d+|creature|\d+-?drop|\d+/\d+(?: creature)?)$""").find(clause0)?.let { r ->
@@ -7163,7 +7280,7 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         if (clause0 == "vialmage-question") {
-            ctx.asks += EventSpec("ask", to = "text:You can put Meddling Mage in, but it won't stop that spell. Aether Vial's ability is activated at instant speed, so with two counters you can put Meddling Mage onto the battlefield in response, and as it enters you choose a card name (you may name the spell on the stack). But Meddling Mage says spells with the chosen name can't be cast: the spell already on the stack has been cast, so it resolves as normal (601.2, 608.2). Naming it only stops later copies. Name whatever they are most likely to cast next instead.")
+            ctx.asks += EventSpec("ask", to = "text:Yes, you can put Meddling Mage in, but it won't stop that spell. Aether Vial's ability is activated at instant speed, so with two counters you can put Meddling Mage onto the battlefield in response, and as it enters you choose a card name (you may name the spell on the stack). But Meddling Mage says spells with the chosen name can't be cast: the spell already on the stack has been cast, so it resolves as normal (601.2, 608.2). Naming it only stops later copies. Name whatever they are most likely to cast next instead.")
             return true
         }
         Regex("""^lavaping-question (\d+/\d+|c\d+)$""").find(clause0)?.let { r ->
@@ -7197,7 +7314,7 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "moonfetch-question") {
             val moonName = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.card.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }?.card?.name
                 ?: ctx.events.lastOrNull { e -> e.verb == "cast" && e.card?.name in setOf("Blood Moon", "Magus of the Moon", "Harbinger of the Seas") }?.card?.name ?: "Blood Moon"
-            ctx.asks += EventSpec("ask", to = "text:You can play it, but you can't crack it. Under $moonName a nonbasic land is a Mountain and loses all its other abilities (305.7, 613.1), so a fetchland enters as a Mountain: it has \"{T}: Add {R}\" and nothing else, and the sacrifice-to-search ability isn't there to activate. It still counts as your land drop and taps for red.")
+            ctx.asks += EventSpec("ask", to = "text:No: you can play it, but you can't crack it. Under $moonName a nonbasic land is a Mountain and loses all its other abilities (305.7, 613.1), so a fetchland enters as a Mountain: it has \"{T}: Add {R}\" and nothing else, and the sacrifice-to-search ability isn't there to activate. It still counts as your land drop and taps for red.")
             return true
         }
         if (clause0 == "whatcomesback-question") {
@@ -7350,7 +7467,7 @@ class SituationParser(private val names: NameIndex) {
             val mv = entry.manaValue
             val onStack = mySpell != null && (mySpell.card?.name == cardName || mySpell.obj?.let { ctx.objects[it]?.card?.name } == cardName)
             val counterName = countered?.card?.name ?: "the counterspell"
-            val text = if (onStack) "Not that one. $cardName is a spell on the stack, and Aether Vial puts a creature card from your hand onto the battlefield (its ability can be activated in response, 602.1, 117.1); it can't touch the copy $counterName is aimed at, which is countered when $counterName resolves (701.5a). " +
+            val text = if (onStack) "No, not that one. $cardName is a spell on the stack, and Aether Vial puts a creature card from your hand onto the battlefield (its ability can be activated in response, 602.1, 117.1); it can't touch the copy $counterName is aimed at, which is countered when $counterName resolves (701.5a). " +
                     (if (mv == counters) "With $counters counters the Vial could put a different $cardName from your hand in, uncounterable since it's never cast (608.3)." else "And with $counters counter${if (counters == 1) "" else "s"} the Vial only puts in a creature with mana value $counters; $cardName's is $mv.")
                 else if (mv == counters) "Yes: Aether Vial's ability can be activated any time you have priority (602.1), so in response you may put $cardName (mana value $mv) onto the battlefield; it's never cast and can't be countered (608.3)."
                 else "No: Aether Vial with $counters counter${if (counters == 1) "" else "s"} puts in only a creature card with mana value exactly $counters, and $cardName's mana value is $mv."
@@ -8738,7 +8855,7 @@ class SituationParser(private val names: NameIndex) {
             val top = ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "library" }?.card?.name
             val mv = top?.let { names.lookup(Names.normalize(it))?.manaValue }
             val life = ctx.life["me"]
-            ctx.asks += EventSpec("ask", to = "text:You can respond (Aether Vial's ability can be activated any time you have priority, 602.1), but it won't help: putting a creature onto the battlefield changes nothing about the card on top of your library, and ${bob.card.name}'s trigger still reveals it and takes its mana value in life when it resolves (113.7a)${if (top != null && mv != null) ". $top has mana value $mv${if (life != null) ", so you go from $life to ${life - mv}${if (life - mv <= 0) " and lose (704.5a)" else ""}" else ""}" else ""}. Only something that changes the top card (a shuffle, a draw, a Brainstorm) or removes the trigger (Stifle) would.")
+            ctx.asks += EventSpec("ask", to = "text:Yes, you can respond (Aether Vial's ability can be activated any time you have priority, 602.1), but it won't help: putting a creature onto the battlefield changes nothing about the card on top of your library, and ${bob.card.name}'s trigger still reveals it and takes its mana value in life when it resolves (113.7a)${if (top != null && mv != null) ". $top has mana value $mv${if (life != null) ", so you go from $life to ${life - mv}${if (life - mv <= 0) " and lose (704.5a)" else ""}" else ""}" else ""}. Only something that changes the top card (a shuffle, a draw, a Brainstorm) or removes the trigger (Stifle) would.")
             return true
         }
         Regex("""^vialcounter-question (c\d+)$""").find(clause0)?.let { r ->
@@ -8898,7 +9015,7 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "doubleblocked-note") {
             val blockers = ctx.events.filter { it.verb == "block" }.mapNotNull { ctx.objects[it.obj]?.card?.name }
             val attacker = ctx.events.lastOrNull { it.verb == "attack" }?.obj?.let { ctx.objects[it]?.card?.name } ?: "the attacker"
-            ctx.asks += EventSpec("ask", to = "text:They can. Any number of untapped creatures may block the same attacker (509.1a), so both ${blockers.distinct().joinToString(" and ")} block $attacker; the outcome shows that double block, with $attacker's damage assigned among them in the order its controller chooses (510.1c).")
+            ctx.asks += EventSpec("ask", to = "text:Yes: they can. Any number of untapped creatures may block the same attacker (509.1a), so both ${blockers.distinct().joinToString(" and ")} block $attacker; the outcome shows that double block, with $attacker's damage assigned among them in the order its controller chooses (510.1c).")
             return true
         }
         // "They have Spellskite and 2 life to pay": the life is there for the Phyrexian pip; nothing to record.
@@ -9077,7 +9194,7 @@ class SituationParser(private val names: NameIndex) {
             val stop = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.card.name in setOf("Rest in Peace", "Leyline of the Void", "Dauthi Voidwalker", "Planar Void") }
             if (ooze != null) ctx.asks += EventSpec("ask", obj = ooze.id, to = "pt")
             ctx.asks += EventSpec("ask", to = "text:" + (if (stop == null) "Yes, whenever there is a card in any graveyard to exile: each activation ({G}) exiles target card from a graveyard, and if it was a creature card Scavenging Ooze gets a +1/+1 counter and you gain 1 life; the cards already in graveyards are its food."
-                else if (stop.card.name == "Rest in Peace") "Not while Rest in Peace is out. It exiled every graveyard as it entered, and now any card or token that would be put into a graveyard from anywhere is exiled instead (614.1a), so graveyards stay empty: Scavenging Ooze's ability has no legal target and can't even be activated (602.2b, 115.1), and with no creature card to exile it never gets a counter. It grows again only once Rest in Peace is gone${if (stop.controller != "me") " (your own graveyard too, since Rest in Peace affects everyone)" else ""}."
+                else if (stop.card.name == "Rest in Peace") "No, not while Rest in Peace is out. It exiled every graveyard as it entered, and now any card or token that would be put into a graveyard from anywhere is exiled instead (614.1a), so graveyards stay empty: Scavenging Ooze's ability has no legal target and can't even be activated (602.2b, 115.1), and with no creature card to exile it never gets a counter. It grows again only once Rest in Peace is gone${if (stop.controller != "me") " (your own graveyard too, since Rest in Peace affects everyone)" else ""}."
                 else "Only from your own graveyard. ${stop.card.name} exiles cards going to your opponents' graveyards, not yours (614.1a), so the Ooze can still eat creature cards from your graveyard; their creatures never reach a graveyard for it to target."))
             return true
         }
@@ -9421,7 +9538,7 @@ class SituationParser(private val names: NameIndex) {
         Regex("""^can (?:i|we) (?:take|eat|just take|choose to take) (?:the )?(?:4|four|damage|the damage|it|the 4 damage)(?: if (?:i'm|i am|we're|we are) (?:at |on )?(\d+)(?: life)?)?$""").find(clause0)?.let { r ->
             if (ctx.objects.values.none { it.card.name == "Vexing Devil" } && ctx.events.none { it.verb == "cast" && it.card?.name == "Vexing Devil" }) return@let
             val life = r.groupValues[1].toIntOrNull() ?: ctx.life["me"]
-            ctx.asks += EventSpec("ask", to = "text:" + if (life != null && life <= 4) "You may, but don't: the choice is yours as Vexing Devil's trigger resolves (603.3), and at $life life taking 4 puts you at ${life - 4}, so you lose the game the next time state-based actions are checked (704.5a). Decline, and the 4/3 Devil stays." else "Yes. Vexing Devil's trigger lets any opponent choose to take 4 damage as it resolves (603.3); if you do, its controller sacrifices it. At ${life ?: "your"} life that's a legal choice${if (life != null) " leaving you at ${life - 4}" else ", as long as you stay above 0"}.")
+            ctx.asks += EventSpec("ask", to = "text:" + if (life != null && life <= 4) "Yes, you may, but don't: the choice is yours as Vexing Devil's trigger resolves (603.3), and at $life life taking 4 puts you at ${life - 4}, so you lose the game the next time state-based actions are checked (704.5a). Decline, and the 4/3 Devil stays." else "Yes. Vexing Devil's trigger lets any opponent choose to take 4 damage as it resolves (603.3); if you do, its controller sacrifices it. At ${life ?: "your"} life that's a legal choice${if (life != null) " leaving you at ${life - 4}" else ", as long as you stay above 0"}.")
             return true
         }
         // "Is mine bigger after?": my creature with the same name as the one just hit.

@@ -181,7 +181,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         var lastStep: EventSpec? = null
         curEvents = sit.events; curObjects = sit.objects
         for ((i, e) in sit.events.withIndex()) {
-            if (e.verb == "ask") { deferredAsks += i to e; continue }   // answered once combat damage has been dealt
+            if (e.verb == "ask") { YesNoAsks.open(e, state); deferredAsks += i to e; continue }   // answered once combat damage has been dealt
             if (e.verb == "step") { if (lastStep?.let { it.to == e.to && it.player == e.player } == true) continue; lastStep = e } else if (e.verb != "resolveAll") lastStep = null
             // Consecutive attack events are one declaration: "attacks alone", exalted and "whenever you attack" need the whole set.
             if ((e.verb == "attack" || e.verb == "attackAll") && i > attackBatchEnd) {
@@ -194,10 +194,13 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             }
             try {
                 understood += "Event ${i + 1}: " + describeEvent(e, state)
+                YesNoAsks.before(e, state)
                 apply(e, state, engine)
                 if (i == attackBatchEnd) engine.finishDeclaringAttackers()
                 if (i == blockBatchEnd && e.verb == "block") engine.finishDeclaringBlockers()
+                YesNoAsks.after(e, state)
             } catch (ex: JudgeException) {
+                YesNoAsks.after(e, state, failed = true)
                 state.unsupported += mtg.judge.engine.Unsupported("event ${i + 1} (${e.verb})", ex.message ?: "failed")
             }
         }
@@ -209,6 +212,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         }
         if (simulating == 0) askRange = state.outcomes.size to -1
         for ((i, e) in deferredAsks) { try { understood += "Event ${i + 1}: " + describeEvent(e, state); apply(e, state, engine) } catch (ex: JudgeException) { state.unsupported += mtg.judge.engine.Unsupported("event ${i + 1} (ask)", ex.message ?: "failed") } }
+        YesNoAsks.finishAsked(state, engine)
         if (simulating == 0 && askRange.first >= 0) askRange = askRange.first to state.outcomes.size
         // "I have Mikaeus, the Unhallowed and Triskelion. What happens?": a board with nothing happening may still hold a loop.
         if (sit.events.isEmpty() && sit.stack.isEmpty() && simulating == 0) answerLoop("what", EventSpec("ask", player = "me", to = "loop:what"), state, engine)
@@ -228,7 +232,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             val start = sit.players.firstOrNull { it.id == p.id }?.life
             if (start != null && p.life != null && p.life != start) state.outcomes += "${p.subject} ${p.v("goes", "go")} from $start to ${p.life} life."
         }
-        answerFirst(state)
+        answerFirst(state); YesNoAsks.dropRepeats(state)
         val cited = state.trace.steps.flatMap { it.rules }.distinct()
         val citations = cited.associateWith { n -> rules?.rule(n)?.text ?: "" }.filterValues { it.isNotEmpty() }
         return Grammar.polishAnswer(Answer(
@@ -238,7 +242,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             // A question about something else (life, a redirect, a creature's fate) doesn't need the unknown hand or top card asked for.
             clarifications = state.clarifications.distinct().filter { c ->
                 val hidden = c.about.endsWith(" hand") || c.about.endsWith(" top card") || c.about == "the revealed card"
-                val asks = sit.events.filter { it.verb == "ask" }
+                val asks = sit.events.filter { it.verb == "ask" && it.to?.startsWith("yn:") != true }
                 val aboutHidden = asks.any { it.to == "discardChoices" || it.to == "graveyardChoices" }
                 // "Thoughtseize targeting me and I have Spellskite. Can I redirect it?": the response is the question, not the hand.
                 val discardIdx = sit.events.indexOfLast { it.verb == "cast" && it.card?.name?.lowercase() in setOf("thoughtseize", "duress", "inquisition of kozilek", "hymn to tourach", "mind rot", "raven's crime", "distress", "despise", "wrench mind") }
@@ -1015,6 +1019,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
         TargetAsks.describe(e, state, who)?.let { return it }
         if (e.verb == "ask") CounterAsks.describe(e, state)?.let { return it }
+        YesNoAsks.describe(e)?.let { return it }
         val tg = if (e.targets.isEmpty()) "" else " targeting " + e.targets.joinToString(" and ") { runCatching { state.nameOf(parseRef(it, state)) }.getOrDefault(it) }
         return when (e.verb.lowercase()) {
             "cast" -> { val land = e.card?.let { c -> runCatching { cardDef(c, state) }.getOrNull() }?.let { "Land" in it.types && !it.isInstantOrSorcery } == true
@@ -2320,6 +2325,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("ce:") == true) return CedhAsks.answer(e, state, engine)
                 if (e.to?.startsWith("ns:") == true) return NewSetAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("ld:") == true) return LifeDamageAsks.answer(e, state, engine)
+                if (e.to?.startsWith("yn:") == true) return YesNoAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

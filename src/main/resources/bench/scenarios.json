@@ -51629,5 +51629,189 @@
       "702.164c",
       "101.2"
     ]
+  },
+  {
+    "id": "yn1",
+    "text": "My opponent controls Kor Firewalker. Can I Shock it?",
+    "expect": [
+      "No: Shock can't target Kor Firewalker."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn2",
+    "text": "I just cast Elvish Mystic. Can I tap it for mana?",
+    "expect": [
+      "No: Elvish Mystic's {T} ability can't be activated (summoning sickness)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn3",
+    "text": "My opponent has Ensnaring Bridge and 1 card in hand. Can my Grizzly Bears attack?",
+    "expect": [
+      "No: Grizzly Bears can't attack (Ensnaring Bridge)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn4",
+    "text": "My opponent attacks with Serra Angel. Can my Grizzly Bears block it?",
+    "expect": [
+      "No: Grizzly Bears can't block Serra Angel (flying)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn5",
+    "text": "I cast Lightning Bolt at their Grizzly Bears. Can my opponent respond with Giant Growth?",
+    "expect": [
+      "Yes: opponent can cast Giant Growth."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn6",
+    "text": "My opponent casts Emrakul, the Aeons Torn. Can I counter it with Counterspell?",
+    "expect": [
+      "No: Emrakul, the Aeons Torn isn't countered (it can't be)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn7",
+    "text": "They cast Duress on me and I have Spellskite. Can I redirect it?",
+    "expect": [
+      "No: Duress's target isn't changed (Spellskite isn't a legal target for it)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn8",
+    "text": "My opponent has Blood Moon. I control Breeding Pool. Can I tap it for green?",
+    "expect": [
+      "No: Green mana isn't what it makes here: Breeding Pool adds {R} (only), because of Blood Moon."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn9",
+    "text": "It's my opponent's turn. I attack with Grizzly Bears. Can I?",
+    "expect": [
+      "No: you can't attack on opponent's turn."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn10",
+    "text": "I play a land, then I play a second land this turn. Is that legal?",
+    "expect": [
+      "No: you can't play another land this turn."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn11",
+    "text": "My opponent casts Pacifism on my Grizzly Bears. Does Pacifism stop my Grizzly Bears from attacking?",
+    "expect": [
+      "Yes: Grizzly Bears can't attack."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn12",
+    "text": "I just cast Birds of Paradise. Does my Birds of Paradise tap for mana?",
+    "expect": [
+      "No: Birds of Paradise's {T} ability can't be activated (summoning sickness)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn13",
+    "text": "My opponent has Chalice of the Void with 2 counters. I cast Dark Confidant. Is it countered?",
+    "expect": [
+      "Yes: Dark Confidant is countered"
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn14",
+    "text": "My opponent casts Lightning Bolt at my Grizzly Bears and I respond with Unsummon on the Bears. Does the Bolt fizzle?",
+    "expect": [
+      "Yes: Lightning Bolt doesn't resolve"
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn15",
+    "text": "I control Thragtusk. My opponent exiles it with Swords to Plowshares. Do I get a Beast?",
+    "expect": [
+      "Yes: you get a Beast token (3/3)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn16",
+    "text": "My opponent attacks with a 3/3 and I block with Sakura-Tribe Elder, then I sacrifice the Elder. Does the 3/3 deal damage to me?",
+    "expect": [
+      "No: a 3/3 creature dealt no damage to you."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn17",
+    "text": "My opponent controls Blind Obedience. I cast Tarmogoyf. Is it tapped?",
+    "expect": [
+      "Yes: Tarmogoyf is tapped."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn18",
+    "text": "I control Soul Warden. My opponent casts Grizzly Bears. Do I gain life?",
+    "expect": [
+      "Yes: you gain 1 life in all."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn19",
+    "text": "My opponent controls Thalia, Guardian of Thraben. Does my Lightning Bolt cost more?",
+    "expect": [
+      "Yes: Lightning Bolt costs {R} plus {1}"
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn20",
+    "text": "My opponent casts Thoughtseize on me. I have Lightning Bolt and a Mountain in hand. Can they take the Mountain?",
+    "expect": [
+      "No: Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain can't be chosen"
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn21",
+    "text": "I have a Grizzly Bears with two +1/+1 counters. Is it a 4/4?",
+    "expect": [
+      "Yes: Grizzly Bears is 4/4"
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn22",
+    "text": "My opponent casts Swords to Plowshares on my Tarmogoyf. Is it exiled?",
+    "expect": [
+      "Yes: Tarmogoyf is exiled."
+    ],
+    "cite": []
+  },
+  {
+    "id": "yn23",
+    "text": "My opponent casts Counterspell on my Lightning Bolt. Can I counter it with Force of Will?",
+    "expect": [
+      "Yes: you can cast Force of Will, and Counterspell is countered."
+    ],
+    "cite": []
   }
 ]
