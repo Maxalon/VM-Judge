@@ -125,7 +125,9 @@ object Turns {
             val et = plan.extraTurns.lastOrNull { it.player == item.controller }
             et?.loseAtEndStep = true
             st.trace.step("$src also creates a delayed triggered ability: at the beginning of the end step of that extra turn, ${you.subject.lowercase()} ${you.v("loses", "lose")} the game. It triggers only then: this turn's end step doesn't trigger it, and if the extra turn is skipped it never triggers at all.", "603.7a", "603.7b")
-            st.outcomes += "At the beginning of the extra turn's end step ${you.subject.lowercase()} ${you.v("loses", "lose")} the game ($src's delayed trigger), unless the game is won first. This turn's end step doesn't trigger it (603.7b)."
+            // Stranglehold: the extra turn is skipped, so it never has an end step and the delayed trigger never triggers.
+            if (et != null && extraTurnSkipper(st, item.controller) != null) st.outcomes += "${you.subject} ${you.v("doesn't", "don't")} lose the game to $src: the extra turn is skipped, so it never has an end step and the delayed trigger, which waits for that turn's end step only, never triggers (603.7b, 614.10)."
+            else st.outcomes += "At the beginning of the extra turn's end step ${you.subject.lowercase()} ${you.v("loses", "lose")} the game ($src's delayed trigger), unless the game is won first. This turn's end step doesn't trigger it (603.7b)."
             return true
         }
         // Chronatog: the next turn this player would take is skipped, whichever turn that is (614.10a).

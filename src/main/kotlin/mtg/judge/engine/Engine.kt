@@ -21,7 +21,8 @@ class Engine(val state: GameState) {
         obj.kwf.escaped = obj.kwf.escapeIntent && obj.kwf.castFrom == Zone.GRAVEYARD; val escapeCast = obj.kwf.escapeIntent || obj.kwf.jumpIntent; obj.kwf.escapeIntent = false; obj.kwf.jumpStarted = obj.kwf.jumpIntent; obj.kwf.jumpIntent = false   // escape (702.138b)
         // "I cast Lightning Bolt from my graveyard": only with permission (Yawgmoth's Will) or the card's own flashback.
         val legacyPermit = obj.zone == Zone.GRAVEYARD && LegacyMech.castFromGraveyardBy(state, playerId, obj, card)   // Dreadhorde Arcanist
-        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback") && !escapeCast && !legacyPermit) {
+        val breachPermit = obj.zone == Zone.GRAVEYARD && !escapeCast && !legacyPermit && playerId !in state.castFromGraveyard && !card.has("flashback") && CedhMech.breachPermits(state, playerId, obj, card)   // Underworld Breach (CedhMechanics.kt)
+        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback") && !escapeCast && !legacyPermit && !breachPermit) {
             trace.step("${card.name} is in ${player.possessive} graveyard, and nothing lets ${player.subject.lowercase()} cast it from there: a spell can be cast only from where a rule or effect allows, normally the hand (601.3, 601.2a). Yawgmoth's Will or a flashback cost would let it be cast from the graveyard.", "601.3", "601.2a")
             state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard (nothing allows it)."; return null
         }
@@ -116,6 +117,7 @@ class Engine(val state: GameState) {
                 return null
             }
         }
+        if (breachPermit && CedhMech.breachPay(this, playerId, obj, card) == false) return null   // Underworld Breach's escape cost (702.138a)
         // Cost taxes (Thalia, the commander tax) against the mana the situation said is available.
         run {
             val taxes = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == playerId)) && spellMatches(t.filter, card) }.map { o to it } }
@@ -450,7 +452,7 @@ class Engine(val state: GameState) {
             trace.step("$mage's enters-the-battlefield trigger was countered, so it never gave ${card.name} flashback; ${card.name} has no flashback of its own and can't be cast from the graveyard.", "702.34a", "601.3")
             state.outcomes += "No: ${card.name} can't be cast from ${player.possessive} graveyard. $mage's trigger was countered, so it never gained flashback, and it has none itself (702.34a, 601.3)."; return null
         }
-        if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn && !legacyPermit) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
+        if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn && !legacyPermit && !CedhMech.breachEscaped(state, obj.id)) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
         if (item.flashback) { obj.zone = Zone.STACK; trace.step("${card.name} is cast from ${player.possessive} graveyard for its flashback cost, an alternative cost paid instead of its mana cost.", "702.34a", "601.2b") }
         if (evoked && !card.has("evoke")) { state.clarifications += Clarification("${card.name}'s evoke", "${card.name} doesn't have evoke, so it can't be cast for an evoke cost; treating it as cast normally.") }
         if (item.evoked) trace.step("${card.name} is cast for its evoke cost, an alternative cost paid instead of its mana cost. It's still a creature spell and resolves normally; its evoke trigger will sacrifice it once it has entered.", "702.74a", "601.2b")
@@ -532,6 +534,7 @@ class Engine(val state: GameState) {
             } else state.outcomes += "${sk.name}'s controller can respond: paying {U/P} changes ${card.name}'s target to ${sk.name} (a 0/4), if ${card.name} could target it."
         }
         onEvent(GameEvent.SpellCast(item))
+        CedhMech.afterCast(this, item)   // Bonus Round's delayed trigger (CedhMechanics.kt)
         trace.step("${player.subject} ${player.v("receives", "receive")} priority again after casting.", "117.3c")
     }
 
@@ -1255,6 +1258,7 @@ class Engine(val state: GameState) {
         val p = state.player(playerId)
         val lib = p.librarySize
         val n = if (lib != null && lib < count) lib else count
+        if (CedhMech.millReplaced(this, p, n)) return   // Dauthi Voidwalker, Rest in Peace (CedhMechanics.kt)
         if (lib != null && lib < count) trace.step("${p.subject} ${p.v("has", "have")} only $lib card${if (lib == 1) "" else "s"} in ${p.possessive} library, so ${p.subject.lowercase()} ${p.v("mills", "mill")} only that many.", "701.13a")
         trace.step("${p.subject} ${p.v("mills", "mill")} $n card${if (n == 1) "" else "s"}: the top $n of ${p.possessive} library ${if (n == 1) "goes" else "go"} into ${p.possessive} graveyard.", "701.13a")
         if (lib != null) p.librarySize = lib - n
@@ -1294,6 +1298,7 @@ class Engine(val state: GameState) {
         val make = { repeat(n) {
             val t = state.add(GameObject(freshObjectId(def.name), def, Zone.BATTLEFIELD, who.id, token = true)); t.timestamp = state.tick(); t.summoningSick = state.isCreature(t)
             trace.step("${who.subject} ${who.v("creates", "create")} ${withArticle(def.name)}${if (state.isCreature(t)) " (${state.describePt(t)})" else ""}; it enters the battlefield under ${who.possessive} control.", "701.7a", "111.1")
+            CedhMech.tokenEntersTapped(this, t)
             onEvent(GameEvent.EntersBattlefield(t))
         } }
         if (n > 1) heldTriggers(make) else make()   // tokens made together enter together: one event (603.2c)
@@ -1302,7 +1307,7 @@ class Engine(val state: GameState) {
 
     /** Which permanent (Stony Silence, Null Rod, Cursed Totem, Pithing Needle) stops [obj]'s activated abilities, or null. */
     fun activationLock(obj: GameObject): GameObject? = state.objects.values.firstOrNull { lock -> lock.isOnBattlefield() && lock.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.filterIsInstance<StaticEffect.CantActivate>().any { e ->
-        (!e.opponentsOnly || lock.controller != obj.controller) && (if (e.named) lock.chosenName?.equals(obj.name, true) == true else state.matches(e.filter, obj, lock.controller, lock)) } }
+        (!e.opponentsOnly || lock.controller != obj.controller) && (if (e.named) lock.chosenName?.equals(obj.name, true) == true else state.matches(e.filter, obj, lock.controller, lock)) } } ?: CedhMech.abolisherLock(state, obj)   // Grand Abolisher on its controller's turn
 
     /** Grafdigger's Cage / Containment Priest against an effect that is only narrated: what stops the creatures entering. */
     private fun enterBlockersNote(item: StackItem, text: String) {
@@ -1681,7 +1686,7 @@ class Engine(val state: GameState) {
         if (item.targets.isNotEmpty()) {
             val legal = item.targets.map { it to isTargetLegal(item, it) }
             val illegalCount = legal.count { !it.second }
-            if (illegalCount == item.targets.size) {
+            if (illegalCount == item.targets.size && !Regex("""(?i)still resolves if its target becomes illegal""").containsMatchIn(item.text)) {   // Gilded Drake
                 // Protection or hexproof gained in response: the rule that makes the target illegal is cited with 608.2b.
                 val why = legal.filter { !it.second }.mapNotNull { (it.first as? Ref.Obj)?.let { r -> if (state.objects[r.id]?.zone == item.targetZones[r.id]) targetingProblem(item.source, item.controller, r)?.second else null } }.distinct()
                 trace.step("${item.describe}'s target${if (item.targets.size > 1) "s are" else " is"} no longer legal (${legal.joinToString("; ") { whyIllegal(item, it.first) }}), so it doesn't resolve and is removed from the stack" +
@@ -1698,6 +1703,9 @@ class Engine(val state: GameState) {
                 Zones.afterFizzle(this, item)   // an Oblivion Ring whose exile fizzled holds nothing (Zones.kt)
                 if (item.kind == StackKind.SPELL && item.source.abilities.any { it is TriggeredAbility && (it.trigger is Trigger.ThisDies || it.trigger is Trigger.ThisLeavesBattlefield) }) trace.step("${item.source.name} goes to the graveyard from the stack, not from the battlefield, so its \"${item.source.abilities.filterIsInstance<TriggeredAbility>().first { it.trigger is Trigger.ThisDies || it.trigger is Trigger.ThisLeavesBattlefield }.text.replace("~", item.source.name)}\" ability doesn't trigger.", "603.6c", "608.2b")
                 afterResolution(); return
+            } else if (illegalCount == item.targets.size) {
+                // Gilded Drake: "This ability still resolves if its target becomes illegal."
+                trace.step("${item.describe}'s target is illegal now (${legal.filter { !it.second }.joinToString("; ") { whyIllegal(item, it.first) }}), but the ability says it still resolves if its target becomes illegal, so it isn't removed from the stack: it resolves, doing nothing to that target and everything else it says.", "608.2b")
             } else if (illegalCount > 0) {
                 trace.step("Some targets of ${item.describe} are illegal (${legal.filter { !it.second }.joinToString("; ") { whyIllegal(item, it.first) }}); it resolves but won't affect them.", "608.2b")
                 state.outcomes += "${item.describe} still resolves: only some of its targets are illegal, so it does nothing to ${legal.filter { !it.second }.joinToString(" and ") { state.nameOf(it.first) }} and everything else it says still happens."
@@ -2607,7 +2615,7 @@ class Engine(val state: GameState) {
     }
 
     /** Narcomoeba, Bloodghast: a trigger of a card in its graveyard that works from there — its source never was on the battlefield to leave. */
-    private fun worksFromGraveyard(item: StackItem): Boolean = item.kind == StackKind.TRIGGERED && item.source.zone == Zone.GRAVEYARD &&
+    private fun worksFromGraveyard(item: StackItem): Boolean = CedhMech.delayedFromSpell(state, item) || item.kind == StackKind.TRIGGERED && item.source.zone == Zone.GRAVEYARD &&
         item.source.abilities.filterIsInstance<TriggeredAbility>().any { it.text == item.text && (functionsFromGraveyard(it) || it.trigger == Trigger.ThisMilled) }
 
     /** Yixlid Jailer: the permanent taking abilities away from cards in graveyards, if one is out. */
@@ -2949,7 +2957,8 @@ class Engine(val state: GameState) {
         return false
     }
 
-    private fun applyUnlessPays(effect: Effect.UnlessPays, item: StackItem) {
+    private fun applyUnlessPays(effect0: Effect.UnlessPays, item: StackItem) {
+        val effect = CedhMech.unlessPaysX(this, effect0, item)   // Esper Sentinel's X, read on resolution (CedhMechanics.kt)
         val payer = resolveWho(effect.payer, item)
         // Reality Smasher: "unless its controller discards a card" can't be paid from an empty hand (118.3), and a discard is a payment, not a choice of card to keep.
         if (effect.cost == "discard a card" && payer != null && payer.handSize == 0 && payer.id !in state.willPay) {
@@ -3473,6 +3482,7 @@ class Engine(val state: GameState) {
                 val make = { repeat(n) {
                     val t = state.add(GameObject(freshObjectId(def.name), def, Zone.BATTLEFIELD, who.id, token = true)); t.timestamp = state.tick(); t.summoningSick = state.isCreature(t)
                     trace.step("${who.subject} ${who.v("creates", "create")} ${withArticle(def.name)}${if (state.isCreature(t)) " (${state.describePt(t)})" else ""}; it enters the battlefield under ${who.possessive} control.", "701.7a", "111.1")
+                    CedhMech.tokenEntersTapped(this, t)   // Blind Obedience taps tokens too (CedhMechanics.kt)
                     state.outcomes += "${who.subject} ${who.v("gets", "get")} ${withArticle(def.name)}."
                     onEvent(GameEvent.EntersBattlefield(t))
                 } }
@@ -3576,6 +3586,7 @@ class Engine(val state: GameState) {
             is Effect.Mill -> if (effect.repeatIfShare != null) millRepeating(effect, item) else for (p in resolvePlayers(effect.who, item)) {
                 val lib = p.librarySize
                 val n = if (lib != null && lib < effect.count) lib else effect.count
+                if (CedhMech.millReplaced(this, p, n)) continue   // Dauthi Voidwalker, Rest in Peace: the milled cards are exiled (614.1a)
                 if (lib != null && lib < effect.count) trace.step("${p.subject} ${p.v("has", "have")} only $lib card${if (lib == 1) "" else "s"} in ${p.possessive} library, so ${p.subject.lowercase()} ${p.v("mills", "mill")} as many as possible: $n. (Milling from a too-small library doesn't make a player lose; only drawing does.)", "701.17b", "704.5b")
                 trace.step("${p.subject} ${p.v("mills", "mill")} $n card${if (n == 1) "" else "s"}: the top $n card${if (n == 1) "" else "s"} of ${p.possessive} library ${if (n == 1) "goes" else "go"} into ${p.possessive} graveyard${if (lib != null) "; ${lib - n} left" else ""}.", "701.17a")
                 if (lib != null) p.librarySize = lib - n
@@ -3616,6 +3627,7 @@ class Engine(val state: GameState) {
             }
             is Effect.PutFromHand -> {
                 val you = state.player(item.controller)
+                if (effect.fromLibrary && CedhMech.searchForbidden(this, item.controller, item, true)) return   // Ashiok, Stranglehold: no search at all (CedhMechanics.kt)
                 if (effect.fromLibrary) searchLimitNote(item.controller, withArticle(effect.filter.raw))
                 val fromZone = if (effect.fromLibrary) Zone.LIBRARY else if (effect.fromGraveyard) Zone.GRAVEYARD else Zone.HAND; val zoneName = if (effect.fromLibrary) "library" else if (effect.fromGraveyard) "graveyard" else "hand"
                 // Reanimate and Sun Titan name the card as a target; with several in the graveyard, that is the one.
@@ -3735,7 +3747,7 @@ class Engine(val state: GameState) {
                 if (o == null || who == null) trace.step("No creature or player to measure, so no life is gained.", "608.2h")
                 else { trace.step("${o.name}'s power is $amount${if (!o.isOnBattlefield()) " (its last known information, since it has left the battlefield)" else ""}.", "608.2h"); gainLife(who, amount) }
             }
-            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text.startsWith("deep:")) DeepMech.targeted(this, item, effect.text, ref) else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
+            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (effect.text.startsWith("ce:")) CedhMech.targeted(this, item, effect.text, ref) else if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text.startsWith("deep:")) DeepMech.targeted(this, item, effect.text, ref) else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
             is Effect.Regenerate -> {
                 val put: (GameObject) -> Unit = { o -> state.shields += Shield(Replacement.Regenerate, o.id, null, 1, item.describe); trace.step("${o.name} gets a regeneration shield: the next time it would be destroyed this turn, it's instead tapped, its damage is removed, and it's removed from combat.", "701.19a", "614.8"); state.outcomes += "${o.name} has a regeneration shield this turn." }
                 if (effect.target == null) put(item.source) else forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let(put) }
@@ -4051,6 +4063,7 @@ class Engine(val state: GameState) {
                 if (Turns.resolve(this, effect.text, item)) return   // extra turns, skips, ending the turn, extra phases (Turns.kt)
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
                 if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
+                if (CedhMech.resolve(this, effect.text, item)) return   // Isochron Scepter's copy, Tainted Pact, Bonus Round, Ashiok (CedhMechanics.kt)
                 if (EdhMech.resolve(this, effect.text, item)) return   // Tergrid, Consultation, Expropriate, Leadership Vacuum (EdhMechanics.kt)
                 if (LegacyMech.narrated(this, effect.text, item)) return   // Dreadnought phased out, Chrome Mox imprint (LegacyMechanics.kt)
                 if (PauperMech.narrated(this, effect.text, item)) return   // Masticore with an empty hand (PauperMechanics.kt)
@@ -5419,6 +5432,7 @@ class Engine(val state: GameState) {
     /** "How much does my Lightning Bolt cost?" — the printed cost plus every tax and reduction on the battlefield (601.2f). */
     fun spellCost(objId: String): String {
         val obj = state.obj(objId); val card = obj.def; val p = state.player(obj.controller)
+        CedhMech.escapeCostLine(state, obj)?.let { return it }   // Underworld Breach's escape cost (CedhMechanics.kt)
         // A commander nobody named has no printed cost to add the tax to — the stand-in card's own cost is not
         // the card's — but the tax is the answer the question asks for, so give that and ask for the name.
         if (obj.commander && card.name.equals("a commander", true))

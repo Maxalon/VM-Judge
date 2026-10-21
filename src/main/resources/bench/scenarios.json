@@ -50265,5 +50265,397 @@
       "603.3d",
       "115.4"
     ]
+  },
+  {
+    "id": "ce1",
+    "text": "I control Underworld Breach and Brain Freeze is in my graveyard with five other cards. Can I cast Brain Freeze from my graveyard, and what does it cost?",
+    "expect": [
+      "Brain Freeze is cast from your graveyard with the escape Underworld Breach gives it: {1}{U} plus exiling three other cards from your graveyard (702.138a).",
+      "Yes: Brain Freeze can be cast.",
+      "Brain Freeze goes back to your graveyard after it resolves (escape doesn't exile it, unlike flashback)"
+    ],
+    "notExpect": [
+      "nothing lets you cast it"
+    ],
+    "cite": [
+      "702.138a",
+      "702.138b"
+    ]
+  },
+  {
+    "id": "ce2",
+    "text": "My opponent controls Blind Obedience and two artifacts. I cast Dockside Extortionist. Can I tap the Treasures for mana?",
+    "expect": [
+      "You get a Treasure token. (×3)",
+      "No, not this turn: the Treasures entered tapped, and {T} is part of the cost, which a tapped permanent can't pay (118.3)."
+    ],
+    "cite": [
+      "614.1d",
+      "118.3"
+    ]
+  },
+  {
+    "id": "ce3",
+    "text": "I control Underworld Breach. Lion's Eye Diamond is in my graveyard with three other cards. Can I cast Lion's Eye Diamond from my graveyard, and what does it cost?",
+    "expect": [
+      "Lion's Eye Diamond is cast from your graveyard with the escape Underworld Breach gives it: {0} plus exiling three other cards from your graveyard (702.138a).",
+      "Yes: Lion's Eye Diamond can be cast.",
+      "it can escape again while Underworld Breach stays"
+    ],
+    "notExpect": [
+      "nothing here lets it be cast"
+    ],
+    "cite": [
+      "702.138a",
+      "118.9"
+    ]
+  },
+  {
+    "id": "ce4",
+    "text": "I cast Thassa's Oracle. My devotion to blue is 2. With the trigger on the stack I cast Tainted Pact and exile my whole library, taking nothing. Do I win?",
+    "expect": [
+      "You exile your whole library with Tainted Pact and take nothing",
+      "You win the game (Thassa's Oracle: X = 2, library = 0)."
+    ],
+    "cite": [
+      "608.2d",
+      "609.3",
+      "104.2b"
+    ]
+  },
+  {
+    "id": "ce5",
+    "text": "I cast Tainted Pact. It exiles an Island, I don't take it, and then it exiles another Island. What happens?",
+    "expect": [
+      "Tainted Pact stops at the second Island",
+      "so you get no card"
+    ],
+    "cite": [
+      "608.2c"
+    ]
+  },
+  {
+    "id": "ce6",
+    "text": "My opponent controls Opposition Agent. I cast Tainted Pact. What happens?",
+    "expect": [
+      "Opposition Agent doesn't apply: Tainted Pact doesn't search the library."
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "ce7",
+    "text": "My opponent controls Aven Mindcensor. I cast Demonic Consultation naming a card that isn't in my library. What happens?",
+    "expect": [
+      "Aven Mindcensor doesn't apply: Demonic Consultation doesn't search the library.",
+      "Your whole library is exiled (the named card isn't in it); you have 0 cards left."
+    ],
+    "notExpect": [
+      "top four cards"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "ce8",
+    "text": "I control Sheoldred, the Apocalypse. My opponent is at 40 life with 60 cards in their library. I cast Peer into the Abyss targeting my opponent. What happens?",
+    "expect": [
+      "opponent draws 30 and loses 20 life (half of 40, rounded up) to Peer into the Abyss",
+      "opponent loses the game."
+    ],
+    "cite": [
+      "608.2h",
+      "121.2",
+      "603.3"
+    ]
+  },
+  {
+    "id": "ce9",
+    "text": "I control Isochron Scepter imprinting Dramatic Reversal, Sol Ring and Grim Monolith. Is that infinite mana?",
+    "expect": [
+      "Yes: an arbitrarily large amount of mana.",
+      "netting 3 colorless mana (and one cast spell) per round"
+    ],
+    "cite": [
+      "707.12",
+      "732.2a"
+    ]
+  },
+  {
+    "id": "ce10",
+    "text": "I control Birgi, God of Storytelling. I cast Lightning Bolt. Can I use the mana from Birgi to pay for Lightning Bolt?",
+    "expect": [
+      "No: Birgi, God of Storytelling's {R} comes from a triggered ability that triggers once the spell has been cast and paid for (601.2i)"
+    ],
+    "notExpect": [
+      "Yes: Birgi"
+    ],
+    "cite": [
+      "601.2i",
+      "605.1b"
+    ]
+  },
+  {
+    "id": "ce11",
+    "text": "I cast Bonus Round, then Brain Freeze targeting my opponent. Does the copy from Bonus Round count for storm?",
+    "expect": [
+      "No: the copy Bonus Round makes is put onto the stack, not cast (707.10), so it doesn't count for storm (702.40a)",
+      "Storm puts 1 copy of Brain Freeze on the stack, above the original.",
+      "opponent mills 3 cards. (×3)"
+    ],
+    "cite": [
+      "603.7a",
+      "707.10",
+      "702.40a"
+    ]
+  },
+  {
+    "id": "ce12",
+    "text": "Can I cast Culling the Weak while I'm paying for Ad Nauseam?",
+    "expect": [
+      "No: Culling the Weak is a spell, not a mana ability, and only mana abilities can be activated while Ad Nauseam is being paid for (601.2g, 605.3a)."
+    ],
+    "notExpect": [
+      "Yes: Culling"
+    ],
+    "cite": [
+      "601.2g",
+      "605.3a",
+      "106.4"
+    ]
+  },
+  {
+    "id": "ce13",
+    "text": "I'm at 5 life. I cast Angel's Grace, then Ad Nauseam and lose 15 life. When do I lose the game?",
+    "expect": [
+      "In the cleanup step of this turn: Angel's Grace's \"can't lose this turn\" ends there (514.2)",
+      "Its damage floor doesn't stop life loss."
+    ],
+    "cite": [
+      "514.2",
+      "514.3a",
+      "704.5a"
+    ]
+  },
+  {
+    "id": "ce14",
+    "text": "My opponent casts Silence and it resolves. Then I activate Isochron Scepter imprinting Dramatic Reversal. Can I cast the copy?",
+    "expect": [
+      "Dramatic Reversal can't be cast (you can't cast spells this turn).",
+      "No: the copy can't be cast (you can't cast spells this turn)."
+    ],
+    "notExpect": [
+      "Isochron Scepter becomes untapped"
+    ],
+    "cite": [
+      "707.12",
+      "601.3"
+    ]
+  },
+  {
+    "id": "ce15",
+    "text": "It's my opponent's turn and they control Grand Abolisher. Can I sacrifice my Treasure for mana? Can I crack my Misty Rainforest?",
+    "expect": [
+      "No: Grand Abolisher says Treasure token's activated abilities can't be activated.",
+      "Yes: Misty Rainforest can activate its ability, mana permitting."
+    ],
+    "cite": [
+      "602.5"
+    ]
+  },
+  {
+    "id": "ce16",
+    "text": "I cast Last Chance. In the extra turn I activate Sundial of the Infinite during my upkeep. Do I lose the game?",
+    "expect": [
+      "No: ending the extra turn with Sundial of the Infinite before its end step skips that end step (724.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (724.1e)"
+    ],
+    "notExpect": [
+      "At the beginning of the extra turn's end step you lose"
+    ],
+    "cite": [
+      "724.1d",
+      "724.1e",
+      "603.7b"
+    ]
+  },
+  {
+    "id": "ce17",
+    "text": "I cast Mnemonic Betrayal and my opponent's graveyard has Misty Rainforest. Can I play Misty Rainforest?",
+    "expect": [
+      "No: Mnemonic Betrayal lets you cast spells from among those cards, and Misty Rainforest is a land, which is played, never cast (305.1).",
+      "Mnemonic Betrayal exiles Misty Rainforest."
+    ],
+    "notExpect": [
+      "You play Misty Rainforest"
+    ],
+    "cite": [
+      "305.1",
+      "601.3"
+    ]
+  },
+  {
+    "id": "ce18",
+    "text": "I cast Praetor's Grasp targeting my opponent and exile their Misty Rainforest. Can I play it, and does it use my land drop?",
+    "expect": [
+      "Misty Rainforest from opponent's library is exiled face down",
+      "Yes: \"play\" covers lands, so you can play Misty Rainforest from exile, but it's your land for the turn (305.2)"
+    ],
+    "cite": [
+      "406.3",
+      "305.2"
+    ]
+  },
+  {
+    "id": "ce19",
+    "text": "I cast Gilded Drake targeting my opponent's Thassa's Oracle. In response to the trigger they sacrifice Thassa's Oracle. Do I have to sacrifice Gilded Drake?",
+    "expect": [
+      "You sacrifice Gilded Drake: the exchange couldn't be made.",
+      "Yes: the creature it was to be exchanged with is gone"
+    ],
+    "notExpect": [
+      "doesn't resolve"
+    ],
+    "cite": [
+      "608.2b",
+      "701.12a"
+    ]
+  },
+  {
+    "id": "ce20",
+    "text": "I exchanged Gilded Drake for my opponent's commander Tymna the Weaver. Later Gilded Drake dies. Do I lose control of Tymna the Weaver?",
+    "expect": [
+      "No: you keep control of Tymna the Weaver. The exchange has no duration (611.2a)"
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "ce21",
+    "text": "Humility is on the battlefield. I cast Thassa's Oracle. Does its trigger happen?",
+    "expect": [
+      "Thassa's Oracle's ability doesn't trigger (Humility has taken its abilities away)."
+    ],
+    "cite": [
+      "613.1f"
+    ]
+  },
+  {
+    "id": "ce22",
+    "text": "My opponent controls Drannith Magistrate. I control Underworld Breach. Can I cast Brain Freeze from my graveyard?",
+    "expect": [
+      "No: Brain Freeze can't be cast from your graveyard (Drannith Magistrate)."
+    ],
+    "notExpect": [
+      "escape Underworld Breach gives it"
+    ],
+    "cite": [
+      "113.6c"
+    ]
+  },
+  {
+    "id": "ce23",
+    "text": "My opponent controls Drannith Magistrate. I control Isochron Scepter imprinting Dramatic Reversal. I activate Isochron Scepter. Can I cast the copy?",
+    "expect": [
+      "Dramatic Reversal can't be cast from exile (Drannith Magistrate).",
+      "No: the copy can't be cast (Drannith Magistrate)."
+    ],
+    "cite": [
+      "707.12",
+      "707.10a"
+    ]
+  },
+  {
+    "id": "ce24",
+    "text": "I control Dauthi Voidwalker. My opponent controls Underworld Breach and casts Brain Freeze targeting themselves. What happens?",
+    "expect": [
+      "opponent mills 3 cards, but Dauthi Voidwalker exiles them instead of putting them into the graveyard (with void counters).",
+      "Brain Freeze: the stack → exile instead of the graveyard (Dauthi Voidwalker, 614.1a)."
+    ],
+    "notExpect": [
+      "cards of opponent's library go into opponent's graveyard"
+    ],
+    "cite": [
+      "614.1a",
+      "614.6"
+    ]
+  },
+  {
+    "id": "ce25",
+    "text": "My opponent controls Collector Ouphe and two artifacts. I cast Dockside Extortionist. Do I get Treasures? Can I sacrifice them for mana?",
+    "expect": [
+      "You get a Treasure token. (×2)",
+      "No: you get the 2 Treasures, but Collector Ouphe stops activated abilities of artifacts, mana abilities included (602.5)"
+    ],
+    "cite": [
+      "602.5",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "ce26",
+    "text": "My opponent controls Deafening Silence. I control Isochron Scepter imprinting Dramatic Reversal. I cast Brainstorm and it resolves. Then I activate Isochron Scepter. Can I cast the copy?",
+    "expect": [
+      "Dramatic Reversal can't be cast (Deafening Silence).",
+      "No: the copy can't be cast (Deafening Silence)."
+    ],
+    "cite": [
+      "707.12",
+      "604.2"
+    ]
+  },
+  {
+    "id": "ce27",
+    "text": "My opponent controls Esper Sentinel. I cast Brainstorm, my first noncreature spell this turn. In response to the Esper Sentinel trigger, I cast Lightning Bolt targeting Esper Sentinel. How much do I have to pay?",
+    "expect": [
+      "Esper Sentinel's trigger still resolves without it: X is its last known power, 1, so paying {1} stops the draw."
+    ],
+    "cite": [
+      "608.2h",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "ce28",
+    "text": "My opponent controls Rhystic Study. I cast Brain Freeze with storm count 3. How many times does Rhystic Study trigger?",
+    "expect": [
+      "Rhystic Study triggers once.",
+      "Storm puts 3 copies of Brain Freeze on the stack, above the original."
+    ],
+    "cite": [
+      "707.10",
+      "702.40a"
+    ]
+  },
+  {
+    "id": "ce29",
+    "text": "My opponent controls Ashiok, Dream Render. I crack Misty Rainforest. What happens?",
+    "expect": [
+      "You can't search your library (Ashiok, Dream Render): Misty Rainforest finds nothing, but its costs stay paid; the library is still shuffled."
+    ],
+    "notExpect": [
+      "Forest enters the battlefield"
+    ],
+    "cite": [
+      "101.2",
+      "701.23a"
+    ]
+  },
+  {
+    "id": "ce30",
+    "text": "My opponent controls Stranglehold. I cast Final Fortune. Do I lose the game?",
+    "expect": [
+      "You don't lose the game to Final Fortune: the extra turn is skipped",
+      "No: You are still in the game."
+    ],
+    "notExpect": [
+      "At the beginning of the extra turn's end step you lose"
+    ],
+    "cite": [
+      "614.10",
+      "603.7b"
+    ]
   }
 ]

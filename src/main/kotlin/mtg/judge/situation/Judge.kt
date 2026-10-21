@@ -932,6 +932,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "pc" -> PauperAsks.applyEvent(e, state, engine)
             "dp" -> DeepAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             "ex" -> ExamAsks.applyEvent(e, state, engine)
+            "cedh" -> CedhAsks.applyEvent(e, state)
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -982,6 +983,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         val who = e.player?.let { state.players.firstOrNull { p -> p.id == it }?.let { p -> if (p.you) "you" else p.name } ?: it }
         WinLossAsks.describe(e, who)?.let { return it }
         EdhAsks.describe(e, state, who)?.let { return it }
+        CedhAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
         TargetAsks.describe(e, state, who)?.let { return it }
@@ -1252,6 +1254,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
 
     private fun answerLoop(kind: String, e: EventSpec, state: GameState, engine: Engine): Boolean {
         if (simulating > 0) return true
+        if (kind != "what" && CedhAsks.scepterLoop(state, engine, e.player ?: "me")) return true   // Isochron Scepter and Dramatic Reversal
         val found = LoopFinder(this, state, engine, e.player ?: "me").find()
         if (found == null) {
             when (kind) {
@@ -2286,6 +2289,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("pc:") == true) return PauperAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("dp:") == true) return DeepAsks.answer(e, state, engine)
                 if (e.to?.startsWith("ex:") == true) return ExamAsks.answer(e, state, engine) { c -> c.oracleId?.let { cards.byOracleId(it) } ?: c.name?.let { cards.resolve(it).best?.card } }
+                if (e.to?.startsWith("ce:") == true) return CedhAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

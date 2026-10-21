@@ -598,9 +598,14 @@ object OracleParser {
             val n = if (m.groupValues[1].equals("an", true)) 1 else number(m.groupValues[1]) ?: return@let
             return StaticEffect.ExtraLandPlays(n, Who.YOU)
         }
-        // "Each player can't cast more than one spell each turn." (Rule of Law, Arcane Laboratory)
-        Regex("""^each player can't cast more than (one|two|three|\d+) spells? each turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
-            number(m.groupValues[1])?.let { return StaticEffect.SpellsPerTurn(it, null) }
+        // "Each player can't cast more than one spell each turn." (Rule of Law, Arcane Laboratory); "… one noncreature spell …" (Deafening Silence)
+        Regex("""^each player can't cast more than (one|two|three|\d+) (noncreature |nonartifact )?spells? each turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val f = when (m.groupValues[2].trim().lowercase()) {
+                "noncreature" -> ObjFilter(setOf(Kind.SPELL), notKinds = setOf(Kind.CREATURE), raw = "noncreature spell")
+                "nonartifact" -> ObjFilter(setOf(Kind.SPELL), notKinds = setOf(Kind.ARTIFACT), raw = "nonartifact spell")
+                else -> null
+            }
+            number(m.groupValues[1])?.let { return StaticEffect.SpellsPerTurn(it, f) }
         }
         // "Each player who has cast a nonartifact spell this turn can't cast additional nonartifact spells." (Ethersworn Canonist)
         Regex("""^each player who has cast an? (.+?) spell this turn can't cast additional \1 spells\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -697,6 +702,7 @@ object OracleParser {
     fun parseStatic(line: String): List<StaticEffect> {
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
+        mtg.judge.engine.CedhMech.parseStatic(line)?.let { return it }   // Underworld Breach, Ashiok (CedhMechanics.kt)
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
         mtg.judge.engine.DeepMech.parseStatic(line)?.let { return it }   // Song of the Dryads, Animar (DeepMechanics.kt)
@@ -1122,6 +1128,7 @@ object OracleParser {
 
     fun parseEffect(text: String): Effect {
         WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
+        mtg.judge.engine.CedhMech.parseSpell(text)?.let { return it }   // Tainted Pact, Peer into the Abyss, Bonus Round (CedhMechanics.kt)
         mtg.judge.engine.EdhMech.parseSpell(text) { parseEffect(it) }?.let { return it }   // Demonic Consultation, Expropriate (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseSpell(text.trim()) { target(it) }?.let { return it }   // Balance, Berserk, Goblin Charbelcher, Donate (PauperMechanics.kt)
         Regex("""^look at the top X cards of your library, where X is your devotion to (white|blue|black|red|green)\. Put up to one of them on top of your library and the rest on the bottom of your library in a random order\. If X is greater than or equal to the number of cards in your library, you win the game\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfDevotionCoversLibrary(mapOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G').getValue(it.groupValues[1].lowercase())) }
@@ -1414,6 +1421,7 @@ object OracleParser {
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
         mtg.judge.engine.PauperMech.parseSentence(s) { target(it) }?.let { return it }   // Pestilence, Earthquake, Skred, Ghostly Flicker, Timetwister (PauperMechanics.kt)
+        mtg.judge.engine.CedhMech.parseSentence(s)?.let { return it }   // Isochron Scepter's copy (CedhMechanics.kt)
         mtg.judge.engine.MoreEffects2.parseSentence(s)?.let { return it }   // Stomp, Banefire, "target opponent draws", Show and Tell (MoreEffects2.kt)
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)

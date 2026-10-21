@@ -2578,6 +2578,121 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- competitive Commander combo turns (see CedhMechanics.kt and CedhAsks.kt) ----
+
+    /** cEDH table talk: Breach piles, Tainted Pact runs, Scepter copies, Birgi, Culling the Weak, Sundial, Gilded Drake, Treasures. */
+    private fun cedhRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val t2 = t.trim()
+        val io = RegexOption.IGNORE_CASE
+        val q = t2.trimEnd('?').trim()
+        fun name(ph: String) = m.cards[ph]?.display ?: ""
+        val lastCast = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name
+        // "Lion's Eye Diamond is in my graveyard with three other cards": the card, and the graveyard's size counting it.
+        Regex("""^(.*?\s)?(c\d+) is in (my|their|his|her) graveyard with (\d+) other cards?$""", io).find(t2)?.let { r ->
+            return "${r.groupValues[1]}${r.groupValues[2]} is in ${r.groupValues[3]} graveyard and ${r.groupValues[3]} graveyard has ${r.groupValues[4].toInt() + 1} cards"
+        }
+        // "I cast Brainstorm, my first noncreature spell this turn" (Esper Sentinel): the cast; that it's the first is what triggers it.
+        Regex("""^(.*\bcasts? c\d+),? (?:my|their|his|her) first noncreature spell (?:this|of the) turn$""", io).find(t2)?.let { r -> return r.groupValues[1] }
+        // "In response to the Esper Sentinel trigger, …"
+        Regex("""^in response to the (c\d+) (?:trigger|triggered ability),? (.+)$""", io).find(t2)?.let { r -> return "in response to ${r.groupValues[1]}'s trigger, ${r.groupValues[2]}" }
+        // Tainted Pact taking nothing: "I cast Tainted Pact and exile my whole library, taking nothing".
+        Regex("""^(.*\bcasts? (c\d+)),? and exiles? (?:my|their|his|her) (?:whole|entire) library(?:,? (?:taking|keeping) nothing|,? without taking (?:a card|anything|any card))?$""", io).find(t2)?.let { r ->
+            if (!name(r.groupValues[2]).equals("Tainted Pact", true)) return@let
+            return "${r.groupValues[1]}, cepact all"
+        }
+        // "It exiles an Island, I don't take it, and then it exiles another Island."
+        // (The sentence is split at ", and then": "It exiles an Island, I don't take it" and "then it exiles another Island".)
+        if (lastCast?.equals("Tainted Pact", true) == true) {
+            if (Regex("""^it exiles an? c\d+,? (?:and )?(?:i|we) (?:don't|do not) (?:take it|pay|keep it)$""", io).matches(t2)) return "cenoted-pact"
+            Regex("""^(?:and )?(?:then )?it exiles another (c\d+)$""", io).find(t2)?.let { r -> return "cepact dup ${r.groupValues[1]}" }
+        }
+        // "Can I use the mana from Birgi to pay for Lightning Bolt?"
+        Regex("""^can (?:i|we) (?:use|spend) (?:the |that )?(?:mana|\{r\}|red mana) (?:from|of|made by|that) (c\d+)(?: (?:makes|adds|gives))? to (?:pay for|cast) (?:c\d+|it|that spell)$""", io).find(q)?.let { r -> return "cebirgi-question ${r.groupValues[1]}" }
+        Regex("""^does the copy (?:from|made by|of) (c\d+) count (?:for|toward|towards|in) (?:the )?storm(?: count)?$""", io).find(q)?.let { r -> return "cecopystorm-question ${r.groupValues[1]}" }
+        Regex("""^can (?:i|we) cast (c\d+) while (?:i'm|i am|we're|we are) (?:paying|casting) (?:for )?(c\d+)$""", io).find(q)?.let { r -> return "ceculling-question ${r.groupValues[1]} ${r.groupValues[2]}" }
+        if (Regex("""^when do (?:i|we) lose(?: the game)?$""", io).matches(q)) return "cewhenlose-question"
+        if (Regex("""^can (?:i|we) (?:still )?cast the copy$""", io).matches(q)) return "cecastcopy-question"
+        // "In the extra turn I activate Sundial of the Infinite during my upkeep."
+        Regex("""^(?:then )?(?:in|during) the extra turn,? (?:i|we) activate (c\d+)(?: (?:during|in) (?:my|our) (?:upkeep|draw step|(?:first )?main phase))?$""", io).find(t2)?.let { r -> return "cesundial ${r.groupValues[1]}" }
+        // "Can I play Misty Rainforest?" after Mnemonic Betrayal.
+        Regex("""^can (?:i|we) play (c\d+)$""", io).find(q)?.let { r -> if (lastCast?.equals("Mnemonic Betrayal", true) == true) return "cemnemonic-question ${r.groupValues[1]}" }
+        // Praetor's Grasp: "I cast Praetor's Grasp targeting my opponent and exile their Misty Rainforest."
+        Regex("""^(i|we) cast (c\d+) targeting (my opponent|the opponent|@\w+) and (?:exile|find|take) (?:their|his|her) (c\d+)$""", io).find(t2)?.let { r ->
+            if (!name(r.groupValues[2]).equals("Praetor's Grasp", true)) return@let
+            return "${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}, cegrasp ${r.groupValues[4]}"
+        }
+        if (Regex("""^can (?:i|we) play it,? and does it (?:use|count as|take) (?:my|our|a) land (?:drop|play)(?: for the turn)?$""", io).matches(q)) return "cegrasp-question"
+        Regex("""^do (?:i|we) (?:have to|need to|must) sacrifice (c\d+)$""", io).find(q)?.let { r -> if (name(r.groupValues[1]).equals("Gilded Drake", true)) return "cedrake-question ${r.groupValues[1]}" }
+        // "I exchanged Gilded Drake for my opponent's commander Tymna the Weaver."
+        Regex("""^(?:i|we) exchanged (c\d+) for (?:my opponent's|the opponent's|their) (commander,? )?(c\d+)$""", io).find(t2)?.let { r -> return "ceswapped ${r.groupValues[1]} ${r.groupValues[3]}${if (r.groupValues[2].isNotEmpty()) " cmd" else ""}" }
+        Regex("""^do (?:i|we) lose control of (c\d+)$""", io).find(q)?.let { r -> return "cekeepcontrol-question ${r.groupValues[1]}" }
+        // "Can I sacrifice them for mana?" of Treasures made during the situation ("my Treasure" already on the board is read elsewhere).
+        if (Regex("""^can (?:i|we) (?:sacrifice|tap|use) (?:them|the treasures|those treasures|the treasure tokens) for mana$""", io).matches(q)) return "cetreasure-question"
+        // "Can I cast Lion's Eye Diamond from my graveyard, and what does it cost?" with Underworld Breach out: the cast, then both questions.
+        Regex("""^can (?:i|we) cast (c\d+) from (?:my|our) graveyard,? and (?:what does it cost|how much does it cost)$""", io).find(q)?.let { r ->
+            if (ctx.objects.values.none { it.zone == "battlefield" && it.controller == "me" && it.card.name == "Underworld Breach" }) return@let
+            return "i cast ${r.groupValues[1]} from my graveyard, cebreachcost-question ${r.groupValues[1]}"
+        }
+        if (Regex("""^(?:how much do (?:i|we) (?:have to|need to) pay|do (?:i|we) get (?:any )?treasures?)$""", io).matches(q)) return "cenoted-question"
+        return t2
+    }
+
+    /** Markers [cedhRewrites] leaves. */
+    private fun readCedhQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?')
+        fun card(ph: String) = m.cards[ph]
+        fun ask(to: String, ph: String? = null, source: String? = null) {
+            val c = ph?.let { card(it) }
+            ctx.asks += EventSpec("ask", player = "me", to = to, card = c?.let { CardRef(name = it.display, oracleId = it.oracleId) }, source = source)
+            ctx.notes += "The question is answered by the outcome below."
+        }
+        if (q == "cenoted-question") { ctx.notes += "The question is answered by the outcome below."; return true }
+        if (q == "cenoted-pact") return true   // the first card, not taken: what the next one does is what matters
+        Regex("""^cepact (all|dup) ?(c\d+)?$""").find(q)?.let { r ->
+            ctx.events += EventSpec("cedh", player = "me", to = if (r.groupValues[1] == "all") "pact=all" else "pact=dup:${card(r.groupValues[2])?.display ?: "card"}")
+            if (r.groupValues[1] == "all") ctx.notes += "Tainted Pact: no card is taken, so it runs until the library is empty."
+            return true
+        }
+        Regex("""^cebirgi-question (c\d+)$""").find(q)?.let { r -> ask("ce:birgi", r.groupValues[1]); return true }
+        Regex("""^cecopystorm-question (c\d+)$""").find(q)?.let { r -> ask("ce:copystorm", r.groupValues[1]); return true }
+        Regex("""^ceculling-question (c\d+) (c\d+)$""").find(q)?.let { r -> ask("ce:culling", r.groupValues[1], card(r.groupValues[2])?.display); return true }
+        if (q == "cewhenlose-question") { ask("ce:whenlose"); return true }
+        if (q == "cecastcopy-question") { ask("ce:castcopy"); return true }
+        if (q == "cegrasp-question") { ask("ce:grasp"); ctx.asks[ctx.asks.size - 1] = ctx.asks.last().copy(card = ctx.objects.values.lastOrNull { it.zone == "exile" }?.card); return true }
+        Regex("""^cebreachcost-question (c\d+)$""").find(q)?.let { r ->
+            val c = card(r.groupValues[1]) ?: return@let
+            val ref = CardRef(name = c.display, oracleId = c.oracleId)
+            ctx.asks += EventSpec("ask", player = "me", to = "castAllowed", card = ref); ctx.asks += EventSpec("ask", player = "me", to = "spellCost", card = ref)
+            return true
+        }
+        Regex("""^cegrasp (c\d+)$""").find(q)?.let { r ->
+            val c = card(r.groupValues[1]) ?: return@let
+            addObject(c, "opp", false, ctx, zone = "exile", allowDuplicate = true)
+            ctx.notes += "${c.display} is the card Praetor's Grasp exiles face down from the opponent's library."
+            return true
+        }
+        Regex("""^cesundial (c\d+)$""").find(q)?.let { r ->
+            val c = card(r.groupValues[1]) ?: return@let
+            objectIdFor(c, ctx) ?: addObject(c, "me", false, ctx)
+            ctx.notes += "${c.display} is activated in the extra turn, before that turn's end step."
+            ask("ce:sundial", r.groupValues[1]); return true
+        }
+        Regex("""^cemnemonic-question (c\d+)$""").find(q)?.let { r -> ask("ce:mnemonic", r.groupValues[1]); return true }
+        Regex("""^cedrake-question (c\d+)$""").find(q)?.let { r -> ask("ce:drake", r.groupValues[1]); return true }
+        Regex("""^ceswapped (c\d+) (c\d+)( cmd)?$""").find(q)?.let { r ->
+            val drake = card(r.groupValues[1]) ?: return@let; val took = card(r.groupValues[2]) ?: return@let
+            val did = objectIdFor(drake, ctx) ?: addObject(drake, "opp", false, ctx)
+            ctx.objects[did] = ctx.objects.getValue(did).copy(controller = "opp", owner = "me")
+            val tid = objectIdFor(took, ctx) ?: addObject(took, "me", false, ctx)
+            ctx.objects[tid] = ctx.objects.getValue(tid).copy(controller = "me", owner = "opp", commander = r.groupValues[3].isNotEmpty())
+            ctx.notes += "After the exchange the opponent controls ${drake.display} and you control ${took.display}${if (r.groupValues[3].isNotEmpty()) ", their commander" else ""}."
+            ctx.lastMentioned = did; ctx.note("me"); ctx.note("opp"); return true
+        }
+        Regex("""^cekeepcontrol-question (c\d+)$""").find(q)?.let { r -> ask("ce:keepcontrol", r.groupValues[1]); return true }
+        if (q == "cetreasure-question") { ask("ce:treasure"); return true }
+        return null
+    }
+
     // ---- four-player Commander tables (see EdhMechanics.kt and EdhAsks.kt) ----
 
     /** Table talk at Commander tables with three or more players: goad, votes, stolen commanders, the command zone. */
@@ -3765,6 +3880,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
+        t2 = cedhRewrites(t2, m, ctx)
         t2 = pauperRewrites(t2, m, ctx)
         t2 = deepRewrites(t2, m, ctx)
         t2 = limitedRewrites(t2, m, ctx)
@@ -8318,6 +8434,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readExamQuestions(clause0, m, ctx)?.let { return it }
+        readCedhQuestions(clause0, m, ctx)?.let { return it }
         readPauperQuestions(clause0, m, ctx)?.let { return it }
         readDeepQuestions(clause0, m, ctx)?.let { return it }
         readLimitedQuestions(clause0, m, ctx)?.let { return it }
@@ -10070,10 +10187,13 @@ class SituationParser(private val names: NameIndex) {
             val card = m.cards[ph] ?: return@let
             val read = readClause(r.groupValues[1], m, ctx)
             val host = ctx.lastMentioned?.takeIf { it in ctx.objects }?.let { ctx.objects.getValue(it).card.name }
+            val hostOwner = ctx.lastMentioned?.takeIf { it in ctx.objects }?.let { ctx.objects.getValue(it).controller }
             val was = ctx.lastMentioned
-            addObject(card, ctx.lastOwner, false, ctx, zone = "exile", allowDuplicate = true)
+            addObject(card, hostOwner ?: ctx.lastOwner, false, ctx, zone = "exile", allowDuplicate = true)
             ctx.lastMentioned = was
-            ctx.notes += "${card.display} is imprinted on ${host ?: "it"} (exiled). The engine doesn't model imprint, so nothing in the answer turns on what the imprinted card says."
+            // Isochron Scepter's copy is played out (CedhMech); other imprints only say where the card is.
+            ctx.notes += if (host == "Isochron Scepter") "${card.display} is imprinted on Isochron Scepter (exiled with it)."
+                else "${card.display} is imprinted on ${host ?: "it"} (exiled). The engine doesn't model imprint, so nothing in the answer turns on what the imprinted card says."
             return read
         }
         // "taps out for Grizzly Bears": a cast, said the way players say it. The mana is spent, not available.
