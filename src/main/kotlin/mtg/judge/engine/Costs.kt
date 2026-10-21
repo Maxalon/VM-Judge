@@ -131,7 +131,7 @@ fun Engine.totalCost(obj: GameObject, x: Int?, kicked: Boolean, alternative: Boo
     if (obj.kwf.extraCost > 0) { generic += obj.kwf.extraCost; changes += CostChange("additional cost", obj.kwf.extraCost, "additional", "{${obj.kwf.extraCost}}") }
     // Increases, then reductions: a reduction can take away the generic mana an increase added (601.2f).
     val earlier = state.spellsThisTurn[obj.controller] ?: 0
-    val taxes = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
+    val taxes = state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
         .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o.name to if (it.perOtherSpellThisTurn) it.amount * earlier else it.amount } }
     taxes.filter { it.second > 0 }.forEach { (n, a) -> generic += a; changes += CostChange(n, a, "increase", "{$a}") }
     if (obj.commander && obj.commanderCasts > 0) { generic += 2 * obj.commanderCasts; changes += CostChange("commander tax", 2 * obj.commanderCasts, "increase", "{${2 * obj.commanderCasts}}") }

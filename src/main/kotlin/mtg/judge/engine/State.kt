@@ -484,7 +484,7 @@ class GameState(
         }
         Condition.WasKicked -> src.wasKicked
         is Condition.SourceTapped -> (src.tapped == true) == c.tapped
-        is Condition.Unknown -> false
+        is Condition.Unknown -> NewSetMech.condition(this, c.text, src) ?: false
     }
 
     /** What a static ability's condition asks for, for traces and for saying why one doesn't apply. */
@@ -499,7 +499,7 @@ class GameState(
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"
         is Condition.SourceTapped -> "it to be ${if (c.tapped) "tapped" else "untapped"}"
-        is Condition.Unknown -> c.text
+        is Condition.Unknown -> NewSetMech.describeCondition(c.text) ?: c.text
     }
 
     /** Layer 7a: a characteristic-defining ability's value, or null when it depends on something the situation doesn't say. */
@@ -520,7 +520,7 @@ class GameState(
             val note = if (alive) "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; ${obj.name} is on the battlefield, so it must be 12 or less, and it's taken as 12 (${obj.name} a 1/1) minus any life paid or lost here. Say the real total for exact sizes." else "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; it's taken as the starting 20 (103.4) for ${obj.name}'s size, minus any life paid or lost here."
             if (note !in assumptions) assumptions += note; p.life = guess; guess } }
         is CountExpr.CountersOn -> obj.counters[expr.kind] ?: 0
-        is CountExpr.Unknown -> null
+        is CountExpr.Unknown -> NewSetMech.count(this, expr.text, obj)   // unspent mana (Omnath), colors spent (NewSetMechanics.kt)
     }
     /** The card types among cards in every graveyard (Tarmogoyf); tokens are not cards, and a Kindred card counts its type. */
     fun cardTypesInGraveyards(): Set<String> = objects.values.filter { it.zone == Zone.GRAVEYARD && !it.token }.flatMap { o -> o.def.types.filter { it in graveyardCardTypes }.map { if (it == "Tribal") "Kindred" else it } }.toSet()

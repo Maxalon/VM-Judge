@@ -120,7 +120,7 @@ class Engine(val state: GameState) {
         if (breachPermit && CedhMech.breachPay(this, playerId, obj, card) == false) return null   // Underworld Breach's escape cost (702.138a)
         // Cost taxes (Thalia, the commander tax) against the mana the situation said is available.
         run {
-            val taxes = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == playerId)) && spellMatches(t.filter, card) }.map { o to it } }
+            val taxes = state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == playerId)) && spellMatches(t.filter, card) }.map { o to it } }
             // "I cast Thalia and they cast Bolt": Thalia is still a spell on the stack, so its tax isn't applying yet.
             state.stack.map { it.source }.filter { s -> s.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().any { t -> spellMatches(t.filter, card) } }
                 .forEach { s -> trace.step("${s.name} is still on the stack, not on the battlefield, so its cost-raising ability isn't applying yet: ${card.name} costs its printed cost. (Once ${s.name} resolves, it would cost more.)", "604.2") }
@@ -791,6 +791,7 @@ class Engine(val state: GameState) {
         if (holding.isEmpty()) return
         val was = state.step?.let { st -> mapOf("precombat_main" to "main phase", "postcombat_main" to "main phase", "main" to "main phase", "combat" to "combat phase", "end" to "end step").getOrElse(st) { st.replace('_', ' ') + " step" } } ?: "step"
         for (p in holding) {
+            if (NewSetMech.keepsMana(state, p)) continue   // Omnath, Locus of the Void (NewSetMechanics.kt)
             val text = p.poolText().ifEmpty { "${p.manaPool} mana" }
             trace.step("As the $was ends, the unspent mana in ${p.possessive} mana pool ($text) empties. This is a turn-based action that doesn't use the stack; mana doesn't carry over from one step or phase to the next.", "500.5", "106.4", "703.4q")
             state.outcomes += "${p.possessive.replaceFirstChar { it.uppercase() }} floating mana ($text) empties as the $was ends: mana doesn't carry over from one step or phase to the next (500.5)."
@@ -1503,7 +1504,9 @@ class Engine(val state: GameState) {
         val notOk = f.notKinds.none { k -> when (k) { Kind.CREATURE -> card.isCreature; Kind.ARTIFACT -> "Artifact" in card.types; Kind.ENCHANTMENT -> "Enchantment" in card.types; Kind.PLANESWALKER -> card.isPlaneswalker; Kind.LAND -> "Land" in card.types; else -> false } }
         val colourOk = f.colors.all { it in card.colors } && f.notColors.none { it in card.colors }
         val mvOk = (f.maxManaValue == null || card.manaValue.toInt() <= f.maxManaValue) && (f.minManaValue == null || card.manaValue.toInt() >= f.minManaValue)
-        return typeOk && notOk && colourOk && mvOk
+        // "Sphinx spells you cast cost {1} less" (The Ur-Sphinx): a creature type the spell has to have.
+        val subOk = f.subtypes.all { s -> card.subtypes.any { it.equals(s, true) } || card.changeling }
+        return typeOk && notOk && colourOk && mvOk && subOk
     }
     private fun usesX(e: Effect): Boolean = when (e) { is Effect.Damage -> e.x; is Effect.Draw -> e.x; is Effect.LoseLife -> e.x; is Effect.Discard -> e.x; is Effect.PumpAll -> e.x; is Effect.SetBasePtAll -> e.x; is Effect.PutCounters -> e.x; is Effect.CreateToken -> e.x; is Effect.Repeat -> e.x || usesX(e.body); is Effect.Seq -> e.effects.any { usesX(it) }; is Effect.May -> usesX(e.effect); is Effect.Modal -> e.modes.any { usesX(it) }; else -> false }
 
@@ -1538,7 +1541,7 @@ class Engine(val state: GameState) {
             // Meekstone and its cousins: some permanents don't untap at all (302.6 doesn't apply to them).
             val held = mine.filter { o -> state.objects.values.any { src -> src.isOnBattlefield() &&
                 src.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.filterIsInstance<StaticEffect.DontUntap>()
-                    .any { e -> state.matches(e.filter, o, src.controller, src) } } }
+                    .any { e -> state.matches(e.filter, o, src.controller, src) } } } + NewSetMech.heldInUntap(state, mine)
             for (o in held) state.objects.values.firstOrNull { src -> src.isOnBattlefield() &&
                 src.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.filterIsInstance<StaticEffect.DontUntap>()
                     .any { e -> state.matches(e.filter, o, src.controller, src) } }?.let { src ->
@@ -1871,6 +1874,7 @@ class Engine(val state: GameState) {
     }
 
     fun stateBasedActions() {
+        NewSetMech.check(state)   // storied: an enduring story once three artifacts, legendaries or Sagas are there (NewSetMechanics.kt)
         var changed = true; var rounds = 0
         while (changed && rounds++ < 10) {
             changed = false
@@ -2377,6 +2381,7 @@ class Engine(val state: GameState) {
 
     private fun onEvent(event: GameEvent) {
         LegacyMech.onEvent(state, event)   // storm's last known information, life lost this turn (LegacyMechanics.kt)
+        NewSetMech.onEvent(state, event)   // life gained this turn, for infusion (NewSetMechanics.kt)
         if (event is GameEvent.Attacks) PauperMech.onEvent(state, event.obj)   // Berserk's "if it attacked this turn" (PauperMechanics.kt)
         // Torpor Orb / Hushbringer: creatures entering (or dying) don't cause abilities to trigger.
         val hush = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.NoEtbTriggers>().map { o to it } }
@@ -2403,7 +2408,7 @@ class Engine(val state: GameState) {
                 continue
             }
             val jailer = if (obj.zone == Zone.GRAVEYARD) graveyardAbilitiesGone() else null
-            for (ability in TriggerRules.lookBack(obj, event, obj.abilities).filterIsInstance<TriggeredAbility>() + grantedTriggers(obj) + GapMech.blitzTriggers(obj, event) + AuditMech.cascadeTriggers(obj, event) + NewMech.dynamicTriggers(obj, event) + ModernMech.untapTriggers(state, obj, event)) {
+            for (ability in TriggerRules.lookBack(obj, event, obj.abilities).filterIsInstance<TriggeredAbility>() + grantedTriggers(obj) + GapMech.blitzTriggers(obj, event) + AuditMech.cascadeTriggers(obj, event) + NewMech.dynamicTriggers(obj, event) + NewSetMech.dynamicTriggers(obj, event, state) + ModernMech.untapTriggers(state, obj, event)) {
                 if (ModernMech.bloodSunMutes(state, obj, ability, event) { matches(obj, ability.trigger, event, false) }) continue
                 val fromGy = obj.zone == Zone.GRAVEYARD && functionsFromGraveyard(ability)
                 if (fromGy && jailer != null) {
@@ -2442,6 +2447,7 @@ class Engine(val state: GameState) {
                 repeat(srcs.size) { triggered += extra }
             }
         }
+        NewSetMech.extraTriggers(state, triggered)   // Bifur's enduring story doubling a Dwarf's triggers (NewSetMechanics.kt)
         if (triggered.isEmpty()) return
         // 603.3b: APNAP order; the active player's triggers go on the stack first (so they resolve last).
         val order = state.players.map { it.id }
@@ -3019,6 +3025,7 @@ class Engine(val state: GameState) {
             is Effect.NewMech -> if (effect.kind.startsWith("pc:")) PauperMech.resolve(this, effect, item)   // Pestilence, Balance, Timetwister, The Abyss … (PauperMechanics.kt)
                 else if (effect.kind.startsWith("cr:")) CoverageMech.resolve(this, effect, item)   // battle cry, annihilator, rampage, renown … (CoverageMechanics.kt)
                 else if (effect.kind.startsWith("ex:")) ExamMech.resolve(this, effect, item)   // Rabid Elephant, Hydroid Krasis (ExamMechanics.kt)
+                else if (effect.kind.startsWith("ns:")) NewSetMech.resolve(this, effect, item)   // empower Jace, recruit, increment, opus … (NewSetMechanics.kt)
                 else NewMech.resolve(this, effect, item) { onEvent(GameEvent.EntersBattlefield(it)) }   // adapt, learn, mobilize, offspring, gift … (NewMechanics.kt)
             is Effect.CantCastThisTurn -> {
                 val who = when (effect.who) {
@@ -3518,6 +3525,7 @@ class Engine(val state: GameState) {
             }
             is Effect.Surveil -> {
                 val p = state.player(item.controller)
+                NewSetMech.scried(this, item.controller, "surveil")   // "whenever you scry or surveil" (NewSetMechanics.kt)
                 trace.step("${p.subject} ${p.v("surveils", "surveil")} ${effect.n}: ${p.subject.lowercase()} ${p.v("looks", "look")} at the top ${if (effect.n == 1) "card" else "${effect.n} cards"} of ${p.possessive} library, then ${p.v("puts", "put")} any number of ${if (effect.n == 1) "it" else "them"} into ${p.possessive} graveyard and the rest back on top in any order. Surveil is a choice about what's on top, not a draw, so nothing is drawn.", "701.25a")
                 state.outcomes += "${p.subject} ${p.v("surveils", "surveil")} ${effect.n}: ${p.subject.lowercase()} may put the top ${if (effect.n == 1) "card" else "${effect.n} cards"} of ${p.possessive} library into the graveyard and keep the rest on top (701.25a); which it is depends on ${p.possessive} library."
             }
@@ -4816,7 +4824,7 @@ class Engine(val state: GameState) {
                     is CountExpr.CardTypesInGraveyards -> state.cardTypesInGraveyards().size; is CountExpr.CardsInGraveyard -> state.objects.values.count { it.zone == Zone.GRAVEYARD && (c.who != Who.YOU || it.owner == o.controller) && state.matches(c.filter, it, o.controller, anyZone = true) }
                     is CountExpr.CardsInHand -> state.player(o.controller).handSize; is CountExpr.YourLifeTotal -> state.player(o.controller).life
                     is CountExpr.CountersOn -> o.counters[c.kind] ?: 0
-                    is CountExpr.Unknown -> null
+                    is CountExpr.Unknown -> NewSetMech.count(state, c.text, o)   // converge's colors spent (NewSetMechanics.kt)
                     null -> null
                 }
                 if (x == null) state.clarifications += Clarification("${o.name}'s counters", "${o.name} enters with a ${e.kind} counter for each ${(e.per as? CountExpr.Unknown)?.text ?: "thing"}, which isn't tracked; say how many.")
@@ -5142,6 +5150,7 @@ class Engine(val state: GameState) {
                 else if ("Planeswalker" in state.typesOf(o)) { val before = o.counters["loyalty"] ?: 0; o.counters["loyalty"] = maxOf(0, before - amount); trace.step("$sourceName deals $amount damage to ${o.name}, so $amount loyalty counters are removed from it (${o.counters["loyalty"]} left).", "306.8", "120.3c"); state.outcomes += "${o.name} has ${o.counters["loyalty"]} loyalty." }
                 else if (infect || wither) { o.counters["-1/-1"] = (o.counters["-1/-1"] ?: 0) + amount; trace.step("$sourceName has ${if (infect) "infect" else "wither"}, so the $amount damage to ${o.name} is dealt as $amount -1/-1 counter${if (amount > 1) "s" else ""}; it's now ${o.power}/${o.toughness}.", if (infect) "702.90c" else "702.80a", "120.3d"); state.outcomes += "${o.name} has ${o.counters["-1/-1"]} -1/-1 counter${if (o.counters["-1/-1"] == 1) "" else "s"}." }
                 else {
+                    NewSetMech.healBeforeDamage(state, o, amount, sourceName)   // Wolverine: the new damage heals the old (NewSetMechanics.kt)
                     val before = o.damage
                     o.damage += amount
                     // "Blocked by their Wall of Wood, then I Shock it": damage stays marked until cleanup, so it adds up (120.6).
@@ -5461,7 +5470,7 @@ class Engine(val state: GameState) {
             if (late.isNotEmpty()) { trace.step("${late.joinToString(" and ") { it.name }} came to the battlefield after ${card.name} was cast, and a cost increase applies only to spells cast while its source is on the battlefield; ${card.name}'s cost was locked in as it was cast.", "601.2f", "601.2a"); return "${card.name} cost $printed when it was cast: ${late.joinToString(" and ") { it.name }} wasn't on the battlefield yet, and a cost increase applies only to spells cast while it's there (601.2f); the cost was paid as the spell was cast and doesn't change afterwards." }
         }
         val taxes: List<Pair<GameObject, StaticEffect.CostTax>> = recorded?.map { (n, amt) -> (state.objects.values.firstOrNull { it.def.name == n } ?: obj) to StaticEffect.CostTax(ObjFilter(kinds = emptySet()), amt) }
-            ?: if (recorded0 != null && obj.zone != Zone.HAND) emptyList() else state.objects.values.filter { it.isOnBattlefield() }
+            ?: if (recorded0 != null && obj.zone != Zone.HAND) emptyList() else state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }
             .flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
                 .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o to it } }
         val commanderTax = if (obj.commander && obj.commanderCasts > 0) 2 * obj.commanderCasts else 0
@@ -5506,7 +5515,7 @@ class Engine(val state: GameState) {
     /** The mana a spell costs right now (taxes and reductions included, X as 0), or null when it has no mana cost. */
     fun spellCostTotal(obj: GameObject): Int? {
         val card = obj.def; val printed = card.manaCost ?: return null
-        val taxes = state.objects.values.filter { it.isOnBattlefield() }
+        val taxes = state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }
             .flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
                 .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o to it } }
         val commanderTax = if (obj.commander && obj.commanderCasts > 0) 2 * obj.commanderCasts else 0
@@ -6006,7 +6015,7 @@ class Engine(val state: GameState) {
     private fun describeTargets(targets: List<Ref>) = if (targets.isEmpty()) "" else " targeting " + targets.joinToString(" and ") { state.nameOf(it) }
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
-        is Effect.NewMech -> if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
+        is Effect.NewMech -> if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"

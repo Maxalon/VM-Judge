@@ -10,7 +10,8 @@ object Generic {
 
     /** "5/5 zombie token", "2/2 zombie creature token", "treasure token", "1/1 white soldier creature token with flying". */
     fun token(desc: String): CardDef? {
-        DeepMech.tokenWithAbility(desc)?.let { return it }   // Voice of Resurgence's Elemental, Urza's Saga's Construct (DeepMechanics.kt)
+        DeepMech.tokenWithAbility(desc)?.let { return it }
+        NewSetMech.token(desc)?.let { return it }   // empower Jace's Jace planeswalker token (NewSetMechanics.kt)   // Voice of Resurgence's Elemental, Urza's Saga's Construct (DeepMechanics.kt)
         val n1 = desc.lowercase().removePrefix("a ").removePrefix("an ").trim()
         val legendary = n1.startsWith("legendary ")
         val named = Regex("""\s+named (.+)$""").find(n1)?.groupValues?.get(1)

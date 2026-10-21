@@ -54,6 +54,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
         lastKw = kind; lastObj = obj.id
         if (kind == "bestow" || kind == "blitz") return GapKeywords.prepareCast(kind, e, state, engine0, obj, plain)
         if (kind in NewMechanicAsks.castKinds) return NewMechanicAsks.prepareCast(kind, arg, e, state, engine0, obj, plain)   // offspring, gift, impending … (NewMechanicAsks.kt)
+        if (kind in NewSetAsks.castKinds) return NewSetAsks.prepareCast(kind, arg, state, engine0, obj, plain)   // teamwork, sneak, a prepare spell (NewSetAsks.kt)
         when (kind) {
             "buyback" -> {
                 val cost = keywordCostText(def, "buyback")

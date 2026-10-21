@@ -50776,5 +50776,459 @@
       "a creatures"
     ],
     "cite": []
+  },
+  {
+    "id": "ns1",
+    "text": "I cast Academic Ascent targeting my Grizzly Bears. I don't control a Jace. What happens?",
+    "expect": [
+      "Grizzly Bears is 4/4 until end of turn.",
+      "You control a Jace planeswalker token with 2 loyalty counters (empower Jace 2, 701.71a)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.71a",
+      "111.1"
+    ]
+  },
+  {
+    "id": "ns2",
+    "text": "I control a Jace token with 1 loyalty counter. I cast Keeper of the Quiet Hour. How much loyalty does my Jace have?",
+    "expect": [
+      "You control a Jace planeswalker token with 3 loyalty counters (empower Jace 2, 701.71a)."
+    ],
+    "notExpect": [
+      "Jace, the Mind Sculptor",
+      "Jace token ceases to exist",
+      "Not modeled"
+    ],
+    "cite": [
+      "701.71a"
+    ]
+  },
+  {
+    "id": "ns3",
+    "text": "Can I behold my Jace token to pay Countersculpt's additional cost instead of paying 1?",
+    "expect": [
+      "Yes: a Jace planeswalker token (its planeswalker type is Jace) is a Jace permanent you control, so choosing it beholds a Jace"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.4a",
+      "205.3j"
+    ]
+  },
+  {
+    "id": "ns4",
+    "text": "My Diviner of Victory is prepared. I cast Unwind History targeting my opponent's Grizzly Bears. Is Diviner of Victory still prepared?",
+    "expect": [
+      "Diviner of Victory is no longer prepared: casting Unwind History unprepared it (722.3c).",
+      "Grizzly Bears: the battlefield → opponent's hand.",
+      "Diviner of Victory is 2/2 until end of turn.",
+      "No: Diviner of Victory isn't prepared."
+    ],
+    "notExpect": [
+      "Prepare // Fight",
+      "Not modeled"
+    ],
+    "cite": [
+      "722.3a",
+      "722.3c",
+      "601.2i",
+      "701.25a"
+    ]
+  },
+  {
+    "id": "ns5",
+    "text": "My Emergency Phytomedic is prepared. I cast Seed Suture targeting it, then I cast Ephemerate on Emergency Phytomedic. Is it prepared again?",
+    "expect": [
+      "Emergency Phytomedic is no longer prepared: casting Seed Suture unprepared it (722.3c).",
+      "Emergency Phytomedic has 1 +1/+1 counter.",
+      "Yes: Emergency Phytomedic is prepared; the copy of Seed Suture waits in exile for you to cast (722.3c)."
+    ],
+    "notExpect": [
+      "Prepare // Fight",
+      "Ephemerate isn't prepared",
+      "Not modeled"
+    ],
+    "cite": [
+      "722.3a",
+      "722.3c",
+      "400.7"
+    ]
+  },
+  {
+    "id": "ns6",
+    "text": "I control Bombur, Gentle Dreamer and two artifacts. Then my opponent destroys both artifacts. Does Bombur untap during my untap step?",
+    "expect": [
+      "Yes: Bombur, Gentle Dreamer untaps during your untap step; you have an enduring story for the rest of the game (702.195a)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.195a",
+      "702.195b",
+      "502.3"
+    ]
+  },
+  {
+    "id": "ns7",
+    "text": "I control Bombur, Gentle Dreamer and one artifact. Does Bombur untap during my untap step?",
+    "expect": [
+      "No: Bombur, Gentle Dreamer stays tapped during your untap step (no enduring story, 702.195a)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.195a",
+      "502.3"
+    ]
+  },
+  {
+    "id": "ns8",
+    "text": "I have an enduring story and control Bifur, Melodic Rider. Bifur attacks. How many times does its trigger resolve?",
+    "expect": [
+      "Bifur, Melodic Rider has 2 +1/+1 counters.",
+      "opponent takes 6 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.195a",
+      "603.2d"
+    ]
+  },
+  {
+    "id": "ns9",
+    "text": "Bard's Company attacks and I recruit, discarding a Forest. Do I get a Soldier token?",
+    "expect": [
+      "No Soldier token: Forest is a land card, and recruit makes a token only for a nonland discard (701.70a)."
+    ],
+    "notExpect": [
+      "You get 1 Human Soldier token",
+      "Not modeled"
+    ],
+    "cite": [
+      "701.70a"
+    ]
+  },
+  {
+    "id": "ns10",
+    "text": "Bard's Company attacks and I recruit, discarding Lightning Bolt. How big is the token?",
+    "expect": [
+      "You get 1 Human Soldier token.",
+      "The Human Soldier token is 2/2 (1/1 base, +1/+1 from Bard's Company)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.70a"
+    ]
+  },
+  {
+    "id": "ns11",
+    "text": "I cast Aerial Doombot this turn. How much does its power-up ability cost?",
+    "expect": [
+      "{5}: Aerial Doombot entered this turn, so its power-up {5}{U} is reduced by its mana cost {U} (702.193a, 702.193b)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.193a",
+      "702.193b",
+      "118.7"
+    ]
+  },
+  {
+    "id": "ns12",
+    "text": "Abomination, Terrifying Titan entered this turn. How much does its power-up ability cost?",
+    "expect": [
+      "{2}{R/G}: Abomination, Terrifying Titan entered this turn, so its power-up {5}{R/G}{R/G} is reduced by its mana cost {3}{R/G}"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.193b",
+      "118.7e"
+    ]
+  },
+  {
+    "id": "ns13",
+    "text": "I activated Aerial Doombot's power-up last turn. Can I activate it again?",
+    "expect": [
+      "No: Aerial Doombot's power-up ability can be activated only once (702.193a)"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.193a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "ns14",
+    "text": "Can I tap creatures that came in this turn to pay Cruel Alliance's teamwork cost?",
+    "expect": [
+      "Yes: summoning sickness only stops a creature's own {T} abilities and attacking (302.6)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.194a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "ns15",
+    "text": "I cast Cruel Alliance with teamwork, tapping my Grizzly Bears, targeting my opponent's Serra Angel. What happens?",
+    "expect": [
+      "Cruel Alliance is cast using teamwork (Grizzly Bears tapped, total power 2) (702.194a).",
+      "Serra Angel: the battlefield → exile.",
+      "You gain 3 life."
+    ],
+    "notExpect": [
+      "can't target Serra Angel",
+      "Not modeled"
+    ],
+    "cite": [
+      "702.194a",
+      "702.194c"
+    ]
+  },
+  {
+    "id": "ns16",
+    "text": "During the declare blockers step I cast Elektra, Daughter of the Hand for her sneak cost, returning my unblocked Grizzly Bears, targeting my opponent's Llanowar Elves. What happens?",
+    "expect": [
+      "Grizzly Bears returns to its owner's hand to pay Elektra, Daughter of the Hand's sneak cost (702.190a).",
+      "Elektra, Daughter of the Hand enters tapped and attacking opponent (sneak, 702.190b).",
+      "Llanowar Elves: the battlefield → opponent's graveyard.",
+      "opponent takes 3 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.190a",
+      "702.190b",
+      "508.4"
+    ]
+  },
+  {
+    "id": "ns17",
+    "text": "Can I cast Elektra, Daughter of the Hand for her sneak cost during the combat damage step?",
+    "expect": [
+      "No: sneak works only during your declare blockers step (702.190a)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.190a"
+    ]
+  },
+  {
+    "id": "ns18",
+    "text": "Wolverine, Fierce Fighter has 4 damage marked. My opponent casts Lightning Bolt on him. Does he die?",
+    "expect": [
+      "Wolverine, Fierce Fighter's 4 earlier damage is healed as the new damage is dealt (701.69a).",
+      "No: Wolverine, Fierce Fighter is still on the battlefield."
+    ],
+    "notExpect": [
+      "opponent takes 3 damage",
+      "Not modeled"
+    ],
+    "cite": [
+      "614.1a",
+      "701.69a"
+    ]
+  },
+  {
+    "id": "ns19",
+    "text": "I control Berta, Wise Extrapolator and cast Grizzly Bears. Does increment trigger?",
+    "expect": [
+      "Berta, Wise Extrapolator has 1 +1/+1 counter.",
+      "You have 1 mana of any color in your mana pool."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.191a",
+      "603.4"
+    ]
+  },
+  {
+    "id": "ns20",
+    "text": "I control Ambitious Augmenter and cast Lightning Bolt targeting my opponent. Does increment trigger?",
+    "expect": [
+      "Ambitious Augmenter's increment doesn't trigger: 1 mana isn't greater than its power (1) or its toughness (1) (702.191a)."
+    ],
+    "notExpect": [
+      "Ambitious Augmenter has 1 +1/+1 counter",
+      "Not modeled"
+    ],
+    "cite": [
+      "702.191a"
+    ]
+  },
+  {
+    "id": "ns21",
+    "text": "I control Colorstorm Stallion and cast Fireball with X=4 targeting my opponent. What happens?",
+    "expect": [
+      "Colorstorm Stallion is 4/4 until end of turn.",
+      "You get a token copy of Colorstorm Stallion.",
+      "opponent takes 4 damage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "207.2c",
+      "601.2h"
+    ]
+  },
+  {
+    "id": "ns22",
+    "text": "I gained life this turn. I cast Foolish Fate targeting my opponent's Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's graveyard.",
+      "opponent loses 3 life."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "207.2c",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "ns23",
+    "text": "I cast Efflorescence targeting my Grizzly Bears. In response I sacrifice a Food to gain 3 life. What happens?",
+    "expect": [
+      "You gain 3 life.",
+      "Grizzly Bears has 2 +1/+1 counters.",
+      "Grizzly Bears has trample and indestructible until end of turn."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "207.2c",
+      "608.2c"
+    ]
+  },
+  {
+    "id": "ns24",
+    "text": "I control Graduation Day and Grizzly Bears. I cast Lightning Bolt targeting my opponent's Llanowar Elves. What happens?",
+    "expect": [
+      "Grizzly Bears has 1 +1/+1 counter.",
+      "Llanowar Elves: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "207.2c",
+      "603.2"
+    ]
+  },
+  {
+    "id": "ns25",
+    "text": "My Decorum Dissertation is countered by Counterspell. Do I get paradigm copies on later turns?",
+    "expect": [
+      "Decorum Dissertation is countered.",
+      "No: Decorum Dissertation was countered, so paradigm never set up its delayed trigger"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.192a"
+    ]
+  },
+  {
+    "id": "ns26",
+    "text": "I cast Decorum Dissertation targeting my opponent and it resolves. Where does it go?",
+    "expect": [
+      "Decorum Dissertation is exiled (paradigm, 702.192a). At the beginning of each of your precombat main phases for the rest of the game, you may cast a copy of it without paying its mana cost."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "702.192a"
+    ]
+  },
+  {
+    "id": "ns27",
+    "text": "I cast Magmablood Archaic paying 6 generic mana. How big is it?",
+    "expect": [
+      "Magmablood Archaic enters with 0 +1/+1 counters.",
+      "Magmablood Archaic is 2/2."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "207.2c",
+      "107.4e"
+    ]
+  },
+  {
+    "id": "ns28",
+    "text": "The Ur-Sphinx is in my command zone. How much does Sphinx of the Final Word cost me?",
+    "expect": [
+      "Sphinx of the Final Word costs {5}{U}{U} minus {1} (The Ur-Sphinx makes it cost {1} less) — 6 mana in all."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "113.6b",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "ns29",
+    "text": "I control Omnath, Locus of the Void and add GG during my first main phase, then go to combat. How big is Omnath?",
+    "expect": [
+      "Your 2 unspent mana doesn't empty; it becomes colorless (Omnath, Locus of the Void).",
+      "Omnath, Locus of the Void is 8/8."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "500.5",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "ns30",
+    "text": "I'm the monarch and control Tamiyo, Upriser Crowned. My opponent attacks me with two Grizzly Bears and I don't block. What happens?",
+    "expect": [
+      "opponent is the monarch.",
+      "Grizzly Bears and Grizzly Bears are tapped with a stun counter"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "725.2",
+      "603.2",
+      "122.1d"
+    ]
   }
 ]

@@ -85,6 +85,7 @@ internal object EdhMech {
 
     /** Whether [obj]'s [trigger] triggers on [event]. A command-zone ability is live only there (113.6b). */
     fun matches(state: GameState, obj: GameObject, trigger: Trigger.Edh, event: Engine.GameEvent): Boolean {
+        if (trigger.kind.startsWith("ns:")) return true   // made only when its event happened (NewSetMech.dynamicTriggers)
         val k = trigger.kind
         return when {
             k == "opp-sacrifices-nontoken" -> event is Engine.GameEvent.Sacrificed && obj.isOnBattlefield() && event.playerId != obj.controller && !event.obj.token

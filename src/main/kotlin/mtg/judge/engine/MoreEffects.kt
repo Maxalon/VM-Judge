@@ -350,6 +350,7 @@ internal object MoreEffects {
             if (n == 0) { tr.step("Scry 0 does nothing: no scry event happens, so nothing that triggers on scrying triggers.", "701.22b"); return true }
             tr.step("${you.subject} ${you.v("scries", "scry")} $n: ${you.subject.lowercase()} ${you.v("looks", "look")} at the top ${if (n == 1) "card" else "$n cards"} of ${their(you)} library, then ${you.v("puts", "put")} any number of them on the bottom and the rest back on top, in any order. No card changes zones.", "701.22a")
             state.outcomes += "${you.subject} ${you.v("scries", "scry")} $n ($src)."
+            NewSetMech.scried(e, item.controller, "scry")   // "whenever you scry or surveil" (NewSetMechanics.kt)
             return true
         }
         // "Shuffle" (Ponder's "you may shuffle"), "That player shuffles" (Surgical Extraction).

@@ -180,7 +180,7 @@ object OracleParser {
                                 "Backup $n (When this creature enters, put ${if (n == 1) "a +1/+1 counter" else "$n +1/+1 counters"} on target creature. If that's another creature, it gains the following abilities until end of turn.)")
                         }
                         // Mobilize, afterlife, decayed, ravenous: expanded into the abilities their rules define (NewMechanics.kt).
-                        else -> abilities += mtg.judge.engine.DeepMech.keywordAbilities(kw, part) ?: mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
+                        else -> abilities += mtg.judge.engine.DeepMech.keywordAbilities(kw, part) ?: mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewSetMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
                     }
                 }
                 // Animate Dead / Dance of the Dead: one paragraph holding the enters ability that returns the card it enchants
@@ -194,6 +194,7 @@ object OracleParser {
                     abilities += StaticAbility(selfRef.removeSuffix(ltb).trim(), null, listOf(StaticEffect.Note(selfRef.removeSuffix(ltb).trim(), listOf("303.4a"))))
                     abilities += TriggeredAbility(Trigger.ThisLeavesBattlefield, Effect.SacrificeEnchanted, ltb)
                 }
+                mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef)!!   // repartee, power-up, prepared, storied (NewSetMechanics.kt)
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
                 mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef)!!   // Uro's escape, Mikaeus (MoreEffects.kt)
                 mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef)!!   // Voice of Resurgence (MoreEffects2.kt)
@@ -235,7 +236,7 @@ object OracleParser {
     }
 
     /** Keyword actions (701): verbs a card's keyword list carries ("Double", "Scry", "Mill") that head an effect sentence, never a keyword ability line. */
-    private val keywordActions = setOf("activate", "attach", "cast", "counter", "create", "destroy", "discard", "double", "exchange", "exile", "fight", "mill", "play", "regenerate", "reveal", "sacrifice", "scry", "search", "shuffle", "tap", "untap", "vote", "transform", "detain", "populate", "monstrosity", "bolster", "manifest", "support", "investigate", "meld", "goad", "exert", "explore", "assemble", "surveil", "adapt", "amass", "learn", "venture into the dungeon", "connive", "open an attraction", "roll to visit your attractions", "convert", "incubate", "the ring tempts you", "face a villainous choice", "time travel", "discover", "cloak", "collect evidence", "suspect", "forage", "manifest dread", "endure", "behold")
+    private val keywordActions = setOf("activate", "attach", "cast", "counter", "create", "destroy", "discard", "double", "exchange", "exile", "fight", "mill", "play", "regenerate", "reveal", "sacrifice", "scry", "search", "shuffle", "tap", "untap", "vote", "transform", "detain", "populate", "monstrosity", "bolster", "manifest", "support", "investigate", "meld", "goad", "exert", "explore", "assemble", "surveil", "adapt", "amass", "learn", "venture into the dungeon", "connive", "open an attraction", "roll to visit your attractions", "convert", "incubate", "the ring tempts you", "face a villainous choice", "time travel", "discover", "cloak", "collect evidence", "suspect", "forage", "manifest dread", "endure", "behold", "empower jace", "recruit", "power-up")   // power-up heads an activated ability (702.193a)
 
     private fun isKeywordLine(line: String, keywords: Collection<String>): Boolean {
         // "Blitz—{2}{B}{B}, Pay 2 life": the life is part of the keyword's cost, not a keyword of its own.
@@ -1430,6 +1431,7 @@ object OracleParser {
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
         mtg.judge.engine.DeepMech.parseSentence(s) { target(it) }?.let { return it }   // Twisted Image, Mind Bend (DeepMechanics.kt)
         mtg.judge.engine.NewMech.parseSentence(s)?.let { return it }   // adapt, learn, discover, the Ring tempts you (NewMechanics.kt)
+        mtg.judge.engine.NewSetMech.parseSentence(s)?.let { return it }   // empower Jace, recruit, opus and infusion conditions (NewSetMechanics.kt)
         mtg.judge.engine.NewMech.stripWhereX(s)?.let { return parseSentence(it) }   // domain: "…, where X is the number of basic land types among lands you control"
         mtg.judge.engine.ExamMech.parseSentence(s) { parseSentence(it) }?.let { return it }   // Grim Affliction's "then proliferate", Rabid Elephant (ExamMechanics.kt)
         // Lavinia, Azorius Renegade: "if no mana was spent to cast it, counter that spell."

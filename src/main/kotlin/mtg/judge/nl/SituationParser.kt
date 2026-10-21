@@ -2693,6 +2693,183 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- the newest sets (see NewSetMechanics.kt and NewSetAsks.kt) ----
+
+    /**
+     * Table talk about the newest sets' mechanics: Jace tokens, enduring stories, recruit, prepared cards, power-up, teamwork,
+     * sneak. Statements other readers would take for something else become "ns…" markers that [readNewSetQuestions] reads.
+     */
+    private fun newSetRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t.trim()
+        val s = """(i|we|they|he|she|my opponent)"""
+        val q = t2.trimEnd('?', '.', '!').trim()
+        // "My Jace" once a Jace planeswalker token is on the table: that token, not a Jace card the name index offers.
+        if (ctx.objects.values.any { it.token && it.card.name == "Jace token" })
+            t2 = t2.replace(Regex("""\b(my|the|that) (c\d+)\b""")) { r -> if (m.cards[r.groupValues[2]]?.display?.startsWith("Jace") == true) "${r.groupValues[1]} jace token" else r.value }
+        // "Wolverine has 4 damage marked. My opponent casts Lightning Bolt on him. Does he die?": a legendary character's pronoun
+        // means the creature just named, not a player.
+        val lastObj = ctx.lastMentioned?.let { ctx.objects[it] }?.takeIf { it.zone == "battlefield" && it.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Legendary Creature") } == true }
+        if (lastObj != null) {
+            t2 = t2.replace(Regex("""^((?:my opponent|they|he|she|i) (?:casts?|aims?|points?) c\d+ (?:on|at|targeting)) (?:him|her)$"""), "$1 it")
+                .replace(Regex("""^(does|will|did) (?:he|she) (die|survive)$"""), "$1 it $2")
+        }
+        // "I control a Jace token with 1 loyalty counter": empower Jace's token, already on the battlefield (701.71a).
+        Regex("""^$s (?:control|controls|have|has) an? (?:blue )?jace(?: planeswalker)? token(?: with (\w+) loyalty(?: counters?)?| at (\w+) loyalty)?$""").find(q)?.let { r ->
+            return "nsjace ${r.groupValues[1].replace(' ', '_')} ${r.groupValues[2].ifEmpty { r.groupValues[3] }.ifEmpty { "0" }}" }
+        if (Regex("""^(?:how much|how many) loyalty(?: counters)? (?:does|do) (?:my|the|their) (?:jace(?: token)?|c\d+) have(?: now)?$""").matches(q) && ctx.objects.values.any { it.card.name == "Jace token" } ||
+            Regex("""^(?:how much|how many) loyalty(?: counters)? (?:does|do) (?:my|the|their) jace(?: token)? have(?: now)?$""").matches(q)) return "nssaid"
+        // "I don't control a Jace": nothing for empower Jace to put counters on, so it makes the token (701.71a).
+        Regex("""^(?:i|we) (?:don't|do not|dont) (?:control|have) (?:a|any) (jace|c\d+)(?: planeswalker)?(?: tokens?)?(?: yet)?$""").find(q)?.let { r ->
+            if (r.groupValues[1] == "jace" || m.cards[r.groupValues[1]]?.display?.startsWith("Jace") == true) return "nsnojace" }
+        // "I gained life this turn" (infusion, 207.2c).
+        Regex("""^$s (?:gained|gains|have gained|has gained|gain|already gained) (?:(\d+) )?life (?:earlier )?this turn$""").find(q)?.let { r -> return "nsgained ${r.groupValues[1].replace(' ', '_')} ${r.groupValues[2].ifEmpty { "1" }}" }
+        // "In response I sacrifice a Food to gain 3 life": a Food token, its ability activated now.
+        Regex("""^(?:in response,? )?$s (?:sacrifices?|sac|sacs|crack|cracks|eat|eats) an? food(?: token)?(?: (?:to|and) gains? (?:\d+) life)?$""").find(q)?.let { r -> return "nsfood ${r.groupValues[1].replace(' ', '_')}" }
+        // "I have an enduring story (and control Bifur)" (702.195b).
+        Regex("""^$s (?:have|has|already have|already has) (?:an|the) enduring story(?:,? and (?:i |they |he |she )?(.+))?$""").find(q)?.let { r ->
+            val rest = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { ", ${r.groupValues[1]} $it" } ?: ""
+            return "nsstory ${r.groupValues[1].replace(' ', '_')}$rest" }
+        // "Then my opponent destroys both artifacts": every artifact of that player's named so far leaves at once.
+        Regex("""^(?:then,? )?$s (?:destroys?|destroyed|kills?|blows? up) (?:both|all|the|my|your|their|those) (?:two |three )?(?:of (?:my|the) )?artifacts$""").find(q)?.let { return "nsdestroyartifacts" }
+        // "Does Bombur untap during my untap step?": the untap step played out (502.3).
+        Regex("""^(?:does|will|would) (?:my |the )?(c\d+) untap (?:during|in) (?:my|its controller's|their|his|her) (?:next )?untap step$""").find(q)?.let { r -> return "nsuntap ${r.groupValues[1]}" }
+        // "Bard's Company attacks and I recruit, discarding a Forest": the card the recruit discards (701.70a), said before the attack plays out.
+        Regex("""^(.+?),? and $s recruits?,? discarding (?:an? |my |the )?(c\d+)$""").find(q)?.let { r -> return "nsrecruit ${r.groupValues[3]} ${r.groupValues[2].replace(' ', '_')}, ${r.groupValues[1]}" }
+        Regex("""^$s recruits?,? discarding (?:an? |my |the )?(c\d+)$""").find(q)?.let { r -> return "nsrecruit ${r.groupValues[2]} ${r.groupValues[1].replace(' ', '_')}" }
+        if (Regex("""^(?:do|did|will) (?:i|we|they) (?:get|make|create) an? (?:human )?soldier(?: token)?$""").matches(q)) return "nssaid"
+        if (Regex("""^how many times does (?:its|the|that|c\\d+'s) (?:ability|trigger|triggered ability) (?:trigger|resolve)$""").matches(q)) return "nssaid"
+        if (Regex("""^how big is (?:the|that|my) (?:new )?(?:human )?(?:soldier )?token$""").matches(q)) return "nstokensize"
+        // Preparation cards: the word "prepared" read as the card Prepare // Fight goes back to being a word (722.3a).
+        fun prep(ph: String) = m.cards[ph]?.display?.let { it == "Prepare" || it.startsWith("Prepare //") } == true
+        Regex("""^(?:my|the) (c\d+) (?:is|was|became|is already) (c\d+)$""").find(q)?.takeIf { prep(it.groupValues[2]) }?.let { r -> return "nsprepared ${r.groupValues[1]}" }
+        Regex("""^is (c\d+|it) (?:still )?(c\d+)(?: again| now)?$""").find(q)?.takeIf { prep(it.groupValues[2]) }?.let { r -> return "nsisprepared ${r.groupValues[1]}" }
+        // "I cast Unwind History …" while a Diviner of Victory is out: the copy of its prepare spell, cast from exile (722.3c).
+        Regex("""^(?:then )?(i|we) cast (c\d+)\b(.*)$""").find(q)?.let { r ->
+            val e = m.cards[r.groupValues[2]] ?: return@let
+            val full = names.fullNameOf(e.oracleId) ?: return@let
+            if (!full.endsWith(" // ${e.display}") || !names.isBackFace(e) || ctx.objects.values.none { it.card.oracleId == e.oracleId && it.zone == "battlefield" }) return@let
+            return "${r.groupValues[1]} cast ${r.groupValues[2]}${r.groupValues[3]}, nsprepcast"
+        }
+        // Power-up (702.193): "Abomination entered this turn", "I activated its power-up last turn", the cost and once-only questions.
+        Regex("""^(?:my |the )?(c\d+) (?:entered|came in|came into play|entered the battlefield) this turn$""").find(q)?.let { r -> return "nsentered ${r.groupValues[1]}" }
+        Regex("""^(?:i|we) (?:already )?activated (?:my |the )?(c\d+)'s power-up(?: ability)?(?: (?:last turn|earlier|already|on a previous turn|before))?$""").find(q)?.let { r -> return "nspoweredup ${r.groupValues[1]}" }
+        Regex("""^how much (?:does|will|would) (?:its|the|(?:my )?(c\d+)'s) power-up(?: ability)? cost(?: me)?(?: now| this turn)?$""").find(q)?.let { r -> return "nspowerupcost ${r.groupValues[1].ifEmpty { "-" }}" }
+        if (Regex("""^can (?:i|we) (?:activate|use) (?:it|its power-up(?: ability)?|(?:the )?power-up(?: ability)?)(?: again| a second time)(?: this turn| now)?$""").matches(q)) return "nspowerupagain"
+        // Teamwork (702.194).
+        Regex("""^can (?:i|we) tap (?:creatures|a creature|my creatures) that (?:came in|entered|came into play|i played|i cast)(?: the battlefield)? this turn (?:to pay|for) (?:my |the )?(c\d+)'s teamwork(?: cost)?$""").find(q)?.let { r -> return "nsteamworksick ${r.groupValues[1]}" }
+        Regex("""^(i|we) cast (c\d+) (?:with|using) teamwork,? (?:by )?tapping (?:my )?(c\d+)(?:,? and (?:my )?(c\d+))?,?\s*(.*)$""").find(q)?.let { r ->
+            return "nsteamworktap ${r.groupValues[3]} ${r.groupValues[4].ifEmpty { "-" }}, ${r.groupValues[1]} cast ${r.groupValues[2]} ${r.groupValues[5]}".trimEnd() + ", nsteamwork ${r.groupValues[3]} ${r.groupValues[4].ifEmpty { "-" }}" }
+        // Sneak (702.190): "During the declare blockers step I cast Elektra for her sneak cost, returning my unblocked Grizzly Bears, targeting …".
+        Regex("""^(?:during (?:the|my) declare blockers step,? )?(i|we) cast (c\d+) (?:for (?:her|his|its|their) sneak cost|with sneak|for sneak),? returning (?:my )?(?:unblocked )?(c\d+),?\s*(.*)$""").find(q)?.let { r ->
+            return "nssneaksetup ${r.groupValues[3]}, ${r.groupValues[1]} cast ${r.groupValues[2]} ${r.groupValues[4]}".trimEnd() + ", nssneak ${r.groupValues[3]}" }
+        Regex("""^can (?:i|we) cast (c\d+) (?:for (?:her|his|its|their) sneak cost|with sneak|for sneak) (?:during|in) the (combat damage|end of combat|declare attackers|declare blockers|beginning of combat) step$""").find(q)?.let { r -> return "nssneakstep ${r.groupValues[1]} ${r.groupValues[2].replace(' ', '_')}" }
+        // Behold (701.4): "Can I behold my Jace token to pay Countersculpt's additional cost?"
+        Regex("""^can (?:i|we) behold (?:my |a |the )?(jace token|c\d+) (?:to pay|for) (?:my |the )?(c\d+)'s (?:additional )?cost.*$""").find(q)?.let { r -> return "nsbehold ${r.groupValues[2]} ${r.groupValues[1].replace(' ', '_')}" }
+        // Converge (207.2c): "I cast Magmablood Archaic paying 6 generic mana" — no color spent; "paying {R}{R}{R}" — one.
+        Regex("""^(i|we) cast (c\d+) (?:by )?paying (?:only |just )?(?:(\d+) (?:generic|colorless) mana|((?:\{[wubrgc]\}|[wubrgc]\b ?)+))(.*)$""").find(q)?.let { r ->
+            val n = if (r.groupValues[3].isNotEmpty()) 0 else r.groupValues[4].filter { it in "wubrg" }.toSet().size
+            return "${r.groupValues[1]} cast ${r.groupValues[2]}${r.groupValues[5]}, nscolors ${r.groupValues[2]} $n" }
+        // "I control Omnath and add GG during my first main phase": mana in the pool (106.4).
+        Regex("""^(?:(.+?),? and )?(?:(i|we) )?(?:add|float|make) (?:\{?([wubrgc])\}?)(?:\{?([wubrgc])\}?)?(?:\{?([wubrgc])\}?)?(?: mana)?(?: during (?:my|our) (?:first|precombat|second|postcombat) main phase)?$""").find(q)?.let { r ->
+            val syms = listOf(r.groupValues[3], r.groupValues[4], r.groupValues[5]).filter { it.isNotEmpty() }.joinToString("") { "{${it.uppercase()}}" }
+            return (r.groupValues[1].takeIf { it.isNotEmpty() }?.let { "$it, " } ?: "") + "nsaddmana ${syms.length / 3} $syms" }
+        // Paradigm (702.192): "Do I get paradigm copies on later turns?"
+        if (Regex("""^(?:do|will|would) (?:i|we) (?:still )?get (?:the )?paradigm(?: copies| copy| trigger)?(?: on later turns| later| next turn)?$""").matches(q)) return "nsparadigm"
+        return t2
+    }
+
+    /** Markers [newSetRewrites] leaves for the newest sets' judge calls ("ns" events, "ns:" questions). */
+    private fun readNewSetQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?', '.').trim()
+        if (!q.startsWith("ns")) return null
+        fun who(w: String) = if (w in setOf("i", "we", "my", "me")) "me" else pronounPlayer(ctx, "their")
+        val parts = q.split(' ')
+        when (parts[0]) {
+            "nssaid" -> { ctx.notes += "The question is answered by the outcome below."; return true }
+            "nsnojace" -> { ctx.notes += "No Jace is on your battlefield, so an empower Jace first creates the Jace planeswalker token."; return true }
+            "nsjace" -> {
+                val owner = who(parts[1].replace('_', ' ')); val n = number(parts.getOrElse(2) { "0" }) ?: 0
+                var id = "jace_token"; var k = 2; while (ctx.objects.containsKey(id)) id = "jace_token_" + (k++)
+                ctx.objects[id] = ObjectSpec(id, CardRef(name = "Jace token"), controller = owner, token = true, counters = mapOf("loyalty" to n))
+                ctx.note(owner); ctx.lastMentioned = id; ctx.lastVerb = "have"; return true
+            }
+            "nsgained" -> { val p = who(parts[1].replace('_', ' ')); ctx.events += EventSpec("ns", player = p, to = "gained", amount = parts.getOrNull(2)?.toIntOrNull() ?: 1); ctx.note(p); return true }
+            "nsstory" -> { val p = who(parts[1].replace('_', ' ')); ctx.events += EventSpec("ns", player = p, to = "story"); ctx.note(p); return true }
+            "nsdestroyartifacts" -> {
+                val arts = ctx.objects.values.filter { o -> o.zone == "battlefield" && (o.card.name?.contains("artifact", true) == true || names.lookup(Names.normalize(o.card.name ?: ""))?.typeLine?.contains("Artifact") == true) }.map { it.id }
+                if (arts.isEmpty()) return null
+                ctx.events += EventSpec("leave", obj = arts.first(), targets = arts.drop(1), to = "graveyard"); return true
+            }
+            "nsuntap" -> {
+                val id = m.cards[parts[1]]?.let { objectIdFor(it, ctx) } ?: return null
+                ctx.asks += EventSpec("ask", obj = id, to = "ns:untap"); return true
+            }
+            "nsrecruit" -> {
+                val p = who(parts[2].replace('_', ' ')); val card = m.cards[parts[1]] ?: return null
+                ctx.events += EventSpec("ns", player = p, to = "recruitdiscard", card = CardRef(name = card.display, oracleId = card.oracleId)); ctx.note(p); return true
+            }
+            "nstokensize" -> { ctx.asks += EventSpec("ask", to = "ns:tokensize"); return true }
+            "nsprepared", "nsentered" -> {
+                val card = m.cards[parts[1]] ?: return null
+                val id = objectIdFor(card, ctx)?.takeIf { ctx.objects[it]?.zone == "battlefield" } ?: addObject(card, "me", false, ctx)
+                ctx.events += EventSpec("ns", player = ctx.objects[id]?.controller ?: "me", obj = id, to = if (parts[0] == "nsprepared") "prepared" else "entered"); ctx.lastMentioned = id; return true
+            }
+            "nsisprepared" -> {
+                val id = (if (parts[1] == "it") ctx.objects.values.lastOrNull { it.zone == "battlefield" && it.card.oracleId?.let { o -> names.fullNameOf(o) }?.contains(" // ") == true }?.id ?: ctx.lastMentioned?.removePrefix("cast:")
+                    else m.cards[parts[1]]?.let { objectIdFor(it, ctx) }) ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" }?.id ?: return null
+                ctx.asks += EventSpec("ask", obj = id.substringBefore(":spell"), to = "ns:prepared"); return true
+            }
+            "nsprepcast" -> { val at = ctx.events.indexOfLast { it.verb == "cast" }; if (at < 0) return null
+                val e = ctx.events[at]; if (e.to == null) ctx.events[at] = e.copy(to = "kw:prepare"); return true }
+            "nspoweredup" -> {
+                val card = m.cards[parts[1]] ?: return null
+                val id = objectIdFor(card, ctx) ?: addObject(card, "me", false, ctx)
+                ctx.objects[id] = ctx.objects.getValue(id).copy(summoningSick = false)
+                ctx.events += EventSpec("ns", player = ctx.objects[id]?.controller ?: "me", obj = id, to = "poweredup"); ctx.lastMentioned = id; return true
+            }
+            "nspowerupcost", "nspowerupagain" -> {
+                val id = parts.getOrNull(1)?.takeIf { it != "-" }?.let { ph -> m.cards[ph]?.let { objectIdFor(it, ctx) } }
+                    ?: ctx.lastMentioned?.removePrefix("cast:")?.substringBefore(":spell")?.takeIf { it in ctx.objects } ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" }?.id ?: return null
+                ctx.asks += EventSpec("ask", obj = id, to = if (parts[0] == "nspowerupcost") "ns:powerupcost" else "ns:powerupagain"); return true
+            }
+            "nsteamworksick" -> { val card = m.cards[parts[1]] ?: return null
+                ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "ns:teamworksick"); return true }
+            "nsteamworktap" -> {
+                parts.drop(1).filter { it != "-" }.forEach { ph -> m.cards[ph]?.let { c -> if (objectIdFor(c, ctx) == null) addObject(c, "me", false, ctx) } }
+                return true
+            }
+            "nsteamwork", "nssneak" -> {
+                val ids = parts.drop(1).filter { it != "-" }.mapNotNull { ph -> m.cards[ph]?.let { objectIdFor(it, ctx) } }
+                val at = ctx.events.indexOfLast { it.verb == "cast" }; if (at < 0 || ids.isEmpty()) return null
+                val e = ctx.events[at]; ctx.events[at] = e.copy(to = (if (parts[0] == "nsteamwork") "kw:teamwork:" else "kw:sneak:") + ids.joinToString("+")); return true
+            }
+            "nssneaksetup" -> {
+                val card = m.cards[parts[1]] ?: return null
+                val id = objectIdFor(card, ctx) ?: addObject(card, "me", false, ctx)
+                ctx.objects[id] = ctx.objects.getValue(id).copy(summoningSick = false)
+                ctx.events += EventSpec("attack", player = "me", obj = id, targets = listOf("opp")); ctx.note("opp")
+                ctx.notes += "${card.display} is attacking and no blockers were declared for it: it's unblocked in the declare blockers step."; return true
+            }
+            "nssneakstep" -> { val card = m.cards[parts[1]] ?: return null
+                ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), to = "ns:sneakstep:${parts.getOrElse(2) { "" }}"); return true }
+            "nsbehold" -> { val card = m.cards[parts[1]] ?: return null
+                val what = parts.getOrNull(2)?.let { if (it == "jace_token") "jace token" else m.cards[it]?.display } ?: return null
+                ctx.asks += EventSpec("ask", card = CardRef(name = card.display, oracleId = card.oracleId), source = what, to = "ns:behold"); return true }
+            "nsaddmana" -> { ctx.events += EventSpec("floatmana", player = "me", amount = parts.getOrNull(1)?.toIntOrNull() ?: 1, to = parts.getOrNull(2)); ctx.note("me"); return true }
+            "nscolors" -> { val card = m.cards[parts[1]] ?: return null
+                ctx.events += EventSpec("ns", player = "me", card = CardRef(name = card.display, oracleId = card.oracleId), to = "colors", amount = parts.getOrNull(2)?.toIntOrNull() ?: 0); return true }
+            "nsparadigm" -> { val cast = ctx.events.lastOrNull { it.verb == "cast" } ?: return null
+                ctx.asks += EventSpec("ask", player = cast.player ?: "me", card = cast.card, to = "ns:paradigm"); return true }
+            "nsfood" -> {
+                val p = who(parts[1].replace('_', ' '))
+                var id = "food"; var k = 2; while (ctx.objects.containsKey(id)) id = "food_" + (k++)
+                ctx.objects[id] = ObjectSpec(id, CardRef(name = "Food token"), controller = p, token = true)
+                ctx.events += EventSpec("activate", player = p, obj = id, abilityIndex = 0); ctx.note(p); ctx.lastActor = p; return true
+            }
+        }
+        return null
+    }
+
     // ---- four-player Commander tables (see EdhMechanics.kt and EdhAsks.kt) ----
 
     /** Table talk at Commander tables with three or more players: goad, votes, stolen commanders, the command zone. */
@@ -3881,6 +4058,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = loopRewrite(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
         t2 = cedhRewrites(t2, m, ctx)
+        t2 = newSetRewrites(t2, m, ctx)
         t2 = pauperRewrites(t2, m, ctx)
         t2 = deepRewrites(t2, m, ctx)
         t2 = limitedRewrites(t2, m, ctx)
@@ -8435,6 +8613,7 @@ class SituationParser(private val names: NameIndex) {
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readExamQuestions(clause0, m, ctx)?.let { return it }
         readCedhQuestions(clause0, m, ctx)?.let { return it }
+        readNewSetQuestions(clause0, m, ctx)?.let { return it }
         readPauperQuestions(clause0, m, ctx)?.let { return it }
         readDeepQuestions(clause0, m, ctx)?.let { return it }
         readLimitedQuestions(clause0, m, ctx)?.let { return it }

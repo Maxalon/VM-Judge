@@ -76,6 +76,7 @@ fun Engine.keywordResolutionZone(item: StackItem): Zone? {
     // A spell that was spliced or cast as an Adventure has the text or characteristics it gained only while it's on the stack (702.47e, 715.4).
     if (src.def !== src.printedDef && (src.kwf.spliced.isNotEmpty() || src.kwf.castAsAdventure)) src.def = src.printedDef
     if (src.kwf.castAsAdventure) return Zone.EXILE
+    NewSetMech.resolutionZone(src)?.let { return it }   // paradigm exiles the spell (NewSetMechanics.kt)
     if (MoreEffects.selfShuffled(state, src)) return Zone.LIBRARY   // Green Sun's Zenith shuffled itself away (MoreEffects.kt)
     if (LegacyMech.exileOnResolve(src) != null) return Zone.EXILE   // Dreadhorde Arcanist: "exile it instead"
     if (src.kwf.jumpStarted) return Zone.EXILE
@@ -87,6 +88,7 @@ fun Engine.keywordResolutionZone(item: StackItem): Zone? {
 /** The trace and outcome lines for the keyword-driven destination chosen by [keywordResolutionZone]. */
 fun Engine.keywordResolutionNote(item: StackItem, zone: Zone) {
     val src = item.source; val def = src.def; val owner = state.player(src.owner)
+    if (zone == Zone.EXILE && NewSetMech.resolutionNote(state, item)) return   // paradigm (NewSetMechanics.kt)
     if (src.kwf.boughtBack && zone == Zone.HAND) {
         state.trace.step("${def.name} finishes resolving. Its buyback cost was paid, so it is put into its owner's hand instead of the graveyard as it resolves.", "702.27a", "608.2n")
         state.outcomes += "${def.name} returns to ${owner.possessive} hand (buyback, 702.27a)."
