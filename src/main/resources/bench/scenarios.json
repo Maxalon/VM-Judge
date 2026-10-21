@@ -42417,13 +42417,15 @@
     "id": "tr8",
     "text": "I forgot my Dark Confidant trigger and we noticed after I drew for the turn. What happens?",
     "expect": [
-      "Dark Confidant's ability triggered at the beginning of your upkeep whether or not anyone remembered it",
+      "Missed trigger, no penalty: your opponent chooses whether Dark Confidant's trigger goes on the stack now (IPG 2.1).",
+      "drawing for the turn did that",
       "tournament rules"
     ],
     "cite": [
       "603.2",
       "603.3",
-      "100.6"
+      "100.6",
+      "IPG 2.1"
     ]
   },
   {
@@ -47620,13 +47622,15 @@
     "id": "wx12",
     "text": "forgot my dark confidant trigger and we noticed after i drew for the turn. what now",
     "expect": [
-      "Dark Confidant's ability triggered at the beginning of your upkeep whether or not anyone remembered it",
+      "Missed trigger, no penalty: your opponent chooses whether Dark Confidant's trigger goes on the stack now (IPG 2.1).",
+      "drawing for the turn did that",
       "tournament rules"
     ],
     "cite": [
       "603.2",
       "603.3",
-      "100.6"
+      "100.6",
+      "IPG 2.1"
     ]
   },
   {
@@ -53384,5 +53388,1399 @@
     "cite": [
       "702.172a"
     ]
+  },
+  {
+    "id": "ip1",
+    "text": "Knight of Infamy attacks alone and I say \"take two\". What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Knight of Infamy's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P01"
+  },
+  {
+    "id": "ip2",
+    "text": "I forgot to remove the last time counter from my suspended Ancestral Vision and then drew for my turn. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Ancestral Vision's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P02"
+  },
+  {
+    "id": "ip3",
+    "text": "I cast Manic Vandal and forgot its trigger. I only realized after I cast another spell. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Manic Vandal's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P03"
+  },
+  {
+    "id": "ip4",
+    "text": "I forgot to exile the Angel token from Geist of Saint Traft at end of combat. We noticed when declaring blockers during the next turn. What happens?",
+    "expect": [
+      "Missed trigger, Warning: Geist of Saint Traft's delayed trigger (\"Exile that token at end of combat\") still happens; your opponent chooses whether it resolves now or when a player would get priority at the start of the next phase (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P04"
+  },
+  {
+    "id": "ip5",
+    "text": "I forgot my Dark Confidant trigger and we noticed after I drew for the turn. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Dark Confidant's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P05"
+  },
+  {
+    "id": "ip6",
+    "text": "I forgot my Dark Confidant trigger at an RCQ. What's the penalty?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Dark Confidant's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "MTR 1.12",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P06"
+  },
+  {
+    "id": "ip7",
+    "text": "I forgot to add a lore counter to my Saga during my precombat main phase. It's now combat. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether the lore counter is put on now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "714.3c",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P07"
+  },
+  {
+    "id": "ip8",
+    "text": "I forgot my Urza's Saga chapter III trigger last turn. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: if the game is now past this turn's precombat main phase, the game just continues and the trigger is gone; if not, your opponent chooses whether Urza's Saga's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P08"
+  },
+  {
+    "id": "ip9",
+    "text": "I missed my Pact of Negation upkeep trigger and noticed in my main phase. Do I lose the game?",
+    "expect": [
+      "It depends: your opponent chooses whether Pact of Negation's trigger goes on the stack now — and then you pay {3}{U}{U} or lose the game (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P09"
+  },
+  {
+    "id": "ip10",
+    "text": "I missed my Pact of Negation upkeep trigger last turn. Do I lose?",
+    "expect": [
+      "It depends: if the game is now past this turn's beginning phase, the game just continues and the trigger is gone; if not, your opponent chooses whether Pact of Negation's trigger goes on the stack now — and then you pay {3}{U}{U} or lose the game."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P10"
+  },
+  {
+    "id": "ip11",
+    "text": "My opponent forgot to pay the Pact of Negation trigger. Do they lose the game?",
+    "expect": [
+      "It depends: you choose whether Pact of Negation's trigger goes on the stack now — and then your opponent pays {3}{U}{U} or loses the game (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P11"
+  },
+  {
+    "id": "ip12",
+    "text": "I forgot my Sheoldred, the Apocalypse trigger when my opponent drew for the turn. We noticed in their main phase. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Sheoldred, the Apocalypse's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P12"
+  },
+  {
+    "id": "ip13",
+    "text": "I forgot to return Ragavan, Nimble Pilferer to my hand after I dashed it. We noticed on my opponent's turn. What happens?",
+    "expect": [
+      "Missed trigger, Warning: Ragavan, Nimble Pilferer's delayed trigger (\"It's returned from the battlefield to its owner's hand at the beginning of the next end step\") still happens; your opponent chooses whether it resolves now or when a player would get priority at the start of the next phase (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P13"
+  },
+  {
+    "id": "ip14",
+    "text": "I Ephemerate my Solitude and forgot the return trigger. We noticed at the end step. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: Ephemerate has no return trigger; it returns Solitude as part of its own resolution (608.2c), so Solitude is in the wrong zone (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "608.2c",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P14"
+  },
+  {
+    "id": "ip15",
+    "text": "My opponent forgot their Rhystic Study trigger when I cast a spell. Do I have to tell them?",
+    "expect": [
+      "No: you never have to point out your opponent's triggers; not reminding them is neither Failure to Maintain Game State nor Cheating (MTR 4.5, IPG 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.5",
+      "IPG 2.1",
+      "IPG 2.6"
+    ],
+    "note": "track policy probe P15"
+  },
+  {
+    "id": "ip16",
+    "text": "My opponent rushed into combat before I could put my upkeep trigger on the stack. Is my trigger missed?",
+    "expect": [
+      "No: your opponent can't make your trigger be missed by rushing ahead; if you acknowledge it before you take an active role (an action, or explicitly passing priority), it's remembered (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P16"
+  },
+  {
+    "id": "ip17",
+    "text": "I drew for the turn and then remembered my Sylvan Library trigger. Can I still use it?",
+    "expect": [
+      "Yes: drawing for the turn doesn't miss Sylvan Library's trigger: the draw comes first (504.1) and the trigger goes on the stack after it, so it's still waiting; put it on the stack now."
+    ],
+    "cite": [
+      "100.6",
+      "504.1",
+      "117.3a",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P17"
+  },
+  {
+    "id": "ip18",
+    "text": "I forgot my Phyrexian Arena trigger. What's the penalty at a tournament?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Phyrexian Arena's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "MTR 1.12",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P18"
+  },
+  {
+    "id": "ip19",
+    "text": "I forgot to pay cumulative upkeep on my Mystic Remora. What happens?",
+    "expect": [
+      "Missed trigger, Warning: your opponent chooses whether Mystic Remora's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P19"
+  },
+  {
+    "id": "ip20",
+    "text": "I forgot my Thalia, Guardian of Thraben tax. My opponent cast Lightning Bolt for one mana. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: Thalia, Guardian of Thraben's ability is static, not a trigger (604.1), so nothing was missed; your opponent committed it by casting Lightning Bolt without paying Thalia, Guardian of Thraben's extra cost (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "604.1",
+      "601.2f",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P20"
+  },
+  {
+    "id": "ip21",
+    "text": "My opponent cast Lightning Bolt without paying for Thalia. What happens at a tournament?",
+    "expect": [
+      "Game Rule Violation, Warning: Thalia, Guardian of Thraben's ability is static, not a trigger (604.1), so nothing was missed; your opponent committed it by casting Lightning Bolt without paying Thalia, Guardian of Thraben's extra cost (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "604.1",
+      "601.2f",
+      "MTR 1.12",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P21"
+  },
+  {
+    "id": "ip22",
+    "text": "I forgot about my Blood Moon. My opponent tapped their Steam Vents for blue. Is it a missed trigger?",
+    "expect": [
+      "No: Blood Moon's ability is static, not a trigger (604.1), so this is a Game Rule Violation, Warning (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "604.1",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P22"
+  },
+  {
+    "id": "ip23",
+    "text": "I forgot the Exalted trigger on my Noble Hierarch. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Noble Hierarch's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P23"
+  },
+  {
+    "id": "ip24",
+    "text": "My opponent missed their Sheoldred trigger. Do I have to remind them?",
+    "expect": [
+      "No: you never have to point out your opponent's triggers; not reminding them is neither Failure to Maintain Game State nor Cheating (MTR 4.5, IPG 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.5",
+      "IPG 2.1",
+      "IPG 2.6"
+    ],
+    "note": "track policy probe P24"
+  },
+  {
+    "id": "ip25",
+    "text": "If I miss a trigger on purpose, what happens?",
+    "expect": [
+      "Unsporting Conduct — Cheating, Disqualification: you must remember your own triggers, and ignoring one on purpose is Cheating (MTR 4.5, IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.5",
+      "IPG 2.1",
+      "IPG 4.8",
+      "JAR"
+    ],
+    "note": "track policy probe P25"
+  },
+  {
+    "id": "ip26",
+    "text": "Does a missed trigger still count for \"once each turn\"?",
+    "expect": [
+      "Yes: a missed trigger still counts as having triggered, so anything that counts or limits how many times it can trigger (\"only once each turn\") counts the missed one (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P26"
+  },
+  {
+    "id": "ip27",
+    "text": "I forgot my trigger at FNM. What happens?",
+    "expect": [
+      "Missed trigger at Regular REL, no penalty: if it says \"may\", it's treated as declined; otherwise the judge puts the trigger on the stack now, unless that would be too disruptive (not if significant decisions were made based on it not happening) (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "MTR 1.12",
+      "JAR"
+    ],
+    "note": "track policy probe P27"
+  },
+  {
+    "id": "ip28",
+    "text": "I forgot my Dark Confidant trigger at a prerelease. What happens?",
+    "expect": [
+      "Missed trigger at Regular REL, no penalty: the judge puts Dark Confidant's trigger on the stack now, unless that would be too disruptive (not if significant decisions were made based on it not happening) (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "MTR 1.12",
+      "JAR"
+    ],
+    "note": "track policy probe P28"
+  },
+  {
+    "id": "ip29",
+    "text": "My opponent forgot their Rhystic Study trigger at FNM. What happens?",
+    "expect": [
+      "Missed trigger at Regular REL, no penalty: Rhystic Study's ability says \"may\", so your opponent is treated as having chosen not to do it (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "MTR 1.12",
+      "JAR"
+    ],
+    "note": "track policy probe P29"
+  },
+  {
+    "id": "ip30",
+    "text": "I exerted my Glorybringer and forgot to pick a target. Is it a missed trigger?",
+    "expect": [
+      "No: exerting Glorybringer announced its \"when you do\" trigger, so it isn't missed; choose its target now, as the trigger is put on the stack (603.3d)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P30"
+  },
+  {
+    "id": "ip31",
+    "text": "I forgot my Bloodghast landfall trigger at FNM. What happens?",
+    "expect": [
+      "Missed trigger at Regular REL, no penalty: Bloodghast's ability says \"may\", so you are treated as having chosen not to do it (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "MTR 1.12",
+      "JAR"
+    ],
+    "note": "track policy probe P31"
+  },
+  {
+    "id": "ip32",
+    "text": "I drew an extra card. What happens?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "121.1",
+      "504.1",
+      "IPG 2.3"
+    ],
+    "note": "track policy probe P32"
+  },
+  {
+    "id": "ip33",
+    "text": "I drew two cards for my turn instead of one. What happens at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "121.1",
+      "504.1",
+      "MTR 1.12",
+      "IPG 2.3"
+    ],
+    "note": "track policy probe P33"
+  },
+  {
+    "id": "ip34",
+    "text": "I cast Brainstorm and drew four cards. What happens?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "121.1",
+      "IPG 2.3"
+    ],
+    "note": "track policy probe P34"
+  },
+  {
+    "id": "ip35",
+    "text": "I drew 8 cards for my opening hand. What happens?",
+    "expect": [
+      "Mulligan Procedure Error, Warning: you take an additional mulligan (IPG 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "103.5",
+      "IPG 2.4"
+    ],
+    "note": "track policy probe P35"
+  },
+  {
+    "id": "ip36",
+    "text": "I accidentally saw the top card of my library while shuffling. What happens?",
+    "expect": [
+      "Looking at Extra Cards, Warning: the card you saw is shuffled into the random portion of the library, and any cards whose positions were already known go back to their places (IPG 2.2)."
+    ],
+    "cite": [
+      "100.6",
+      "401.2",
+      "IPG 2.2",
+      "IPG 1.3"
+    ],
+    "note": "track policy probe P36"
+  },
+  {
+    "id": "ip37",
+    "text": "I went first and drew for my turn. What happens?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "103.8a",
+      "IPG 2.3"
+    ],
+    "note": "track policy probe P37"
+  },
+  {
+    "id": "ip38",
+    "text": "I forgot to untap my lands. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: it's still the same turn, so you untap them now (IPG 2.5's partial fix for a forgotten untap)."
+    ],
+    "cite": [
+      "100.6",
+      "502.3",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P38"
+  },
+  {
+    "id": "ip39",
+    "text": "My opponent untapped during my turn. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: no partial fix covers it, so if it was the last thing done a simple backup taps them again; otherwise a full backup may be considered or the game left as it is (IPG 1.4, 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "502.3",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P39"
+  },
+  {
+    "id": "ip40",
+    "text": "I attacked with a summoning sick creature. We noticed two turns later. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: noticed 2 turns later, the game is left as it is: no partial fix covers an illegal attack, and backups are a last resort that only the Head Judge may authorize (IPG 1.4, 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "302.6",
+      "508.1a",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P40"
+  },
+  {
+    "id": "ip41",
+    "text": "I played two lands this turn. What happens at a tournament?",
+    "expect": [
+      "Game Rule Violation, Warning: caught right away, a simple backup returns the second land to hand; later, it goes back to hand only if that's a minor disruption (an object in the wrong zone that everyone can identify), otherwise the game is left as it is (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "305.2",
+      "MTR 1.12",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P41"
+  },
+  {
+    "id": "ip42",
+    "text": "I cast Wrath of God for 3W. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: Wrath of God costs {2}{W}{W}, so {3}{W} doesn't pay for it. Caught right away, a simple backup undoes the cast; otherwise a full backup may be considered or the game left as it is (IPG 1.4, 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "601.2f",
+      "601.2h",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P42"
+  },
+  {
+    "id": "ip43",
+    "text": "I forgot to discard down to seven at my end step. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: you discard down to seven now: a player who failed to discard does so (IPG 2.5's partial fix)."
+    ],
+    "cite": [
+      "100.6",
+      "514.1",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P43"
+  },
+  {
+    "id": "ip44",
+    "text": "This is my third Game Rule Violation in the tournament. What's the penalty?",
+    "expect": [
+      "Game Loss: a third Game Rule Violation Warning in the same tournament is upgraded to a Game Loss (IPG 2, 2.5). On a multi-day event the count resets each day."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 1.12",
+      "IPG 2",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P44"
+  },
+  {
+    "id": "ip45",
+    "text": "My opponent played two lands and I didn't notice. Do I get a penalty?",
+    "expect": [
+      "Yes: letting your opponent's error go by is Failure to Maintain Game State, a Warning that is never upgraded, once the game has gone past the point where you could reasonably have noticed it (IPG 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "305.2",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe P45"
+  },
+  {
+    "id": "ip46",
+    "text": "I was 5 minutes late to my match. What's the penalty?",
+    "expect": [
+      "Tardiness, Game Loss: 5 minutes late, you lose a game, and the match gets a 5-minute time extension (IPG 3.1)."
+    ],
+    "cite": [
+      "100.6",
+      "IPG 3.1"
+    ],
+    "note": "track policy probe P46"
+  },
+  {
+    "id": "ip47",
+    "text": "I was 12 minutes late for my round at an RCQ. What happens?",
+    "expect": [
+      "Tardiness, Match Loss: not in your seat 10 minutes into the round, you lose the match and are dropped from the tournament, unless you report to the Head Judge or Scorekeeper before the round ends (IPG 3.1)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 1.12",
+      "IPG 3.1"
+    ],
+    "note": "track policy probe P47"
+  },
+  {
+    "id": "ip48",
+    "text": "I'm playing too slowly. What's the penalty for slow play?",
+    "expect": [
+      "Slow Play, Warning: if the match goes past time, two more turns are added to the additional turns (none if the match is already in additional turns) (IPG 3.3)."
+    ],
+    "cite": [
+      "100.6",
+      "IPG 3.3",
+      "IPG 4.7",
+      "MTR 5.5"
+    ],
+    "note": "track policy probe P48"
+  },
+  {
+    "id": "ip49",
+    "text": "I forgot to shuffle my library after fetching. What happens?",
+    "expect": [
+      "Insufficient Shuffling, Warning: the library is shuffled thoroughly now (IPG 3.9)."
+    ],
+    "cite": [
+      "100.6",
+      "701.24a",
+      "MTR 3.10",
+      "IPG 3.9"
+    ],
+    "note": "track policy probe P49"
+  },
+  {
+    "id": "ip50",
+    "text": "My deck has 59 cards but my decklist says 60. What happens?",
+    "expect": [
+      "Deck Problem, Warning, if the missing card turns up (with your sideboard, say): it's revealed to your opponent and put back, and if the game has started your opponent chooses whether that's done now or when a player next gets priority (IPG 3.5)."
+    ],
+    "cite": [
+      "100.6",
+      "IPG 3.5",
+      "IPG 3.4"
+    ],
+    "note": "track policy probe P50"
+  },
+  {
+    "id": "ip51",
+    "text": "Do I have to tell my opponent how many cards are in my hand?",
+    "expect": [
+      "No, not at Competitive REL: how many cards are in your hand is derived information, which your opponent is entitled to but you don't have to help work out; they can count the cards (MTR 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "402.3",
+      "MTR 4.1"
+    ],
+    "note": "track policy probe P51"
+  },
+  {
+    "id": "ip52",
+    "text": "My opponent asked my life total. Do I have to answer?",
+    "expect": [
+      "Yes: your life total is status information. You must announce every change to it, keep it tracked where both players can see it, and you may never represent it incorrectly (MTR 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.1"
+    ],
+    "note": "track policy probe P52"
+  },
+  {
+    "id": "ip53",
+    "text": "Can I ask what my opponent's card does?",
+    "expect": [
+      "Yes, ask — but at Competitive REL your opponent doesn't have to explain it: what a card does is derived information. You're entitled to its official Oracle text, so call a judge to read it to you (MTR 3.6, 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.1",
+      "MTR 3.6"
+    ],
+    "note": "track policy probe P53"
+  },
+  {
+    "id": "ip54",
+    "text": "Does my opponent have to tell me what their card does at an RCQ?",
+    "expect": [
+      "No, not at Competitive REL: what a card does is derived information, which your opponent doesn't have to help you with; you're entitled to its official Oracle text, so call a judge to read it to you (MTR 3.6, 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 1.12",
+      "MTR 4.1",
+      "MTR 3.6"
+    ],
+    "note": "track policy probe P54"
+  },
+  {
+    "id": "ip55",
+    "text": "Does my opponent have to tell me what their card does at FNM?",
+    "expect": [
+      "Yes: at Regular REL derived information, including what a card does, counts as free, so your opponent must answer completely and honestly (MTR 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 1.12",
+      "MTR 4.1",
+      "MTR 3.6"
+    ],
+    "note": "track policy probe P55"
+  },
+  {
+    "id": "ip56",
+    "text": "My opponent lied about their life total. What happens?",
+    "expect": [
+      "Unsporting Conduct — Cheating, Disqualification, if it was deliberate: misrepresenting a life total (status information) breaks MTR 4.1, and doing it knowingly to gain an advantage is Cheating (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.1",
+      "IPG 4.8",
+      "IPG 3.7"
+    ],
+    "note": "track policy probe P56"
+  },
+  {
+    "id": "ip57",
+    "text": "Can I lie about how many cards are in my library?",
+    "expect": [
+      "No: how many cards are in your library is derived information, and no player may represent it incorrectly (MTR 4.1); lying about it on purpose to gain an advantage is Cheating, a Disqualification (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.1",
+      "IPG 4.8"
+    ],
+    "note": "track policy probe P57"
+  },
+  {
+    "id": "ip58",
+    "text": "In a four-player Commander game, can I ask how many cards are in each player's hand?",
+    "expect": [
+      "Yes, you can ask, and everyone is entitled to know: the number of cards in a hand is derived information. At Competitive REL nobody has to help you count, but nobody may misstate it (MTR 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "402.3",
+      "MTR 4.1"
+    ],
+    "note": "track policy probe P58"
+  },
+  {
+    "id": "ip59",
+    "text": "I said \"go to combat\" and then wanted to cast a sorcery. Can I?",
+    "expect": [
+      "No: saying \"go to combat\" passes priority in your main phase with an empty stack, so by the shortcut your opponent is acting in the beginning of combat step and you next get priority there, after your main phase has ended (MTR 4.2, 500.2). A sorcery needs your main phase (307.1)."
+    ],
+    "cite": [
+      "100.6",
+      "500.2",
+      "307.1",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe P59"
+  },
+  {
+    "id": "ip60",
+    "text": "I said \"attack with everything\" and then wanted to crack a fetch first. Can I?",
+    "expect": [
+      "No, not before the attack: announcing your attackers means you passed priority in the beginning of combat step, so the attack is declared (MTR 4.2, 508.1). You can still crack the fetch now, in the declare attackers step, since it's an activated ability you can use whenever you have priority."
+    ],
+    "cite": [
+      "100.6",
+      "508.1",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe P60"
+  },
+  {
+    "id": "ip61",
+    "text": "I said \"pass the turn\". Can my opponent act in my end step?",
+    "expect": [
+      "Yes: \"pass the turn\" (or \"go\") is a shortcut by which your opponent is assumed to be acting in your end step, so they can cast instants and activate abilities there (MTR 4.2)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe P61"
+  },
+  {
+    "id": "ip62",
+    "text": "I said \"go\". Can I still cast a sorcery?",
+    "expect": [
+      "No: by saying \"go\" you passed priority, and your opponent is now assumed to be acting in your end step (MTR 4.2); a sorcery can be cast only in your main phase (307.1)."
+    ],
+    "cite": [
+      "100.6",
+      "307.1",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe P62"
+  },
+  {
+    "id": "ip63",
+    "text": "Can my opponent interrupt my shortcut?",
+    "expect": [
+      "Yes: any player may interrupt a tournament shortcut by explaining how they're deviating from it or at which point in it they want to take an action (MTR 4.2). A player may interrupt their own shortcut the same way."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe P63"
+  },
+  {
+    "id": "ip64",
+    "text": "I have Thopter Foundry and Sword of the Meek and I loop it a million times. Is that allowed?",
+    "expect": [
+      "Yes, if you can actually do it: a loop is a tournament shortcut, so you announce the exact number of iterations (a million is fine) and the resulting game state, and your opponent agrees or names a lower number at which they'll act (MTR 4.4, 732.2a)."
+    ],
+    "cite": [
+      "100.6",
+      "732.2a",
+      "MTR 4.4"
+    ],
+    "note": "track policy probe P64"
+  },
+  {
+    "id": "ip65",
+    "text": "My opponent says they'll do their loop \"a bunch of times\" but won't say how many. What happens?",
+    "expect": [
+      "They must name a number: a loop is a shortcut in which the player proposing it states exactly how many times it's repeated, and you agree or name a lower number at which you'll act (MTR 4.4, 732.2a)."
+    ],
+    "cite": [
+      "100.6",
+      "732.2a",
+      "MTR 4.4",
+      "IPG 3.3"
+    ],
+    "note": "track policy probe P65"
+  },
+  {
+    "id": "ip66",
+    "text": "Both players have a mandatory loop that can't be stopped. What happens?",
+    "expect": [
+      "The game is a draw: a loop of only mandatory actions that no one can stop is a draw (104.4b, 732.4), and under the tournament rules, when no player is maintaining the loop and every player chooses not to act, the game is a draw (MTR 4.4)."
+    ],
+    "cite": [
+      "100.6",
+      "104.4b",
+      "732.4",
+      "MTR 4.4"
+    ],
+    "note": "track policy probe P66"
+  },
+  {
+    "id": "ip67",
+    "text": "Can I do things out of order, like discard to Masticore's upkeep before untapping my land?",
+    "expect": [
+      "Yes: that's acceptable out-of-order sequencing, and discarding for Masticore's upkeep cost before untapping your land is MTR 4.3's own first example."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.3"
+    ],
+    "note": "track policy probe P67"
+  },
+  {
+    "id": "ip68",
+    "text": "I said \"no blocks\" and then immediately wanted to block. Can I?",
+    "expect": [
+      "It depends: a judge may let you change \"no blocks\" if you've gained no information since saying it, as when you correct yourself immediately (MTR 4.8, its own example)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.2",
+      "MTR 4.8"
+    ],
+    "note": "track policy probe P68"
+  },
+  {
+    "id": "ip69",
+    "text": "What happens if I forget my trigger at a Regional Championship?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether the trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "MTR 1.12",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P69"
+  },
+  {
+    "id": "ip70",
+    "text": "I forgot to sacrifice my Ball Lightning at the end step. We noticed on my opponent's turn. What happens?",
+    "expect": [
+      "Missed trigger, Warning: your opponent chooses whether Ball Lightning's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P70"
+  },
+  {
+    "id": "ip71",
+    "text": "I forgot the Hellrider trigger while attacking. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Hellrider's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe P71"
+  },
+  {
+    "id": "ip72",
+    "text": "I forgot to scry. What happens?",
+    "expect": [
+      "No infraction: by the MTR 4.2 shortcut, a player who doesn't scry when told to is assumed to have chosen not to look and to leave the cards in the same order."
+    ],
+    "cite": [
+      "100.6",
+      "701.22a",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe P72"
+  },
+  {
+    "id": "ip73",
+    "text": "My opponent forgot their Dark Confidant trigger. We noticed after they drew. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: you choose whether Dark Confidant's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q01"
+  },
+  {
+    "id": "ip74",
+    "text": "I missed my Phyrexian Arena trigger last turn. What happens now?",
+    "expect": [
+      "Missed trigger, no penalty: if the game is now past this turn's beginning phase, the game just continues and the trigger is gone; if not, your opponent chooses whether Phyrexian Arena's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q02"
+  },
+  {
+    "id": "ip75",
+    "text": "At an RCQ my opponent forgot to sacrifice their Ball Lightning. Do they get a penalty?",
+    "expect": [
+      "Yes. Missed trigger, Warning: you choose whether Ball Lightning's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "MTR 1.12",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q03"
+  },
+  {
+    "id": "ip76",
+    "text": "I forgot my Sheoldred, the Apocalypse trigger three turns ago. Can I still get the life?",
+    "expect": [
+      "No: it's missed for good, no penalty: it was missed before the current phase of the previous turn, so the game just continues and the trigger is gone (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q04"
+  },
+  {
+    "id": "ip77",
+    "text": "My opponent missed their Pact of Negation trigger at FNM. Do they lose?",
+    "expect": [
+      "It depends: at Regular REL, the judge puts Pact of Negation's trigger on the stack now, unless that would be too disruptive (not if significant decisions were made based on it not happening) — and then your opponent pays {3}{U}{U} or loses the game."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "MTR 1.12",
+      "JAR"
+    ],
+    "note": "track policy probe Q05"
+  },
+  {
+    "id": "ip78",
+    "text": "I forgot the Flickerwisp return trigger at the end step. We noticed during my opponent's upkeep. What happens?",
+    "expect": [
+      "Missed trigger, no penalty: Flickerwisp's delayed trigger (\"Return that card to the battlefield under its owner's control at the beginning of the next end step\") still happens; your opponent chooses whether it resolves now or when a player would get priority at the start of the next phase (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q06"
+  },
+  {
+    "id": "ip79",
+    "text": "I didn't remember my Bitterblossom trigger in my upkeep and drew for the turn. What's the ruling?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether Bitterblossom's trigger goes on the stack now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.2b",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q07"
+  },
+  {
+    "id": "ip80",
+    "text": "Is it a missed trigger if I forget Ragavan's dash return?",
+    "expect": [
+      "Yes: it's a missed trigger, Warning, and Ragavan, Nimble Pilferer's delayed trigger (\"It's returned from the battlefield to its owner's hand at the beginning of the next end step\") still happens: your opponent chooses whether it resolves now or when a player would get priority at the start of the next phase."
+    ],
+    "cite": [
+      "100.6",
+      "603.2",
+      "603.3",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q08"
+  },
+  {
+    "id": "ip81",
+    "text": "I forgot to put a lore counter on my Saga. What's the penalty?",
+    "expect": [
+      "Missed trigger, no penalty: your opponent chooses whether the lore counter is put on now (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "714.3c",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q09"
+  },
+  {
+    "id": "ip82",
+    "text": "My opponent forgot their exalted trigger and said take two. Do I have to point it out?",
+    "expect": [
+      "No: you never have to point out your opponent's triggers; not reminding them is neither Failure to Maintain Game State nor Cheating (MTR 4.5, IPG 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.5",
+      "IPG 2.1",
+      "IPG 2.6"
+    ],
+    "note": "track policy probe Q10"
+  },
+  {
+    "id": "ip83",
+    "text": "I accidentally drew 2 extra cards. What's the penalty at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 2 cards from it that they didn't already know; they go back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "121.1",
+      "504.1",
+      "MTR 1.12",
+      "IPG 2.3"
+    ],
+    "note": "track policy probe Q11"
+  },
+  {
+    "id": "ip84",
+    "text": "My opponent drew an extra card at FNM. What happens?",
+    "expect": [
+      "No penalty at Regular REL: 1 card is taken at random from their hand and put on top of their library, without shuffling it (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "121.1",
+      "504.1",
+      "MTR 1.12",
+      "IPG 2.3",
+      "JAR"
+    ],
+    "note": "track policy probe Q12"
+  },
+  {
+    "id": "ip85",
+    "text": "I cast Ancestral Recall and drew four cards. What's the fix?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "121.1",
+      "IPG 2.3"
+    ],
+    "note": "track policy probe Q13"
+  },
+  {
+    "id": "ip86",
+    "text": "I drew 9 cards for my opening hand. What happens?",
+    "expect": [
+      "Mulligan Procedure Error, Warning: you take an additional mulligan (IPG 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "103.5",
+      "IPG 2.4"
+    ],
+    "note": "track policy probe Q14"
+  },
+  {
+    "id": "ip87",
+    "text": "I accidentally flipped over the top card of my library. What's the penalty?",
+    "expect": [
+      "Looking at Extra Cards, Warning: the card you saw is shuffled into the random portion of the library, and any cards whose positions were already known go back to their places (IPG 2.2)."
+    ],
+    "cite": [
+      "100.6",
+      "401.2",
+      "IPG 2.2",
+      "IPG 1.3"
+    ],
+    "note": "track policy probe Q15"
+  },
+  {
+    "id": "ip88",
+    "text": "My opponent forgot to untap their lands. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: it's still the same turn, so your opponent untaps them now (IPG 2.5's partial fix for a forgotten untap)."
+    ],
+    "cite": [
+      "100.6",
+      "502.3",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe Q16"
+  },
+  {
+    "id": "ip89",
+    "text": "I played two lands this turn at FNM. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: caught right away, a simple backup returns the second land to hand; later, it goes back to hand only if that's a minor disruption (an object in the wrong zone that everyone can identify), otherwise the game is left as it is (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "305.2",
+      "MTR 1.12",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe Q17"
+  },
+  {
+    "id": "ip90",
+    "text": "My opponent cast Lightning Bolt without paying for my Thalia at an RCQ. What's the penalty?",
+    "expect": [
+      "Game Rule Violation, Warning: Thalia, Guardian of Thraben's ability is static, not a trigger (604.1), so nothing was missed; your opponent committed it by casting Lightning Bolt without paying Thalia, Guardian of Thraben's extra cost (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "604.1",
+      "601.2f",
+      "MTR 1.12",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe Q18"
+  },
+  {
+    "id": "ip91",
+    "text": "I was 15 minutes late for my match. What happens?",
+    "expect": [
+      "Tardiness, Match Loss: not in your seat 10 minutes into the round, you lose the match and are dropped from the tournament, unless you report to the Head Judge or Scorekeeper before the round ends (IPG 3.1)."
+    ],
+    "cite": [
+      "100.6",
+      "IPG 3.1"
+    ],
+    "note": "track policy probe Q19"
+  },
+  {
+    "id": "ip92",
+    "text": "My opponent was 3 minutes late. What's the penalty?",
+    "expect": [
+      "Tardiness, Game Loss: 3 minutes late, your opponent loses a game, and the match gets a 3-minute time extension (IPG 3.1)."
+    ],
+    "cite": [
+      "100.6",
+      "IPG 3.1"
+    ],
+    "note": "track policy probe Q20"
+  },
+  {
+    "id": "ip93",
+    "text": "Do I have to tell my opponent how many cards are in my hand at FNM?",
+    "expect": [
+      "Yes: at Regular REL derived information, like the number of cards in a hand, counts as free, so you must answer completely and honestly (MTR 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "402.3",
+      "MTR 1.12",
+      "MTR 4.1"
+    ],
+    "note": "track policy probe Q21"
+  },
+  {
+    "id": "ip94",
+    "text": "Can I ask my opponent what their card does?",
+    "expect": [
+      "Yes, ask — but at Competitive REL your opponent doesn't have to explain it: what a card does is derived information. You're entitled to its official Oracle text, so call a judge to read it to you (MTR 3.6, 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.1",
+      "MTR 3.6"
+    ],
+    "note": "track policy probe Q22"
+  },
+  {
+    "id": "ip95",
+    "text": "Can I lie about my life total?",
+    "expect": [
+      "No: your life total is status information, and no player may represent it incorrectly (MTR 4.1); lying about it on purpose to gain an advantage is Cheating, a Disqualification (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.1",
+      "IPG 4.8"
+    ],
+    "note": "track policy probe Q23"
+  },
+  {
+    "id": "ip96",
+    "text": "I said \"go\" and then wanted to play a land. Can I?",
+    "expect": [
+      "No: by saying \"go\" you passed priority, and your opponent is now assumed to be acting in your end step (MTR 4.2); a land can be played only in your main phase (305.2)."
+    ],
+    "cite": [
+      "100.6",
+      "307.1",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe Q24"
+  },
+  {
+    "id": "ip97",
+    "text": "My opponent says \"go to combat\". Can I still cast a sorcery?",
+    "expect": [
+      "No: it's your opponent's turn, and a sorcery can be cast only in your own main phase (307.1). By the shortcut you're now acting in their beginning of combat step, so you can cast instants and activate abilities there (MTR 4.2)."
+    ],
+    "cite": [
+      "100.6",
+      "307.1",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe Q25"
+  },
+  {
+    "id": "ip98",
+    "text": "I said \"go to combat\". Can my opponent cast an instant before attackers?",
+    "expect": [
+      "Yes: \"go to combat\" passes priority in your main phase, and by the shortcut your opponent is then acting in the beginning of combat step, before attackers are declared (MTR 4.2). After that you get priority there too."
+    ],
+    "cite": [
+      "100.6",
+      "507.2",
+      "MTR 4.2"
+    ],
+    "note": "track policy probe Q26"
+  },
+  {
+    "id": "ip99",
+    "text": "My opponent forgot to shuffle after fetching. What happens?",
+    "expect": [
+      "Insufficient Shuffling, Warning: the library is shuffled thoroughly now (IPG 3.9)."
+    ],
+    "cite": [
+      "100.6",
+      "701.24a",
+      "MTR 3.10",
+      "IPG 3.9"
+    ],
+    "note": "track policy probe Q27"
+  },
+  {
+    "id": "ip100",
+    "text": "I forgot to discard down to seven. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: you discard down to seven now: a player who failed to discard does so (IPG 2.5's partial fix)."
+    ],
+    "cite": [
+      "100.6",
+      "514.1",
+      "IPG 2.5"
+    ],
+    "note": "track policy probe Q28"
+  },
+  {
+    "id": "ip101",
+    "text": "Do I have to remind my opponent about their Sheoldred trigger?",
+    "expect": [
+      "No: you never have to point out your opponent's triggers; not reminding them is neither Failure to Maintain Game State nor Cheating (MTR 4.5, IPG 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "MTR 4.5",
+      "IPG 2.1",
+      "IPG 2.6"
+    ],
+    "note": "track policy probe Q29"
+  },
+  {
+    "id": "ip102",
+    "text": "My opponent rushed through their upkeep before I could announce my trigger. Is it missed?",
+    "expect": [
+      "No: your opponent can't make your trigger be missed by rushing ahead; if you acknowledge it before you take an active role (an action, or explicitly passing priority), it's remembered (IPG 2.1)."
+    ],
+    "cite": [
+      "100.6",
+      "IPG 2.1"
+    ],
+    "note": "track policy probe Q30"
   }
 ]

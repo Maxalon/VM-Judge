@@ -4270,6 +4270,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = policyRewrites(t2, m, ctx)
         t2 = lifeDamageRewrites(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
         t2 = cedhRewrites(t2, m, ctx)
@@ -8330,6 +8331,224 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** The markers [stackRewrites] leaves: stack, priority and timing questions, answered by StackAsks in the judge. */
+    // ---- tournament policy: missed triggers, game rule violations, communication, shortcuts (IPG, MTR, JAR); see situation/Policy.kt ----
+
+    /** "an RCQ", "FNM", "a prerelease": the Rules Enforcement Level the event is run at (MTR 1.12, Appendix F). */
+    private fun policyRel(s: String, f: MutableMap<String, String>) {
+        if (f.containsKey("rel")) return
+        val prof = Regex("""\b(?:the )?(pro tour|world championship|professional rel)\b""").find(s)
+        val reg = Regex("""\b(?:an? |the |my )?(fnm|friday night magic|prerelease|regular rel|regular|casual (?:store )?event|lgs|local game store|launch party|store championship|commander night)\b""").find(s)
+        val comp = Regex("""\b(?:an? |the )?(rcq|regional championship(?: qualifier)?|ptq|pro tour qualifier|grand prix|gp|spotlight series|eternal weekend|comp rel|competitive rel|competitive (?:event|tournament)|competitive|tournament)\b""").find(s)
+        val (rel, r) = when { prof != null -> "prof" to prof; reg != null -> "reg" to reg; comp != null -> "comp" to comp; else -> return }
+        f["rel"] = rel
+        f["relsaid"] = r.value.trim().let { v -> if (Regex("""^(?:an?|the|my) """).containsMatchIn(v)) v else (if (rel == "reg" && v.startsWith("fnm")) "an $v" else v) }.replace("rcq", "RCQ").replace("fnm", "FNM").replace("ptq", "PTQ").replace("gp", "GP").replace(Regex("""\brel\b"""), "REL")
+    }
+
+    /** "we noticed after I drew", "two turns later", "it's now combat": when the problem came to light, and what had happened by then. */
+    private fun policyTiming(n: String, f: MutableMap<String, String>, whenOnly: Boolean = false) {
+        Regex("""\b(\d+|a few|several|a couple of) turns? (?:later|ago|after(?:wards?)?)\b""").find(n)?.let { r -> val k = r.groupValues[1].toIntOrNull(); f["when"] = if (k == 1) "next" else "older"; if (k != null) f["n"] = "$k" }
+        if (f["when"] == null && Regex("""\b(?:next turn|following turn|last turn|previous turn|the turn before|(?:on|during|in) (?:my opponent's|the opponent's|their|his|her) (?:next )?turn|(?:on|during) my (?:next )?turn)\b""").containsMatchIn(n)) f["when"] = "next"
+        if (f["when"] == null && Regex("""\b(?:this turn|same turn|right away|immediately|straight away|a moment later|right after)\b""").containsMatchIn(n)) f["when"] = "same"
+        if (whenOnly) return
+        when {
+            Regex("""\b(?:second|postcombat) main\b""").containsMatchIn(n) -> 3
+            Regex("""\b(?:end step|end of (?:the )?turn|cleanup)\b""").containsMatchIn(n) -> 4
+            Regex("""\b(?:combat|blockers|blocks|attackers|attacks?|attacking|damage step)\b""").containsMatchIn(n) -> 2
+            Regex("""\b(?:main phase|precombat main|first main|main)\b""").containsMatchIn(n) -> 1
+            Regex("""\b(?:upkeep|untap step|draw step|drew|draws|drawing)\b""").containsMatchIn(n) -> 0
+            else -> null
+        }?.let { f["cur"] = "$it" }
+        when {
+            Regex("""\bdr[ea]w (?:a card )?for (?:the|my|their|his|her) turn\b|\b(?:after|then|and|until) (?:i |we |they |he |she )?(?:drew|drawing)\b|\bdraw step\b""").containsMatchIn(n) -> f.putIfAbsent("act", "draw")
+            Regex("""\bcast (?:another|a second|a different|my next|the next) spell\b|\bafter (?:i|we|they) cast\b""").containsMatchIn(n) -> f.putIfAbsent("act", "cast")
+            Regex("""\bdeclar\w* blockers\b|\bblocks\b""").containsMatchIn(n) -> f.putIfAbsent("act", "blockers")
+            Regex("""\bplayed a land\b|\bland drop\b""").containsMatchIn(n) -> f.putIfAbsent("act", "land")
+        }
+    }
+
+    /** Card names that are also the words of a judge call ("I said go", "I saw the top card", "out of order"): read as the words. */
+    private val policyWords = setOf("forget", "saw", "said", "order", "suspend", "shuffle", "scry", "lie", "loop", "pass", "combat", "untap", "late", "remember", "notice", "penalty", "warning", "judge", "cheating", "mulligan", "tardy", "ago", "over the top", "turns", "later", "go", "attack", "lands", "extra", "rushed", "slow")
+
+    private val policyHints = listOf("cumulative" to """\bcumulative upkeep\b""", "upkeep" to """\bupkeep\b""", "oppdraw" to """\b(?:my opponent|they|he|she|opponent) (?:drew|draws|drawing)\b""",
+        "draw" to """\bdraw step\b""", "exalted" to """\bexalted\b""", "attack" to """\battack(?:s|ing|ed)?\b""", "end" to """\bend step\b|\bend of (?:the )?turn\b""",
+        "return" to """\breturn\b""", "exile" to """\bexile\b""", "sacrifice" to """\bsacrifice\b""", "chapter" to """\bchapter\b""", "lore" to """\blore counters?\b""",
+        "time" to """\btime counters?\b|\bsuspend""", "landfall" to """\blandfall\b""", "etb" to """\b(?:etb|enters?|enter the battlefield)\b""", "exert" to """\bexert(?:ed|s)?\b""", "dash" to """\bdash(?:ed)?\b""")
+
+    /**
+     * A judge call in table talk: "I forgot my Dark Confidant trigger and we noticed after I drew", "I drew an extra card",
+     * "I said go to combat", "Do I have to tell my opponent how many cards are in my hand?", "It's an RCQ". Each becomes an
+     * "ippol <kind> k=v …" marker that [readPolicyQuestions] turns into an "ip:" ask (situation/PolicyAsks.kt). Sentences
+     * that only add a detail (the event, when it was noticed, the question) are read once a policy question is open.
+     */
+    private fun policyRewrites(t: String, m: Marked, ctx: Ctx): String {
+        var s = t.trim().trimEnd('?', '.', '!').trim().lowercase()
+        // "What happens if I forget my trigger": "Forget" is also a card's name; here it is the verb.
+        for ((ph, e) in m.cards) if (e.display.lowercase() in policyWords) s = s.replace(Regex("""\b$ph\b"""), e.display.lowercase())
+        s = s.replace('’', '\'').replace("\"", "")
+        val inPolicy = ctx.asks.any { it.to?.startsWith("ip:") == true }
+        val f = LinkedHashMap<String, String>()
+        // "… at FNM", "… at an RCQ": the event is read here, and the rest of the sentence is read without it.
+        policyRel(s, f)
+        val s0 = s
+        if (f.isNotEmpty()) s = s.replace(Regex(""",? (?:at|in|during) (?:an? |the |my )?(?:rcq|fnm|friday night magic|prerelease|regional championship(?: qualifier)?|ptq|grand prix|gp|pro tour|tournament|competitive rel|comp rel|regular rel|casual (?:store )?event|lgs|local game store|commander night)(?: event| tournament| match)?\b"""), "").trim()
+        val who = """(i|we|they|he|she|my opponent|the opponent|opponent)"""
+        fun side(w: String) = if (w in setOf("i", "we")) "me" else "opp"
+        fun phs(x: String) = Regex("""\bc\d+\b""").findAll(x).map { it.value }.filter { it in m.cards }.distinct().toList()
+        fun mk(kind: String): String {
+            policyRel(s, f)
+            return "ippol $kind " + f.entries.joinToString(" ") { "${it.key}=${it.value.replace(' ', '_')}" }
+        }
+        fun hints(x: String) { val h = policyHints.filter { (_, re) -> Regex(re).containsMatchIn(x) }.map { it.first }; if (h.isNotEmpty()) f["hint"] = h.joinToString(",") }
+        val notice = Regex("""\b(?:noticed|notice|realized|realised|realize|remembered|caught (?:it|the mistake|that)|saw it|figured (?:it )?out|found out|discovered|it's now|it is now|now it's|we're now|we are now|only after|until)\b(.*)$""")
+
+        // ---- missed triggers, and how a player can and can't miss one ----
+        if (Regex("""\b(?:on purpose|intentionally|deliberately)\b""").containsMatchIn(s) && Regex("""\b(?:miss|missed|forget|forgot|ignore|ignored|skip)\b""").containsMatchIn(s) && s.contains("trigger")) return mk("purpose")
+        if (Regex("""\bmissed trigger\b.*\bcount|\bonce (?:each|per|a) turn\b.*\bmissed\b""").containsMatchIn(s)) return mk("count")
+        if (Regex("""\b(?:rushed|rushes|hurried|raced|skipped ahead|moved ahead|jumped ahead)\b""").containsMatchIn(s) && s.contains("trigger")) { f["q"] = "missed"; return mk("rushed") }
+        // "Knight of Infamy attacks alone and I say "take two"": the exalted bonus left out of the damage.
+        Regex("""^(c\d+) attacks?(?: alone)?,? and (?:i|we) (?:say|said|announce|announced) take (\d+)$""").find(s)?.let { r ->
+            f["who"] = "me"; f["cards"] = r.groupValues[1]; f["hint"] = "attack"; f["act"] = "take"; f["n"] = r.groupValues[2]; f["cur"] = "2"; f["when"] = "same"; return mk("missed") }
+        // "I drew for the turn. Then I remembered my Sylvan Library trigger."
+        Regex("""^(?:and )?(?:then )?(?:(?:i|we) )?(?:remembered|realized|noticed|remember) (?:my|the|that|about my) (c\d+)(?:'s)? (?:\w+ )?trigger""").find(s)?.let { r ->
+            f["who"] = "me"; f["cards"] = r.groupValues[1]
+            if (ctx.events.any { e -> (e.verb == "step" && e.to == "draw") || e.verb == "draw" }) { f["act"] = "draw"; f["cur"] = "0" }
+            return mk("missed") }
+        // "I forgot to untap", "I forgot to shuffle", "I forgot to discard", "I forgot to scry": each is its own infraction.
+        Regex("""^(?:what happens if |if )?$who (?:just |completely |totally |accidentally )?(?:forgot|forget|forgets|didn't|did not|never) (?:to )?(untap|shuffle|discard|draw|scry|surveil)\b(.*)$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1]); policyTiming(r.groupValues[3], f, whenOnly = true)
+            return when (r.groupValues[2]) { "untap" -> { f["sub"] = "untap"; mk("grv") }; "shuffle" -> mk("shuffle"); "discard" -> { f["sub"] = "discard"; mk("grv") }; "draw" -> { f["sub"] = "draw"; mk("grv") }; else -> { f["sub"] = "scry"; mk("shortcut") } }
+        }
+        // "I forgot my Dark Confidant trigger", "I cast Manic Vandal and forgot its trigger", "I forgot to pay cumulative upkeep on my Mystic Remora",
+        // "I forgot my Thalia tax", "my opponent missed their Pact of Negation trigger".
+        if (Regex("""^is (?:it|that|this) (?:a |still a )?missed trigger\b""").containsMatchIn(s)) f["q"] = "missed"
+        Regex("""\b(forgot|forget|forgets|missed|miss|misses|didn't remember|did not remember|never put|failed to)\b""").findAll(s).firstOrNull { v -> Regex("""\b$who\b""").containsMatchIn(s.substring(0, v.range.first)) }?.let { v ->
+            val before = s.substring(0, v.range.first); val after = s.substring(v.range.last + 1)
+            val missWords = Regex("""\btrigger|\babilit|\bdash\b|\bunearth\b|\bupkeep\b|\blore counter|\btime counter|\bchapter|\bcumulative upkeep|\btax\b|\bexalted\b|\bto (?:pay|sacrifice|exile|return|remove|add|put|pick|choose|reveal|announce)\b|\babout (?:my|the|their|his|her) c\d+""")
+            if (!missWords.containsMatchIn(after)) return@let
+            val subj = Regex("""^(?:what happens if |if )?(?:at [^,]+, )?$who\b""").find(before)?.groupValues?.get(1) ?: Regex("""\b$who\b""").find(before)?.groupValues?.get(1) ?: return@let
+            f["who"] = side(subj)
+            val tail = notice.find(after)?.groupValues?.get(1) ?: Regex("""\b(?:and then|then|after)\b(.*)$""").find(after)?.groupValues?.get(1)
+            val missPart = if (tail != null) after.substringBefore(tail) else after
+            val cs = phs(missPart).ifEmpty { phs(before) }
+            if (cs.isNotEmpty()) f["cards"] = (cs + phs(before)).distinct().joinToString("~")
+            hints(missPart + " " + before)
+            Regex("""\bchapter (i{1,3}|iv|v|vi|\d)\b""").find(missPart)?.let { c -> f["chapter"] = c.groupValues[1].let { x -> x.toIntOrNull()?.let { listOf("i", "ii", "iii", "iv", "v", "vi")[it - 1] } ?: x } }
+            when {
+                Regex("""\bupkeep|draw step""").containsMatchIn(missPart) -> f["mph"] = "0"
+                Regex("""\bend step|end of (?:the )?turn""").containsMatchIn(missPart) -> f["mph"] = "4"
+                Regex("""\bcombat|attack""").containsMatchIn(missPart) -> f["mph"] = "2"
+                Regex("""\bmain phase""").containsMatchIn(missPart) -> f["mph"] = "1"
+            }
+            policyTiming(missPart, f, whenOnly = true)
+            if (tail != null) policyTiming(tail, f)
+            return mk("missed")
+        }
+        // "My opponent rushed into combat", "Do I have to remind them?", as a question of its own.
+        if (Regex("""^(?:do|must|should) (?:i|we) (?:have to |need to )?(?:remind|tell|warn) (?:them|him|her|my opponent|the opponent)\b.*\btrigger""").containsMatchIn(s)) { phs(s).takeIf { it.isNotEmpty() }?.let { f["cards"] = it.joinToString("~") }; return mk("remind") }
+
+        // ---- cards drawn or seen that shouldn't have been (IPG 2.2–2.4) ----
+        Regex("""^$who (?:accidentally )?drew (\d+) cards? for (?:my|their|his|her|an?|the) opening hand$""").find(s)?.let { r ->
+            val k = r.groupValues[2].toInt(); if (k <= 7) return@let
+            f["who"] = side(r.groupValues[1]); f["n"] = "${k - 7}"; return mk("mulligan") }
+        Regex("""^$who (?:accidentally )?drew (?:an extra card|(\d+|one|a) extra cards?|(\d+) cards for (?:my|their|his|her|the) turn(?: instead of (?:1|one))?)$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1])
+            f["n"] = "${r.groupValues[2].takeIf { it.isNotEmpty() }?.let { it.toIntOrNull() ?: 1 } ?: r.groupValues[3].toIntOrNull()?.let { it - 1 } ?: 1}"
+            return mk("hce") }
+        Regex("""^$who cast (c\d+) and (?:accidentally )?drew (\d+) cards?$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1]); f["cards"] = r.groupValues[2]; f["drawn"] = r.groupValues[3]; return mk("hce") }
+        Regex("""^$who (?:went|was going|were going|played|was on the play|were on the play) first,? and (?:then )?drew (?:a card )?for (?:my|their|his|her|the) (?:first )?turn$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1]); f["sub"] = "first"; f["n"] = "1"; return mk("hce") }
+        Regex("""^$who (?:accidentally )?(?:saw|looked at|flipped(?: over)?|revealed|flashed) (?:the )?(?:top|bottom|next) (?:card|\d+ cards) of (?:my|their|his|her|the) (?:library|deck)\b""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1]); return mk("lec") }
+
+        // ---- game rule violations (IPG 2.5, 2.6) ----
+        Regex("""^$who untapped (?:\w+ )*?(?:during|on|in) (?:my|their|his|her|the opponent's|my opponent's) turn$""").find(s)?.let { r -> f["who"] = side(r.groupValues[1]); f["sub"] = "badUntap"; return mk("grv") }
+        Regex("""^$who attacked with (?:a |my |their |an? )?(?:summoning[- ]sick|sick) (?:creature|c\d+)(.*)$""").find(s)?.let { r -> f["who"] = side(r.groupValues[1]); f["sub"] = "sick"; policyTiming(r.groupValues[2], f); return mk("grv") }
+        Regex("""^$who played (?:2|two) lands(?: this turn| in (?:one|a|the same) turn)?(?:,? and (i|we) (?:didn't|did not) notice)?$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1]); f["sub"] = "land"; if (r.groupValues[2].isNotEmpty()) f["ftmgs"] = "1"; return mk("grv") }
+        Regex("""^$who cast (c\d+) (?:for|paying|with) \{?(\d*)\}?((?:\{?[wubrgc]\}?)+)$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1]); f["sub"] = "mana"; f["cards"] = r.groupValues[2]; f["paid"] = (r.groupValues[3] + r.groupValues[4]).replace(Regex("""[{}]"""), ""); return mk("grv") }
+        Regex("""^$who cast (c\d+) without paying (?:for|the tax (?:for|from)|extra for|the extra (?:mana )?for) (?:my |their |the )?(c\d+)$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1]); f["actor"] = f["who"]!!; f["srcwho"] = if (f["who"] == "me") "opp" else "me"; f["sub"] = "tax"; f["cards"] = "${r.groupValues[2]}~${r.groupValues[3]}"; return mk("grv") }
+        Regex("""^(?:this is )?(?:my|their|his|her) (?:3rd|third|4th|fourth) game rule violation\b""").find(s)?.let { return mk("grv3") }
+
+        // ---- tournament errors (IPG 3) ----
+        Regex("""^$who (?:was|were|am|is|are|arrived|showed up|got there|came) (\d+) minutes? late\b""").find(s)?.let { r -> f["who"] = side(r.groupValues[1]); f["n"] = r.groupValues[2]; return mk("tardy") }
+        if (Regex("""\bslow play\b|^$who(?:'m| am|'re| are| is|'s) playing (?:too |very )?slow(?:ly)?$""").containsMatchIn(s)) { Regex("""^$who\b""").find(s)?.let { f["who"] = side(it.groupValues[1]) }; return mk("slow") }
+        Regex("""^my deck has (\d+) cards? but my decklist (?:says|has|lists|shows) (\d+)$""").find(s)?.let { r -> f["n"] = r.groupValues[1]; f["listed"] = r.groupValues[2]; return mk("deck") }
+
+        // ---- communication: free, derived and status information (MTR 4.1) ----
+        Regex("""^(?:in a (?:4|four)[- ]player (?:commander |edh )?game,? )?(?:can|may) (?:i|we) ask how many cards (?:are )?in (?:each player's|everyone's|their|my opponent's|his|her) hands?$""").find(s)?.let { r ->
+            f["sub"] = "hand"; f["q"] = "ask"; if (r.value.contains("each") || r.value.contains("everyone") || r.value.contains("player")) f["multi"] = "1"; return mk("info") }
+        if (Regex("""^(?:do|must) (?:i|we) (?:have to |need to )?(?:tell|answer|say|show)(?: my opponent| them| him| her)? how many cards (?:are |i have )?in my hand$""").matches(s)) { f["sub"] = "hand"; f["q"] = "tell"; return mk("info") }
+        if (Regex("""^(?:my opponent|they|he|she) asked (?:me )?(?:for |about )?my life(?: total)?$""").matches(s)) { f["sub"] = "life"; return mk("info") }
+        Regex("""^$who lied about (?:their|my|his|her) (life(?: total)?|hand|library)$""").find(s)?.let { r -> f["who"] = side(r.groupValues[1]); f["sub"] = "lie"; f["what"] = r.groupValues[2].substringBefore(' '); return mk("info") }
+        Regex("""^can (?:i|we) lie about (?:how many cards (?:are )?in my (library|hand)|my (life) total|my (library|hand))$""").find(s)?.let { r -> f["sub"] = "liecan"; f["what"] = r.groupValues.drop(1).first { it.isNotEmpty() }; return mk("info") }
+        Regex("""^(can (?:i|we) ask(?: my opponent| them| him| her)?|does (?:my opponent|the opponent|he|she|they) have to (?:tell|explain to) (?:me|us)|(?:do|must) (?:i|we) (?:have to )?(?:tell|explain to) (?:my opponent|them|him|her)) what (?:my opponent's|the opponent's|their|his|her|my|the|this|that|a) (?:card|c\d+) does(?: at .+)?$""").find(s)?.let { r ->
+            f["sub"] = "oracle"; f["q"] = if (r.groupValues[1].startsWith("can")) "ask" else "must"; return mk("info") }
+
+        // ---- shortcuts, out-of-order sequencing, loops, taking a decision back (MTR 4.2–4.4, 4.8) ----
+        Regex("""^(i|we|my opponent|they|he|she) (?:said|say|says|announced|announce|announces) (go to combat|move to combat|combat|attack with (?:everything|all|all my creatures|my team)|attack|pass the turn|pass|go|your turn|end (?:of )?turn|no blocks?|no blockers)$""").find(s)?.let { r ->
+            f["who"] = side(r.groupValues[1])
+            f["said"] = when (r.groupValues[2]) { "go to combat", "move to combat", "combat" -> "combat"; "no block", "no blocks", "no blockers" -> "noblock"; else -> if (r.groupValues[2].startsWith("attack")) "attack" else "go" }
+            return mk("shortcut") }
+        if (Regex("""^can (?:my opponent|the opponent|they|he|she|i|we) (?:interrupt|break|stop) (?:my|their|a|the|his|her) shortcut$""").matches(s)) { f["sub"] = "interrupt"; return mk("shortcut") }
+        if (Regex("""\bout of order\b""").containsMatchIn(s)) { f["cards"] = phs(s).joinToString("~"); if (f["cards"].isNullOrEmpty()) f.remove("cards"); return mk("ooo") }
+        Regex("""^(?:i|we) (?:have|control) (c\d+) and (c\d+),? and (?:i|we) (?:loop|go infinite with|repeat) (?:it|this|that|them|the combo)(?: for)? (a million|a billion|a bunch of|\d+|infinite|many|lots of) times?$""").find(s)?.let { r ->
+            f["cards"] = "${r.groupValues[1]}~${r.groupValues[2]}"; f["sub"] = "count"; f["n"] = r.groupValues[3].replace(' ', '_'); return mk("loop") }
+        if (Regex("""\bloop\b.*\b(?:won't|will not|doesn't|does not|refuses? to) (?:say|tell|name|give) (?:me )?(?:how many|a number)""").containsMatchIn(s)) { f["sub"] = "vague"; return mk("loop") }
+        if (Regex("""\bmandatory loop\b|\bloop (?:that )?(?:can't|cannot|no one can|nobody can) (?:be )?stop""").containsMatchIn(s)) { f["sub"] = "mandatory"; return mk("loop") }
+
+        // ---- details said in a sentence of their own, once a policy question is open ----
+        val relOnly = Regex("""^(?:(?:it's|it is|this is|this was|it was|we're|we are|i'm|i am|we were|i was)\s+)?(?:(?:at|playing(?: in| at)?|in)\s+)?(?:an?\s+|the\s+|my\s+)?(rcq|fnm|friday night magic|prerelease|regional championship(?: qualifier)?|ptq|grand prix|gp|pro tour|tournament|competitive(?: rel)?|comp rel|regular rel|casual (?:store )?event|commander night|lgs)(?:\s+(?:event|tournament|match))?$""")
+        if (relOnly.matches(s0) && (inPolicy || Regex("""\b(?:forg[eo]t|missed|penalt|judge|infraction|shortcut|loop|late|slow|shuffle|decklist|drew|lied|lie)""").containsMatchIn(ctx.fullText.lowercase()))) return mk("fact")
+        if (!inPolicy) return t
+        notice.find(s)?.takeIf { s.startsWith(it.value) || Regex("""^(?:we|i|they|he|she|my opponent) (?:only )?""").find(s)?.let { p -> s.removePrefix(p.value).startsWith(it.value.substringBefore(' ')) } == true }?.let { r ->
+            policyTiming(r.value, f); return mk("fact") }
+        Regex("""^(?:it's|it is|we're|we are) (?:now )?(?:in )?(?:my |their |his |her |the )?(upkeep|draw step|main phase|precombat main(?: phase)?|combat|second main(?: phase)?|postcombat main(?: phase)?|end step)$""").find(s)?.let { r -> policyTiming(r.groupValues[1], f); return mk("fact") }
+        Regex("""^(?:my opponent|they|he|she) (?:cast|casts) (c\d+) for (?:one|1|\d+) mana$""").find(s)?.let { r -> f["actor"] = "opp"; f["srcwho"] = "me"; f["cards"] = r.groupValues[1]; return mk("fact") }
+        Regex("""^(?:my opponent|they|he|she) tapped (?:their |a |an |his |her )?(c\d+) for \w+$""").find(s)?.let { f["actor"] = "opp"; f["srcwho"] = "me"; return mk("fact") }
+        Regex("""^(?:and )?(?:i|we) (?:didn't|did not) notice$""").find(s)?.let { f["ftmgs"] = "1"; return mk("fact") }
+        // "… and then drew for my turn" split off as a sentence of its own: the action that showed it was missed.
+        Regex("""^(?:and )?then (?:i |we |they |he |she )?(?:drew|draw|cast|played|attacked|declared)\b.*$""").find(s)?.takeIf { ctx.asks.lastOrNull()?.to?.startsWith("ip:missed") == true }?.let { r -> policyTiming(r.value, f); return mk("fact") }
+        Regex("""^(?:and )?then (?:i |we )?(?:immediately |realized i |decided i )?(?:wanted|want|tried|try|decided|wished|wanted) to (cast a sorcery|cast (?:a |an |my )?(?:sorcery|c\d+)|crack (?:a |my |the )?fetch(?:land)?|(?:crack|use|activate) (?:my |a |the )?c\d+|block(?: with .+)?|play a land)(?: first)?$""").find(s)?.let { r ->
+            f["want"] = r.groupValues[1].let { w -> when { w.startsWith("block") -> "block"; w.contains("fetch") || w.startsWith("crack") || w.startsWith("use") || w.startsWith("activate") -> "fetch"; w.startsWith("play a land") -> "land"; else -> "sorcery" } }
+            return mk("fact") }
+        // The question itself: what kind of answer it wants.
+        val q = when {
+            Regex("""^what(?:'s| is| would be| will be) the (?:penalty|ruling|infraction|fix|remedy|correct ruling)\b|^(?:is there|do (?:i|we|they) get|does (?:my opponent|he|she|they) get|will (?:i|we|they) get) (?:a |any )?(?:penalty|warning|game loss)\b|^what penalty\b""").containsMatchIn(s) -> "penalty"
+            Regex("""^what (?:happens|now|should happen|do we do|does the judge do|should the judge do)\b|^how (?:is|do we) (?:it|this|that) (?:get )?fixed\b|^what now$""").containsMatchIn(s) -> "what"
+            Regex("""^(?:do|will|would|does) (?:i|we|they|he|she|my opponent) (?:still )?lose(?: the game)?$""").matches(s) -> "lose"
+            Regex("""^(?:do|must|should) (?:i|we) (?:have to |need to )?(?:remind|tell|warn|point (?:it|that) out)\b""").containsMatchIn(s) -> "remind"
+            Regex("""^(?:do|must) (?:i|we) (?:have to |need to )?answer\b""").containsMatchIn(s) -> "tell"
+            Regex("""^can (?:i|we) (?:still )?(?:use|resolve|get|put|do|have) (?:it|the trigger|that|its trigger|the life|the card|the cards|the damage)\b""").containsMatchIn(s) -> "use"
+            Regex("""^is (?:it|that|this|my trigger) (?:a |still a )?(?:missed(?: trigger)?|missed)$""").matches(s) -> "missed"
+            Regex("""^is (?:that|this|it) (?:allowed|legal|ok|okay|fine)$|^can (?:i|we) do (?:that|this)$""").matches(s) -> "allowed"
+            Regex("""^can (?:i|we)(?: still)?$""").matches(s) -> "can"
+            Regex("""^can (?:i|we) still cast a sorcery$""").matches(s) -> { f["want"] = "sorcery"; "can" }
+            Regex("""^can (?:my opponent|the opponent|they|he|she) (?:still )?(?:act|respond|do (?:something|anything)|cast (?:spells|instants|an instant|something)) (?:in|during|at) my end step$""").matches(s) -> { f["want"] = "oppend"; "can" }
+            Regex("""^can (?:my opponent|the opponent|they|he|she) (?:still )?(?:act|respond|do (?:something|anything)|cast (?:spells|instants|an instant|something)|activate (?:an ability|abilities)) (?:before (?:attackers|attacks|i attack|blockers)|(?:in|during|at) (?:the )?beginning of combat)$""").matches(s) -> { f["want"] = "oppboc"; "can" }
+            else -> null
+        } ?: return t
+        f["q"] = q
+        return mk("q")
+    }
+
+    /** The "ippol" markers [policyRewrites] leaves, as "ip:" asks. Each new one defers the ones before it, so the last one rules with everything said. */
+    private fun readPolicyQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val r = Regex("""^ippol (\w+)((?: [a-z]+=\S*)*)$""").find(clause0.trim()) ?: return null
+        val kind = r.groupValues[1]
+        val f = r.groupValues[2].trim().split(' ').filter { '=' in it }.associate { it.substringBefore('=') to it.substringAfter('=').replace('_', ' ').let { v -> if (v == "opponent") "opp" else v } }.toMutableMap()   // "opp" may have been spelled out by a later rewrite
+        val cards = f["cards"]?.split('~')?.mapNotNull { m.cards[it] }.orEmpty()
+        if (cards.isNotEmpty()) f["cards"] = cards.joinToString("~") { it.oracleId }
+        val last = ctx.fullText.trim().split(Regex("""(?<=[.?!])\s+""")).lastOrNull { it.isNotBlank() }?.trim()?.lowercase()?.replace(Regex("""^(?:and|so|but|then|now|also|ok|okay|wait)\s*,?\s+"""), "") ?: ""
+        if (Regex("""^(?:can|could|does|do|did|is|are|was|were|will|would|should|has|have|may|must|am)\b""").containsMatchIn(last)) f["yn"] = "1"
+        for (i in ctx.asks.indices) { val a = ctx.asks[i]; if (a.to?.startsWith("ip:") == true && !a.to.contains(";defer=1")) ctx.asks[i] = a.copy(to = a.to + ";defer=1") }
+        val to = "ip:$kind|" + f.entries.joinToString(";") { "${it.key}=${it.value}" }
+        ctx.asks += EventSpec("ask", player = if (f["who"] == "opp") pronounPlayer(ctx, "their") else "me", to = to, card = cards.firstOrNull()?.let { CardRef(name = it.display, oracleId = it.oracleId) })
+        return true
+    }
+
     // ---- triggered abilities in depth (603, 605.1b, 607): see situation/TriggerAsks.kt ----
 
     /** Table talk about triggers, put in words the clause reader knows or turned into this track's question markers. */
@@ -8828,6 +9047,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readPolicyQuestions(clause0, m, ctx)?.let { return it }
         readLifeDamageQuestions(clause0, m, ctx)?.let { return it }
         readExamQuestions(clause0, m, ctx)?.let { return it }
         readCedhQuestions(clause0, m, ctx)?.let { return it }

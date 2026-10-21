@@ -1018,6 +1018,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         LifeDamageAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
+        if (e.verb == "ask") PolicyAsks.describe(e, state)?.let { return it }
         TargetAsks.describe(e, state, who)?.let { return it }
         if (e.verb == "ask") CounterAsks.describe(e, state)?.let { return it }
         YesNoAsks.describe(e)?.let { return it }
@@ -2327,6 +2328,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("ns:") == true) return NewSetAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("ld:") == true) return LifeDamageAsks.answer(e, state, engine)
                 if (e.to?.startsWith("yn:") == true) return YesNoAsks.answer(e, state, engine)
+                if (e.to?.startsWith("ip:") == true) return PolicyAsks.answer(e, state) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {
