@@ -51813,5 +51813,737 @@
       "Yes: you can cast Force of Will, and Counterspell is countered."
     ],
     "cite": []
+  },
+  {
+    "id": "pt1",
+    "text": "Humility is out. Does my Kitchen Finks persist when it dies",
+    "expect": [
+      "Kitchen Finks doesn't return: it had no persist on the battlefield (Humility).",
+      "No: Kitchen Finks is in your graveyard."
+    ],
+    "notExpect": [
+      "comes back with a -1/-1 counter"
+    ],
+    "cite": [
+      "603.10a",
+      "613.1f"
+    ],
+    "note": "Perturbation (remove the final question mark) of sweep-humility-finks-does-not-persist."
+  },
+  {
+    "id": "pt2",
+    "text": "My Opponent Casts Thoughtseize And Takes My Lightning Bolt. Do They Lose Life?",
+    "expect": [
+      "Lightning Bolt: your hand → your graveyard.",
+      "opponent loses 2 life in all."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (Title Case) of thoughtseize-takes-bolt-life."
+  },
+  {
+    "id": "pt3",
+    "text": "I Have A Creature That Says Whenever You Cast A Spell Put A +1/+1 Counter On It, I Cast 3 Spells, How Big Is It",
+    "expect": [
+      "a creature that says \"whenever you cast a spell put a +1/+1 counter on it\" is 5/5 (2/2 base, 3 +1/+1 counters)."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (Title Case) of says-cast-trigger-counters-3-spells."
+  },
+  {
+    "id": "pt4",
+    "text": "I Control Blood Moon And Magus Of The Moon. They Wasteland My Blood Moon. Are Their Nonbasics Still Mountains?",
+    "expect": [
+      "Wasteland's own ability is gone",
+      "Yes: Blood Moon and Magus of the Moon each make every nonbasic land a Mountain"
+    ],
+    "notExpect": [
+      "Wasteland adds {R}"
+    ],
+    "cite": [
+      "305.7",
+      "613.1d"
+    ],
+    "note": "Perturbation (Title Case) of layers-magus-keeps-nonbasics-mountains."
+  },
+  {
+    "id": "pt5",
+    "text": "I Have Trinisphere. How Much Does Lightning Bolt Cost?",
+    "expect": [
+      "Lightning Bolt would cost 1 mana, but Trinisphere is untapped and makes each spell that would cost less than 3 cost 3: 1 → 3 mana in all (the extra is generic)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [],
+    "note": "Perturbation (Title Case) of trinisphere-bolt-question."
+  },
+  {
+    "id": "pt6",
+    "text": "I Target My Opponent's Creature With Ward 2 With Lightning Bolt And Don't Pay. Is Bolt Countered?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.21a"
+    ],
+    "note": "Perturbation (Title Case) of tg18."
+  },
+  {
+    "id": "pt7",
+    "text": "My opponent casts Thoughtseize with Chalice on one on their own side. Does their own Chalice counter it?",
+    "expect": [
+      "Yes: Thoughtseize is countered (by Chalice of the Void)"
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (digits as words) of tt252-their-own-chalice-counters-their-thoughtseize."
+  },
+  {
+    "id": "pt8",
+    "text": "my bears took one damage this turn then i blink it w/ cloudshift. is it still damaged",
+    "expect": [
+      "No: Grizzly Bears left the battlefield and returned as a new object with no memory of its previous existence (400.7)"
+    ],
+    "notExpect": [],
+    "cite": [
+      "400.7"
+    ],
+    "note": "Perturbation (digits as words) of wd60."
+  },
+  {
+    "id": "pt9",
+    "text": "I have three lands and cast a two mana spell and then a one mana spell. Can I also cast a one mana spell?",
+    "expect": [
+      "a 1 mana spell can't be cast (costs 1, only 0 mana available)."
+    ],
+    "notExpect": [
+      "a 1 mana spell costs {1} — 1 mana. Nothing on the battlefield changes it. You have 1 available, enough."
+    ],
+    "cite": [],
+    "note": "Perturbation (digits as words) of three-lands-two-spells-can-i-cast-a-third."
+  },
+  {
+    "id": "pt10",
+    "text": "i electrolyze their llanowar elves and their face. they bounce the elves in response. do i still draw and still ping face for one?",
+    "expect": [
+      "Electrolyze deals 1 damage to opponent, as divided when it was cast",
+      "Electrolyze still resolves: only some of its targets are illegal",
+      "You draw 1 card."
+    ],
+    "notExpect": [
+      "opponent takes 2 damage",
+      "doesn't resolve"
+    ],
+    "cite": [
+      "608.2b",
+      "601.2d"
+    ],
+    "note": "Perturbation (digits as words) of wd77."
+  },
+  {
+    "id": "pt11",
+    "text": "i have a planeswalker that says +1 each opponent loses one life with three loyalty, i use it three turns in a row, how much life do they lose",
+    "expect": [
+      "opponent loses 1 life. (×3)",
+      "opponent loses 3 life in all."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (digits as words) of says-pw-plus-one-three-turns."
+  },
+  {
+    "id": "pt12",
+    "text": "I have Aetherflux Reservoir and 51 life. I activate it targeting them who is at 40.",
+    "expect": [
+      "You pay 50 life",
+      "opponent takes 50 damage",
+      "opponent loses the game"
+    ],
+    "notExpect": [],
+    "cite": [
+      "119.4",
+      "704.5a"
+    ],
+    "note": "Perturbation (\"they\"/\"them\" for my opponent) of aetherflux."
+  },
+  {
+    "id": "pt13",
+    "text": "I hit them for 3 with Lightning Bolt. How much damage do they take?",
+    "expect": [
+      "3 damage in all"
+    ],
+    "notExpect": [
+      "I couldn't find"
+    ],
+    "cite": [],
+    "note": "Perturbation (\"they\"/\"them\" for my opponent) of damage-said-as-hitting-for-an-amount."
+  },
+  {
+    "id": "pt14",
+    "text": "I cast Lightning Bolt on them at 3 life while they have Kor Firewalker. Do they gain life?",
+    "expect": [
+      "opponent gains 1 life.",
+      "opponent goes from 3 to 1 life."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (\"they\"/\"them\" for my opponent) of kor-firewalker-bolt-face."
+  },
+  {
+    "id": "pt15",
+    "text": "i cast Lightning Bolt on them who is at 3, do they die",
+    "expect": [
+      "Yes: opponent has lost the game."
+    ],
+    "notExpect": [],
+    "cite": [
+      "704.5a"
+    ],
+    "note": "Perturbation (\"they\"/\"them\" for my opponent) of bolt-face-at-3."
+  },
+  {
+    "id": "pt16",
+    "text": "I cast Lightning Bolt on them at 3 life while they have Kor Firewalker. Do they die?",
+    "expect": [
+      "opponent gains 1 life.",
+      "No: opponent is still in the game at 1 life."
+    ],
+    "notExpect": [
+      "loses the game"
+    ],
+    "cite": [],
+    "note": "Perturbation (\"they\"/\"them\" for my opponent) of kor-firewalker-saves-at-three."
+  },
+  {
+    "id": "pt17",
+    "text": "Our opponent casts Counterspell on our Rancor. Does Rancor come back to our hand?",
+    "expect": [
+      "Rancor is countered.",
+      "No: Rancor is in your graveyard. It stays there: its return-to-hand ability triggers only when it goes to a graveyard from the battlefield"
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (\"we\" for \"I\") of rancor-countered-does-it-come-back."
+  },
+  {
+    "id": "pt18",
+    "text": "they attack us with a 3/3, we have a 1/1 lifelinker, do we gain life if we block",
+    "expect": [
+      "You gain 1 life in all."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.15b"
+    ],
+    "note": "Perturbation (\"we\" for \"I\") of lifelink-blocker-gain-life."
+  },
+  {
+    "id": "pt19",
+    "text": "Our opponent casts Vapor Snag on our Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your hand.",
+      "You lose 1 life."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (\"we\" for \"I\") of vapor-snag-bears."
+  },
+  {
+    "id": "pt20",
+    "text": "Our opponent attacks with Goblin Guide and we have Lightning Bolt. Should we bolt it before blocks or after?",
+    "expect": [
+      "Either way it dies before it deals combat damage"
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (\"we\" for \"I\") of bolt-guide-before-or-after-blocks."
+  },
+  {
+    "id": "pt21",
+    "text": "We skip our next turn because of Chronatog. Our opponent gives us an extra turn. Do we take it?",
+    "expect": [
+      "No: the extra turn from your opponent's effect is your next turn, and Chronatog said to skip the next turn, so it's skipped"
+    ],
+    "notExpect": [],
+    "cite": [
+      "614.10",
+      "614.10a",
+      "500.7"
+    ],
+    "note": "Perturbation (\"we\" for \"I\") of tu12."
+  },
+  {
+    "id": "pt22",
+    "text": "my library is empty.  i cast thoracle, opp bounces thoracle w/ petty theft in response to the trigger.  do i win ",
+    "expect": [
+      "Thassa's Oracle: the battlefield → your hand.",
+      "You win the game (Thassa's Oracle: X = 0, library = 0)."
+    ],
+    "notExpect": [
+      "X = 2"
+    ],
+    "cite": [
+      "113.7a",
+      "700.5",
+      "104.2b"
+    ],
+    "note": "Perturbation (double spaces and a trailing space) of wx19."
+  },
+  {
+    "id": "pt23",
+    "text": "My opponent attacks with Grizzly Bears - I cast Settle the Wreckage - How many lands do they get?",
+    "expect": [
+      "opponent searches their library for 1 (that many) basic land cards and puts it onto the battlefield tapped (Settle the Wreckage)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "701.13a"
+    ],
+    "note": "Perturbation (dashes between sentences) of settle-how-many-lands."
+  },
+  {
+    "id": "pt24",
+    "text": "I attack with a 2/2 and they block with a 0/4 wall - Then I Giant Growth my creature - Does the wall die?",
+    "expect": [
+      "Yes: a 0/4 wall creature died (it's in the graveyard)."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (dashes between sentences) of giant-growth-vs-0-4-wall-after-block."
+  },
+  {
+    "id": "pt25",
+    "text": "I cast Show and Tell - I put Emrakul, the Aeons Torn onto the battlefield and my opponent puts Grizzly Bears onto the battlefield - What happens?",
+    "expect": [
+      "Emrakul, the Aeons Torn enters the battlefield.",
+      "Emrakul, the Aeons Torn wasn't cast, so its \"when you cast\" ability doesn't trigger.",
+      "Grizzly Bears enters the battlefield."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "101.4",
+      "110.2a"
+    ],
+    "note": "Perturbation (dashes between sentences) of dp19."
+  },
+  {
+    "id": "pt26",
+    "text": "I attack with a 2/2 and my opponent blocks with a 3/3 - Theirs has first strike - What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → your graveyard"
+    ],
+    "notExpect": [
+      "a 3/3 creature: the battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "510.4"
+    ],
+    "note": "Perturbation (dashes between sentences) of theirs-has-first-strike."
+  },
+  {
+    "id": "pt27",
+    "text": "I have 9 cards in hand at end of turn - What happens?",
+    "expect": [
+      "cleanup step that follows"
+    ],
+    "notExpect": [
+      "Nothing changes"
+    ],
+    "cite": [
+      "514.1"
+    ],
+    "note": "Perturbation (dashes between sentences) of over-hand-size-at-end-of-turn."
+  },
+  {
+    "id": "pt28",
+    "text": "Quick question: Two Oblivion Rings each exiling the other. What happens?",
+    "expect": [
+      "There is no loop. Two Oblivion Rings can't each be holding the other"
+    ],
+    "notExpect": [],
+    "cite": [
+      "607.2a"
+    ],
+    "note": "Perturbation (Quick question prefix) of loop-two-oblivion-rings."
+  },
+  {
+    "id": "pt29",
+    "text": "Quick question: I attack with Colossal Dreadmaw equipped with Basilisk Collar. My opponent blocks with Mirran Crusader. How much damage does my opponent take and how much life do I gain?",
+    "expect": [
+      "Damage to Mirran Crusader from Colossal Dreadmaw is prevented (protection).",
+      "opponent takes 5 damage.",
+      "You gain 5 life in all."
+    ],
+    "notExpect": [
+      "Mirran Crusader: the battlefield",
+      "Not modeled"
+    ],
+    "cite": [
+      "702.2c",
+      "702.19b",
+      "702.16e",
+      "702.15b"
+    ],
+    "note": "Perturbation (Quick question prefix) of ex6."
+  },
+  {
+    "id": "pt30",
+    "text": "Quick question: My opponent attacks me with Death's Shadow while at 4 life. How big is it?",
+    "expect": [
+      "Death's Shadow is 9/9."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [],
+    "note": "Perturbation (Quick question prefix) of deaths-shadow-while-at-4."
+  },
+  {
+    "id": "pt31",
+    "text": "Quick question: ragavan connects and exiles the top card of their library, a forest. can i play the forest",
+    "expect": [
+      "No: Ragavan, Nimble Pilferer says you may cast that card, and a land can't be cast"
+    ],
+    "notExpect": [],
+    "cite": [
+      "116.2a",
+      "701.18b"
+    ],
+    "note": "Perturbation (Quick question prefix) of wx57."
+  },
+  {
+    "id": "pt32",
+    "text": "Quick question: Can I cast Force of Will for free if I have no other blue cards in hand?",
+    "expect": [
+      "No. Force of Will's alternative cost is to pay 1 life and exile a blue card from your hand (118.9). Costs are paid as the last step of casting, when Force of Will is already on the stack (601.2a, 601.2h), so it isn't in your hand to exile and can't pay for itself. With no other blue card you have to pay {3}{U}{U}."
+    ],
+    "notExpect": [
+      "Not understood",
+      "Force of Will is cast without paying its mana cost"
+    ],
+    "cite": [],
+    "note": "Perturbation (Quick question prefix) of force-of-will-cant-pitch-itself."
+  },
+  {
+    "id": "pt33",
+    "text": "Hey judge, I cast Banisher Priest and my opponent Bolts it in response to the trigger. Does the exile happen?",
+    "expect": [
+      "Nothing is exiled: Banisher Priest had already left the battlefield."
+    ],
+    "notExpect": [],
+    "cite": [
+      "610.3b"
+    ],
+    "note": "Perturbation (Hey judge prefix) of zn15."
+  },
+  {
+    "id": "pt34",
+    "text": "Hey judge, I control Necropotence and my opponent controls Sheoldred, the Apocalypse. It's my turn. Do I lose life in my draw step?",
+    "expect": [
+      "You skip your draw step (Necropotence)",
+      "you lose no life"
+    ],
+    "notExpect": [
+      "You lose 2 life"
+    ],
+    "cite": [
+      "614.10"
+    ],
+    "note": "Perturbation (Hey judge prefix) of ed26."
+  },
+  {
+    "id": "pt35",
+    "text": "Hey judge, my unblocked 1/1 is attacking. I ninjutsu Ninja of the Deep Hours. Is the Ninja blocked?",
+    "expect": [
+      "No: Ninja of the Deep Hours was put onto the battlefield attacking after blockers had been declared, so it was never declared as an attacker and nobody could block it"
+    ],
+    "notExpect": [],
+    "cite": [
+      "508.4d",
+      "702.49c"
+    ],
+    "note": "Perturbation (Hey judge prefix) of kw1-ninjutsu-ninja-is-not-blocked."
+  },
+  {
+    "id": "pt36",
+    "text": "Hey judge, I attack with a 2/2 and my opponent has Settle the Wreckage. They cast it. What happens?",
+    "expect": [
+      "a 2/2 creature: the battlefield → exile."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (Hey judge prefix) of settle-the-wreckage-exiles-attacker."
+  },
+  {
+    "id": "pt37",
+    "text": "Hey judge, I have Grizzly Bears. My opponent casts Lightning Bolt on it. Can they?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Lightning Bolt costs {R} — 1 mana. Nothing on the battlefield changes it."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (Hey judge prefix) of bolt-can-they-yes."
+  },
+  {
+    "id": "pt38",
+    "text": "So, first draw of the turn is terminus. can i miracle it for w",
+    "expect": [
+      "Yes: Terminus was the first card you drew this turn, so you reveal it and may cast it for the miracle cost {W} when the trigger resolves (702.94a)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.94a",
+      "702.94b",
+      "603.11"
+    ],
+    "note": "Perturbation (So prefix) of wx3."
+  },
+  {
+    "id": "pt39",
+    "text": "So, I have Delver of Secrets and reveal Lightning Bolt at upkeep. Does it flip?",
+    "expect": [
+      "Yes. Delver of Secrets' upkeep trigger",
+      "transforms into Insectile Aberration"
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (So prefix) of delver-reveals-bolt-flip."
+  },
+  {
+    "id": "pt40",
+    "text": "So, During my opponent's end step I cast Violent Outburst and cascade into Living End. Can I cast Living End?",
+    "expect": [
+      "Living End is cast from exile without paying its mana cost",
+      "Yes: cascade lets you cast Living End while its trigger resolves"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.85a",
+      "608.2g"
+    ],
+    "note": "Perturbation (So prefix) of md19."
+  },
+  {
+    "id": "pt41",
+    "text": "So, i rampant growth and say i cant find a basic. is that allowed",
+    "expect": [
+      "Yes: Rampant Growth searches for a basic land card, a card with a stated quality"
+    ],
+    "notExpect": [],
+    "cite": [
+      "701.23b"
+    ],
+    "note": "Perturbation (So prefix) of wd135."
+  },
+  {
+    "id": "pt42",
+    "text": "So, my opponent casts Force of Will pitching Brainstorm to counter my Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears is countered."
+    ],
+    "notExpect": [
+      "a spell is countered"
+    ],
+    "cite": [],
+    "note": "Perturbation (So prefix) of force-of-will-pitching-to-counter-bears."
+  },
+  {
+    "id": "pt43",
+    "text": "I attack with a 3/3. They block with a 2/2 and then cast Giant Growth on their blocker. Who dies? thanks",
+    "expect": [
+      "No: a 2/2 creature is still on the battlefield.",
+      "Yes: a 3/3 creature died (it's in the graveyard)."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (thanks suffix) of growth-on-their-blocker-who-dies."
+  },
+  {
+    "id": "pt44",
+    "text": "I attack with a Vampire Nighthawk and they block with a 1/1 deathtouch. What happens? thanks",
+    "expect": [
+      "a 1/1 creature with deathtouch can't block Vampire Nighthawk (flying).",
+      "You gain 2 life."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (thanks suffix) of nighthawk-vs-deathtouch-1-1."
+  },
+  {
+    "id": "pt45",
+    "text": "I cast Wrath of God. My opponent has Blightsteel Colossus. Where does it go? thanks",
+    "expect": [
+      "Blightsteel Colossus is indestructible and isn't destroyed.",
+      "Blightsteel Colossus is on the battlefield."
+    ],
+    "notExpect": [],
+    "cite": [],
+    "note": "Perturbation (thanks suffix) of wrath-vs-blightsteel."
+  },
+  {
+    "id": "pt46",
+    "text": "I Wrath with Avacyn, Angel of Hope on my side. Do their creatures die? thanks",
+    "expect": [
+      "Avacyn, Angel of Hope is indestructible and isn't destroyed.",
+      "Yes: a creature died (it's in the graveyard)."
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [
+      "702.12b"
+    ],
+    "note": "Perturbation (thanks suffix) of wrath-avacyn-their-creatures."
+  },
+  {
+    "id": "pt47",
+    "text": "Opponent has Grave Pact. I cast Murder on their Grizzly Bears while I control Llanowar Elves. thanks",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's graveyard",
+      "Llanowar Elves: the battlefield → your graveyard"
+    ],
+    "notExpect": [],
+    "cite": [
+      "701.21a"
+    ],
+    "note": "Perturbation (thanks suffix) of grave-pact."
+  },
+  {
+    "id": "pt48",
+    "text": "I control Grizzly Bears equipped with Bonesplitter. My opponent casts Shatter on Bonesplitter in response to my attack. Thanks!",
+    "expect": [
+      "Bonesplitter: the battlefield → your graveyard",
+      "opponent takes 2 damage"
+    ],
+    "notExpect": [
+      "opponent takes 4 damage"
+    ],
+    "cite": [
+      "701.8a",
+      "510.1b"
+    ],
+    "note": "Perturbation (Thanks! suffix) of shatter-in-response-to-attack."
+  },
+  {
+    "id": "pt49",
+    "text": "I have Rhystic Study and my opponent casts three spells this turn, paying for none of them. Thanks!",
+    "expect": [
+      "You draw 1 card. (×3)"
+    ],
+    "notExpect": [],
+    "cite": [
+      "608.2g"
+    ],
+    "note": "Perturbation (Thanks! suffix) of rhystic-three-spells-none-paid."
+  },
+  {
+    "id": "pt50",
+    "text": "I have metalcraft and cast Galvanic Blast at their Grizzly Bears. Thanks!",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's graveyard"
+    ],
+    "notExpect": [
+      "Not understood"
+    ],
+    "cite": [],
+    "note": "Perturbation (Thanks! suffix) of metalcraft-said-outright."
+  },
+  {
+    "id": "pt51",
+    "text": "I cast Terminate on their Darksteel Colossus. Thanks!",
+    "expect": [
+      "Darksteel Colossus is indestructible and isn't destroyed"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.12b"
+    ],
+    "note": "Perturbation (Thanks! suffix) of terminate-darksteel."
+  },
+  {
+    "id": "pt52",
+    "text": "I attack my opponent's Invasion of Gobakhan with a 3/3. Thanks!",
+    "expect": [
+      "You can't attack Invasion of Gobakhan: you are its protector (310.9b)."
+    ],
+    "notExpect": [
+      "Invasion of Gobakhan is defeated"
+    ],
+    "cite": [
+      "310.9b"
+    ],
+    "note": "Perturbation (Thanks! suffix) of cb16."
+  },
+  {
+    "id": "pt53",
+    "text": "I control seven lands and cast the avenger of zendikar. What happens?",
+    "expect": [
+      "You get a Plant token. (×7)"
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "701.7a",
+      "608.2h"
+    ],
+    "note": "Perturbation (\"the\" before lower-case card names) of un31."
+  },
+  {
+    "id": "pt54",
+    "text": "My opponent controls the chalice of the void with one counter. I cast the ragavan, nimble pilferer for its dash cost. Does Chalice counter it?",
+    "expect": [
+      "Yes: Ragavan, Nimble Pilferer still has mana value 1 when cast for its alternative cost"
+    ],
+    "notExpect": [],
+    "cite": [
+      "118.9c",
+      "202.3",
+      "701.6a"
+    ],
+    "note": "Perturbation (\"the\" before lower-case card names) of md23."
+  },
+  {
+    "id": "pt55",
+    "text": "I cast the lightning bolt at a Spellskite they control with the kor firewalker out. Do they gain life?",
+    "expect": [
+      "opponent gains 1 life in all"
+    ],
+    "notExpect": [
+      "You gain 1 life"
+    ],
+    "cite": [],
+    "note": "Perturbation (\"the\" before lower-case card names) of bolt-their-spellskite-their-firewalker."
+  },
+  {
+    "id": "pt56",
+    "text": "I control the mishra's workshop and Goblin Charbelcher. Can I use the mana from Mishra's Workshop to activate the goblin charbelcher?",
+    "expect": [
+      "No: Mishra's Workshop's mana can be spent only to cast artifact spells (106.6)"
+    ],
+    "notExpect": [],
+    "cite": [
+      "106.6"
+    ],
+    "note": "Perturbation (\"the\" before lower-case card names) of pc18."
+  },
+  {
+    "id": "pt57",
+    "text": "I have the dark confidant and reveal Emrakul. How much life do I lose?",
+    "expect": [
+      "You lose 15 life (Emrakul, the Aeons Torn's mana value).",
+      "You lose 15 life in all."
+    ],
+    "notExpect": [],
+    "cite": [
+      "202.3"
+    ],
+    "note": "Perturbation (\"the\" before lower-case card names) of dark-confidant-reveals-emrakul."
   }
 ]

@@ -228,8 +228,75 @@ object Slang {
     private fun MatchResult.expandGroups(rep: String): String =
         Regex("""\$(\d)""").replace(rep) { g -> groupValues.getOrElse(g.groupValues[1].toInt()) { "" } }
 
-    fun normalize(text: String): String {
+    /** "one" said as a number where a digit would be: "I'm at one life", "Chalice on one", "choosing modes one and four". */
+    private const val NUMW = "one|two|three|four|five|six|seven|eight|nine|ten"
+    private val numValue = mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10)
+    private val themAtLife = Regex("""\b(on|at|targeting|to|hit|hits|hitting|attack|attacks|attacking|bolt|bolts|bolted|shock|shocks|helix|burn|burns|drain|drains) them (?=(?:(?:who|that)(?: is|'s|'s|s) |they(?: are|'re) )?at \d|for \d|(?:who|that) (?:has|have) \d|with \d+ life)""", ci)
+    private val oneNoun = Regex("""(?<!\badd )\bone\b(?= +(?:(?:more|less|fewer|extra|additional) +)?(?:life|damage|mana|counters?|cards?|toughness|power|loyalty|poison|green|blue|red|white|black|colorless|generic|drop|energy|experience|storm|counterspells?|swamps?|islands?|forests?|mountains?|plains|(?:basic )?lands?)\b)""", ci)
+    private val oneCost = Regex("""\bone\b(?= +(?:more|less|fewer)\b)""", ci)
+    /** "at four", "on one", "ward one", "costs three", "chapter two": a number word closing off a clause or leading a numbered noun. */
+    private val numAfter = Regex("""(?<=\b(?:at|is|am|are|was|naming|names|named|on|than|equals?|from|by|to|x|for|ward|costs?|costing|paying|pay|chapter|ch|level|rank) )($NUMW)\b(?= *(?:[.,;:?!)]|$|\band\b|\bor\b|\bbut\b|\bthen\b|\bso\b|\bwhen\b|\bif\b|\bafter\b|\bwhile\b|\bwith\b|\bw/|\bfor\b|\bon\b|\bagainst\b|\bin\b|\blife\b|\bloyalty\b|\bpoison\b))""", ci)
+    private val pronounOneContext = Regex("""\b(?:chalice|vial|prelate|ping|pings|pinged|damage|life|lose|loses|gain|gains|deals?|dealt|loyalty|poison|ward|taxes|cost|costs)\b""", ci)
+    private val numNoun = Regex("""\b(two|three|four|five|six|seven|eight|nine|ten)\b(?= +(?:life|loyalty|poison|damage|energy)\b)""", ci)
+    private val allNum = Regex("""\b(all|take|takes|taking) ($NUMW)\b(?= *(?:[.,;:?!)]|$|\bon\b|\bto\b|\bfrom\b|\bat\b|\bto\b|\bof\b))""", ci)
+    private val modeList = Regex("""\b(modes?|choosing|chooses|chose|choose) +(?:the +)?((?:one|two|three|four|five)(?:(?:,| +and|, +and| +or)? +(?:one|two|three|four|five))*)\b(?! +(?:of|creature|card|counter|damage|mana|life))""", ci)
+    private val digitOf = mapOf("one" to "1", "two" to "2", "three" to "3", "four" to "4", "five" to "5")
+
+    private val leadFiller = Regex("""^\s*(?:(?:hey|hi|hello|yo|ok|okay|so|um+|uh+|well|alright|alrighty|judge call|judge|judges|quick question|quick q|rules question|rules q|question|real quick|dumb question|stupid question|random question|hypothetically|hypothetical|just wondering|just curious|sorry if this is dumb|ok so|okay so)\b(?!')[\s,:;!.\-–—]*)+""", ci)
+    private val trailFiller = Regex("""[\s,.;:!?\-]*\b(?:thanks|thank you|thx|ty|tia|cheers|please|pls|plz|appreciated)\b(?:[\s,.;:!?\-]*(?:in advance|a lot|so much|very much|much appreciated|guys|folks|everyone|judge|judges|all|appreciated))*[\s.!?]*$""", ci)
+    private val spacedDash = Regex("""(?<=[\w)'"?!]) +(?:-{1,2}|[–—]) +(?=[A-Za-z])""")
+
+    /** "I Attack With Serra Angel And They Block": every word capitalised, which only means the caps lock key. Typed that way, it reads as lower case. */
+    private fun titleCaseToLower(text: String): String {
+        val words = Regex("""[A-Za-z][A-Za-z'\-]*""").findAll(text).map { it.value }.toList()
+        if (words.size < 3) return text
+        val caps = words.count { it[0].isUpperCase() }
+        val small = setOf("And", "With", "The", "On", "To", "In", "At", "Of", "If", "My", "Their", "It", "Is", "Do", "Does", "Can", "Then", "They", "Them", "That", "Has", "Have", "For", "From", "By", "Or", "But", "As", "After", "Before")
+        val midSmall = words.drop(1).count { it in small }
+        return if (caps >= words.size * 0.8 && midSmall >= 1) text.lowercase() else text
+    }
+
+    /** Chat around the question rather than in it: "Hey judge,", "quick question:", "... thanks!", "A - B" for "A. B". */
+    private fun chatter(text: String): String {
+        var t = titleCaseToLower(text)
+        val lead = leadFiller.find(t)
+        if (lead != null && lead.range.last + 1 < t.length) t = t.substring(lead.range.last + 1)
+        val trail = trailFiller.find(t)
+        if (trail != null && trail.range.first > 0) t = t.substring(0, trail.range.first) + (if ('?' in trail.value) "?" else "")
+        // Two spaces after a full stop, or a space left at the end, say nothing.
+        t = Regex("""[ \t]{2,}""").replace(t.trim(), " ")
+        return spacedDash.replace(t, ". ")
+    }
+
+    /** The way people say things aloud rather than type them: spoken numbers and "we" for "I" (the asker is always one player). */
+    private fun spokenForms(text: String): String {
         var t = text
+        t = modeList.replace(t) { m -> m.groupValues[1] + " " + Regex("""\b(?:one|two|three|four|five)\b""", ci).replace(m.groupValues[2]) { digitOf[it.value.lowercase()]!! } }
+        // "bolt them at 3 life", "hit them for 3": "them" is the other player when a life total or an amount of damage follows.
+        t = themAtLife.replace(t, "$1 my opponent ")
+        t = oneNoun.replace(t, "1"); t = oneCost.replace(t, "1")
+        t = numAfter.replace(t) { m ->
+            val before = t.substring(0, m.range.first).trimEnd()
+            val prep = before.substringAfterLast(' ').lowercase()
+            // "cast Fatal Push on one" / "pays for one" is a pronoun; "Chalice on one", "ping for one" is the number.
+            if (m.value.equals("one", true) && prep in setOf("on", "for", "by", "to", "from", "with") && !pronounOneContext.containsMatchIn(before.takeLast(60))) m.value
+            else numValue[m.value.lowercase()].toString() }
+        t = Regex("""\b(chapter|ch) +($NUMW)\b""", ci).replace(t) { it.groupValues[1] + " " + numValue[it.groupValues[2].lowercase()] }
+        t = numNoun.replace(t) { numValue[it.value.lowercase()].toString() }
+        t = allNum.replace(t) { it.groupValues[1] + " " + numValue[it.groupValues[2].lowercase()] }
+        // "we're both tapped out" / "we both control Bears" keep "we"; a question told entirely in "we/our" is told by one player.
+        if (Regex("""\b(?:we|our|ours|us|ourselves|we're|we've|we'll|we'd)\b""", ci).containsMatchIn(t) && !Regex("""\b(?:i|me|my|mine|myself|i'm|i've|i'll|i'd|im|ive)\b""", ci).containsMatchIn(t) && !Regex("""\b(?:we|us) (?:both|each|all)\b|\b(?:both|each) of us\b|\bwe (?:fight|start|noticed)\b""", ci).containsMatchIn(t)) {
+            t = Regex("""\b(we're|we've|we'll|we'd|we|us|our|ours|ourselves)\b""", ci).replace(t) { m ->
+                val r = when (m.value.lowercase()) { "we" -> "I"; "us" -> "me"; "our" -> "my"; "ours" -> "mine"; "ourselves" -> "myself"; "we're" -> "I'm"; "we've" -> "I've"; "we'll" -> "I'll"; else -> "I'd" }
+                r }
+            t = Regex("""\bI are\b""").replace(t, "I am"); t = Regex("""\bI were\b""").replace(t, "I was"); t = Regex("""\b([Aa])re I\b""").replace(t) { it.groupValues[1] + "m I" }
+            t = Regex("""\bI don't has\b""").replace(t, "I don't have")
+        }
+        return t
+    }
+
+    fun normalize(text: String): String {
+        var t = spokenForms(chatter(text))
         for ((re, f) in rules) t = re.replace(t) { f(it) }
         // "it phases out" after a creature: the creature.
         t = Regex("""(\bon (?:their|my|his|her|the) creature),? (?:and )?it (phases out|phase out)\b""", ci).replace(t, "$1, the creature $2")

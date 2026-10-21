@@ -151,7 +151,38 @@ class SituationParser(private val names: NameIndex) {
         "manland" to "Celestial Colonnade, Raging Ravine, …", "creature land" to "Celestial Colonnade, Raging Ravine, …")
 
     /** Table talk first ("dont", "my guy", "swords"), then the ordinary reading. */
-    fun parse(text: String): Parsed = parseCore(Slang.normalize(text))
+    fun parse(text: String): Parsed = parseCore(perturbRewrites(Slang.normalize(text)))
+
+    /**
+     * "I cast the lightning bolt", "they have the sphere of resistance": the article in front of a card named in full is
+     * dropped, so the name reads the same as without it. Names of two words or more (or a long one-word permanent name), and only when "the" is not part
+     * of a longer name ("the Ur-Dragon", "Jace, the Mind Sculptor"), so "the Top" and "the Angel" keep their own handling.
+     */
+    private fun perturbRewrites(text: String): String {
+        if (!Regex("""(?i)\bthe\b""").containsMatchIn(text)) return text
+        val tokens = Regex("""\S+""").findAll(text).toList()
+        val norm = tokens.map { Names.normalize(stripPossessive(it.value)).ifEmpty { "_" } }
+        val kept = tokens.map { Names.normalize(it.value.trimEnd(',', '.', ';', '!', '?')).ifEmpty { "_" } }
+        val whole = (names.findAll(kept) + names.findAll(norm))
+        val drop = mutableListOf<IntRange>()
+        for ((i, w) in norm.withIndex()) {
+            if (w != "the" || i + 2 >= tokens.size) continue
+            val after = names.findAll(norm.subList(i + 1, minOf(norm.size, i + 1 + 8)))
+            val hit = after.firstOrNull() ?: continue
+            // One word counts too when it is the card's whole name and a long one ("the Spellskite", "the Mutavault"); nicknames ("the Top", "the Bears") keep their own handling.
+            val oneWord = hit.end == 1 && norm[i + 1].length >= 7 && Names.normalize(hit.entry.display) == norm[i + 1] && hit.entry.kind == "full" && !hit.entry.isSpellOnly
+            if (hit.start != 0 || (hit.end < 2 && !oneWord) || !hit.entry.isCard) continue
+            // "the Esper Sentinel trigger", "the Sakura-Tribe Elder ability": the article belongs to the noun after the name.
+            if (norm.getOrNull(i + 1 + hit.end) in setOf("ability", "abilities", "trigger", "triggers", "effect", "activation")) continue
+            // "the sphere of resistance" is not "The Sphere" + "of resistance": a name found around the article only stops this when it is as long.
+            if (whole.any { f -> f.start <= i && i < f.end && f.end >= i + 1 + hit.end }) continue
+            drop += tokens[i].range.first until tokens[i + 1].range.first
+        }
+        if (drop.isEmpty()) return text
+        val sb = StringBuilder(); var pos = 0
+        for (r in drop) { sb.append(text, pos, r.first); pos = r.last + 1 }
+        return sb.append(text, pos, text.length).toString()
+    }
 
     private fun parseCore(text: String): Parsed {
         val ctx = Ctx()
@@ -507,7 +538,7 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""(?i)\bdark confidant\b""").containsMatchIn(text0)) text0 = text0.replace(Regex("""\bBob\b"""), "Dark Confidant")
         // "Does the redirect still happen?" about Spellskite: the noun, not the card Redirect.
         // "Does my Kitchen Finks persist when it dies?": it dies, then the question is whether it comes back.
-        text0 = text0.replace(Regex("""(?i)\b(?:does|will) (my |their |the )?([A-Z][\w',-]*(?: [A-Za-z][\w',-]*)*?) (?:still )?(?:persist|undying|come back|return) (?:when|if|after) it (?:dies|is destroyed|gets destroyed|is killed)\?"""), { r -> "${r.groupValues[1].ifEmpty { "my " }}${r.groupValues[2]} dies. Does it persist?" })
+        text0 = text0.replace(Regex("""(?i)\b(?:does|will) (my |their |the )?([A-Z][\w',-]*(?: [A-Za-z][\w',-]*)*?) (?:still )?(?:persist|undying|come back|return) (?:when|if|after) it (?:dies|is destroyed|gets destroyed|is killed)(?:\?|$)"""), { r -> "${r.groupValues[1].ifEmpty { "my " }}${r.groupValues[2]} dies. Does it persist?" })
         // "Can I then cast Counterspell?": "then" inside a question means afterward, not a new sentence.
         text0 = text0.replace(Regex("""(?i)\b(can|could|may) (i|we|they|he|she) then\b"""), "$1 $2 afterward")
         // "the persisted Finks": a participle, not the card Persist.
