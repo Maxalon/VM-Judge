@@ -173,7 +173,8 @@ class SituationParserTest {
         assertEquals("ask", ask.verb); assertEquals("damage", ask.to); assertEquals("sol_ring", ask.obj); assertEquals(listOf("opp"), ask.targets)
         assertTrue(p.unread.isEmpty(), "unread: ${p.unread}")
         val q = parser.parse("I have Rhystic Study and it attacks. Does my Rhystic Study survive?")
-        assertEquals(listOf("attack", "resolveAll", "ask"), q.situation.events.map { it.verb }); assertEquals("survive", q.situation.events.last().to)
+        // The "yn:q" marker in front of the asks says the question wants a Yes or No first (YesNoAsks.kt); it isn't one of the events.
+        assertEquals(listOf("attack", "resolveAll", "ask"), q.situation.events.filter { it.to?.startsWith("yn:") != true }.map { it.verb }); assertEquals("survive", q.situation.events.last().to)
     }
 
     @Test
