@@ -52545,5 +52545,177 @@
       "202.3"
     ],
     "note": "Perturbation (\"the\" before lower-case card names) of dark-confidant-reveals-emrakul."
+  },
+  {
+    "id": "ci1",
+    "text": "I cast Teferi's Protection. On their turn my opponent attacks me with their commander Atraxa, Praetors' Voice. Do I take commander damage?",
+    "expect": [
+      "Damage to you from Atraxa, Praetors' Voice is prevented (protection from everything)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.2a",
+      "405.2",
+      "117.3c",
+      "608.1",
+      "609.3",
+      "702.26b",
+      "510.2",
+      "903.10a"
+    ],
+    "note": "Teferi's Protection with nothing of yours matching phases nothing out; the empty phase-out cites doing only as much as possible."
+  },
+  {
+    "id": "ci2",
+    "text": "I have Rhystic Study. It's my opponent's turn, they cast Sol Ring and then Stifle the Rhystic Study trigger.",
+    "expect": [
+      "draw 1 card",
+      "countered"
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.2a",
+      "405.2",
+      "603.2",
+      "603.3",
+      "603.3a",
+      "117.3c",
+      "117.4",
+      "608.1",
+      "608.2c",
+      "608.2n",
+      "608.3a",
+      "701.6a",
+      "117.3b"
+    ]
+  },
+  {
+    "id": "ci3",
+    "text": "I control Kiki-Jiki, Mirror Breaker and Restoration Angel. Can I win this turn?",
+    "expect": [
+      "Yes, if nothing is done about it: tap Kiki-Jiki, Mirror Breaker to copy Restoration Angel",
+      "exiles Kiki-Jiki, Mirror Breaker and returns it, untapped"
+    ],
+    "notExpect": [],
+    "cite": [
+      "732.1b",
+      "732.2a",
+      "707.9b"
+    ],
+    "note": "The 'one round of the loop' step cites the shortcut rule."
+  },
+  {
+    "id": "ci4",
+    "text": "Uro escapes. Is it sacrificed?",
+    "expect": [
+      "No: Uro, Titan of Nature's Wrath is not sacrificed."
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.138b",
+      "609.3"
+    ],
+    "note": "Uro's enters trigger finds no named land: only as much as possible happens."
+  },
+  {
+    "id": "ci5",
+    "text": "I control Academy Rector and it dies.",
+    "expect": [
+      "Academy Rector: the battlefield → your graveyard"
+    ],
+    "notExpect": [],
+    "cite": [
+      "400.7",
+      "609.3",
+      "701.24a"
+    ],
+    "note": "No enchantment was named: nothing is put onto the battlefield but the library is still shuffled."
+  },
+  {
+    "id": "ci6",
+    "text": "I cast Chord of Calling with convoke. Can I tap summoning-sick creatures?",
+    "expect": [
+      "Yes: tapping a creature for convoke isn't activating a {T} ability of that creature"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.51a",
+      "302.6",
+      "609.3",
+      "701.24a"
+    ]
+  },
+  {
+    "id": "ci7",
+    "text": "I have Mikaeus, the Unhallowed and Triskelion. What happens?",
+    "expect": [
+      "this board has a loop that deals an arbitrarily large amount of damage",
+      "comes back with 4 +1/+1 counters",
+      "The first time round is different (opponent takes 1 damage"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.93a",
+      "732.1b",
+      "732.2a",
+      "732.1b"
+    ]
+  },
+  {
+    "id": "ci8",
+    "text": "I cast Lightning Bolt targeting Grizzly Bears. Does it die?",
+    "expect": [
+      "Yes: Grizzly Bears died (it's in the graveyard)."
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.2a",
+      "405.2",
+      "117.3c",
+      "117.4",
+      "608.1",
+      "120.3e",
+      "608.2c",
+      "608.2n",
+      "704.3",
+      "704.5g",
+      "117.3b"
+    ]
+  },
+  {
+    "id": "ci9",
+    "text": "I attack with Grizzly Bears and my opponent has no creatures. How much damage do they take?",
+    "expect": [
+      "Yes: opponent takes 2 damage in all."
+    ],
+    "notExpect": [],
+    "cite": [
+      "508.1a",
+      "508.1f",
+      "510.1b",
+      "510.2",
+      "120.3a",
+      "510.3"
+    ]
+  },
+  {
+    "id": "ci10",
+    "text": "I cast Counterspell on their Lightning Bolt targeting my Grizzly Bears. What happens?",
+    "expect": [
+      "Lightning Bolt is countered.",
+      "Grizzly Bears enters the battlefield."
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.2a",
+      "405.2",
+      "109.2",
+      "608.2b",
+      "701.6a",
+      "608.2c",
+      "608.2n",
+      "608.3a",
+      "117.3b"
+    ]
   }
 ]

@@ -3198,7 +3198,7 @@ class Engine(val state: GameState) {
                 val pid = (ref as? Ref.Player)?.id ?: return@forEachLegalTarget
                 val affected = state.objects.values.filter { it.controller == pid && state.matches(effect.filter, it, pid) }
                 item.lastCount = affected.size
-                if (affected.isEmpty()) trace.step("${state.nameOf(ref)} ${if (state.player(pid).you) "control" else "controls"} no ${effect.filter.raw}, so nothing happens.")
+                if (affected.isEmpty()) trace.step("${state.nameOf(ref)} ${if (state.player(pid).you) "control" else "controls"} no ${effect.filter.raw}, so nothing happens.", "609.3")
                 // "Settle the Wreckage; one attacker has hexproof": only the player is a target, so hexproof on the creatures doesn't matter.
                 affected.filter { state.hasKeyword(it, "hexproof") || state.hasKeyword(it, "shroud") }.takeIf { it.isNotEmpty() }?.let { shy ->
                     trace.step("${shy.joinToString(" and ") { it.name }} ${if (shy.size == 1) "has" else "have"} ${if (state.hasKeyword(shy[0], "hexproof")) "hexproof" else "shroud"}, but ${item.source.name} targets only ${state.nameOf(ref)}; the ${effect.filter.raw} it affects aren't its targets, so ${if (shy.size == 1) "it is" else "they are"} affected all the same.", "115.10a", if (state.hasKeyword(shy[0], "hexproof")) "702.11b" else "702.18a")
@@ -3300,7 +3300,7 @@ class Engine(val state: GameState) {
             }
             is Effect.ReflectPrevented -> {
                 val sh = state.shields.lastOrNull { it.sourceName == item.describe }
-                if (sh == null) trace.step("${item.describe} made no prevention shield, so there is nothing for the damage to be sent back from.")
+                if (sh == null) trace.step("${item.describe} made no prevention shield, so there is nothing for the damage to be sent back from.", "609.3")
                 else {
                     val r = sh.replacement as Replacement.PreventDamage
                     sh.replacement = r.copy(reflectToCreature = r.reflectToCreature || effect.toCreature, reflectToController = r.reflectToController || effect.toController)
@@ -3666,7 +3666,7 @@ class Engine(val state: GameState) {
                     trace.step("${keeper.name} exiles every card that would be put into a graveyard, so the graveyards are empty: there is no ${effect.filter.raw} for ${item.source.name} to put onto the battlefield. (Had one been named as a target, ${item.source.name} couldn't have been cast at all.)", "614.1a", "601.2c")
                     state.outcomes += "${item.source.name} does nothing: ${keeper.name} has kept the graveyards empty, so there is no ${effect.filter.raw} to put onto the battlefield."
                 } else
-                if (chosen == null) { state.clarifications += Clarification("${item.source.name}'s card", "${item.source.name} puts ${withArticle(effect.filter.raw)} from ${you.possessive} $zoneName onto the battlefield; which card? (none was named, so nothing is put)"); trace.step("No ${effect.filter.raw} in ${you.possessive} $zoneName was named for ${item.source.name}; nothing is put onto the battlefield${if (effect.fromLibrary) " (the library is still shuffled)" else ""}.") }
+                if (chosen == null) { state.clarifications += Clarification("${item.source.name}'s card", "${item.source.name} puts ${withArticle(effect.filter.raw)} from ${you.possessive} $zoneName onto the battlefield; which card? (none was named, so nothing is put)"); trace.step("No ${effect.filter.raw} in ${you.possessive} $zoneName was named for ${item.source.name}; nothing is put onto the battlefield${if (effect.fromLibrary) " (the library is still shuffled)" else ""}.", "609.3", *(if (effect.fromLibrary) arrayOf("701.24a") else emptyArray())) }
                 else if (chosen.zone != fromZone) trace.step("${chosen.name} isn't in ${you.possessive} $zoneName, so ${item.source.name} can't put it onto the battlefield.", "608.2b")
                 else if (effect.maxMv != null && chosen.def.manaValue.toInt() > effect.maxMv) { trace.step("${chosen.name} has mana value ${chosen.def.manaValue.toInt()}, more than ${effect.maxMv}, so ${item.source.name} can't find it.", "202.3"); state.outcomes += "${chosen.name} can't be put onto the battlefield (mana value too high)." }
                 else if (!state.matches(effect.filter, chosen, item.controller, anyZone = true)) { trace.step("${chosen.name} isn't a ${effect.filter.raw}, so ${item.source.name} can't put it onto the battlefield.", "608.2b"); state.outcomes += "${chosen.name} stays in hand." }
@@ -4013,7 +4013,7 @@ class Engine(val state: GameState) {
             }
             is Effect.LoseKeywordsAll -> {
                 val affected = state.objects.values.filter { it.isOnBattlefield() && state.matches(effect.filter, it, item.controller, item.source) }
-                if (affected.isEmpty()) trace.step("Nothing matches \"${effect.filter.raw}\", so nothing loses ${effect.keywords.joinToString(" or ")}.")
+                if (affected.isEmpty()) trace.step("Nothing matches \"${effect.filter.raw}\", so nothing loses ${effect.keywords.joinToString(" or ")}.", "609.3")
                 for (o in affected) {
                     val had = effect.keywords.filter { o.has(it) }
                     o.lostKeywords += effect.keywords
@@ -4128,7 +4128,7 @@ class Engine(val state: GameState) {
             }
             is Effect.PhaseOutAll -> {
                 val ps = state.objects.values.filter { it.isOnBattlefield() && state.matches(effect.filter, it, item.controller) }
-                if (ps.isEmpty()) trace.step("No permanents match \"${effect.filter.raw}\", so nothing phases out.")
+                if (ps.isEmpty()) trace.step("No permanents match \"${effect.filter.raw}\", so nothing phases out.", "609.3", "702.26b")
                 else {
                     for (o in ps) o.phasedOut = true
                     trace.step("${ps.joinToString(", ") { it.name }} phase${if (ps.size == 1) "s" else ""} out. Until ${if (ps.size == 1) "it phases" else "they phase"} in at the start of ${you.possessive} next turn ${if (ps.size == 1) "it is" else "they are"} treated as though ${if (ps.size == 1) "it doesn't" else "they don't"} exist: spells, abilities and attacks can't touch ${if (ps.size == 1) "it" else "them"}, and ${if (ps.size == 1) "it doesn't" else "they don't"} leave the battlefield, so nothing triggers on leaving.", "702.26b", "702.26d")

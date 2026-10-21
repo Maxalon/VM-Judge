@@ -1300,7 +1300,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         }
         val steady = found.rounds.last()
         val cap = found.sentence.replaceFirstChar { it.uppercase() }
-        state.trace.step("Played once on a copy of the board, from the position it repeats from, one round of the loop goes like this:")
+        state.trace.step("Played once on a copy of the board, from the position it repeats from, one round of the loop goes like this:", "732.1b")
         state.trace.steps += steady.after.trace.steps
         val pieces = found.candidate.pieces.toList()
         state.trace.step("After that round the board is back where it started (${pieces.joinToString(" and ")} ${if (pieces.size == 1) "is back as it was" else "are back as they were"}, ready to go again), and ${found.gainText}. A set of actions that returns to the same position can be repeated as many times as a player likes; a player shortcuts it by naming the number of times (732.1b, 732.2a). Each repetition starts with an action the player chooses to take, so it isn't a loop of mandatory actions and never makes the game a draw (104.4b).", "732.1b", "732.2a", "104.4b")
