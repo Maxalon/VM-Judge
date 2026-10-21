@@ -462,6 +462,7 @@ class Engine(val state: GameState) {
         // "I'm at 3 life and cast Dismember paying 4 life": life can be paid only from a life total at least that big (119.4).
         run {
             val lifeNeeded = card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostText>().firstNotNullOfOrNull { c -> Regex("""(?i)\bpay (X|\d+) life\b""").find(c.text)?.groupValues?.get(1)?.let { n -> if (n.equals("X", true)) x else n.toIntOrNull() } } ?: payLife
+            if (lifeNeeded != null && LifeDmgMech.payBlocked(this, player, lifeNeeded, "${card.name}'s cost", "${card.name} can't be cast", card.manaCost)) { state.stack.remove(item); return null }   // Platinum Emperion (LifeDamageMechanics.kt)
             val have = player.life
             if (lifeNeeded != null && lifeNeeded > 0 && have != null && lifeNeeded > have) {
                 trace.step("${player.subject} ${player.v("is", "are")} at $have life and ${card.name}'s cost asks for $lifeNeeded life: a player can pay life only if their life total is at least the amount, so that cost can't be paid and ${card.name} can't be cast this way${if (Regex("""\{[WUBRG]/P\}""").containsMatchIn(card.manaCost ?: "")) " (its Phyrexian mana would have to be paid with mana instead)" else ""}.", "119.4", "601.2h")
@@ -578,7 +579,7 @@ class Engine(val state: GameState) {
 
     /** "I gain 5 life (from lifelink)": life gain as a given, with its triggers. */
     fun gainLifeEvent(playerId: String, amount: Int) { gainLife(state.player(playerId), amount); stateBasedActions() }
-    fun loseLifeEvent(playerId: String, amount: Int) { val p = state.player(playerId); if (p.lifeLocked) { trace.step("${p.possessive.replaceFirstChar { it.uppercase() }} life total can't change, so ${p.subject.lowercase()} ${p.v("loses", "lose")} no life.", "119.8"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} no life (${p.possessive} life total can't change)."; return }; p.life = p.life?.minus(amount); lifeLost(p, amount); trace.step("${p.subject} ${p.v("loses", "lose")} $amount life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $amount life."; stateBasedActions() }
+    fun loseLifeEvent(playerId: String, amount: Int) { val p = state.player(playerId); if (LifeDmgMech.lossBlocked(this, p, amount)) return; if (p.lifeLocked) { trace.step("${p.possessive.replaceFirstChar { it.uppercase() }} life total can't change, so ${p.subject.lowercase()} ${p.v("loses", "lose")} no life.", "119.8"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} no life (${p.possessive} life total can't change)."; return }; p.life = p.life?.minus(amount); lifeLost(p, amount); trace.step("${p.subject} ${p.v("loses", "lose")} $amount life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $amount life."; stateBasedActions() }
 
     /** A player draws cards outside any effect ("my opponent draws a card"): each draw is an event triggers can see. */
     /**
@@ -967,6 +968,7 @@ class Engine(val state: GameState) {
         }
         Regex("""Pay (\d+) life""", RegexOption.IGNORE_CASE).find(ability.cost)?.let { m ->
             val n = m.groupValues[1].toInt(); val p = state.player(playerId)
+            if (LifeDmgMech.payBlocked(this, p, n, "${obj.name}'s ability", "No: ${obj.name}'s ability can't be activated")) return null   // Platinum Emperion (LifeDamageMechanics.kt)
             if (p.life != null && p.life!! < n) { trace.step("${p.subject} ${p.v("has", "have")} ${p.life} life and can't pay $n life, so the ability can't be activated.", "118.3", "119.4"); state.outcomes += "${obj.name}'s ability can't be activated (not enough life)."; return null }
             p.life = p.life?.minus(n); trace.step("${p.subject} ${p.v("pays", "pay")} $n life${p.life?.let { " ($it)" } ?: ""} as part of the cost.", "119.4", "602.2b"); state.outcomes += "${p.subject} ${p.v("pays", "pay")} $n life."; lifeLost(p, n)   // paying life is losing it (119.4)
         }
@@ -1037,6 +1039,7 @@ class Engine(val state: GameState) {
             val p = state.player(playerId)
             // "I have Spellskite and 2 life": paying the life is allowed at exactly 2 (119.4), but it puts the player at 0 and they lose when state-based actions are checked.
             // "I redirect it with no blue at 1 life": life can't be paid beyond the life total (119.4), so the ability can't be activated at all.
+            if ((p.mana == 0 || payLife != null) && LifeDmgMech.payBlocked(this, p, 2 * phyrexian, "${obj.name}'s Phyrexian mana", "No: ${obj.name}'s ability can't be activated")) { if (ability.cost.contains("{T}")) obj.tapped = false; return null }   // Platinum Emperion (LifeDamageMechanics.kt)
             if ((p.mana == 0 || payLife != null) && p.life != null && p.life!! < 2 * phyrexian) {
                 trace.step("${obj.name}'s cost has ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value}, payable with that colour of mana or 2 life; ${p.subject.lowercase()} ${p.v("has", "have")} no mana of that colour and only ${p.life} life, and a player can't pay more life than they have, so the cost can't be paid and the ability can't be activated.", "107.4f", "119.4", "602.2b")
                 state.outcomes += "No: ${obj.name}'s ability can't be activated. Its ${Regex("""\{[WUBRG]/P\}""").find(ability.cost)!!.value} would have to be paid with 2 life, and at ${p.life} life ${p.subject.lowercase()} can't pay it (119.4)."
@@ -2605,6 +2608,7 @@ class Engine(val state: GameState) {
         is Trigger.Unknown -> false
         is MoreTrigger -> MoreEffects.triggerMatches(state, obj, trigger, event)   // Mikaeus (MoreEffects.kt)
         is MoreTrigger2 -> MoreEffects2.triggerMatches(state, obj, trigger, event)   // Voice of Resurgence (MoreEffects2.kt)
+        is LdTrigger -> LifeDmgMech.triggerMatches(state, obj, trigger, event)   // Repercussion (LifeDamageMechanics.kt)
         }
     }
 
@@ -2726,6 +2730,8 @@ class Engine(val state: GameState) {
     /** Bridges for DeepMechanics.kt: draw cards. */
     internal fun dpDraw(p: Player, n: Int) = drawCards(p, n)
     internal fun dpDamage(sourceName: String, target: Ref, amount: Int, source: GameObject?) = applyDamage(sourceName, target, amount, source)
+    /** Bridge for LifeDamageMechanics.kt: life lost, with its triggers. */
+    internal fun ldLifeLost(p: Player, n: Int) = lifeLost(p, n)
 
     /** Kira, Great Glass-Spinner: triggered abilities a permanent has because a static grants them to what it is (613.1f). */
     /** The activated abilities a permanent has: its own, plus any granted to it (Cryptolith Rite) while it is on the battlefield. */
@@ -3252,6 +3258,7 @@ class Engine(val state: GameState) {
                 // Fireball: the amount is X, and it is divided evenly, rounded down (the remainder is lost).
                 val effect = if (!effect.x) effect else effect.copy(amount = item.x ?: 0).also { if (item.x == null) state.clarifications += Clarification("${item.source.name}'s X", "${item.source.name} deals X damage; what was X? (assuming 0)") }
                 val legal = item.targets.filter { isTargetLegal(item, it) }
+                if (LifeDmgMech.dividedAsSaid(this, item, effect.amount) { it in legal }) return   // "dividing 2 to the Bears and 1 to them" (LifeDamageMechanics.kt)
                 when {
                     item.targets.isEmpty() -> state.unsupported += Unsupported(item.describe, "No targets were given to divide ${effect.amount} damage among (${effect.target.raw}).")
                     legal.isEmpty() -> trace.step("Every target is illegal now, so ${item.describe} is removed from the stack and none of the damage is dealt.", "608.2b")
@@ -3755,7 +3762,7 @@ class Engine(val state: GameState) {
                 if (o == null || who == null) trace.step("No creature or player to measure, so no life is gained.", "608.2h")
                 else { trace.step("${o.name}'s power is $amount${if (!o.isOnBattlefield()) " (its last known information, since it has left the battlefield)" else ""}.", "608.2h"); gainLife(who, amount) }
             }
-            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (effect.text.startsWith("ce:")) CedhMech.targeted(this, item, effect.text, ref) else if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text.startsWith("deep:")) DeepMech.targeted(this, item, effect.text, ref) else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
+            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (LifeDmgMech.targeted(this, item, effect.text, ref)) Unit else if (effect.text.startsWith("ce:")) CedhMech.targeted(this, item, effect.text, ref) else if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text.startsWith("deep:")) DeepMech.targeted(this, item, effect.text, ref) else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
             is Effect.Regenerate -> {
                 val put: (GameObject) -> Unit = { o -> state.shields += Shield(Replacement.Regenerate, o.id, null, 1, item.describe); trace.step("${o.name} gets a regeneration shield: the next time it would be destroyed this turn, it's instead tapped, its damage is removed, and it's removed from combat.", "701.19a", "614.8"); state.outcomes += "${o.name} has a regeneration shield this turn." }
                 if (effect.target == null) put(item.source) else forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let(put) }
@@ -3815,7 +3822,7 @@ class Engine(val state: GameState) {
                 state.outcomes += when (effect.keywords.singleOrNull()?.substringBefore('@')) { "unblockable" -> "${it.name} can't be blocked ${if (untilNext) dur else "this turn"}."; "cant-block" -> "${it.name} can't block ${if (untilNext) dur else "this turn"}."; "cant-attack" -> "${it.name} can't attack ${if (untilNext) dur else "this turn"}."; else -> "${it.name} has $said $dur." }
             } }
             is Effect.GainLife -> resolvePlayers(effect.who, item).forEach { p -> gainLife(p, effect.amount) }
-            is Effect.LoseLife -> { val n = if (effect.x) (item.x ?: 0) else effect.amount; resolvePlayers(effect.who, item).forEach { p -> if (p.lifeLocked) { EdhMech.lifeLockedLoss(state, p, n); return@forEach }; p.life = p.life?.minus(n); item.lifeLost += n; trace.step("${p.subject} ${p.v("loses", "lose")} $n life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $n life."; lifeLost(p, n) } }
+            is Effect.LoseLife -> { val n = if (effect.x) (item.x ?: 0) else effect.amount; resolvePlayers(effect.who, item).forEach { p -> if (p.lifeLocked) { EdhMech.lifeLockedLoss(state, p, n); return@forEach }; if (LifeDmgMech.lossBlocked(this, p, n)) return@forEach; p.life = p.life?.minus(n); item.lifeLost += n; trace.step("${p.subject} ${p.v("loses", "lose")} $n life${p.life?.let { " ($it)" } ?: ""}.", "119.3"); state.outcomes += "${p.subject} ${p.v("loses", "lose")} $n life."; lifeLost(p, n) } }
             is Effect.ExileTwo -> for (i in 0..1) item.targets.getOrNull(i)?.let { ref ->
                 if (isTargetLegal(item, ref)) objOf(ref)?.let { o -> if (effect.thenReturn) blinkObject(o, item.controller) else move(o, Zone.EXILE, "${o.name} is exiled.", "701.13a") }
                 else trace.step("${state.nameOf(ref)} is an illegal target now, so it isn't exiled.", "608.2b")
@@ -4069,6 +4076,7 @@ class Engine(val state: GameState) {
             }
             is Effect.Narrated -> {
                 if (Turns.resolve(this, effect.text, item)) return   // extra turns, skips, ending the turn, extra phases (Turns.kt)
+                if (LifeDmgMech.resolve(this, effect.text, item)) return   // life totals set and exchanged, Transcendence, Repercussion (LifeDamageMechanics.kt)
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
                 if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
                 if (CedhMech.resolve(this, effect.text, item)) return   // Isochron Scepter's copy, Tainted Pact, Bonus Round, Ashiok (CedhMechanics.kt)
@@ -4109,7 +4117,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${item.source.name}: ${sp.subject} ${sp.v("searches", "search")} for a basic land card and ${sp.v("finds", "find")} nothing (none left in ${sp.possessive} library); the library is shuffled anyway."
                 } else if (!effect.text.startsWith("pay {")) state.outcomes += "${item.source.name}: ${said.trimEnd('.').let { t -> if (carrier !== you && t.startsWith("Its owner ")) "its owner (${carrier.subject.replaceFirstChar { it.lowercase() }}) " + t.removePrefix("Its owner ") else t }} (not tracked in detail)."
             }
-            is Effect.ForAll -> applyEffectMore(effect, item)
+            is Effect.ForAll -> LifeDmgMech.oneDamageEvent(this, item) { applyEffectMore(effect, item) }   // one lifelink gain for all of it (LifeDamageMechanics.kt)
             is Effect.ExileSelfSpell ->
                 if (item.source.isOnBattlefield()) move(item.source, Zone.EXILE, "${item.source.name} is exiled.", "701.13a")
                 else trace.step("${item.source.name} exiles itself as it finishes resolving: it goes to exile instead of its owner's graveyard.", "701.13a", "608.2n")
@@ -5023,6 +5031,7 @@ class Engine(val state: GameState) {
     private fun applyDamage(sourceName: String, target: Ref, amount: Int, source: GameObject? = state.objects.values.firstOrNull { it.name == sourceName }): Int {
         var amount = amount
         if (CoverageMech.zeroDamage(state, sourceName, target, amount, source)) return 0   // Fling an Ornithopter: 0 damage isn't dealt (CoverageMechanics.kt)
+        LifeDmgMech.redirect(this, sourceName, target, amount)?.let { to -> try { return applyDamage(sourceName, to, amount, source) } finally { LifeDmgMech.redirectDone(state) } }   // Palisade Giant, Pariah's Shield (LifeDamageMechanics.kt)
         if (target is Ref.Player && amount > 0 && state.player(target.id).protectedFromEverything) {
             val p = state.player(target.id)
             trace.step("${p.subject} ${p.v("has", "have")} protection from everything, so the $amount damage $sourceName would deal to ${p.subject.lowercase()} is prevented.", "702.16e", "615.1")
@@ -5060,6 +5069,7 @@ class Engine(val state: GameState) {
             prevention = emptyList()
         }
         if (prevention.isNotEmpty() && MoreEffects2.damageCantBePrevented(this, source, sourceName, amount, prevention.map { it.first })) prevention = emptyList()   // Stomp, Banefire (MoreEffects2.kt)
+        if (prevention.isNotEmpty() && LifeDmgMech.cantPrevent(this, sourceName, amount, prevention.map { it.first })) prevention = emptyList()   // Leyline of Punishment (LifeDamageMechanics.kt)
         // Torbran's "plus 2" with Furnace of Rath and a prevention shield: the affected player orders all three (ExamMechanics.kt).
         ExamMech.plusDamage(state, source, sourceName, target, amount, doublers, prevention)?.let { n ->
             if (n <= 0) { state.outcomes += "Damage to ${state.nameOf(target)} from $sourceName is prevented."; return 0 }
@@ -5091,7 +5101,7 @@ class Engine(val state: GameState) {
                         } }
                 }
             }
-            if (amount <= 0) { state.outcomes += "Damage to ${state.nameOf(target)} from $sourceName is prevented."; reflections.forEach { it() }; return 0 }
+            if (amount <= 0) { state.outcomes += "Damage to ${state.nameOf(target)} from $sourceName is prevented."; LifeDmgMech.preventedLifelink(this, source); reflections.forEach { it() }; return 0 }
         }
         reflections.forEach { it() }
         for ((o, d) in doublers) { trace.step("${o.name} replaces the damage: $sourceName deals ${amount * d.factor} damage instead of $amount.", "614.1a", "614.6"); amount *= d.factor }
@@ -5099,10 +5109,10 @@ class Engine(val state: GameState) {
             val o = state.objects[target.id]
             if (o != null) {
                 val qualities = qualitiesOf(source)
-                protectionHit(state.protections(o), qualities, source.controller)?.let { q ->
+                protectionHit(state.protections(o), qualities, source.controller)?.takeIf { q -> !LifeDmgMech.protectionOverridden(this, o, sourceName, amount, protectionName(q)) }?.let { q ->
                     trace.step("$sourceName would deal $amount damage to ${o.name}, but ${o.name} has protection from ${protectionName(q)}, so that damage is prevented.", "702.16e", "615.1")
-                    state.outcomes += "Damage to ${o.name} from $sourceName is prevented (protection)."; return 0
-                }
+                    state.outcomes += "Damage to ${o.name} from $sourceName is prevented (protection)."; LifeDmgMech.preventedLifelink(this, source); return 0
+                } ?: LifeDmgMech.protectionMiss(this, o, source, amount)   // Walking Ballista at Paladin en-Vec (LifeDamageMechanics.kt)
             }
         }
         // Phyrexian Unlife at -3 life, Shocked: the 2 damage is dealt as though Shock had infect, so 2 poison counters (702.90b).
@@ -5138,10 +5148,10 @@ class Engine(val state: GameState) {
                 if (amount > 0) p.damagedThisTurn = true
                 if (amount > 0 && inCombatDamage) MoreEffects2.combatDamaged(state, p.id)   // Tymna (MoreEffects2.kt)
                 if (infect) { val got = MoreEffects2.playerCounters(this, p.id, amount, "poison"); p.poison += got; trace.step("$sourceName ${if (unlifeInfect != null && source?.has("infect") != true) "is treated as having infect" else "has infect"}, so instead of losing life ${if (p.you) "you get" else p.name + " gets"} $got poison counter${if (got > 1) "s" else ""} (${p.poison} total).", "702.90b", "120.3b"); poisonLine(p) }
-                else { p.life = p.life?.minus(amount); trace.step("$sourceName deals $amount damage to ${if (p.you) "you" else p.name}, ${if (p.you) "and you lose" else "who loses"} $amount life${p.life?.let { " ($it)" } ?: ""}.", "120.3a"); state.outcomes += "${p.subject} ${p.v("takes", "take")} $amount damage."; lifeLost(p, amount) }
+                else if (!LifeDmgMech.lossBlocked(this, p, amount, sourceName)) { p.life = p.life?.minus(amount); trace.step("$sourceName deals $amount damage to ${if (p.you) "you" else p.name}, ${if (p.you) "and you lose" else "who loses"} $amount life${p.life?.let { " ($it)" } ?: ""}.", "120.3a"); state.outcomes += "${p.subject} ${p.v("takes", "take")} $amount damage."; lifeLost(p, amount) }
                 val toxic = source?.takeIf { inCombatDamage }?.let { src -> Regex("""\bToxic (\d+)""").findAll(src.rulesText).sumOf { it.groupValues[1].toInt() } } ?: 0
                 if (source?.commander == true && inCombatDamage) { val total = (p.commanderDamage[source.id] ?: 0) + amount; p.commanderDamage[source.id] = total; trace.step("${source.name} is a commander: ${if (p.you) "you have" else p.name + " has"} now been dealt $total combat damage by it this game (21 or more loses the game).", "903.10a"); state.outcomes += "${p.subject} ${p.v("has", "have")} taken $total commander damage from ${source.name}." }
-                if (toxic > 0) { p.poison += toxic; trace.step("$sourceName has toxic $toxic, so ${if (p.you) "you also get" else p.name + " also gets"} $toxic poison counter${if (toxic > 1) "s" else ""} (${p.poison} total).", "702.164c", "120.3g"); poisonLine(p) } }
+                if (toxic > 0 && !LifeDmgMech.toxicBlocked(this, p, toxic, sourceName)) { p.poison += toxic; trace.step("$sourceName has toxic $toxic, so ${if (p.you) "you also get" else p.name + " also gets"} $toxic poison counter${if (toxic > 1) "s" else ""} (${p.poison} total).", "702.164c", "120.3g"); poisonLine(p) } }
             is Ref.Obj -> { val o = state.obj(target.id)
                 // 702.2b is about damage, not only combat damage: a fight or a ping from a deathtouch source is
                 // just as lethal. Without this a deathtouch creature won a fight it should have traded.
@@ -5165,7 +5175,7 @@ class Engine(val state: GameState) {
         }
         // Lifelink is about damage, not only combat damage (702.15b): a fight, a Rabid Bite or a pinger with
         // lifelink gains its controller the life too. Combat damage gains it in the combat damage step itself.
-        if (!inCombatDamage && amount > 0 && source != null && target !is Ref.Stack && source.has("lifelink")) {
+        if (!inCombatDamage && amount > 0 && source != null && target !is Ref.Stack && source.has("lifelink") && !LifeDmgMech.holdLifelink(state, source, amount)) {
             val c = state.player(source.controller)
             trace.step("${source.name} has lifelink, so ${c.subject.lowercase()} ${c.v("gains", "gain")} $amount life from the damage it dealt.", "702.15b", "120.3f")
             gainLife(c, amount)
@@ -5225,6 +5235,7 @@ class Engine(val state: GameState) {
     private fun gainLife(p: Player, amount: Int) {
         var n = amount
         if (p.lifeLocked) { trace.step("${p.possessive.replaceFirstChar { it.uppercase() }} life total can't change, so ${p.subject.lowercase()} ${p.v("gains", "gain")} no life.", "119.7"); state.outcomes += "${p.subject} ${p.v("gains", "gain")} no life (${p.possessive} life total can't change)."; return }
+        if (LifeDmgMech.gainBlocked(this, p, amount)) return   // Rampaging Ferocidon, Platinum Emperion (LifeDamageMechanics.kt)
         state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.LifeGainMultiplier }.filter { it.anyPlayer || o.controller == p.id }.map { o to it } }
             .forEach { (o, m) -> trace.step("${o.name} replaces the life gain: ${p.subject.lowercase()} ${p.v("gains", "gain")} ${n * m.factor} life instead of $n.", "614.1a", "614.6"); n *= m.factor }
         if (n == 0) { trace.step("${p.subject} ${p.v("gains", "gain")} no life.", "119.3"); state.outcomes += "${p.subject} ${p.v("gains", "gain")} no life (0)."; return }
@@ -5901,7 +5912,7 @@ class Engine(val state: GameState) {
         e is Effect.Seq && e.effects.any { it is Effect.Modal } -> Effect.Seq(e.effects.map { substituteModes(it, item) ?: it })
         else -> e
     }
-    private fun specFor(item: StackItem, ref: Ref): TargetSpec? { val specs = effectiveEffect(item)?.targets() ?: return null; val i = item.targets.indexOf(ref); return specs.getOrNull(i) }
+    private fun specFor(item: StackItem, ref: Ref): TargetSpec? { val specs = effectiveEffect(item)?.targets() ?: return null; val i = item.targets.indexOf(ref); return specs.getOrNull(i) ?: LifeDmgMech.dividedSpec(effectiveEffect(item), i) }   // each of a divided spell's targets fits its one "any target" (LifeDamageMechanics.kt)
 
     private inline fun forEachLegalTarget(item: StackItem, spec: TargetSpec, block: (Ref) -> Unit) {
         val specs = effectiveEffect(item)?.targets() ?: emptyList()

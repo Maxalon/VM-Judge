@@ -814,6 +814,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             moon != null -> "No: ${moon.name} makes ${o.name} a Mountain with none of its own abilities; it has only \"{T}: Add {R}\", so it taps for one red mana and nothing else (305.7, 613.1d)."
                             lock != null && any.isNotEmpty() -> { ModernAsks.lockStep(o, lock, any, engine, state); "No: ${lock.name} says ${o.name}\'s activated abilities can\'t be activated${if (lock.rulesText.contains("mana abilit", true)) " (mana abilities excepted, as it says)" else ""}." }
                             any.isEmpty() -> "${o.name} has no activated abilities."
+                            LifeDamageAsks.lifeCostBlocked(o, any, state) != null -> LifeDamageAsks.lifeCostBlocked(o, any, state, say = true)!!   // Platinum Emperion and Griselbrand (LifeDamageAsks.kt)
                             o.tapped == true && tapAbilities.isNotEmpty() && tapAbilities.size == any.size -> "No: ${o.name} is already tapped, and every one of its abilities costs {T}."
                             tapAbilities.isNotEmpty() && state.isCreature(o) && o.summoningSick == true && !state.hasKeyword(o, "haste") ->
                                 "No: ${o.name} came under ${state.player(o.controller).possessive} control this turn and doesn\'t have haste, so its {T} ability can\'t be activated yet (302.6).${if (tapAbilities.size < any.size) " Its abilities without {T} in the cost still can be." else ""}" +
@@ -957,6 +958,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "dp" -> DeepAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             "ex" -> ExamAsks.applyEvent(e, state, engine)
             "cedh" -> CedhAsks.applyEvent(e, state)
+            "lifedmg" -> LifeDamageAsks.applyEvent(e, state)
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1008,6 +1010,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         WinLossAsks.describe(e, who)?.let { return it }
         EdhAsks.describe(e, state, who)?.let { return it }
         CedhAsks.describe(e, state)?.let { return it }
+        LifeDamageAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
         TargetAsks.describe(e, state, who)?.let { return it }
@@ -2316,6 +2319,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("ex:") == true) return ExamAsks.answer(e, state, engine) { c -> c.oracleId?.let { cards.byOracleId(it) } ?: c.name?.let { cards.resolve(it).best?.card } }
                 if (e.to?.startsWith("ce:") == true) return CedhAsks.answer(e, state, engine)
                 if (e.to?.startsWith("ns:") == true) return NewSetAsks.answer(e, state, engine) { c -> cardDef(c, state) }
+                if (e.to?.startsWith("ld:") == true) return LifeDamageAsks.answer(e, state, engine)
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

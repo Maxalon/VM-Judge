@@ -44,6 +44,7 @@ internal object TriggerRules {
                 out += o to a
             }
         }
+        out += LifeDmgMech.stateTriggers(state)   // Transcendence: "When you have 20 or more life" (LifeDamageMechanics.kt)
         return out
     }
 

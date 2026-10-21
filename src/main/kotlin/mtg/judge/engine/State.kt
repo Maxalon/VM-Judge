@@ -574,6 +574,7 @@ class GameState(
         if (!stripped && (obj.def.has(k) || k in obj.tempKeywords)) return true
         if (!stripped && levelBand(obj)?.keywords?.contains(k) == true) return true   // 702.87b: the band's abilities while it has that many level counters
         if (k in keywordCounters && (obj.counters[k] ?: 0) > 0) return true   // 122.1b: a keyword counter grants the keyword, and isn't an ability of the creature
+        if (k == "lifelink" && LifeDmgMech.spellLifelink(this, obj)) return true   // Soulfire Grand Master's instants and sorceries (LifeDamageMechanics.kt)
         return staticEffectsOn(obj).any { (src, e) ->
             e is StaticEffect.KeywordGrant && k in e.keywords && (e.filter.raw != "~" || src === obj) && conditionalKeywordOk(src, e) &&
                 abilitiesLostOn(src) == null   // a lord that lost its own abilities grants nothing

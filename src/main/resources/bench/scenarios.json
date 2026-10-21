@@ -51230,5 +51230,404 @@
       "603.2",
       "122.1d"
     ]
+  },
+  {
+    "id": "ld1",
+    "text": "I control Ajani's Pridemate. I'm at 4 life and my opponent is at 18. I cast Reverse the Sands, giving me 18 life and my opponent 4. What are our life totals, and does Pridemate get a counter?",
+    "expect": [
+      "You gain 14 life.",
+      "Opponent loses 14 life.",
+      "Ajani's Pridemate has 1 +1/+1 counter.",
+      "You are at 18 life.",
+      "Opponent is at 4 life."
+    ],
+    "cite": [
+      "119.5",
+      "603.2"
+    ]
+  },
+  {
+    "id": "ld2",
+    "text": "My opponent controls Platinum Emperion. I'm at 3 life and my opponent is at 20. I activate Soul Conduit targeting me and my opponent. What happens?",
+    "expect": [
+      "No exchange happens: Platinum Emperion says opponent's life total can't change",
+      "You stay at 3 and opponent stays at 20."
+    ],
+    "cite": [
+      "701.12a",
+      "701.12c",
+      "119.8"
+    ]
+  },
+  {
+    "id": "ld3",
+    "text": "My opponent controls Sulfuric Vortex. I'm at 5 life and my opponent is at 17. During my upkeep I activate Magus of the Mirror targeting my opponent. What are our life totals?",
+    "expect": [
+      "Opponent loses 12 life.",
+      "You gain no life (0).",
+      "Opponent is at 5 life."
+    ],
+    "cite": [
+      "701.12c",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "ld4",
+    "text": "I'm at 5 life. My opponent controls Leyline of Punishment. I cast Blessed Wind targeting myself. What is my life total?",
+    "expect": [
+      "You gain no life (Leyline of Punishment).",
+      "You are at 5 life."
+    ],
+    "notExpect": [
+      "You are at 20 life"
+    ],
+    "cite": [
+      "119.5",
+      "101.2"
+    ]
+  },
+  {
+    "id": "ld5",
+    "text": "My opponent is at 20 life. I control Exquisite Blood and activate Sorin Markov's -3 targeting my opponent. Do they lose life, and how much life do I gain?",
+    "expect": [
+      "Opponent loses 10 life.",
+      "You gain 10 life.",
+      "Opponent goes from 20 to 10 life."
+    ],
+    "notExpect": [
+      "20 life in all"
+    ],
+    "cite": [
+      "119.5",
+      "603.2"
+    ]
+  },
+  {
+    "id": "ld6",
+    "text": "My opponent controls Rampaging Ferocidon. I attack with Vampire Nighthawk and it isn't blocked. What happens?",
+    "expect": [
+      "Opponent takes 2 damage.",
+      "You gain no life (Rampaging Ferocidon)."
+    ],
+    "notExpect": [
+      "You gain 2 life."
+    ],
+    "cite": [
+      "120.3f",
+      "101.2"
+    ]
+  },
+  {
+    "id": "ld7",
+    "text": "I control Platinum Emperion and Griselbrand. I'm at 20 life. Can I activate Griselbrand's ability?",
+    "expect": [
+      "No: Griselbrand's ability costs 7 life, and Platinum Emperion says your life total can't change"
+    ],
+    "cite": [
+      "119.8"
+    ]
+  },
+  {
+    "id": "ld8",
+    "text": "I control Platinum Emperion. Can I pay 2 life for Gitaxian Probe's Phyrexian mana?",
+    "expect": [
+      "No: Gitaxian Probe can't be cast paying 2 life: Platinum Emperion",
+      "can still be paid with mana: {U}"
+    ],
+    "notExpect": [
+      "Yes: Gitaxian Probe can be cast"
+    ],
+    "cite": [
+      "119.8"
+    ]
+  },
+  {
+    "id": "ld9",
+    "text": "I control Platinum Emperion. My opponent attacks me with Blightsteel Colossus and I don't block. What happens?",
+    "expect": [
+      "You have 11 poison counters.",
+      "You lose the game (poison)."
+    ],
+    "cite": [
+      "702.90b",
+      "704.5c"
+    ]
+  },
+  {
+    "id": "ld10",
+    "text": "I control Platinum Emperion. My opponent attacks me with Vampire Nighthawk and I don't block. Does my life total change, and do they gain life?",
+    "expect": [
+      "You take 2 damage but lose no life (Platinum Emperion).",
+      "Opponent gains 2 life."
+    ],
+    "notExpect": [
+      "and you lose 2 life"
+    ],
+    "cite": [
+      "119.8",
+      "120.3f"
+    ]
+  },
+  {
+    "id": "ld11",
+    "text": "I control Transcendence and I'm at 1 life. My opponent casts Lightning Bolt targeting me. Do I lose, and what is my life total?",
+    "expect": [
+      "No: You are still in the game at 4 life.",
+      "You gain 6 life."
+    ],
+    "notExpect": [
+      "poison counters instead"
+    ],
+    "cite": [
+      "704.5a",
+      "603.2"
+    ]
+  },
+  {
+    "id": "ld12",
+    "text": "I control Transcendence and I'm at 16 life. My opponent casts Lava Axe targeting me. What happens?",
+    "expect": [
+      "You gain 10 life.",
+      "Transcendence triggers: you have 21 life (20 or more)",
+      "You lose the game."
+    ],
+    "cite": [
+      "603.8",
+      "104.3e"
+    ]
+  },
+  {
+    "id": "ld13",
+    "text": "I control Lich's Mastery and I'm at 2 life. My opponent casts Lava Axe targeting me. Then I cast Sacred Nectar. What is my life total, and do I lose?",
+    "expect": [
+      "No: You are still in the game at 1 life.",
+      "You exile 5 permanents or cards from hand or graveyard (Lich's Mastery).",
+      "You draw 4 cards."
+    ],
+    "cite": [
+      "104.3b",
+      "603.2",
+      "121.1"
+    ]
+  },
+  {
+    "id": "ld14",
+    "text": "I control Palisade Giant. My opponent attacks me with Blightsteel Colossus and I don't block. What happens?",
+    "expect": [
+      "is dealt to Palisade Giant instead (Palisade Giant).",
+      "Palisade Giant has 11 -1/-1 counters.",
+      "Palisade Giant: the battlefield"
+    ],
+    "notExpect": [
+      "poison counter"
+    ],
+    "cite": [
+      "614.9",
+      "702.90c"
+    ]
+  },
+  {
+    "id": "ld15",
+    "text": "I control Darksteel Myr equipped with Pariah's Shield. My opponent attacks me with a 5/5 and I don't block. What happens?",
+    "expect": [
+      "dealt to Darksteel Myr instead (Pariah's Shield).",
+      "Darksteel Myr is indestructible and isn't destroyed"
+    ],
+    "notExpect": [
+      "You take 5 damage."
+    ],
+    "cite": [
+      "614.9",
+      "702.12b"
+    ]
+  },
+  {
+    "id": "ld16",
+    "text": "My opponent controls Jace, the Mind Sculptor. I cast Lightning Bolt targeting my opponent. Can I redirect the damage to Jace?",
+    "expect": [
+      "No: the old planeswalker redirection rule was removed (306.7)."
+    ],
+    "cite": [
+      "306.7",
+      "601.2c",
+      "115.4"
+    ]
+  },
+  {
+    "id": "ld17",
+    "text": "I control Solitary Confinement. My opponent attacks me with Blightsteel Colossus and I don't block. Do I get poison counters?",
+    "expect": [
+      "No: the damage to you from Blightsteel Colossus is prevented"
+    ],
+    "cite": [
+      "615.1",
+      "702.90b"
+    ]
+  },
+  {
+    "id": "ld18",
+    "text": "My opponent controls Leyline of Punishment. Their Plague Stinger attacks me and I cast Holy Day. Do I get a poison counter?",
+    "expect": [
+      "Holy Day can't prevent Plague Stinger's damage (Leyline of Punishment).",
+      "You have 1 poison counter."
+    ],
+    "cite": [
+      "615.12",
+      "702.90b"
+    ]
+  },
+  {
+    "id": "ld19",
+    "text": "I attack with Gifted Aetherborn and my opponent blocks with White Knight. Do I gain life?",
+    "expect": [
+      "No: you gain no life here.",
+      "Damage to White Knight from Gifted Aetherborn is prevented (protection).",
+      "No life from Gifted Aetherborn's lifelink"
+    ],
+    "cite": [
+      "702.16e",
+      "702.15b"
+    ]
+  },
+  {
+    "id": "ld20",
+    "text": "I control Vampire Nighthawk equipped with Grafted Exoskeleton. It attacks and isn't blocked. What happens?",
+    "expect": [
+      "Opponent has 4 poison counters.",
+      "You gain 4 life."
+    ],
+    "cite": [
+      "702.90b",
+      "120.3f"
+    ]
+  },
+  {
+    "id": "ld21",
+    "text": "I attack my opponent's Jace, the Mind Sculptor with Vampire Nighthawk and it isn't blocked. What happens?",
+    "expect": [
+      "Jace, the Mind Sculptor has 1 loyalty.",
+      "You gain 2 life."
+    ],
+    "cite": [
+      "120.3c",
+      "702.15b"
+    ]
+  },
+  {
+    "id": "ld22",
+    "text": "I control True Conviction and Ajani's Pridemate. I attack with Grizzly Bears alone and it isn't blocked. How much life do I gain, and how many counters does Pridemate get?",
+    "expect": [
+      "Ajani's Pridemate has 2 +1/+1 counters.",
+      "You gain 4 life in all."
+    ],
+    "cite": [
+      "510.4",
+      "702.4b",
+      "702.15b"
+    ]
+  },
+  {
+    "id": "ld23",
+    "text": "I control Ornithopter. My opponent controls Grizzly Bears. I cast Rabid Bite targeting Ornithopter and Grizzly Bears. What happens?",
+    "expect": [
+      "Ornithopter deals no damage to Grizzly Bears: 0 damage isn't dealt at all."
+    ],
+    "cite": [
+      "120.8"
+    ]
+  },
+  {
+    "id": "ld24",
+    "text": "My opponent controls Grizzly Bears. I cast Arc Lightning dividing 2 damage to Grizzly Bears and 1 to my opponent. In response they cast Gods Willing on Grizzly Bears choosing red. What happens?",
+    "expect": [
+      "Grizzly Bears takes no damage: it was an illegal target",
+      "Opponent takes 1 damage."
+    ],
+    "notExpect": [
+      "Opponent takes 3 damage"
+    ],
+    "cite": [
+      "601.2d",
+      "608.2b"
+    ]
+  },
+  {
+    "id": "ld25",
+    "text": "My opponent controls Repercussion and two Grizzly Bears. I control Grizzly Bears. I cast Pyroclasm. What happens?",
+    "expect": [
+      "You take 2 damage.",
+      "Opponent takes 2 damage.",
+      "deals 2 damage to Grizzly Bears's controller, opponent"
+    ],
+    "cite": [
+      "603.2",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "ld26",
+    "text": "My opponent controls Paladin en-Vec. My Walking Ballista has two counters, I remove one to ping Paladin en-Vec. What happens?",
+    "expect": [
+      "doesn't stop Walking Ballista: it's colourless (702.16e).",
+      "Paladin en-Vec has 1 damage marked."
+    ],
+    "cite": [
+      "702.16e",
+      "105.2c"
+    ]
+  },
+  {
+    "id": "ld27",
+    "text": "My opponent controls Leyline of Sanctity and Slippery Bogle. I cast Earthquake with X=2. What happens?",
+    "expect": [
+      "Slippery Bogle: the battlefield",
+      "Opponent takes 2 damage.",
+      "You take 2 damage."
+    ],
+    "cite": [
+      "120.3",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "ld28",
+    "text": "I control Soulfire Grand Master and Ajani's Pridemate. My opponent controls three Grizzly Bears. I cast Electrickery with overload. How much life do I gain, and how many counters does Pridemate get?",
+    "expect": [
+      "You gain 3 life in all.",
+      "Ajani's Pridemate has 1 +1/+1 counter."
+    ],
+    "notExpect": [
+      "2 +1/+1 counters"
+    ],
+    "cite": [
+      "702.15b",
+      "119.9"
+    ]
+  },
+  {
+    "id": "ld29",
+    "text": "I cast Giant Growth on my Grizzly Bears, then my opponent casts Lightning Bolt targeting it. Does it survive the cleanup step?",
+    "expect": [
+      "Yes: Grizzly Bears survives the turn."
+    ],
+    "cite": [
+      "514.2"
+    ]
+  },
+  {
+    "id": "ld30",
+    "text": "I control Melira, Sylvok Outcast. My opponent attacks me with Bloated Contaminator and I don't block. What happens?",
+    "expect": [
+      "You take 4 damage.",
+      "You get no poison counters from toxic (Melira, Sylvok Outcast)."
+    ],
+    "notExpect": [
+      "You have 1 poison counter"
+    ],
+    "cite": [
+      "702.164c",
+      "101.2"
+    ]
   }
 ]

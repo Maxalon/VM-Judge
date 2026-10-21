@@ -2578,6 +2578,66 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- life totals and damage (see LifeDamageMechanics.kt and LifeDamageAsks.kt) ----
+
+    /** Table talk about life totals and damage: two player targets, life totals handed out, a division of damage, old redirection. */
+    private fun lifeDamageRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val t2 = t.trim()
+        val io = RegexOption.IGNORE_CASE
+        val q = t2.trimEnd('?').trim()
+        fun pl(w: String) = if (w.lowercase() in setOf("me", "myself", "i")) "pme" else "popp"   // marker words later rewrites leave alone
+        val players = """me|myself|my opponent|the opponent|them|him|her"""
+        // Soul Conduit: "I activate Soul Conduit targeting me and my opponent" — two player targets, not two clauses.
+        Regex("""^(i|we|my opponent|the opponent|they) activates? (c\d+) targeting ($players) and ($players)$""", io).find(t2)?.let { r ->
+            return "ldactivate2 ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "pme" else "popp"} ${r.groupValues[2]} ${pl(r.groupValues[3])} ${pl(r.groupValues[4])}"
+        }
+        // Reverse the Sands: "I cast Reverse the Sands, giving me 18 life and my opponent 4."
+        Regex("""^(.*\bcasts? (c\d+)),? (?:giving|and give|to give|handing) ($players) (\d+)(?: life)? and ($players) (\d+)(?: life)?$""", io).find(t2)?.let { r ->
+            return "${r.groupValues[1]}, ldredist ${pl(r.groupValues[3])}:${r.groupValues[4]},${pl(r.groupValues[5])}:${r.groupValues[6]}"
+        }
+        // Arc Lightning: "I cast Arc Lightning dividing 2 damage to Grizzly Bears and 1 to my opponent."
+        Regex("""^(.*\bcasts? (c\d+)),? (?:dividing|splitting|and divide|and split|with) (?:its |the )?(\d+)(?: damage)? to ((?:my |their |his |her |the )?(?:c\d+|opponent|me|myself|my opponent|them)) and (\d+)(?: damage)? to ((?:my |their |his |her |the )?(?:c\d+|opponent|me|myself|my opponent|them))$""", io).find(t2)?.let { r ->
+            fun key(w: String): String = Regex("""c\d+""").find(w)?.value ?: pl(w.removePrefix("the ").trim())
+            // Players first, the way the two-target reading writes them ("targeting my opponent & c2").
+            val (x, y) = listOf(r.groupValues[4], r.groupValues[6]).sortedBy { if (Regex("""c\d+""").containsMatchIn(it)) 1 else 0 }
+            return "${r.groupValues[1]} targeting $x & $y, lddivide ${r.groupValues[2]} ${key(r.groupValues[4])}=${r.groupValues[3]} ${key(r.groupValues[6])}=${r.groupValues[5]}"
+        }
+        // "Can I redirect the damage to Jace?": the planeswalker redirection rule is gone (306.7).
+        Regex("""^can (?:i|we|they) (?:still )?redirect (?:the |that |its |this )?damage to (?:their |his |her |my opponent's |the opponent's )?(c\d+)(?: instead)?$""", io).find(q)?.let { r -> return "ldpwredirect-question ${r.groupValues[1]}" }
+        // "Can I pay 2 life for Gitaxian Probe's Phyrexian mana?" ("by paying 4 life" is left to the alternative-cost reading: Snuff Out.)
+        Regex("""^can (i|we) pay (\d+) life for (c\d+)'s phyrexian (?:mana|symbol)$""", io).find(q)?.let { r -> return "can ${r.groupValues[1]} cast ${r.groupValues[3]} paying ${r.groupValues[2]} life" }
+        return t2
+    }
+
+    /** Markers [lifeDamageRewrites] leaves. */
+    private fun readLifeDamageQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?')
+        fun card(ph: String) = m.cards[ph]
+        Regex("""^ldactivate2 (pme|popp) (c\d+) (pme|popp) (pme|popp)$""").find(q)?.let { r ->
+            fun pid(w: String) = w.removePrefix("p")
+            val c = card(r.groupValues[2]) ?: return@let
+            val id = objectIdFor(c, ctx) ?: addObject(c, pid(r.groupValues[1]), false, ctx)
+            ctx.events += EventSpec("activate", player = pid(r.groupValues[1]), obj = id, targets = listOf(pid(r.groupValues[3]), pid(r.groupValues[4])))
+            ctx.events += EventSpec("resolveAll"); ctx.lastMentioned = id
+            return true
+        }
+        Regex("""^ldredist (.+)$""").find(q)?.let { r -> ctx.events += EventSpec("lifedmg", player = "me", to = "redistribute=" + r.groupValues[1].replace("pme", "me").replace("popp", "opp")); return true }
+        Regex("""^lddivide (c\d+) (\S+)=(\d+) (\S+)=(\d+)$""").find(q)?.let { r ->
+            val spell = card(r.groupValues[1]) ?: return@let
+            fun id(k: String): String? = if (k == "pme" || k == "popp") k.removePrefix("p") else card(k)?.let { c -> ctx.objects.values.lastOrNull { it.card.name == c.display && it.zone == "battlefield" }?.id }
+            val a = id(r.groupValues[2]) ?: return@let; val b = id(r.groupValues[4]) ?: return@let
+            ctx.events += EventSpec("lifedmg", player = "me", to = "divide:${spell.display}=$a:${r.groupValues[3]},$b:${r.groupValues[5]}")
+            return true
+        }
+        Regex("""^ldpwredirect-question (c\d+)$""").find(q)?.let { r ->
+            val c = card(r.groupValues[1])
+            ctx.asks += EventSpec("ask", player = "me", to = "ld:pwredirect", card = c?.let { CardRef(name = it.display, oracleId = it.oracleId) })
+            ctx.notes += "The question is answered by the outcome below."
+            return true
+        }
+        return null
+    }
+
     // ---- competitive Commander combo turns (see CedhMechanics.kt and CedhAsks.kt) ----
 
     /** cEDH table talk: Breach piles, Tainted Pact runs, Scepter copies, Birgi, Culling the Weak, Sundial, Gilded Drake, Treasures. */
@@ -4056,6 +4116,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = lifeDamageRewrites(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
         t2 = cedhRewrites(t2, m, ctx)
         t2 = newSetRewrites(t2, m, ctx)
@@ -8077,7 +8138,9 @@ class SituationParser(private val names: NameIndex) {
             ctx.asks += EventSpec("ask", targets = which, to = "ex:blockable"); answered(); return true
         }
         Regex("""^exsurviveturn-question (it|c\d+)$""").find(c)?.let { r ->
-            val id = idOf(r.groupValues[1]) ?: return null
+            // "…then they Bolt it. Does it survive the turn?": "it" is the creature the last spell targeted, not that spell.
+            val it0 = if (r.groupValues[1] == "it" && ctx.lastMentioned !in ctx.objects) ctx.events.lastOrNull { e -> e.targets.any { t -> t in ctx.objects } }?.targets?.firstOrNull { t -> t in ctx.objects } else null
+            val id = it0 ?: idOf(r.groupValues[1]) ?: return null
             ctx.asks += EventSpec("ask", obj = id, to = "ex:surviveturn"); answered(); return true
         }
         Regex("""^exmv-question (.+)$""").find(c)?.let { r ->
@@ -8611,6 +8674,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readLifeDamageQuestions(clause0, m, ctx)?.let { return it }
         readExamQuestions(clause0, m, ctx)?.let { return it }
         readCedhQuestions(clause0, m, ctx)?.let { return it }
         readNewSetQuestions(clause0, m, ctx)?.let { return it }

@@ -294,6 +294,7 @@ object OracleParser {
     private fun parseTriggered(line: String): Ability {
         mtg.judge.engine.EdhMech.parseTriggered(line) { parseEffect(it) }?.let { return it }   // Tergrid, command-zone abilities (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseTriggered(line)?.let { return it }   // Standstill, Nether Void, The Abyss (PauperMechanics.kt)
+        mtg.judge.engine.LifeDmgMech.parseTriggered(line)?.let { return it }   // Transcendence, Lich's Mastery, Repercussion (LifeDamageMechanics.kt)
         // Harsh Mentor: "Whenever an opponent activates an ability of an artifact, creature, or land on the battlefield, if it
         // isn't a mana ability, ~ deals 2 damage to that player." The list's commas aren't the trigger's comma.
         Regex("""^Whenever (an opponent|a player|you) activates? an ability of (.+?)(?: on the battlefield)?, if it isn't a mana ability, (.+)$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -710,6 +711,7 @@ object OracleParser {
         mtg.judge.engine.ExamMech.parseStatic(line)?.let { return it }   // Mirror Gallery, Torbran, High Ground, Lure (ExamMechanics.kt)
         mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
         mtg.judge.engine.MoreEffects2.parseStatic(line)?.let { return it }   // Dryad of the Ilysian Grove, Animar (MoreEffects2.kt)
+        mtg.judge.engine.LifeDmgMech.parseStatic(line)?.let { return it }   // Platinum Emperion, Rampaging Ferocidon, Palisade Giant (LifeDamageMechanics.kt)
         mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
@@ -1423,6 +1425,7 @@ object OracleParser {
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
         mtg.judge.engine.PauperMech.parseSentence(s) { target(it) }?.let { return it }   // Pestilence, Earthquake, Skred, Ghostly Flicker, Timetwister (PauperMechanics.kt)
         mtg.judge.engine.CedhMech.parseSentence(s)?.let { return it }   // Isochron Scepter's copy (CedhMechanics.kt)
+        mtg.judge.engine.LifeDmgMech.parseSentence(s)?.let { return it }   // life totals set, exchanged, redistributed (LifeDamageMechanics.kt)
         mtg.judge.engine.MoreEffects2.parseSentence(s)?.let { return it }   // Stomp, Banefire, "target opponent draws", Show and Tell (MoreEffects2.kt)
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
