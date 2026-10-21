@@ -177,6 +177,7 @@ class Engine(val state: GameState) {
             // Lands aren't cast: playing one is a special action that doesn't use the stack.
             emptyStackFirst("playing a land")
             if (ExamMech.landPlayRefused(this, playerId, obj)) return null   // the land play is used, from the hand or the top of the library (ExamMechanics.kt)
+            if (MoreEffects3.landPlayRefused(this, playerId, obj)) return null   // Crucible of Worlds (MoreEffects3.kt)
             trace.step("${player.subject} ${player.v("plays", "play")} ${card.name}. Playing a land is a special action: it doesn't use the stack, can't be responded to, and is only possible during ${player.possessive} own main phase with an empty stack, once per turn unless an effect allows more.", "305.1", "116.2a", "305.2")
             // enter() already says it entered; saying it again here printed the line twice.
             obj.controller = playerId
@@ -926,6 +927,7 @@ class Engine(val state: GameState) {
         if (ability.cost.contains("{T}") && state.isCreature(obj) && obj.summoningSick == true && !obj.has("haste")) { trace.step("${obj.name} hasn't been under ${state.player(playerId).possessive} control since the turn began and doesn't have haste, so its {T} ability can't be activated.", "302.6"); state.outcomes += "${obj.name}'s {T} ability can't be activated (summoning sickness)."; return null }
         if (!paySacrificeCosts(playerId, obj, ability, choice)) return null
         MoreEffects2.payDiscardHand(this, playerId, ability)   // Lion's Eye Diamond's "Discard your hand" (MoreEffects2.kt)
+        MoreEffects3.activationCost(this, playerId, obj, ability)   // Boseiju's channel cost (MoreEffects3.kt)
         val isMana = isManaEffect(ability.effect)
         if (!isMana) state.stack.firstOrNull { it.kind == StackKind.SPELL && it.source.def.has("split second") }?.let { ss ->
             trace.step("${ss.source.name} has split second and is on the stack, so abilities that aren't mana abilities can't be activated. ${obj.name}'s ability can't be activated now.", "702.61a")
@@ -936,7 +938,7 @@ class Engine(val state: GameState) {
             val made0 = manaMade(ability.effect, playerId, choice)
             // Mana Reflection, Nyxbloom Ancient, Kinnan: what the permanent makes is multiplied or added to.
             var madeBoost: String? = made0 ?: describeManaEffect(ability.effect).takeIf { Regex("""\{[^}]+\}""").containsMatchIn(it) }
-            val boosts = state.objects.values.filter { it.isOnBattlefield() }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.ManaBoost }.filter { b -> (b.anyPlayer || src.controller == playerId) && (!b.nonlandOnly || "Land" !in state.typesOf(obj)) && (!b.landOnly || "Land" in state.typesOf(obj)) && (!b.enchantedOnly || src.attachedTo == obj.id) }.map { src to it } }
+            val boosts = state.objects.values.filter { it.isOnBattlefield() }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.ManaBoost }.filter { b -> (b.anyPlayer || src.controller == playerId) && (!b.nonlandOnly || "Land" !in state.typesOf(obj)) && (!b.landOnly || "Land" in state.typesOf(obj)) && (!b.enchantedOnly || src.attachedTo == obj.id) && (b.ofType == null || state.typesOf(obj).any { it.equals(b.ofType, true) } || state.subtypesOf(obj).any { it.equals(b.ofType, true) }) }.map { src to it } }
             for ((src, b) in boosts) {
                 val text = madeBoost ?: break
                 val syms = Regex("""\{[^}]+\}""").findAll(text).map { it.value }.toList()
@@ -1130,6 +1132,7 @@ class Engine(val state: GameState) {
             state.outcomes += "${p.subject} can't play another land this turn."
             return
         }
+        if (MoreEffects3.landPlayRefused(this, playerId, state.obj(objectId))) return   // Crucible of Worlds (MoreEffects3.kt)
         state.landsPlayed[playerId] = already + 1
         trace.step("${p.subject} ${p.v("plays", "play")} a land. Playing a land is a special action: it uses no stack and can't be responded to.", "305.1", "116.2a")
         if (PauperMech.landReplaced(this, state.obj(objectId))) return   // Kjeldoran Outpost with no Plains (PauperMechanics.kt)
@@ -1508,7 +1511,9 @@ class Engine(val state: GameState) {
         val colourOk = f.colors.all { it in card.colors } && f.notColors.none { it in card.colors }
         val mvOk = (f.maxManaValue == null || card.manaValue.toInt() <= f.maxManaValue) && (f.minManaValue == null || card.manaValue.toInt() >= f.minManaValue)
         // "Sphinx spells you cast cost {1} less" (The Ur-Sphinx): a creature type the spell has to have.
-        val subOk = f.subtypes.all { s -> card.subtypes.any { it.equals(s, true) } || card.changeling }
+        // "instant or sorcery spell" (Double Vision) is read as the subtypes "instant"/"sorcery" with any one sufficing: a card type counts.
+        fun hasSub(s: String) = card.subtypes.any { it.equals(s, true) } || card.types.any { it.equals(s, true) } || card.changeling
+        val subOk = if (f.subtypesAny) f.subtypes.isEmpty() || f.subtypes.any { hasSub(it) } else f.subtypes.all { hasSub(it) }
         return typeOk && notOk && colourOk && mvOk && subOk
     }
     private fun usesX(e: Effect): Boolean = when (e) { is Effect.Damage -> e.x; is Effect.Draw -> e.x; is Effect.LoseLife -> e.x; is Effect.Discard -> e.x; is Effect.PumpAll -> e.x; is Effect.SetBasePtAll -> e.x; is Effect.PutCounters -> e.x; is Effect.CreateToken -> e.x; is Effect.Repeat -> e.x || usesX(e.body); is Effect.Seq -> e.effects.any { usesX(it) }; is Effect.May -> usesX(e.effect); is Effect.Modal -> e.modes.any { usesX(it) }; else -> false }
@@ -2451,6 +2456,7 @@ class Engine(val state: GameState) {
             }
         }
         NewSetMech.extraTriggers(state, triggered)   // Bifur's enduring story doubling a Dwarf's triggers (NewSetMechanics.kt)
+        MoreEffects3.filterTriggers(state, triggered)   // "This ability triggers only once each turn" (MoreEffects3.kt)
         if (triggered.isEmpty()) return
         // 603.3b: APNAP order; the active player's triggers go on the stack first (so they resolve last).
         val order = state.players.map { it.id }
@@ -2608,6 +2614,7 @@ class Engine(val state: GameState) {
         is Trigger.Unknown -> false
         is MoreTrigger -> MoreEffects.triggerMatches(state, obj, trigger, event)   // Mikaeus (MoreEffects.kt)
         is MoreTrigger2 -> MoreEffects2.triggerMatches(state, obj, trigger, event)   // Voice of Resurgence (MoreEffects2.kt)
+        is MoreTrigger3 -> MoreEffects3.triggerMatches(state, obj, trigger, event)   // Aurelia (MoreEffects3.kt)
         is LdTrigger -> LifeDmgMech.triggerMatches(state, obj, trigger, event)   // Repercussion (LifeDamageMechanics.kt)
         }
     }
@@ -3018,6 +3025,7 @@ class Engine(val state: GameState) {
 
     private fun applyEffect(effect: Effect, item: StackItem) {
         if (MoreEffects2.apply(this, effect, item)) return   // "target opponent draws a card" (MoreEffects2.kt)
+        if (MoreEffects3.apply(this, effect, item)) return   // once each turn, copy that spell, untap up to three lands (MoreEffects3.kt)
         val you = state.player(item.controller)
         when (effect) {
             is Effect.ShuffleGraveyardIntoLibrary, is Effect.ReturnExiledCard, is Effect.SacrificeEnchanted, is Effect.GainLifeThatMuch, is Effect.TapOrUntap, is Effect.CreateTokenCopy, is Effect.OpponentMayTakeDamage, is Effect.DamageCausing, is Effect.DoublePower, is Effect.PumpCount, is Effect.LoseHalfLife, is Effect.ExileUntilLeaves, is Effect.SacrificeTarget, is Effect.GainLifeEqualTo, is Effect.FreezeUntap, is Effect.RemoveCounters, is Effect.SetBasePtTarget, is Effect.LoseLifeEqual -> applyEffectMore(effect, item)
@@ -4235,6 +4243,7 @@ class Engine(val state: GameState) {
                 if (hand == null) { trace.step("${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"} (${p.possessive} hand size wasn't given).", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"}." }
                 else if (hand == 0) { trace.step("${p.subject} ${p.v("has", "have")} no cards in hand, so nothing is discarded.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} nothing (no cards in hand)." }
                 else { val d = minOf(n, hand); p.handSize = hand - d; trace.step("${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"}${if (d < n) " (only $hand in hand)" else ""}, leaving ${p.handSize} in hand.${if (d < n) " An effect that can't be done in full does as much as it can." else ""}", "701.9a", *(if (d < n) arrayOf("609.3") else emptyArray())); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"} ($hand → ${p.handSize} in hand)." }
+                MoreEffects3.discardedUnseen(this, p.id, if (hand == null) n else minOf(n, hand))   // Megrim on cards nobody named (MoreEffects3.kt)
         }
     }
 
@@ -5699,6 +5708,7 @@ class Engine(val state: GameState) {
             // Whatever was attached to it, or it was attached to, is checked by state-based actions (704.5m/n).
         } else if (to == Zone.GRAVEYARD) onEvent(GameEvent.PutIntoGraveyard(obj))
         if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects2.discarded(this, obj)   // Necropotence (MoreEffects2.kt)
+        if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects3.discarded(this, obj)   // Megrim (MoreEffects3.kt)
     
         // A commander put into a graveyard or exile may go to the command zone at the next state-based action check
         // (903.9a); one that would go to hand or library may go there instead (903.9b). See CommanderRules.kt.
@@ -6026,6 +6036,7 @@ class Engine(val state: GameState) {
     private fun describeTargets(targets: List<Ref>) = if (targets.isEmpty()) "" else " targeting " + targets.joinToString(" and ") { state.nameOf(it) }
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
+        is More3 -> MoreEffects3.describe(effect, item.source.name)   // MoreEffects3.kt
         is Effect.NewMech -> if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
@@ -6088,4 +6099,7 @@ class Engine(val state: GameState) {
     internal fun meDestroy(o: GameObject, text: String, vararg rules: String) = destroy(o, text, *rules)
     // MoreEffects2.kt's.
     internal fun me2ForEachLegal(item: StackItem, spec: TargetSpec, block: (Ref) -> Unit) = forEachLegalTarget(item, spec, block)
+    // MoreEffects3.kt's.
+    internal fun me3CopySpell(effect: Effect.CopySpell, item: StackItem, ref: Ref) = copySpell(effect, item, ref)
+    internal fun me3PutTrigger(obj: GameObject, ability: TriggeredAbility, causedBy: String?, causedObject: String?) = putTriggerOnStack(obj, ability, emptyList(), causedBy, null, causedObject)
 }

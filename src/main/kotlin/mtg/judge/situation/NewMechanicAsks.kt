@@ -173,6 +173,8 @@ internal object NewMechanicAsks {
             // "Varragoth attacked this turn" (702.142a): it attacked, though it isn't attacking now.
             "attacked" -> state.objects[e.obj ?: return]?.let { NewMech.flags(it)["attacked"] = (NewMech.flags(it)["attacked"] ?: 0) + 1 }
             "boasted" -> state.objects[e.obj ?: return]?.let { NewMech.flags(it)["boasted"] = 1 }
+            // "I channel Boseiju, Who Endures": the channel ability activated from the hand, its cost reduction counted (MoreEffects3.kt).
+            "channel" -> mtg.judge.engine.MoreEffects3.channel(engine, player, e.card?.let(cardDef) ?: return)
             // "I activate its adapt ability": the activated ability whose effect is that keyword action, then the stack resolves.
             else -> if (e.to?.startsWith("activatekw:") == true) {
                 val o = state.obj(e.obj ?: return); val kind = e.to.removePrefix("activatekw:")

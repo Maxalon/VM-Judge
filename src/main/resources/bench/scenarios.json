@@ -53011,5 +53011,378 @@
     "expect": [
       "Neither: both die."
     ]
+  },
+  {
+    "id": "or1",
+    "text": "I control Morbid Opportunist, Grizzly Bears and Llanowar Elves. My opponent casts Lightning Bolt targeting Grizzly Bears. After it resolves, my opponent casts Lightning Bolt targeting Llanowar Elves. How many cards do I draw?",
+    "expect": [
+      "Morbid Opportunist's ability doesn't trigger again this turn (it triggers only once each turn).",
+      "You draw 1 card in all."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "or2",
+    "text": "I control Nykthos Paragon and Grizzly Bears. I gain 3 life. Then I gain 2 life. How many counters are on Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears has 2 +1/+1 counters.",
+      "that was already done this turn, so this one does nothing"
+    ],
+    "cite": [
+      "603.2h"
+    ]
+  },
+  {
+    "id": "or3",
+    "text": "I control Double Vision. I cast Lightning Bolt targeting my opponent. How much damage does my opponent take?",
+    "expect": [
+      "A copy of Lightning Bolt is put on the stack targeting opponent.",
+      "opponent takes 6 damage in all."
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "or4",
+    "text": "I control Double Vision. My opponent controls Grizzly Bears. I cast Lightning Bolt targeting Grizzly Bears. What happens?",
+    "expect": [
+      "Double Vision lets you choose new targets for the copy",
+      "Lightning Bolt doesn't resolve (all targets illegal)."
+    ],
+    "cite": [
+      "707.10c"
+    ]
+  },
+  {
+    "id": "or5",
+    "text": "It's a four-player Commander game. I play Spire Garden. Does it enter tapped?",
+    "expect": [
+      "Spire Garden is untapped."
+    ],
+    "cite": [
+      "614.1c"
+    ]
+  },
+  {
+    "id": "or6",
+    "text": "I control Aurelia, the Warleader. I attack with Aurelia. What happens?",
+    "expect": [
+      "After this phase there is an additional combat phase (Aurelia, the Warleader, 500.8)."
+    ],
+    "cite": [
+      "500.8"
+    ]
+  },
+  {
+    "id": "or7",
+    "text": "I control Aurelia, the Warleader and a tapped Grizzly Bears. I attack with Aurelia. Does Grizzly Bears untap?",
+    "expect": [
+      "Aurelia, the Warleader's ability triggers on Aurelia, the Warleader attacking.",
+      "Grizzly Bears is untapped."
+    ],
+    "cite": [
+      "603.2",
+      "701.26b"
+    ]
+  },
+  {
+    "id": "or8",
+    "text": "I control Manifold Key and a tapped Sol Ring. I activate Manifold Key's untap ability targeting Sol Ring. What happens?",
+    "expect": [
+      "Sol Ring is untapped."
+    ],
+    "cite": [
+      "701.26b"
+    ]
+  },
+  {
+    "id": "or9",
+    "text": "I control a tapped Island, a tapped Swamp and a tapped Mountain. I cast Frantic Search. What happens?",
+    "expect": [
+      "You untap up to 3 lands (chosen as Frantic Search resolves, not targeted): Island, Swamp, Mountain."
+    ],
+    "cite": [
+      "701.26b"
+    ]
+  },
+  {
+    "id": "or10",
+    "text": "I control Mondrak, Glory Dominus. I cast Raise the Alarm. How many tokens do I get?",
+    "expect": [
+      "Mondrak, Glory Dominus replaces the token creation: 4 tokens instead of 2.",
+      "You have 4 tokens."
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "or11",
+    "text": "I control Megrim. My opponent casts Mind Rot targeting themselves. How much life does my opponent lose?",
+    "expect": [
+      "Megrim's ability triggers on opponent discarding a card",
+      "Opponent loses 4 life in all."
+    ],
+    "cite": [
+      "603.2",
+      "701.9a"
+    ]
+  },
+  {
+    "id": "or12",
+    "text": "I control Cranial Plating attached to Ornithopter and two other artifacts. How big is Ornithopter?",
+    "expect": [
+      "Ornithopter is 4/2 (0/2 base, +4/+0 from Cranial Plating (+1/+0 for each artifact you control: 4))."
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "or13",
+    "text": "I control Oketra's Monument. How much does Serra Angel cost me?",
+    "expect": [
+      "Serra Angel costs {3}{W}{W} minus {1} (Oketra's Monument makes it cost {1} less) — 4 mana in all."
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "or14",
+    "text": "I control Sedgemoor Witch. My opponent casts Lightning Bolt targeting Sedgemoor Witch. What happens?",
+    "expect": [
+      "opponent didn't pay 3 life, so ward counters Lightning Bolt (702.21a).",
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "702.21a"
+    ]
+  },
+  {
+    "id": "or15",
+    "text": "I control Enduring Innocence. My opponent casts Murder targeting Enduring Innocence. What happens?",
+    "expect": [
+      "Enduring Innocence: your graveyard → the battlefield.",
+      "Enduring Innocence returns from your graveyard to the battlefield."
+    ],
+    "cite": [
+      "400.7"
+    ]
+  },
+  {
+    "id": "or16",
+    "text": "I control Enduring Vitality. My opponent casts Murder targeting Enduring Vitality. Is Enduring Vitality a creature?",
+    "expect": [
+      "No: Enduring Vitality isn't a creature right now: it returned to the battlefield as an enchantment, not a creature (611.2e)."
+    ],
+    "cite": [
+      "611.2e",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "or17",
+    "text": "I cast Light Up the Stage. What happens?",
+    "expect": [
+      "You may play the exiled cards until the end of your next turn (Light Up the Stage)."
+    ],
+    "cite": [
+      "601.3"
+    ]
+  },
+  {
+    "id": "or18",
+    "text": "I have a Forest in my graveyard and control Crucible of Worlds. I play the Forest from my graveyard.",
+    "expect": [
+      "Crucible of Worlds lets you play lands from your graveyard",
+      "Forest enters the battlefield."
+    ],
+    "cite": [
+      "116.2a"
+    ]
+  },
+  {
+    "id": "or19",
+    "text": "I have a Forest in my graveyard. I play the Forest from my graveyard.",
+    "expect": [
+      "No: you can't play Forest from your graveyard without an effect that allows it (305.1)."
+    ],
+    "cite": [
+      "305.1"
+    ]
+  },
+  {
+    "id": "or20",
+    "text": "I control Coldsteel Heart. I tap it for mana. What happens?",
+    "expect": [
+      "Coldsteel Heart's mana ability: add one mana of the chosen color."
+    ],
+    "cite": [
+      "605.1a"
+    ]
+  },
+  {
+    "id": "or21",
+    "text": "I play Thriving Isle. Does it enter tapped?",
+    "expect": [
+      "Thriving Isle is tapped."
+    ],
+    "cite": [
+      "614.1c"
+    ]
+  },
+  {
+    "id": "or22",
+    "text": "I control Abundant Growth attached to a Forest. What can the Forest tap for?",
+    "expect": [
+      "{T}: Add one mana of any color (from Abundant Growth)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "or23",
+    "text": "I control Body of Knowledge. My opponent casts Lightning Bolt targeting Body of Knowledge. How many cards do I draw?",
+    "expect": [
+      "\"That many\" is the amount of the event that made Body of Knowledge's ability trigger: 3.",
+      "You draw 3 cards in all."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "or24",
+    "text": "My opponent controls Sol Ring. I control Isamaru, Hound of Konda and Thalia, Guardian of Thraben. I channel Boseiju, Who Endures. What happens?",
+    "expect": [
+      "Boseiju, Who Endures's ability costs {G} to activate (reduced from {1}{G}; legendary creature you control: 2).",
+      "Sol Ring: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "602.2b",
+      "118.7"
+    ]
+  },
+  {
+    "id": "or25",
+    "text": "I control Crypt Ghast. I tap a Swamp for mana. How much mana do I get?",
+    "expect": [
+      "Swamp's mana ability: add {B}{B}."
+    ],
+    "cite": [
+      "605.1b"
+    ]
+  },
+  {
+    "id": "or26",
+    "text": "I cast Infectious Inquiry. What happens?",
+    "expect": [
+      "Opponent has 1 poison counter."
+    ],
+    "cite": [
+      "122.1f"
+    ]
+  },
+  {
+    "id": "or27",
+    "text": "I control Ethereal Armor attached to Grizzly Bears and one other enchantment. How big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 4/4 (2/2 base, +2/+2 from Ethereal Armor (+1/+1 for each enchantment you control: 2))."
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "or28",
+    "text": "I control Elvish Warmaster. I cast Llanowar Elves. How many tokens do I have?",
+    "expect": [
+      "Elvish Warmaster's ability doesn't trigger again this turn (it triggers only once each turn).",
+      "You have 1 token."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "or29",
+    "text": "I control Zendikar Resurgent. I tap a Forest for mana. How much mana do I have?",
+    "expect": [
+      "Forest's mana ability: add {G}{G}."
+    ],
+    "cite": [
+      "605.1b"
+    ]
+  },
+  {
+    "id": "or30",
+    "text": "I control Wizard Class. I activate Wizard Class's ability. How many cards do I draw?",
+    "expect": [
+      "Wizard Class is level 2.",
+      "You draw 2 cards in all."
+    ],
+    "cite": [
+      "716.2a"
+    ]
+  },
+  {
+    "id": "or31",
+    "text": "I control Druid Class. I play a Forest. Then I play a Mountain. What happens?",
+    "expect": [
+      "You gain 1 life.",
+      "No: you can't play Mountain: you already played 1 land this turn"
+    ],
+    "cite": [
+      "305.2b"
+    ]
+  },
+  {
+    "id": "or32",
+    "text": "I control The Seriema with seven charge counters on it. How big is The Seriema?",
+    "expect": [
+      "it's an artifact creature with its printed power and toughness 5/5",
+      "The Seriema is 5/5."
+    ],
+    "cite": [
+      "721.2b"
+    ]
+  },
+  {
+    "id": "or33",
+    "text": "I control Uthros Research Craft with three charge counters on it. I cast Sol Ring. How many cards do I draw?",
+    "expect": [
+      "Uthros Research Craft's ability triggers on you casting Sol Ring.",
+      "Uthros Research Craft has 4 charge counters.",
+      "You draw 1 card in all."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "or34",
+    "text": "I control Uthros Research Craft with eight charge counters on it and an untapped Serra Angel. I activate Uthros Research Craft's station ability. Is Uthros Research Craft a creature?",
+    "expect": [
+      "You tap Serra Angel to station Uthros Research Craft",
+      "Yes: Uthros Research Craft is a creature (1/8)."
+    ],
+    "cite": [
+      "702.184a",
+      "721.2b"
+    ]
+  },
+  {
+    "id": "or35",
+    "text": "My opponent casts Grizzly Bears and I cast Three Steps Ahead choosing counter target spell. What happens?",
+    "expect": [
+      "Three Steps Ahead has spree: as it was cast, you chose one mode (\"Counter target spell\") and paid its additional cost {1}{U}",
+      "Grizzly Bears is countered."
+    ],
+    "cite": [
+      "702.172a"
+    ]
   }
 ]

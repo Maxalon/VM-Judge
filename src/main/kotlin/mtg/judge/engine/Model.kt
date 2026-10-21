@@ -475,6 +475,7 @@ sealed interface Effect {
         is LoseLifeUnlessSacOrDiscard -> emptyList()
         is WinLossEffect -> WinLoss.targets(this)
         is Populate, is Amass, is Cascade, is ExiledOwnerTokenMv, is CounterIfNoManaSpent, is NewMech -> emptyList()
+        is More3 -> listOfNotNull(target)   // MoreEffects3.kt
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is Exploit, is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
         is Investigate, is Surveil, is SacrificeUnlessEscaped, is Hideaway, is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
@@ -716,7 +717,9 @@ sealed interface Replacement {
     /** Mana Reflection / Nyxbloom Ancient ("produces twice/three times as much"), Kinnan ("add one mana of any type that permanent produced"). */
     data class ManaBoost(val factor: Int, val plus: Int, val nonlandOnly: Boolean, val trigger: Boolean, val anyPlayer: Boolean = false, val landOnly: Boolean = false,
         /** Wild Growth: only the land it enchants, and [adds] is the mana it adds ("an additional {G}") rather than more of the same. */
-        val enchantedOnly: Boolean = false, val adds: String? = null) : Replacement
+        val enchantedOnly: Boolean = false, val adds: String? = null,
+        /** Crypt Ghast: "Whenever you tap a Swamp for mana" — the card type or subtype the tapped permanent must have (MoreEffects3.kt). */
+        val ofType: String? = null) : Replacement
     /** "If you would gain life, you gain twice that much life instead." */
     data class LifeGainMultiplier(val factor: Int, val anyPlayer: Boolean = false) : Replacement
     /** "If an effect would place one or more counters on a permanent you control, it places twice that many instead." (Doubling Season) */

@@ -157,7 +157,7 @@ class GameObject(
     val toughness: Int? get() = state?.toughnessOf(this) ?: def.toughness?.let { it + pumps.sumOf { p -> p.second } + (counters["+1/+1"] ?: 0) - (counters["-1/-1"] ?: 0) }
     fun has(keyword: String): Boolean = state?.hasKeyword(this, keyword) ?: (def.has(keyword) || keyword.lowercase() in tempKeywords)
     /** The abilities it has right now: the printed ones unless Humility, Darksteel Mutation or Blood Moon took them away (613.1f, 305.7). Copiable values and "card named" questions read [def] instead. */
-    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else MoreEffects2.liveAbilities(this, DeepMech.live(this, def.abilities))   // Animar's reduction counted now (DeepMechanics.kt)
+    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else MoreEffects3.liveAbilities(this, MoreEffects2.liveAbilities(this, DeepMech.live(this, def.abilities)))   // Animar's reduction counted now (DeepMechanics.kt)
     /** The rules text it has right now: empty while its abilities are gone (613.1f). */
     val rulesText: String get() = if (state?.abilitiesGone(this) != null) "" else def.oracleText
     val name get() = def.name
@@ -408,6 +408,7 @@ class GameState(
     fun notACreatureBecause(o: GameObject): String? {
         if (!o.def.isCreature || !o.isOnBattlefield()) return null
         NewMech.notACreature(this, o)?.let { return it }   // impending, reconfigure (NewMechanics.kt)
+        MoreEffects3.notACreature(this, o)?.let { return it }   // the Enduring cycle (MoreEffects3.kt)
         val god = o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.NotACreatureUnlessDevotion>().firstOrNull() ?: return null
         val have = devotion(o.controller, god.colour)
         val colourName = when (god.colour) { 'W' -> "white"; 'U' -> "blue"; 'B' -> "black"; 'R' -> "red"; else -> "green" }
@@ -449,7 +450,7 @@ class GameState(
     }
     fun charsOf(o: GameObject): Chars = layers()?.of(o) ?: Chars(o)
     /** Card types, subtypes and supertypes right now (layer 4, 613.1d). */
-    fun typesOf(o: GameObject): Set<String> = charsOf(o).types
+    fun typesOf(o: GameObject): Set<String> = MoreEffects3.types(this, o, charsOf(o).types)   // the Enduring cycle returns as an enchantment only; a Spacecraft at 12+ is a creature (MoreEffects3.kt)
     fun subtypesOf(o: GameObject): Set<String> = charsOf(o).subtypes
     fun supertypesOf(o: GameObject): Set<String> = charsOf(o).supertypes
     /** Blood Moon or Magus of the Moon, when it has made this land a Mountain and taken its rules text away (305.7). */
@@ -484,7 +485,7 @@ class GameState(
         }
         Condition.WasKicked -> src.wasKicked
         is Condition.SourceTapped -> (src.tapped == true) == c.tapped
-        is Condition.Unknown -> NewSetMech.condition(this, c.text, src) ?: false
+        is Condition.Unknown -> NewSetMech.condition(this, c.text, src) ?: MoreEffects3.condition(this, c.text, src) ?: false
     }
 
     /** What a static ability's condition asks for, for traces and for saying why one doesn't apply. */
@@ -499,7 +500,7 @@ class GameState(
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"
         is Condition.SourceTapped -> "it to be ${if (c.tapped) "tapped" else "untapped"}"
-        is Condition.Unknown -> NewSetMech.describeCondition(c.text) ?: c.text
+        is Condition.Unknown -> NewSetMech.describeCondition(c.text) ?: MoreEffects3.describeCondition(c.text) ?: c.text
     }
 
     /** Layer 7a: a characteristic-defining ability's value, or null when it depends on something the situation doesn't say. */
@@ -557,10 +558,10 @@ class GameState(
     fun powerOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) toughness7c(obj) else power7c(obj)
     fun toughnessOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) power7c(obj) else toughness7c(obj)
     private fun power7c(obj: GameObject): Int? = basePower(obj)?.let { base ->
-        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.power ?: 0 } + selfCountPt(obj) + obj.pumps.sumOf { it.first } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
+        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.power ?: 0 } + selfCountPt(obj) + MoreEffects3.attachedPt(this, obj, false) + obj.pumps.sumOf { it.first } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
     private fun toughness7c(obj: GameObject): Int? = baseToughness(obj)?.let { base ->
-        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.toughness ?: 0 } + selfCountPt(obj, toughness = true) + obj.pumps.sumOf { it.second } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
+        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.toughness ?: 0 } + selfCountPt(obj, toughness = true) + MoreEffects3.attachedPt(this, obj, true) + obj.pumps.sumOf { it.second } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
     /** Keywords a keyword counter can be (122.1b). */
     val keywordCounters = setOf("flying", "first strike", "double strike", "deathtouch", "decayed", "exalted", "haste", "hexproof", "indestructible", "lifelink", "menace", "reach", "shadow", "trample", "vigilance")
@@ -572,6 +573,7 @@ class GameState(
         if (obj.isOnBattlefield() && k in charsOf(obj).keywords) return true   // given in layer 6 (Darksteel Mutation's indestructible)
         val stripped = abilitiesLostOn(obj) != null
         if (!stripped && (obj.def.has(k) || k in obj.tempKeywords)) return true
+        if (!stripped && MoreEffects3.gatedKeyword(obj, k)) return true   // "12+ | Flying" with 12 charge counters (MoreEffects3.kt)
         if (!stripped && levelBand(obj)?.keywords?.contains(k) == true) return true   // 702.87b: the band's abilities while it has that many level counters
         if (k in keywordCounters && (obj.counters[k] ?: 0) > 0) return true   // 122.1b: a keyword counter grants the keyword, and isn't an ability of the creature
         if (k == "lifelink" && LifeDmgMech.spellLifelink(this, obj)) return true   // Soulfire Grand Master's instants and sorceries (LifeDamageMechanics.kt)
@@ -606,7 +608,7 @@ class GameState(
 
     /** Ward cost on an object, if any ("Ward {2}", "Ward—Pay 3 life"). */
     fun wardCost(obj: GameObject): String? = obj.abilities.filterIsInstance<StaticAbility>().firstNotNullOfOrNull { a ->
-        Regex("""^Ward(?:\s*[—-]\s*|\s+)(.+?)\.?$""", RegexOption.IGNORE_CASE).find(a.text)?.groupValues?.get(1)
+        Regex("""^Ward(?:\s*[—-]\s*|\s+)(.+?)\.?$""", RegexOption.IGNORE_CASE).find(a.text)?.groupValues?.get(1)?.replace(Regex("""^(?i)pay (?=\d+ life$)"""), "")   // "Ward—Pay 2 life": the cost is 2 life (702.21a)
     // A ward granted for the turn (an animated creature-land, say) counts the same as a printed one.
     } ?: obj.tempKeywords.firstNotNullOfOrNull { k -> Regex("""^ward(?:\s*[—-]\s*|\s+)(.+)$""", RegexOption.IGNORE_CASE).find(k)?.groupValues?.get(1) }
 
@@ -626,6 +628,7 @@ class GameState(
         if (lost == null) cdaOf(obj)?.let { c -> parts += "base set by its own ability (layer 7a${if (c.power is CountExpr.CardTypesInGraveyards || c.toughness is CountExpr.CardTypesInGraveyards) ": ${cardTypesInGraveyards().size} card type${if (cardTypesInGraveyards().size == 1) "" else "s"} in graveyards${cardTypesInGraveyards().takeIf { it.isNotEmpty() }?.let { t -> " (" + t.sorted().joinToString(", ") + ")" } ?: ""}" else ""})" }
         val statics = staticEffectsOn(obj).filter { it.second is StaticEffect.PtModify && !((it.second as StaticEffect.PtModify).power == 0 && (it.second as StaticEffect.PtModify).toughness == 0) }
         for ((src, e) in statics) { e as StaticEffect.PtModify; parts += "${sign(e.power)}/${sign(e.toughness)} from ${if (src === obj) "its own ability" + (e.condition?.let { " (condition met)" } ?: "") else src.name}" }
+        parts += MoreEffects3.describeAttachedPt(this, obj)   // Cranial Plating's count (MoreEffects3.kt)
         // A size-changing ability of its own whose condition isn't met: saying so is the difference between "it is
         // 1/1" and "it is 1/1 because the graveyard you described has three cards in it, not seven".
         if (lost == null) for (e in obj.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.PtModify>())

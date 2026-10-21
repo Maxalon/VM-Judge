@@ -89,7 +89,7 @@ object OracleParser {
                     if (i >= 0) abilities[i] = (abilities[i] as ActivatedAbility).copy(restriction = selfRef.trimEnd('.'), text = abilities[i].text + " " + selfRef) else abilities += UnparsedAbility(selfRef)
                 }
                 isKeywordLine(selfRef, keywords) && statics.isEmpty() -> selfRef.split(',', ';').map { it.trim() }.filter { it.isNotEmpty() }.forEach { part ->
-                    val kw = keywords.map { it.lowercase() }.filter { part.lowercase() == it || part.lowercase().startsWith("$it ") }.maxByOrNull { it.length } ?: part.substringBefore(' ').lowercase()
+                    val kw = keywords.map { it.lowercase() }.filter { part.lowercase() == it || part.lowercase().startsWith("$it ") || part.lowercase().startsWith("$it—") }.maxByOrNull { it.length } ?: part.substringBefore(' ').lowercase()
                     when (kw) {
                         "enchant" -> { val what = part.substring(7).trim().trimEnd('.'); enchant = if (what.equals("player", true)) ObjFilter(setOf(Kind.PLAYER), raw = what)
                             // Animate Dead: "Enchant creature card in a graveyard" — a card, not a permanent.
@@ -180,7 +180,7 @@ object OracleParser {
                                 "Backup $n (When this creature enters, put ${if (n == 1) "a +1/+1 counter" else "$n +1/+1 counters"} on target creature. If that's another creature, it gains the following abilities until end of turn.)")
                         }
                         // Mobilize, afterlife, decayed, ravenous: expanded into the abilities their rules define (NewMechanics.kt).
-                        else -> abilities += mtg.judge.engine.DeepMech.keywordAbilities(kw, part) ?: mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewSetMech.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
+                        else -> abilities += mtg.judge.engine.DeepMech.keywordAbilities(kw, part) ?: mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewSetMech.keywordAbilities(kw, part) ?: mtg.judge.engine.MoreEffects3.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
                     }
                 }
                 // Animate Dead / Dance of the Dead: one paragraph holding the enters ability that returns the card it enchants
@@ -198,6 +198,7 @@ object OracleParser {
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
                 mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef)!!   // Uro's escape, Mikaeus (MoreEffects.kt)
                 mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef)!!   // Voice of Resurgence (MoreEffects2.kt)
+                mtg.judge.engine.MoreEffects3.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects3.parseAbilityLine(selfRef)!!   // "12+ | Flying" on a station card (MoreEffects3.kt)
                 isSpell && WinLoss.isSpellLine(selfRef) -> spellLines += selfRef   // Pact of Negation's delayed trigger is part of the spell
                 selfRef.startsWith("When ", true) || selfRef.startsWith("Whenever ", true) || selfRef.startsWith("At ", true) || abilityWord.containsMatchIn(selfRef) -> abilities += parseTriggeredAll(selfRef)
                 isActivated(selfRef) -> abilities += parseActivated(selfRef)
@@ -218,6 +219,7 @@ object OracleParser {
         val kws = keywords.map { it.lowercase() }.toSet()
         // Basic land types carry intrinsic mana abilities (305.6): "({T}: Add {G} or {U}.)" is reminder text, so add them from the type line.
         if ("Land" in types) for (sub in subs) basicLandMana[sub]?.let { sym -> if (abilities.none { it is ActivatedAbility && it.cost == "{T}" && (it.effect as? Effect.AddMana)?.text == sym }) abilities += ActivatedAbility("{T}", Effect.AddMana(sym), "{T}: Add $sym. (intrinsic, from being ${if (sub.first() in "AEIOU") "an" else "a"} $sub)") }
+        mtg.judge.engine.MoreEffects3.gateClassLevels(abilities)   // a Class's abilities below its level bars (MoreEffects3.kt)
         return CardDef(oracleId, name, typeLine, supers, types, subs, manaCost, manaValue, if ("devoid" in kws) emptySet() else colors.toSet(), CardDef.parseStat(power), CardDef.parseStat(toughness),
             kws, abilities, spellEffect, oracleText, enchant, "changeling" in kws, loyalty?.toIntOrNull())
     }
@@ -231,7 +233,7 @@ object OracleParser {
         if (shortName != name) s = s.replace(shortName, "~")
         // Legendary names shortened in their own text: "Kaalia of the Vast" -> "Kaalia", "Ezuri the Claw" -> "Ezuri", "Arcades, the Strategist" already handled.
         Regex("""^([A-Z][\w'-]+) (?:of|the|,)\b""").find(name)?.groupValues?.get(1)?.let { first -> if (first.length >= 3) s = s.replace(Regex("""\b${Regex.escape(first)}\b(?! (?:of|the))"""), "~") }
-        s = s.replace(Regex("""\b[Tt]his (creature|permanent|artifact|enchantment|land|planeswalker|spell|card|Aura|Equipment|Vehicle|token|battle|Saga|Class|Room)\b"""), "~")
+        s = s.replace(Regex("""\b[Tt]his (creature|permanent|artifact|enchantment|land|planeswalker|spell|card|Aura|Equipment|Vehicle|token|battle|Saga|Class|Room|Spacecraft|Planet)\b"""), "~")
         return s
     }
 
@@ -257,6 +259,9 @@ object OracleParser {
     }
 
     private val manaRe = Regex("""^Add (\{[^}]+\}(?:\{[^}]+\})*(?:(?:, or |, | or | and )\{[^}]+\}(?:\{[^}]+\})*)*|(?:one|two|three|four|five|N|X) mana (?:of any (?:one )?color(?: in your commander's color identity)?|in any combination of colors|of any color(?: or type)?)|an amount of mana .+)\.?$""", RegexOption.IGNORE_CASE)
+
+    /** "{T}: Add {G}." quoted inside a grant (Abundant Growth): read as the activated ability it is (MoreEffects3.kt). */
+    internal fun parseActivatedLine(line: String): Ability = parseActivated(line)
 
     private fun parseActivated(line: String): Ability {
         val colon = line.indexOf(':')
@@ -379,6 +384,7 @@ object OracleParser {
     fun parseTrigger(cond: String): Trigger {
         val c = cond.trim().trimEnd(',')
         mtg.judge.engine.Turns.trigger(c)?.let { return it }   // Paradox Haze: "enchanted player's first upkeep each turn"
+        mtg.judge.engine.MoreEffects3.parseTrigger(c)?.let { return it }   // Megrim, Aurelia (MoreEffects3.kt)
         Regex("""^the beginning of (?:(your|each player's|each|an opponent's|each opponent's|the) )?(upkeep|draw step|precombat main phase|first main phase|combat on your turn|combat on each of your turns|combat on each opponent's turn|combat|end step|next end step|postcombat main phase|second main phase|untap step|end of combat step|turn)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             val whose = when (m.groupValues[1].lowercase()) { "your" -> Who.YOU; "an opponent's", "each opponent's" -> Who.OPPONENT; else -> Who.ANY_PLAYER }
             val stepKey = m.groupValues[2].lowercase().substringBefore(" on ")
@@ -711,6 +717,7 @@ object OracleParser {
         mtg.judge.engine.ExamMech.parseStatic(line)?.let { return it }   // Mirror Gallery, Torbran, High Ground, Lure (ExamMechanics.kt)
         mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
         mtg.judge.engine.MoreEffects2.parseStatic(line)?.let { return it }   // Dryad of the Ilysian Grove, Animar (MoreEffects2.kt)
+        mtg.judge.engine.MoreEffects3.parseStatic(line)?.let { return it }   // Mondrak, Cranial Plating, Oketra's Monument (MoreEffects3.kt)
         mtg.judge.engine.LifeDmgMech.parseStatic(line)?.let { return it }   // Platinum Emperion, Rampaging Ferocidon, Palisade Giant (LifeDamageMechanics.kt)
         mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
@@ -1056,6 +1063,7 @@ object OracleParser {
     /** "you control a Swamp", "you control an artifact", "it's your turn", "you control three or more creatures". */
     fun parseCondition(text: String): Condition? {
         val t = text.trim().trimEnd('.')
+        mtg.judge.engine.MoreEffects3.parseCondition(t)?.let { return it }   // "you have two or more opponents" (MoreEffects3.kt)
         if (Regex("""^(?:~|it|this spell) was kicked$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.WasKicked
         if (Regex("""^~ is untapped$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.SourceTapped(false)
         if (Regex("""^~ is tapped$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.SourceTapped(true)
@@ -1130,6 +1138,7 @@ object OracleParser {
     private val sentenceSplit = Regex("""(?<=\.)\s+(?=[A-Z~])""")
 
     fun parseEffect(text: String): Effect {
+        mtg.judge.engine.MoreEffects3.parseSpell(text)?.let { return it }   // spree's "+ {1} — mode" lines (MoreEffects3.kt)
         WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
         mtg.judge.engine.CedhMech.parseSpell(text)?.let { return it }   // Tainted Pact, Peer into the Abyss, Bonus Round (CedhMechanics.kt)
         mtg.judge.engine.EdhMech.parseSpell(text) { parseEffect(it) }?.let { return it }   // Demonic Consultation, Expropriate (EdhMechanics.kt)
@@ -1427,6 +1436,7 @@ object OracleParser {
         mtg.judge.engine.CedhMech.parseSentence(s)?.let { return it }   // Isochron Scepter's copy (CedhMechanics.kt)
         mtg.judge.engine.LifeDmgMech.parseSentence(s)?.let { return it }   // life totals set, exchanged, redistributed (LifeDamageMechanics.kt)
         mtg.judge.engine.MoreEffects2.parseSentence(s)?.let { return it }   // Stomp, Banefire, "target opponent draws", Show and Tell (MoreEffects2.kt)
+        mtg.judge.engine.MoreEffects3.parseSentence(s)?.let { return it }   // once each turn, copy that spell, Frantic Search's untap (MoreEffects3.kt)
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
         mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
