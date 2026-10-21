@@ -233,6 +233,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             if (start != null && p.life != null && p.life != start) state.outcomes += "${p.subject} ${p.v("goes", "go")} from $start to ${p.life} life."
         }
         answerFirst(state); YesNoAsks.dropRepeats(state)
+        DirectAnswers.lead(sit.question, sit, state)   // the first line says Yes, No, the number, the fate or the choice
         val cited = state.trace.steps.flatMap { it.rules }.distinct()
         val citations = cited.associateWith { n -> rules?.rule(n)?.text ?: "" }.filterValues { it.isNotEmpty() }
         return Grammar.polishAnswer(Answer(

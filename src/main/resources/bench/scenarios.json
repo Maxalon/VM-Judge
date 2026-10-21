@@ -4210,7 +4210,7 @@
     "id": "ancient-tomb-damage",
     "text": "My opponent taps Ancient Tomb for mana. How much damage do they take?",
     "expect": [
-      "Yes: opponent takes 2 damage in all"
+      "opponent takes 2 damage in all"
     ],
     "notExpect": [
       "narrated(text="
@@ -10319,7 +10319,7 @@
     "id": "fight-who-wins",
     "text": "Who wins the fight between Grizzly Bears and Hill Giant?",
     "expect": [
-      "Yes: Grizzly Bears died",
+      "Grizzly Bears died",
       "No: Hill Giant is still on the battlefield"
     ],
     "notExpect": [
@@ -10333,7 +10333,7 @@
     "id": "fight-deathtouch-trades",
     "text": "Who wins the fight between Thornweald Archer and Colossal Dreadmaw?",
     "expect": [
-      "Yes: Thornweald Archer died",
+      "Thornweald Archer died",
       "Yes: Colossal Dreadmaw died"
     ],
     "notExpect": [
@@ -10654,7 +10654,7 @@
     "text": "I attack with a 3/3 and they block with a 2/2. Who wins?",
     "expect": [
       "Yes: a 3/3 creature is still on the battlefield",
-      "No: a 2/2 creature is in the graveyard"
+      "a 2/2 creature is in the graveyard"
     ],
     "notExpect": [
       "Not understood"
@@ -10665,7 +10665,7 @@
     "id": "who-wins-the-game",
     "text": "My opponent is at 2 and I attack with a 5/5. Who wins?",
     "expect": [
-      "Yes: You have won the game."
+      "You have won the game."
     ],
     "notExpect": [
       "Not understood"
@@ -16027,7 +16027,7 @@
     "text": "My opponent blocks my 4/4 with a 2/2. I cast Giant Growth on my attacker. How much trample damage goes through?",
     "expect": [
       "opponent takes 5 damage.",
-      "Yes: opponent takes 5 damage in all."
+      "opponent takes 5 damage in all."
     ],
     "notExpect": [
       "Not understood"
@@ -16826,7 +16826,7 @@
     "text": "I have a 1/1 with Rancor attacking and my opponent chumps with a 0/1. How much trample?",
     "expect": [
       "opponent takes 2 damage.",
-      "Yes: opponent takes 2 damage in all."
+      "opponent takes 2 damage in all."
     ],
     "notExpect": [
       "Not understood"
@@ -18625,7 +18625,7 @@
     "expect": [
       "You take 5 damage.",
       "a 6/6 creature with trample: the battlefield → opponent's graveyard.",
-      "Yes: you take 5 damage in all."
+      "you take 5 damage in all."
     ],
     "notExpect": [
       "Not understood"
@@ -23921,7 +23921,7 @@
     "id": "three-1-1-tokens-attack-how-much",
     "text": "I attack with three 1/1 tokens. They have a 2/2. How much damage do they take?",
     "expect": [
-      "Yes: opponent takes 3 damage in all."
+      "opponent takes 3 damage in all."
     ]
   },
   {
@@ -24314,7 +24314,7 @@
     "text": "I have Grapeshot and have cast 3 spells this turn. How much damage?",
     "expect": [
       "Storm puts 3 copies of Grapeshot on the stack, above the original.",
-      "Yes: opponent takes 4 damage in all."
+      "opponent takes 4 damage in all."
     ],
     "cite": [
       "702.40a"
@@ -24730,14 +24730,14 @@
     "text": "I attack with Serra Angel and cast Giant Growth after blockers. They didn't block. How much damage do they take?",
     "expect": [
       "Serra Angel is 7/7 until end of turn.",
-      "Yes: opponent takes 7 damage in all."
+      "opponent takes 7 damage in all."
     ]
   },
   {
     "id": "trample-3-3-vs-1-1-deathtouch-how-much-over",
     "text": "I have a 3/3 with trample and they block with a 1/1 with deathtouch. How much tramples over?",
     "expect": [
-      "Yes: opponent takes 2 damage in all.",
+      "opponent takes 2 damage in all.",
       "a 3/3 creature with trample: the battlefield → your graveyard."
     ],
     "cite": [
@@ -25237,7 +25237,7 @@
     "id": "two-2-2s-they-block-one-with-3-3-damage",
     "text": "I attack with two 2/2s. They have one 3/3. They block one. How much damage do they take?",
     "expect": [
-      "Yes: opponent takes 2 damage in all.",
+      "opponent takes 2 damage in all.",
       "a 2/2 creature: the battlefield → your graveyard."
     ]
   },
@@ -25434,7 +25434,7 @@
     "text": "I cast Lightning Bolt at them and then Fork it. How much damage?",
     "expect": [
       "A copy of Lightning Bolt is put on the stack targeting opponent.",
-      "Yes: opponent takes 6 damage in all."
+      "opponent takes 6 damage in all."
     ],
     "cite": [
       "707.10"
@@ -25713,7 +25713,7 @@
     "expect": [
       "Saproling token has 1 damage marked.",
       "You take 4 damage.",
-      "Yes: you take 4 damage in all."
+      "you take 4 damage in all."
     ]
   },
   {
@@ -26421,7 +26421,7 @@
     "text": "I attack with a 2/2 and a 3/3. My opponent has one 4/4 and blocks the 3/3. How much damage do they take?",
     "expect": [
       "a 3/3 creature: the battlefield → your graveyard.",
-      "Yes: opponent takes 2 damage in all."
+      "opponent takes 2 damage in all."
     ]
   },
   {
@@ -26485,7 +26485,7 @@
     "text": "I have two Grizzly Bears and cast Overrun. How much damage do I deal if I attack?",
     "expect": [
       "Grizzly Bears is 5/5 with trample until end of turn. (×2)",
-      "Yes: opponent takes 10 damage in all."
+      "opponent takes 10 damage in all."
     ]
   },
   {
@@ -26897,7 +26897,7 @@
     "text": "I attack with a 4/4 with trample and my opponent blocks with a 0/1 Saproling. How much damage do they take?",
     "expect": [
       "opponent takes 3 damage.",
-      "Yes: opponent takes 3 damage in all."
+      "opponent takes 3 damage in all."
     ]
   },
   {
@@ -26921,7 +26921,7 @@
     "id": "elesh-norn-bears-deal-four",
     "text": "I control Elesh Norn, Grand Cenobite and attack with Grizzly Bears. How much damage does it deal?",
     "expect": [
-      "Yes: opponent takes 4 damage in all."
+      "opponent takes 4 damage in all."
     ]
   },
   {
@@ -27142,7 +27142,7 @@
     "text": "I control Celestial Colonnade and attack with it. How much damage does it deal?",
     "expect": [
       "Celestial Colonnade is a 4/4 creature until end of turn.",
-      "Yes: opponent takes 4 damage in all."
+      "opponent takes 4 damage in all."
     ]
   },
   {
@@ -27470,7 +27470,7 @@
     "text": "My opponent casts Lightning Bolt at my Dark Confidant. I respond with Lightning Bolt at their face and they're at 3. Who wins?",
     "expect": [
       "opponent loses the game.",
-      "Yes: You have won the game."
+      "You have won the game."
     ]
   },
   {
@@ -27668,7 +27668,7 @@
     "text": "I attack with a 2/2 and cast Brute Force on it after my opponent declares no blockers. How much damage do they take?",
     "expect": [
       "a 2/2 creature is 5/5 until end of turn.",
-      "Yes: opponent takes 5 damage in all."
+      "opponent takes 5 damage in all."
     ],
     "notExpect": [
       "Not understood"
@@ -28379,7 +28379,7 @@
     "id": "trample-double-blocked-damage",
     "text": "My opponent attacks with a 5/5 trample. I block with a 1/1 and a 2/2. How much damage do I take?",
     "expect": [
-      "Yes: you take 2 damage in all."
+      "you take 2 damage in all."
     ]
   },
   {
@@ -29666,7 +29666,7 @@
     "id": "trample-6-6-into-0-4-wall",
     "text": "My opponent attacks with a 6/6 trample and I block with a 0/4 Wall. How much damage do I take?",
     "expect": [
-      "Yes: you take 2 damage in all."
+      "you take 2 damage in all."
     ]
   },
   {
@@ -30265,7 +30265,7 @@
     "id": "champion-vs-goyf-two-types",
     "text": "I attack with Champion of the Parish and my opponent blocks with Tarmogoyf. Graveyards have 2 types. Who wins?",
     "expect": [
-      "Yes: Tarmogoyf is still on the battlefield.",
+      "Tarmogoyf is still on the battlefield.",
       "No: Champion of the Parish is in the graveyard."
     ],
     "notExpect": [
@@ -30989,7 +30989,7 @@
     "id": "guide-bolt-total-if-attack",
     "text": "I have a Goblin Guide and cast Lightning Bolt at their face. How much damage total if I attack?",
     "expect": [
-      "Yes: opponent takes 5 damage in all."
+      "opponent takes 5 damage in all."
     ],
     "cite": []
   },
@@ -36243,7 +36243,7 @@
     "id": "tt250-aberration-no-fliers",
     "text": "I attack with Insectile Aberration and they have no fliers. How much damage?",
     "expect": [
-      "Yes: opponent takes 3 damage in all"
+      "opponent takes 3 damage in all"
     ]
   },
   {
@@ -36553,14 +36553,14 @@
     "id": "tt253-two-chalices-one-on-each",
     "text": "They have two Chalices, one on 1 and one on 2. I cast Gitaxian Probe. Which Chalice counters it?",
     "expect": [
-      "Yes: Gitaxian Probe is countered (by Chalice of the Void, the one on 1)"
+      "Gitaxian Probe is countered (by Chalice of the Void, the one on 1)"
     ]
   },
   {
     "id": "tt253-chalice-on-one-and-chalice-on-two",
     "text": "They have a Chalice on 1 and a Chalice on 2. I cast Gitaxian Probe. Which Chalice counters it?",
     "expect": [
-      "Yes: Gitaxian Probe is countered (by Chalice of the Void, the one on 1)"
+      "Gitaxian Probe is countered (by Chalice of the Void, the one on 1)"
     ]
   },
   {
@@ -37110,7 +37110,7 @@
     "text": "I block their 5/5 trampler with my 2/2 and 1/1. How much tramples over?",
     "expect": [
       "You take 2 damage",
-      "Yes: you take 2 damage in all"
+      "you take 2 damage in all"
     ]
   },
   {
@@ -37637,7 +37637,7 @@
     "text": "They attack with two 2/2s and I have a 3/3. I block one. How much damage do I take?",
     "expect": [
       "You take 2 damage",
-      "Yes: you take 2 damage in all"
+      "you take 2 damage in all"
     ]
   },
   {
@@ -39077,7 +39077,7 @@
     "text": "My 1/1 with protection from green blocks a 5/5 green trample. How much damage goes through?",
     "expect": [
       "Damage to a 1/1 creature with protection from green from a 5/5 green creature with trample is prevented (protection).",
-      "Yes: you take 4 damage in all."
+      "you take 4 damage in all."
     ],
     "notExpect": [
       "a 1/1 creature with protection from green: the battlefield"
@@ -41204,7 +41204,7 @@
     "text": "My 2/2 first striker attacks and nobody blocks. After first strike damage I give my creature double strike. How much damage does my opponent take?",
     "expect": [
       "deals combat damage a second time",
-      "Yes: opponent takes 4 damage in all."
+      "opponent takes 4 damage in all."
     ],
     "cite": [
       "702.4d"
@@ -42623,7 +42623,7 @@
     "expect": [
       "opponent pays 1 life.",
       "opponent takes 2 damage.",
-      "Yes: opponent takes 2 damage in all."
+      "opponent takes 2 damage in all."
     ],
     "cite": [
       "603.2",
@@ -45671,7 +45671,7 @@
     "id": "nm23-mobilize",
     "text": "I attack with Voice of Victory. How much damage does the opponent take, and what happens to the Warrior tokens?",
     "expect": [
-      "Yes: opponent takes 3 damage in all.",
+      "opponent takes 3 damage in all.",
       "You get 2 1/1 Warrior tokens, tapped and attacking"
     ],
     "cite": [
@@ -47004,7 +47004,7 @@
     "id": "lt17",
     "text": "My opponent's 5/5 trample attacks and I block with Darksteel Myr. How much damage do I take?",
     "expect": [
-      "Yes: you take 4 damage in all.",
+      "you take 4 damage in all.",
       "Darksteel Myr is indestructible"
     ],
     "cite": [
@@ -48875,7 +48875,7 @@
     "id": "pc24",
     "text": "I control Fastbond. I play three lands this turn. How much damage do I take?",
     "expect": [
-      "Yes: you take 2 damage in all."
+      "you take 2 damage in all."
     ],
     "cite": [
       "603.4"
@@ -50157,7 +50157,7 @@
     "expect": [
       "opponent takes 1 damage.",
       "Damage to opponent from Boros Swiftblade is prevented.",
-      "Yes: opponent takes 1 damage in all."
+      "opponent takes 1 damage in all."
     ],
     "notExpect": [
       "Not modeled"
@@ -50663,7 +50663,7 @@
     "text": "I attack with an 8/8 trampler into a 2/2 blocker. How much damage do they take?",
     "expect": [
       "An 8/8 creature with trample deals 6 damage to opponent",
-      "Yes: opponent takes 6 damage in all"
+      "opponent takes 6 damage in all"
     ],
     "notExpect": [
       "a 8/8"
@@ -52686,7 +52686,7 @@
     "id": "ci9",
     "text": "I attack with Grizzly Bears and my opponent has no creatures. How much damage do they take?",
     "expect": [
-      "Yes: opponent takes 2 damage in all."
+      "opponent takes 2 damage in all."
     ],
     "notExpect": [],
     "cite": [
@@ -52716,6 +52716,300 @@
       "608.2n",
       "608.3a",
       "117.3b"
+    ]
+  },
+  {
+    "id": "yq1",
+    "text": "I attack with Grizzly Bears into their untapped Llanowar Elves. Do they block?",
+    "expect": [
+      "Yes, as played out here: Llanowar Elves blocks Grizzly Bears (whether to block is their choice, 509.1a)."
+    ]
+  },
+  {
+    "id": "yq2",
+    "text": "I control Rest in Peace. My opponent casts Snapcaster Mage. Does the trigger do anything?",
+    "expect": [
+      "No: Snapcaster Mage's trigger has no legal target (Rest in Peace keeps graveyards empty) and does nothing."
+    ]
+  },
+  {
+    "id": "yq3",
+    "text": "My opponent controls Jace Beleren with 3 loyalty. I attack Jace with a 2/2 and they don't block. Does Jace take damage?",
+    "expect": [
+      "Yes: a 2/2 creature deals 2 damage to Jace Beleren, so 2 loyalty counters are removed from it (1 left)."
+    ]
+  },
+  {
+    "id": "yq4",
+    "text": "I cast Ponder. Do I have to shuffle?",
+    "expect": [
+      "Yes, if you want: Ponder says you may shuffle, so it's your choice."
+    ]
+  },
+  {
+    "id": "yq5",
+    "text": "My opponent controls Rest in Peace. I cast Snapcaster Mage. Can I flashback anything?",
+    "expect": [
+      "No: Snapcaster Mage's trigger has no legal target (Rest in Peace keeps graveyards empty) and does nothing."
+    ]
+  },
+  {
+    "id": "yq6",
+    "text": "I cast Lightning Bolt and my opponent casts Mana Leak on it. I have one untapped land. Can I pay?",
+    "expect": [
+      "No: you can't pay {3} for Mana Leak: you have only 1 mana available."
+    ]
+  },
+  {
+    "id": "yq7",
+    "text": "I control Zulaport Cutthroat and a 1/1 token. The token dies. Do I drain 1?",
+    "expect": [
+      "Yes: opponent loses 1 life."
+    ]
+  },
+  {
+    "id": "yq8",
+    "text": "My opponent controls Blood Moon. I play Dryad Arbor. Is it a creature?",
+    "expect": [
+      "Yes: Dryad Arbor is still a creature."
+    ]
+  },
+  {
+    "id": "yq9",
+    "text": "I attack with a 2/2 into their untapped 3/3. Should I?",
+    "expect": [
+      "No, by the numbers (it's your call): So attacking with a 2/2 creature risks losing it for nothing if opponent"
+    ]
+  },
+  {
+    "id": "yq10",
+    "text": "I control Humility. My opponent casts Mulldrifter. Does its trigger happen?",
+    "expect": [
+      "No: Mulldrifter's ability doesn't trigger (Humility has taken its abilities away)."
+    ]
+  },
+  {
+    "id": "yq11",
+    "text": "My opponent Bolts my Young Wolf. Does it come back bigger?",
+    "expect": [
+      "Yes: Young Wolf is 2/2 (printed 1/1)."
+    ]
+  },
+  {
+    "id": "yq12",
+    "text": "I have Grave Titan and it attacks. Do I get Zombies?",
+    "expect": [
+      "Yes: you get a Zombie token (×2)."
+    ]
+  },
+  {
+    "id": "yq13",
+    "text": "I cast Lightning Helix targeting my opponent at 3 life. Do they die before I gain life?",
+    "expect": [
+      "No: you gain 3 life first; opponent loses the game only once the spell has finished resolving, when"
+    ]
+  },
+  {
+    "id": "yq14",
+    "text": "I have Delver of Secrets and my opponent bolts it in response to the upkeep trigger. Does it flip?",
+    "expect": [
+      "No: Delver of Secrets's trigger still resolves even though Delver of Secrets is gone (113.7a), but with"
+    ]
+  },
+  {
+    "id": "yq15",
+    "text": "My opponent casts Thoughtseize and I have only Spellskite in hand. Do they have to take it?",
+    "expect": [
+      "Yes: Spellskite is the only card it lets them choose; Thoughtseize lets opponent choose a nonland card from"
+    ]
+  },
+  {
+    "id": "yq16",
+    "text": "I control Howling Mine. It is my draw step. How many cards do I draw?",
+    "expect": [
+      "2: you draw 2 cards."
+    ]
+  },
+  {
+    "id": "yq17",
+    "text": "I control Blood Artist and two 1/1 tokens. My opponent casts Pyroclasm. How much life do they lose?",
+    "expect": [
+      "3: opponent loses 3 life in all."
+    ]
+  },
+  {
+    "id": "yq18",
+    "text": "My opponent attacks with a 6/6 trample and I block with a 2/2. How much damage do I take?",
+    "expect": [
+      "4: you take 4 damage in all."
+    ]
+  },
+  {
+    "id": "yq19",
+    "text": "I control two Forests and Sol Ring. How much mana do I have?",
+    "expect": [
+      "4: you can make 4 mana right now: Forest → {G}; Forest → {G}; Sol Ring → {C}{C}."
+    ]
+  },
+  {
+    "id": "yq20",
+    "text": "I control Grave Titan and Anointed Procession. Grave Titan attacks. How many Zombies do I get?",
+    "expect": [
+      "4: you get 4 Zombie tokens."
+    ]
+  },
+  {
+    "id": "yq21",
+    "text": "My opponent controls Thalia, Guardian of Thraben. How much does my Lightning Bolt cost?",
+    "expect": [
+      "2: Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more) — 2 mana in all."
+    ]
+  },
+  {
+    "id": "yq22",
+    "text": "I control Hardened Scales and Doubling Season. I cast Walking Ballista with X=1. How many counters does it enter with?",
+    "expect": [
+      "4 or 3, by the order chosen: Walking Ballista's controller chooses the order of Hardened Scales and Doubling"
+    ]
+  },
+  {
+    "id": "yq23",
+    "text": "My Grizzly Bears is equipped with Bonesplitter. My opponent Bolts Grizzly Bears. What happens to Bonesplitter?",
+    "expect": [
+      "Bonesplitter stays on the battlefield, unattached."
+    ]
+  },
+  {
+    "id": "yq24",
+    "text": "Grizzly Bears fights Hill Giant. Who wins the fight between Grizzly Bears and Hill Giant?",
+    "expect": [
+      "Hill Giant: Grizzly Bears dies and Hill Giant survives."
+    ]
+  },
+  {
+    "id": "yq25",
+    "text": "My opponent controls two Grizzly Bears. I cast Lightning Bolt on one of them. Which one dies?",
+    "expect": [
+      "One Grizzly Bears dies (the one hit); the other is on the battlefield."
+    ]
+  },
+  {
+    "id": "yq26",
+    "text": "I cast Ponder and my opponent responds with Lightning Bolt to my face. Which resolves first?",
+    "expect": [
+      "Lightning Bolt resolves first: it was put on the stack last, and the stack resolves top first (405.5, 608.1)."
+    ]
+  },
+  {
+    "id": "yq27",
+    "text": "I suspend Ancestral Vision. When do I draw?",
+    "expect": [
+      "At the beginning of your upkeep 4 turns from now: the last time counter comes off then and it is cast without"
+    ]
+  },
+  {
+    "id": "yq28",
+    "text": "My opponent is at 2 life. I cast Lightning Bolt targeting them. Who wins?",
+    "expect": [
+      "You win: you have won the game."
+    ]
+  },
+  {
+    "id": "yq29",
+    "text": "My opponent casts Doom Blade on my Grizzly Bears and I respond with Unsummon on it. What happens to Doom Blade?",
+    "expect": [
+      "Doom Blade doesn't resolve (all targets illegal). Players call this fizzling."
+    ]
+  },
+  {
+    "id": "yq30",
+    "text": "I cast Chain Lightning at my opponent. Can they copy it back at me?",
+    "expect": [
+      "Yes: Chain Lightning: whoever it hit (the player, or the controller of the permanent) may pay {R}{R} as it"
+    ]
+  },
+  {
+    "id": "yq31",
+    "text": "I attack with Monastery Swiftspear and cast Grizzly Bears first. Does Swiftspear get bigger?",
+    "expect": [
+      "No: Monastery Swiftspear is still 1/2, as printed."
+    ]
+  },
+  {
+    "id": "yq32",
+    "text": "I cast Uro, Titan of Nature's Wrath from my hand. Does it get sacrificed?",
+    "expect": [
+      "Yes: Uro, Titan of Nature's Wrath is sacrificed (it didn't escape)."
+    ]
+  },
+  {
+    "id": "yq33",
+    "text": "My 2/2 blocks their 2/2. Do both die?",
+    "expect": [
+      "Yes, both die: a 2/2 creature and a 2/2 creature both go to the graveyard."
+    ]
+  },
+  {
+    "id": "yq34",
+    "text": "I have Aether Vial on 2. They cast Thoughtseize. I vial in Thalia in response. Can they take Thalia?",
+    "expect": [
+      "No: Thalia, Guardian of Thraben isn't in the hand any more (it's on the battlefield), so it can't be taken."
+    ]
+  },
+  {
+    "id": "yq35",
+    "text": "I control Mox Diamond. I activate Black Lotus. Can my opponent destroy it in response?",
+    "expect": [
+      "No: Black Lotus's ability is a mana ability, which doesn't use the stack and can't be responded to (605.3a);"
+    ]
+  },
+  {
+    "id": "yq36",
+    "text": "I cast Unsummon on my Grizzly Bears in response to my opponent's Doom Blade. Does Doom Blade resolve?",
+    "expect": [
+      "No: Doom Blade doesn't resolve. Doom Blade isn't countered, but it doesn't resolve either: every target it"
+    ]
+  },
+  {
+    "id": "yq37",
+    "text": "I have Reliquary Tower and 10 cards in hand. Do I discard?",
+    "expect": [
+      "No: you discard nothing to hand size: Reliquary Tower gives you no maximum hand size (10 cards kept)."
+    ]
+  },
+  {
+    "id": "yq38",
+    "text": "My opponent controls Leyline of Sanctity. I cast Duress. Can I target them?",
+    "expect": [
+      "No: Duress can't target opponent."
+    ]
+  },
+  {
+    "id": "yq39",
+    "text": "My opponent controls Ensnaring Bridge and has 1 card in hand. I control a 1/1 and a 3/3. Which can attack?",
+    "expect": [
+      "A 1/1 creature only: a 3/3 creature can't attack (Ensnaring Bridge: opponent has 1 card in hand and a 3/3"
+    ]
+  },
+  {
+    "id": "yq40",
+    "text": "I control Blood Artist and two Grizzly Bears. My opponent casts Wrath of God. How many times does Blood Artist trigger?",
+    "expect": [
+      "3: Blood Artist triggers 3 times: once for each creature that died, itself included. They all died at the"
+    ]
+  },
+  {
+    "id": "yq41",
+    "text": "My opponent has Propaganda. I attack with three creatures. How much mana do I need?",
+    "expect": [
+      "6: you pay {6} for Propaganda in all — {2} for each of 3 attackers."
+    ]
+  },
+  {
+    "id": "yq42",
+    "text": "I control Thornweald Archer and it fights Craw Wurm. Who wins the fight between Thornweald Archer and Craw Wurm?",
+    "expect": [
+      "Neither: both die."
     ]
   }
 ]

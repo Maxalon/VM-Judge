@@ -5,6 +5,7 @@ import mtg.judge.situation.CardRef
 import mtg.judge.situation.EventSpec
 import mtg.judge.situation.ObjectSpec
 import mtg.judge.situation.PlayerSpec
+import mtg.judge.situation.QuestionSpec
 import mtg.judge.situation.Situation
 import mtg.judge.situation.TurnSpec
 
@@ -87,6 +88,8 @@ class SituationParser(private val names: NameIndex) {
         var lastVerb: String? = null               // "have" | "cast" for bare continuations ("… and Smothering Tithe")
         var lastOwner: String = "me"
         var lastMentioned: String? = null          // object id, or "cast:<slug>" for a spell just cast
+        /** The last sentence, when it is a question: its words and the cards it names, for the answer's first line. */
+        var question: QuestionSpec? = null
         val castCards = mutableListOf<String>()     // display names of cards cast so far
         /** A keyword said with a cast ("with buyback", "splice Glacial Ray onto it") waiting for the cast event to carry it, with its argument. */
         var kwPending: String? = null
@@ -399,7 +402,7 @@ class SituationParser(private val names: NameIndex) {
         if (ctx.players.isNotEmpty() && ctx.usesOpp && ctx.players.size >= 2) ctx.notes += "\"opponent\"/\"they\" was read as a separate player from ${ctx.players.values.joinToString(" and ")}; name the player instead if that's wrong."
         // Two "everything resolves" in a row (a counter cast, then "does it get countered?") are one resolution.
         val events = ctx.events.filterIndexed { i, e -> !(e.verb == "resolveAll" && i > 0 && ctx.events[i - 1].verb == "resolveAll") && !(e.verb == "block" && i > 0 && ctx.events[i - 1].verb == "block" && ctx.events[i - 1].obj == e.obj && ctx.events[i - 1].targets == e.targets) }
-        return Parsed(Situation(players, turnSpec, ctx.objects.values.toList(), emptyList(), events, enteredOrder = ctx.enteredOrder.distinct()), ctx.unread, ctx.notes)
+        return Parsed(Situation(players, turnSpec, ctx.objects.values.toList(), emptyList(), events, question = ctx.question ?: QuestionSpec(), enteredOrder = ctx.enteredOrder.distinct()), ctx.unread, ctx.notes)
     }
 
     /**
@@ -418,6 +421,9 @@ class SituationParser(private val names: NameIndex) {
      */
     private fun yesNoTrial(sentence: String, marked: Marked, here: Pair<Int, Int>, prev: Pair<Int, Int>, ctx: Ctx) {
         if (!ctx.fullText.trimEnd().endsWith("?")) return
+        // "Do both die?" / "How much damage do I take?": the question itself, so the answer's first line can say Yes, No or the number (DirectAnswers.kt).
+        val named = Regex("""\bc\d+\b""").findAll(marked.text).mapNotNull { marked.cards[it.value]?.display }.distinct().toList()
+        ctx.question = QuestionSpec(obj = ctx.lastMentioned?.takeIf { it in ctx.objects }, text = restore(marked.text, marked), said = sentence.trim(), names = named)
         val q = sentence.trim().lowercase().replace(Regex("""^(?:(?:and|so|but|then|now|also|ok|okay|wait|ok so)\s*,?\s+)"""), "")
         val yesNoWord = Regex("""^(?:can|could|does|do|did|is|are|was|were|will|would|should|has|have|may|must|am)\b""")
         if (yesNoWord.containsMatchIn(q) && ctx.asks.size > here.second) { yesNoBracket(q, here.second, ctx); return }

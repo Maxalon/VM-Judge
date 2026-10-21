@@ -127,7 +127,13 @@ data class EventSpec(
 )
 
 @Serializable
-data class QuestionSpec(val kind: String = "whatHappens", @SerialName("object") val obj: String? = null, val which: String? = null)
+data class QuestionSpec(val kind: String = "whatHappens", @SerialName("object") val obj: String? = null, val which: String? = null,
+                        /** The question as asked (its last sentence), for the answer's first line (DirectAnswers.kt). */
+                        val text: String? = null,
+                        /** The same sentence as typed, before card names were read into it ("spirits" stays a word). */
+                        val said: String? = null,
+                        /** The cards the question names, by their full names. */
+                        val names: List<String> = emptyList())
 
 @Serializable
 data class Answer(
