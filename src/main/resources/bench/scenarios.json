@@ -1509,7 +1509,7 @@
     "id": "blightsteel-block",
     "text": "I have 3 poison counters. My opponent attacks with Blightsteel Colossus and I block with Grizzly Bears.",
     "expect": [
-      "Grizzly Bears has 2 -1/-1 counter(s)",
+      "Grizzly Bears has 2 -1/-1 counters",
       "Grizzly Bears: the battlefield → your graveyard"
     ],
     "cite": [
@@ -9278,7 +9278,7 @@
     ],
     "notExpect": [
       "Not modeled",
-      "but 2 given"
+      "but 2 were given"
     ],
     "cite": []
   },
@@ -13336,7 +13336,7 @@
     "id": "ordinal-keeps-the-kind",
     "text": "they cast their third instant",
     "expect": [
-      "casts a instant"
+      "casts an instant"
     ],
     "notExpect": [
       "Not understood"
@@ -16091,7 +16091,7 @@
     "text": "I cast Chain Lightning at my opponent. Can they copy it back at me?",
     "expect": [
       "opponent takes 3 damage.",
-      "Chain Lightning: the player it hit (or the controller of the permanent it hit) may pay {R}{R} as it resolves to copy it and choose a new target for the copy — it can be chained back at you, and that copy can be chained again (707.10)."
+      "Chain Lightning: whoever it hit (the player, or the controller of the permanent) may pay {R}{R} as it resolves to copy it and choose a new target for the copy — it can be chained back at you, and that copy can be chained again (707.10)."
     ],
     "notExpect": [
       "Not understood"
@@ -18596,7 +18596,7 @@
     "id": "infect-and-wither-attackers-both-blocked",
     "text": "I attack with a 1/1 with infect and a 1/1 with wither. They block both with 2/2s. What happens?",
     "expect": [
-      "a 2/2 creature has 1 -1/-1 counter(s). (×2)",
+      "a 2/2 creature has 1 -1/-1 counter. (×2)",
       "a 1/1 creature with wither: the battlefield → your graveyard."
     ],
     "notExpect": [
@@ -23546,7 +23546,7 @@
     "id": "thoughtseize-bolt-and-forest-what-can-they-take",
     "text": "They cast Thoughtseize on me. I have Bolt and a Forest in hand. What can they take?",
     "expect": [
-      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Forest can't be chosen (not nonland card).",
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Forest can't be chosen (not a nonland card).",
       "opponent loses 2 life."
     ]
   },
@@ -23746,7 +23746,7 @@
     "id": "duress-bolt-bears-swamp-what-can-i-take",
     "text": "I cast Duress. They have Lightning Bolt, Grizzly Bears and Swamp in hand. What can I take?",
     "expect": [
-      "Duress lets you choose a noncreature, nonland card from opponent's hand: Lightning Bolt; Grizzly Bears, Swamp can't be chosen (not noncreature, nonland card)."
+      "Duress lets you choose a noncreature, nonland card from opponent's hand: Lightning Bolt; Grizzly Bears, Swamp can't be chosen (not a noncreature, nonland card)."
     ]
   },
   {
@@ -25314,7 +25314,7 @@
     "id": "infect-1-1-blocked-by-3-3-counters",
     "text": "I have a 1/1 with infect and they block with a 3/3. What happens to the 3/3?",
     "expect": [
-      "a 3/3 creature has 1 -1/-1 counter(s)."
+      "a 3/3 creature has 1 -1/-1 counter."
     ],
     "cite": [
       "702.90c"
@@ -25873,7 +25873,7 @@
     "text": "I cast Duress on my opponent. They have Lightning Bolt and Grizzly Bears in hand. What can I take?",
     "expect": [
       "Lightning Bolt: opponent's hand → opponent's graveyard.",
-      "Duress lets you choose a noncreature, nonland card from opponent's hand: Lightning Bolt; Grizzly Bears can't be chosen (not noncreature, nonland card)."
+      "Duress lets you choose a noncreature, nonland card from opponent's hand: Lightning Bolt; Grizzly Bears can't be chosen (not a noncreature, nonland card)."
     ]
   },
   {
@@ -26030,7 +26030,7 @@
     "text": "My opponent casts Thoughtseize on me and I have Lightning Bolt and a Forest in hand. What can they take?",
     "expect": [
       "Lightning Bolt: your hand → your graveyard.",
-      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Forest can't be chosen (not nonland card)."
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Forest can't be chosen (not a nonland card)."
     ]
   },
   {
@@ -28004,7 +28004,7 @@
     "id": "crusader-vs-wurm-blocker",
     "text": "I attack with a Phyrexian Crusader and my opponent blocks with a 5/5 Wurm. Does the Wurm die?",
     "expect": [
-      "a 5/5 creature has 2 -1/-1 counter(s).",
+      "a 5/5 creature has 2 -1/-1 counters.",
       "Phyrexian Crusader: the battlefield → your graveyard.",
       "No: a 5/5 creature is still on the battlefield."
     ]
@@ -28013,7 +28013,7 @@
     "id": "crusader-vs-bears-blocker",
     "text": "I attack with Phyrexian Crusader and my opponent blocks with a Grizzly Bears. What happens?",
     "expect": [
-      "Grizzly Bears has 2 -1/-1 counter(s).",
+      "Grizzly Bears has 2 -1/-1 counters.",
       "Grizzly Bears: the battlefield → opponent's graveyard."
     ]
   },
@@ -28565,7 +28565,7 @@
     "id": "thoughtseize-bolt-and-mountain",
     "text": "My opponent casts Thoughtseize on me. I have Lightning Bolt and a Mountain in hand. What can they take?",
     "expect": [
-      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain can't be chosen (not nonland card)."
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain can't be chosen (not a nonland card)."
     ]
   },
   {
@@ -29520,7 +29520,7 @@
     "id": "crusader-blocked-by-bears",
     "text": "My opponent blocks my Phyrexian Crusader with a Grizzly Bears. Does the Bears die?",
     "expect": [
-      "Grizzly Bears has 2 -1/-1 counter(s).",
+      "Grizzly Bears has 2 -1/-1 counters.",
       "Yes: Grizzly Bears died (it's in the graveyard)."
     ]
   },
@@ -30094,7 +30094,7 @@
       "Snapcaster Mage: the battlefield → opponent's graveyard."
     ],
     "notExpect": [
-      "but 2 given"
+      "but 2 were given"
     ],
     "cite": []
   },
@@ -30106,7 +30106,7 @@
       "Snapcaster Mage: the battlefield → opponent's graveyard."
     ],
     "notExpect": [
-      "but 2 given",
+      "but 2 were given",
       "opponent takes 2 damage."
     ],
     "cite": []
@@ -30973,7 +30973,7 @@
       "You have 1 mana of any color in your mana pool."
     ],
     "notExpect": [
-      "but 0 given"
+      "but 0 were given"
     ],
     "cite": []
   },
@@ -36628,7 +36628,7 @@
     "id": "tt254-thoughtseize-see-list",
     "text": "They Thoughtseize me and see Force of Will, Brainstorm and an Island. What do they take?",
     "expect": [
-      "Thoughtseize lets opponent choose a nonland card from your hand: Force of Will, Brainstorm; Island can't be chosen (not nonland card)."
+      "Thoughtseize lets opponent choose a nonland card from your hand: Force of Will, Brainstorm; Island can't be chosen (not a nonland card)."
     ],
     "notExpect": [
       "opponent draws 3 cards"
@@ -37629,7 +37629,7 @@
     "text": "They Thoughtseize me with my hand being two Mountains and a Bolt. Do they take the Bolt?",
     "expect": [
       "Lightning Bolt: your hand → your graveyard",
-      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain, Mountain can't be chosen (not nonland card)"
+      "Thoughtseize lets opponent choose a nonland card from your hand: Lightning Bolt; Mountain, Mountain can't be chosen (not a nonland card)"
     ]
   },
   {
@@ -39063,7 +39063,7 @@
     "id": "cb8",
     "text": "My opponent's 4/4 wither is blocked by my 4/4. What happens to my creature?",
     "expect": [
-      "a 4/4 creature has 4 -1/-1 counter(s).",
+      "a 4/4 creature has 4 -1/-1 counters.",
       "Yes: a 4/4 creature died"
     ],
     "notExpect": [],
@@ -43066,7 +43066,7 @@
     "id": "wd7",
     "text": "opp's 4/4 wither is blocked by my 4/4. what happens to my guy",
     "expect": [
-      "a 4/4 creature has 4 -1/-1 counter(s).",
+      "a 4/4 creature has 4 -1/-1 counters.",
       "Yes: a 4/4 creature died"
     ],
     "cite": [
@@ -50657,5 +50657,124 @@
       "614.10",
       "603.7b"
     ]
+  },
+  {
+    "id": "gr1",
+    "text": "I attack with an 8/8 trampler into a 2/2 blocker. How much damage do they take?",
+    "expect": [
+      "An 8/8 creature with trample deals 6 damage to opponent",
+      "Yes: opponent takes 6 damage in all"
+    ],
+    "notExpect": [
+      "a 8/8"
+    ],
+    "cite": []
+  },
+  {
+    "id": "gr2",
+    "text": "I control Smothering Tithe and my opponent draws two cards from Brainstorm and doesn't pay.",
+    "expect": [
+      "if not: create 1 Treasure token.",
+      "You get a Treasure token"
+    ],
+    "notExpect": [
+      "token token"
+    ],
+    "cite": [
+      "608.2g"
+    ]
+  },
+  {
+    "id": "gr3",
+    "text": "My opponent controls Cursed Totem and I try to activate my Birds of Paradise. What happens?",
+    "expect": [
+      "Birds of Paradise is a creature, so you can't begin to activate its ability"
+    ],
+    "notExpect": [
+      "a creatures",
+      "is a creatures"
+    ],
+    "cite": [
+      "602.5"
+    ]
+  },
+  {
+    "id": "gr4",
+    "text": "I cast Overlord of the Hauntwoods for its impending cost. Is it a creature?",
+    "expect": [
+      "enters the battlefield under your control; it is not a creature right now",
+      "No: Overlord of the Hauntwoods isn't a creature right now"
+    ],
+    "notExpect": [
+      "as a not a creature",
+      "as not a creature"
+    ],
+    "cite": [
+      "702.176a"
+    ]
+  },
+  {
+    "id": "gr5",
+    "text": "their commander gets bounced by my Cyclonic Rift, does it go to the command zone",
+    "expect": [
+      "That card is a commander: instead of going to opponent's hand"
+    ],
+    "notExpect": [
+      "a commander is a commander:"
+    ],
+    "cite": [
+      "903.9b"
+    ]
+  },
+  {
+    "id": "gr6",
+    "text": "I control Herd Baloth and put a +1/+1 counter on it. Does it make a Beast?",
+    "expect": [
+      "1 +1/+1 counter is put on Herd Baloth"
+    ],
+    "notExpect": [
+      "counter(s)",
+      "counter are put"
+    ],
+    "cite": [
+      "122.1"
+    ]
+  },
+  {
+    "id": "gr7",
+    "text": "I attack with Preeminent Captain and put Vicious Conquistador onto the battlefield tapped and attacking. Does my opponent lose 1 life from Vicious Conquistador?",
+    "expect": [
+      "question: does Vicious Conquistador's attack trigger go off?",
+      "No: Vicious Conquistador was put onto the battlefield tapped and attacking"
+    ],
+    "notExpect": [
+      "trigger trigger"
+    ],
+    "cite": []
+  },
+  {
+    "id": "gr8",
+    "text": "They have Ghostly Prison. I have three creatures and 4 lands. How many can I attack with?",
+    "expect": [
+      "question: answered in the outcome",
+      "2 of your 3 creatures can attack"
+    ],
+    "notExpect": [
+      "does null"
+    ],
+    "cite": [
+      "508.1c"
+    ]
+  },
+  {
+    "id": "gr9",
+    "text": "I control Linvala, Keeper of Silence. Can my opponent activate Mutavault, and can they then tap it for mana?",
+    "expect": [
+      "Mutavault is one of the creatures your opponents control"
+    ],
+    "notExpect": [
+      "a creatures"
+    ],
+    "cite": []
   }
 ]

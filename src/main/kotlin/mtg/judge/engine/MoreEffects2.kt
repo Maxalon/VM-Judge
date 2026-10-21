@@ -601,7 +601,7 @@ internal object MoreEffects2 {
             m.mayTaken[item.id] = pays
             if (pays) tr.step("${hit.subject} ${hit.v("pays", "pay")} ${r.groupValues[1]} as $src resolves.", "608.2d", "118.3")
             else { tr.step("${hit.subject} may pay ${r.groupValues[1]} now, as $src resolves; paying wasn't said, so ${hit.subject.lowercase()} ${hit.v("doesn't", "don't")}.", "608.2d"); state.assumptions += "${hit.subject} ${hit.v("doesn't", "don't")} pay ${r.groupValues[1]} to copy $src (paying wasn't said)." }
-            state.outcomes += "$src: the player it hit (or the controller of the permanent it hit) may pay ${r.groupValues[1]} as it resolves to copy it and choose a new target for the copy — it can be chained back at ${you.subject.lowercase()}, and that copy can be chained again (707.10)."
+            state.outcomes += "$src: whoever it hit (the player, or the controller of the permanent) may pay ${r.groupValues[1]} as it resolves to copy it and choose a new target for the copy — it can be chained back at ${you.subject.lowercase()}, and that copy can be chained again (707.10)."
             return true
         }
         if (chainCopyRe.matches(t.replace(src, "~"))) {

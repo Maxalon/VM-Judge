@@ -21,7 +21,7 @@ internal object LimitedAsks {
         return when (to.substringAfter("lt:").substringBefore(':')) {
             "trample" -> "question: how much damage tramples over?"
             "canblock" -> "question: is that block legal?"
-            "attacktrigger" -> "question: does $n's attack trigger trigger?"
+            "attacktrigger" -> "question: does $n's attack trigger go off?"
             "sagasac" -> "question: is $n sacrificed before its last chapter ability resolves?"
             "mustattack" -> "question: does $n have to attack?"
             "mustblock" -> "question: does $n have to block?"

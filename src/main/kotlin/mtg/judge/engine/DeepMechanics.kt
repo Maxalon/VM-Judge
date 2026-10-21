@@ -216,7 +216,7 @@ internal object DeepMech {
                         eff.subtypes.any { it in basicTypes } -> "setting a basic land type takes away every ability from its rules text and gives it \"{T}: Add ${manaOf(eff.subtypes.first { it in basicTypes })}\" (305.7); abilities other effects grant it stay"
                         else -> "it keeps its abilities"
                     }
-                    step("${e.source.name} makes ${t.name} a $desc: the new card type replaces its old ones${if (lostTypes.isNotEmpty()) " (it's no longer ${lostTypes.joinToString(" or ") { it.lowercase() }})" else ""}, and so do the subtypes that went with them (layer 4); ${if (eff.colorless) "it's colorless (layer 5); " else ""}$abil. Its name, supertypes, counters and anything else on it stay.",
+                    step("${e.source.name} makes ${t.name} a $desc: the new card type replaces its old ones${if (lostTypes.isNotEmpty()) " (it's no longer ${lostTypes.joinToString(" or ") { mtg.judge.situation.Grammar.withIndefinite(it.lowercase()) }})" else ""}, and so do the subtypes that went with them (layer 4); ${if (eff.colorless) "it's colorless (layer 5); " else ""}$abil. Its name, supertypes, counters and anything else on it stay.",
                         arrayOf("205.1a", "613.1d", *(if (eff.colorless) arrayOf("613.1e") else emptyArray()), *(if (eff.loseAll) arrayOf("613.1f") else arrayOf("305.7"))))
                     out("${t.name} is a $desc${if ("Creature" in lostTypes) ", not a creature: it can't attack or block and has no power or toughness" else ""} (${e.source.name}).")
                 }
