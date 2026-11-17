@@ -87,6 +87,8 @@ internal object AuditAsks {
             engine.activate(player, o.id, untap, emptyList())?.let { engine.resolveTop() }
             if (!o.isOnBattlefield() || o.tapped == true) return false
             engine.activate(player, o.id, mana, emptyList())
+            // It ends the test tapped again: "is untapped" from the middle of the round isn't where it stands.
+            if (o.tapped == true) state.outcomes.remove("${o.name} is untapped.")
             val after = o.counters[kind] ?: 0
             if (after == before) {
                 val by = state.trace.steps.lastOrNull { it.text.contains("replaces the counter placement") }?.text?.substringBefore(" replaces")

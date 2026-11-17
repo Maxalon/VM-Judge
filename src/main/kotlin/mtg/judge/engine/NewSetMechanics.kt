@@ -21,7 +21,7 @@ internal object NewSetMech {
     fun cards(s: GameState): MutableMap<String, CardDef> = stateCards.getOrPut(s) { mutableMapOf() }
 
     private fun freshId(state: GameState, name: String): String { val base = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_'); var id = base; var i = 2; while (state.objects.containsKey(id)) id = base + "_" + (i++); return id }
-    private fun plural(n: Int, w: String) = "$n $w${if (n == 1) "" else "s"}"
+    private fun plural(n: Int, w: String) = "$n $w${if (n == 1 || w == "mana") "" else "s"}"   // "2 mana", not "2 manas"
 
     // ---- reading the cards ------------------------------------------------------------------------------------------
 
@@ -143,7 +143,7 @@ internal object NewSetMech {
             if (spent > pw || spent > tf) repeat(n) { out += TriggeredAbility(Trigger.SpellCast(Who.YOU), Effect.NewMech("ns:increment", spent), "Increment (Whenever you cast a spell, if the amount of mana you spent is greater than this creature's power or toughness, put a +1/+1 counter on this creature.)") }
             else if (state.trace.steps.none { it.text.startsWith("${obj.name}'s increment doesn't trigger") }) {
                 state.outcomes += "${obj.name}'s increment doesn't trigger: $spent mana isn't greater than its power ($pw) or its toughness ($tf) (702.191a)."
-                state.trace.step("${obj.name}'s increment doesn't trigger: ${plural(spent, "mana")} ${if (spent == 1) "was" else "were"} spent to cast ${item.source.name}, which isn't greater than its power ($pw) or its toughness ($tf). Increment's \"if\" is checked as the spell is cast.", "702.191a", "603.4") }
+                state.trace.step("${obj.name}'s increment doesn't trigger: ${plural(spent, "mana")} was spent to cast ${item.source.name}, which isn't greater than its power ($pw) or its toughness ($tf). Increment's \"if\" is checked as the spell is cast.", "702.191a", "603.4") }
         }
         if (item.kind == StackKind.SPELL && item.source.def.isInstantOrSorcery && targetsCreature(state, item))
             for (a in obj.abilities.filterIsInstance<StaticAbility>().filter { it.keyword == "repartee" }) {
@@ -412,7 +412,7 @@ internal object NewSetMech {
                 if (!src.isOnBattlefield() || !state.isCreature(src)) { state.trace.step("${src.name} isn't a creature on the battlefield any more, so increment does nothing.", "702.191a", "603.4"); return }
                 val pw = src.power ?: 0; val tf = src.toughness ?: 0
                 if (e.n > pw || e.n > tf) {
-                    state.trace.step("Increment resolves: ${plural(e.n, "mana")} ${if (e.n == 1) "was" else "were"} spent on that spell, still more than ${src.name}'s ${if (e.n > pw) "power ($pw)" else "toughness ($tf)"}, so it gets a +1/+1 counter. Only one of the two has to be smaller.", "702.191a", "603.4")
+                    state.trace.step("Increment resolves: ${plural(e.n, "mana")} was spent on that spell, still more than ${src.name}'s ${if (e.n > pw) "power ($pw)" else "toughness ($tf)"}, so it gets a +1/+1 counter. Only one of the two has to be smaller.", "702.191a", "603.4")
                     engine.putCounters(src.id, 1, "+1/+1")
                 } else {
                     state.trace.step("Increment checks its \"if\" again as it resolves: ${src.name} is now $pw/$tf, and ${plural(e.n, "mana")} isn't greater than either, so it does nothing.", "702.191a", "603.4")
@@ -425,10 +425,10 @@ internal object NewSetMech {
                 val spent = spell?.let { manaSpent(it) ?: (it.source.def.manaValue.toInt() + (it.x ?: 0)) }
                 if (spent == null) { state.trace.step("The spell that made ${src.name}'s ability trigger isn't known here, so how much mana was spent on it isn't either.", "601.2h"); return }
                 if (spent >= e.n) {
-                    state.trace.step("${plural(spent, "mana")} ${if (spent == 1) "was" else "were"} spent to cast ${spell.source.name}${spell.x?.let { x -> " (X = $x counts: the mana paid for X is mana spent)" } ?: ""}, ${e.n} or more, so the rest of ${src.name}'s ability happens: ${e.text}. Opus is only an ability word; the trigger resolves before the spell does.", "207.2c", "601.2h", "107.3a")
+                    state.trace.step("$spent mana was spent to cast ${spell.source.name}${spell.x?.let { x -> " (X = $x counts: the mana paid for X is mana spent)" } ?: ""}, ${e.n} or more, so the rest of ${src.name}'s ability happens: ${e.text}. Opus is only an ability word; the trigger resolves before the spell does.", "207.2c", "601.2h", "107.3a")
                     engine.meApply(mtg.judge.oracle.OracleParser.parseEffect(e.text.replace(src.name, "~").replaceFirstChar { it.uppercase() } + "."), item)
                 } else {
-                    state.trace.step("Only ${plural(spent, "mana")} ${if (spent == 1) "was" else "were"} spent to cast ${spell.source.name}, fewer than ${e.n}, so the rest of ${src.name}'s ability (${e.text}) doesn't happen.", "601.2h")
+                    state.trace.step("Only $spent mana was spent to cast ${spell.source.name}, fewer than ${e.n}, so the rest of ${src.name}'s ability (${e.text}) doesn't happen.", "601.2h")
                     state.outcomes += "${src.name}: only $spent mana was spent on ${spell.source.name}, so \"${e.text}\" doesn't happen."
                 }
             }

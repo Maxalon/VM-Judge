@@ -95,6 +95,9 @@ internal object ModernMech {
         if (i <= 0 || state.stack[i - 1].source !== item.source || state.stack[i - 1].kind != StackKind.TRIGGERED) return
         while (i > 0 && state.stack[i - 1].source === item.source && state.stack[i - 1].kind == StackKind.TRIGGERED) { state.stack[i] = state.stack[i - 1]; state.stack[i - 1] = item; i-- }
         val p = state.player(item.controller)
+        // The step that just put it "above" the enters trigger is undone by this order: say "below" instead.
+        state.trace.steps.indexOfLast { it.text.endsWith(", above ${item.source.name}'s triggered ability.") }.takeIf { it >= 0 }?.let { k ->
+            state.trace.steps[k] = state.trace.steps[k].copy(text = state.trace.steps[k].text.removeSuffix(", above ${item.source.name}'s triggered ability.") + ", below ${item.source.name}'s enters trigger.") }
         state.trace.step("${p.subject} ${p.v("puts", "put")} the evoke sacrifice trigger on the stack first and ${item.source.name}'s own enters trigger above it: both triggered at the same time, so ${p.subject.lowercase()} ${p.v("chooses", "choose")} their order, and the one put on the stack last resolves first. ${item.source.name}'s ability resolves while it is still on the battlefield, and there is a window to respond before it is sacrificed.", "603.3b", "702.74a")
     }
 

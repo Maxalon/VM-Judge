@@ -1902,7 +1902,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                     val p = state.player(e.player ?: "me"); val subj = Regex.escape(p.subject)
                     val gain = e.to == "playerGain"
                     // A card named by its own text ("… that says whenever a creature dies you gain 1 life") is quoted; the quotes are not gains.
-                    val total = state.trace.steps.sumOf { st ->
+                    // "Mode 3: Target opponent loses 2 life and you gain 2 life." only names the mode; it isn't a gain.
+                    val total = state.trace.steps.filterNot { it.text.startsWith("Mode ") && it.rules == listOf("700.2a") }.sumOf { st ->
                         val text = st.text.replace(Regex(""""[^"]*""""), "\"\"")
                         (if (gain) Regex("""(?i)(?:^|\b)$subj (?:gains?|gain) (\d+) life\b""") else Regex("""(?i)(?:^|\b)$subj,? (?:who )?(?:loses?|lose) (\d+) life\b""")).findAll(text).sumOf { it.groupValues[1].toInt() }
                     }
@@ -2368,7 +2369,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 ?: state.objects[objId]?.def?.name?.let { n -> state.stack.lastOrNull { it.source.def.name == n && it.kind == wanted } }
                 // "they cast an artifact, can I counter it?": the spell's stand-in was named one way by the parser and another by the
                 // card it became; with exactly one spell of that kind on the stack, it is the one meant.
-                ?: state.stack.filter { it.kind == wanted }.singleOrNull()?.also { state.assumptions += "\"$objId\" is read as ${it.source.name}, the only $kind on the stack." }
+                ?: state.stack.filter { it.kind == wanted }.singleOrNull()?.also { state.assumptions += "The ${when (wanted) { StackKind.TRIGGERED -> "triggered ability"; StackKind.ACTIVATED -> "activated ability"; else -> "spell" }} meant is read as ${it.source.name}, the only one of its kind on the stack." }
                 // "they counter my creature spell, I cast a reanimation spell on it": the spell is gone from the stack
                 // and "it" is now the card where the counter put it.
                 ?: run {

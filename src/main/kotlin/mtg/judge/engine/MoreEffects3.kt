@@ -426,7 +426,7 @@ internal object MoreEffects3 {
             "is-enchantment" -> {
                 val o = item.source
                 if (o.isOnBattlefield() && o.id in enchantmentOnly(st)) {
-                    st.trace.step("${o.name} returned as an enchantment, not a creature: the effect that says so applies as it enters (611.2e), a type-changing effect in layer 4 (613.1d). It has no power or toughness and can't attack or block, and a creature entering wouldn't see it.", "611.2e", "613.1d")
+                    st.trace.step("${o.name} returned as an enchantment, not a creature: the effect that says so applies as it enters (611.2e), a type-changing effect in layer 4 (613.1d). It has no power or toughness and can't attack or block; its other abilities still work.", "611.2e", "613.1d")
                     st.outcomes += "${o.name} is an enchantment, not a creature, after returning."
                 }
             }
@@ -497,7 +497,7 @@ internal object MoreEffects3 {
         val coloured = Regex("""\{([^}0-9]+)\}""").findAll(mana).joinToString("") { "{${it.groupValues[1]}}" }
         val left = maxOf(0, generic - per * n)
         val now = (if (left > 0) "{$left}" else "") + coloured
-        st.trace.step("${obj.name}'s ability costs {$per} less to activate for each ${m.groupValues[2]}: ${p.subject.lowercase()} ${p.v("has", "have")} $n, so its mana cost $mana becomes ${now.ifEmpty { "{0}" }}${if (per * n > generic) " (a reduction takes off generic mana only, so the coloured part stays)" else ""}.", "602.2b", "601.2f", "118.7")
+        st.trace.step("${obj.name}'s ability costs {$per} less to activate for each ${m.groupValues[2]}: ${p.subject.lowercase()} ${p.v("has", "have")} $n, so its activation cost $mana becomes ${now.ifEmpty { "{0}" }}${if (per * n > generic) " (a reduction takes off generic mana only, so the coloured part stays)" else ""}.", "602.2b", "601.2f", "118.7")
         if (n > 0) st.outcomes += "${obj.name}'s ability costs ${now.ifEmpty { "{0}" }} to activate (reduced from $mana; ${m.groupValues[2]}: $n)."
     }
 

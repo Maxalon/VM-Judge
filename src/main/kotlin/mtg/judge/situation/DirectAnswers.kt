@@ -51,6 +51,8 @@ object DirectAnswers {
     private fun yesNo(c: Q) {
         val outs = c.outs
         if (answered.containsMatchIn(outs[0])) return
+        // "Does Thalia get discarded?" to a random discard: neither yes nor no, but the odds.
+        outs.indexOfFirst { Regex("""^\d+% to (?:lose|keep) it: """).containsMatchIn(it) }.takeIf { it >= 0 }?.let { k -> val l = outs.removeAt(k); outs.add(0, "It depends on the random discard: $l"); return }
         // The engine's own Yes/No line, written further down (the narration of the events came first): it moves up.
         val bare = Regex("""^(?:can|could|may) (?:i|we|they|he|she)(?: still| even)?$""").matches(c.q)
         (outs.indexOfFirst { answered.containsMatchIn(it) && (bare || relevant(c, it)) }.takeIf { it > 0 }
@@ -368,7 +370,8 @@ object DirectAnswers {
     }
 
     private fun wearOff(c: Q): String? {
-        if (!Regex("""\b(?:wear off|wears off|go away|end|last|still (?:have|apply))\b""").containsMatchIn(c.q)) return null
+        // "Is it destroyed at the end step?" names the step; it doesn't ask whether an effect ends.
+        if (!Regex("""\b(?:wear off|wears off|go away|end(?! step)|last|still (?:have|apply))\b""").containsMatchIn(c.q)) return null
         c.outs.firstOrNull { it.startsWith("Until-end-of-turn effects still apply during the end step") }?.let { return "No, not yet: " + low(it) }
         return null
     }

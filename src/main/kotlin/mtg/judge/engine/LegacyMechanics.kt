@@ -195,7 +195,7 @@ internal object LegacyMech {
                 who.handSize = hand
             } else {
                 mills++
-                lines += "draw ${i + 1}: ${who.possessive} hand is empty, so ${who.subject.lowercase()} can't discard and ${who.v("mills", "mill")} a card instead"
+                lines += "draw ${i + 1}: ${who.possessive} hand is empty, so ${who.subject.lowercase()} can't discard; ${who.subject.lowercase()} ${who.v("mills", "mill")} a card instead"
                 who.librarySize = who.librarySize?.minus(1)?.coerceAtLeast(0)
             }
         }

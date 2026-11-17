@@ -419,6 +419,7 @@ internal object PauperMech {
             if (id in (attackedThisTurn[state] ?: emptySet<String>())) {
                 state.trace.step("$srcName's delayed trigger resolves at the beginning of the end step: ${o.name} attacked this turn, so it's destroyed.", "603.7", "513.1")
                 engine.meDestroy(o, "${o.name} is destroyed.", "701.8a")
+                state.outcomes += "${o.name} is destroyed at the beginning of the end step: it attacked this turn ($srcName)."
             } else {
                 state.trace.step("$srcName's delayed trigger resolves at the beginning of the end step, but ${o.name} didn't attack this turn${if (o.blocking != null) " (it blocked, and blocking isn't attacking)" else ""}, so it isn't destroyed.", "603.7", "513.1")
                 state.outcomes += "${o.name} isn't destroyed at the end step: it didn't attack this turn ($srcName)."

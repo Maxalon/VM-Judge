@@ -147,10 +147,10 @@ internal object DeepMech {
         st.outcomes += "${o.name}'s text now says \"$to\" where it said \"$from\"${shown?.let { ": \"$it\"" } ?: ""} (${item.source.name}, layer 3)."
         if (o.def.abilities.filterIsInstance<StaticAbility>().any { a -> a.effects.any { it == StaticEffect.NonbasicLandsAreMountains } }) {
             val t = moonType(o)
-            st.outcomes.removeAll { it.endsWith("with no abilities (${o.name}).") }
+            st.outcomes.removeAll { it.endsWith("(${o.name}).") && " whose only ability is " in it }
             for (land in st.objects.values.filter { it.isOnBattlefield() && st.moonOn(it) === o }) {
                 st.trace.step("${o.name} now says nonbasic lands are ${t}s, so ${land.name} is ${if (t == "Island") "an" else "a"} $t instead: it loses its other land types and every ability from its rules text and has only \"{T}: Add ${manaOf(t)}\" (layer 4, applied after the text change).", "613.1d", "305.7", "613.1c")
-                st.outcomes += "${land.name} is ${if (t == "Island") "an" else "a"} $t with no abilities (${o.name}); it taps for ${manaOf(t)} only."
+                st.outcomes += "${land.name} is ${if (t == "Island") "an" else "a"} $t whose only ability is \"{T}: Add ${manaOf(t)}\" (${o.name}); it taps for ${manaOf(t)} only."
             }
         }
         if (landOk && o.def.types.contains("Land")) st.outcomes += "${o.name} is ${if (to == "Island") "an" else "a"} $to now${if (to in basicTypes) " and taps for ${manaOf(to)} (305.6)" else ""}."
@@ -248,8 +248,10 @@ internal object DeepMech {
             return true
         }
         obj.attachedTo = null
-        st.trace.step("${obj.name} is a creature now, and a creature can't be attached to anything: it becomes unattached from ${host.name} and stays on the battlefield (state-based action). ${host.name} loses whatever ${obj.name} gave it.", "704.3", "704.5p")
-        st.outcomes += "${obj.name} becomes unattached and stays on the battlefield as a creature${if (st.isCreature(host)) "; ${host.name} is ${st.describePt(host)} without it" else ""}."
+        // Lizard Blades on Grizzly Bears that died: it isn't a creature first and unattached second; the host left, so it's attached to nothing.
+        if (!host.isOnBattlefield()) st.trace.step("${host.name} has left the battlefield, so ${obj.name} is no longer attached to anything; what kept it from being a creature lasted only while it was attached, so it's a creature again and stays on the battlefield.", "702.151b")
+        else st.trace.step("${obj.name} is a creature now, and a creature can't be attached to anything: it becomes unattached from ${host.name} and stays on the battlefield (state-based action). ${host.name} loses whatever ${obj.name} gave it.", "704.3", "704.5p")
+        st.outcomes += "${obj.name} becomes unattached and stays on the battlefield as a creature${if (st.isCreature(host) && host.isOnBattlefield()) "; ${host.name} is ${st.describePt(host)} without it" else ""}."
         return true
     }
 

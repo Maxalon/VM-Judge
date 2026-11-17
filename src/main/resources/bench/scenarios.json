@@ -3162,7 +3162,7 @@
     "id": "blood-moon-urzas-saga",
     "text": "My opponent controls Blood Moon. I control Urza's Saga. What happens?",
     "expect": [
-      "Urza's Saga is a Mountain with no abilities (Blood Moon)"
+      "Urza's Saga is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon)"
     ],
     "notExpect": [
       "Rules text not modeled"
@@ -16141,7 +16141,7 @@
     "id": "blood-moon-urzas-saga-stays",
     "text": "I control Blood Moon. My opponent plays Urza's Saga. What happens?",
     "expect": [
-      "Urza's Saga is a Mountain with no abilities (Blood Moon).",
+      "Urza's Saga is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (715.4)."
     ],
     "notExpect": [
@@ -16724,7 +16724,7 @@
     "id": "blood-moon-dryad-arbor",
     "text": "I have Blood Moon and my opponent plays Dryad Arbor. What is it?",
     "expect": [
-      "Dryad Arbor is a Mountain with no abilities (Blood Moon).",
+      "Dryad Arbor is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "Dryad Arbor is still a creature (1/1): Blood Moon changes only its land type and abilities."
     ],
     "notExpect": [
@@ -25784,7 +25784,7 @@
     "id": "blood-moon-steam-vents-what-color-can-i-make",
     "text": "My opponent controls Blood Moon. I have Steam Vents. What color mana can I make?",
     "expect": [
-      "Steam Vents is a Mountain with no abilities (Blood Moon).",
+      "Steam Vents is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "Steam Vents is a Mountain under Blood Moon, so it taps for {R} and nothing else."
     ]
   },
@@ -26714,7 +26714,7 @@
     "id": "blood-moon-steam-vents-no-shock",
     "text": "I control Blood Moon. My opponent plays Steam Vents. Do they pay 2 life?",
     "expect": [
-      "Steam Vents enters untapped under Blood Moon, with nothing to pay: it's a Mountain with no abilities, and its own text doesn't apply as it enters (614.12)."
+      "Steam Vents enters untapped under Blood Moon, with nothing to pay: it's a Mountain whose only ability is \"{T}: Add {R}\", and its own text doesn't apply as it enters (614.12)."
     ],
     "notExpect": [
       "pays 2 life"
@@ -28386,7 +28386,7 @@
     "id": "blood-moon-vs-urzas-saga",
     "text": "I have Blood Moon. My opponent has an Urza's Saga. What happens?",
     "expect": [
-      "Urza's Saga is a Mountain with no abilities (Blood Moon).",
+      "Urza's Saga is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (715.4)."
     ]
   },
@@ -28737,7 +28737,7 @@
     "id": "blood-moon-colonnade-animate",
     "text": "My opponent has a Blood Moon. I have a Celestial Colonnade. Can I animate it?",
     "expect": [
-      "Celestial Colonnade is a Mountain with no abilities (Blood Moon).",
+      "Celestial Colonnade is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "Celestial Colonnade's own ability is gone under Blood Moon, so it can't be activated."
     ]
   },
@@ -29821,7 +29821,7 @@
     "id": "blood-moon-steam-vents-becomes",
     "text": "My opponent casts Blood Moon. My Steam Vents becomes what?",
     "expect": [
-      "Steam Vents is a Mountain with no abilities (Blood Moon)."
+      "Steam Vents is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon)."
     ]
   },
   {
@@ -30602,7 +30602,7 @@
     "id": "moon-vs-cavern",
     "text": "I control Blood Moon and my opponent plays Cavern of Souls. What does it do?",
     "expect": [
-      "Cavern of Souls is a Mountain with no abilities (Blood Moon)."
+      "Cavern of Souls is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon)."
     ],
     "cite": []
   },
@@ -30733,7 +30733,7 @@
     "id": "moon-colonnade-still-animate",
     "text": "My opponent casts Blood Moon. I have Celestial Colonnade. Can I still animate it?",
     "expect": [
-      "Celestial Colonnade is a Mountain with no abilities (Blood Moon).",
+      "Celestial Colonnade is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "can't be activated"
     ],
     "cite": []
@@ -30798,7 +30798,7 @@
     "id": "moon-plains-vents-cast-path",
     "text": "My opponent has Blood Moon and I have a Plains and Steam Vents. Can I cast Path to Exile?",
     "expect": [
-      "Steam Vents is a Mountain with no abilities (Blood Moon).",
+      "Steam Vents is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "a 2/2 creature: the battlefield → exile"
     ],
     "notExpect": [
@@ -32710,9 +32710,15 @@
     "id": "brutality-drain-into-leyline",
     "text": "They have Leyline of Sanctity. I cast Collective Brutality choosing drain. What happens?",
     "expect": [
-      "Collective Brutality can't target opponent (hexproof)."
+      "Collective Brutality can't target opponent (hexproof), and \"target opponent\" can't be its own controller"
     ],
-    "cite": []
+    "cite": [],
+    "notExpect": [
+      "You lose 2 life",
+      "The only player Collective Brutality could be cast targeting is you",
+      "You gain 2 life in all",
+      "You gain 2 life ("
+    ]
   },
   {
     "id": "ooze-with-counters-vs-push",
@@ -33270,7 +33276,7 @@
     "id": "blood-moon-then-urzas-saga",
     "text": "I control Blood Moon. They play Urza's Saga. What happens?",
     "expect": [
-      "Urza's Saga is a Mountain with no abilities (Blood Moon)",
+      "Urza's Saga is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon)",
       "Urza's Saga stays on the battlefield"
     ],
     "cite": [
@@ -34289,7 +34295,7 @@
     "id": "saga-2-lore-under-blood-moon-construct",
     "text": "They cast Blood Moon and I have Urza's Saga with 2 lore counters. Does it get a Construct?",
     "expect": [
-      "No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities"
+      "No. Under Blood Moon, Urza's Saga is a Mountain with no abilities but \"{T}: Add {R}\" (305.7), so it has no chapter abilities"
     ],
     "cite": [
       "715.3c"
@@ -35633,11 +35639,12 @@
     "id": "tt244-teferi-vs-my-thoughtseize",
     "text": "I cast Thoughtseize targeting them. They have Teferi, Time Raveler. Does Teferi stop my Thoughtseize?",
     "expect": [
-      "Yes: Thoughtseize can be cast",
+      "No, it doesn't stop it: Thoughtseize can be cast",
       "You lose 2 life"
     ],
     "notExpect": [
-      "sorcery speed only"
+      "sorcery speed only",
+      "Yes: Thoughtseize can be cast"
     ]
   },
   {
@@ -37056,7 +37063,7 @@
     "id": "tt258-blood-moon-saga-chapter-two",
     "text": "They cast Blood Moon. I have Urza's Saga on chapter 2. What happens?",
     "expect": [
-      "Urza's Saga is a Mountain with no abilities (Blood Moon)",
+      "Urza's Saga is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon)",
       "Urza's Saga stays on the battlefield"
     ],
     "cite": [
@@ -39266,7 +39273,7 @@
     "id": "rp6",
     "text": "Blood Moon is on the battlefield. My opponent plays Urza's Saga. What happens?",
     "expect": [
-      "Urza's Saga is a Mountain with no abilities (Blood Moon).",
+      "Urza's Saga is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "Urza's Saga stays on the battlefield"
     ],
     "notExpect": [
@@ -44904,7 +44911,7 @@
     "id": "wd154",
     "text": "blood moon is out. opp plays urza's saga. what happens",
     "expect": [
-      "Urza's Saga is a Mountain with no abilities (Blood Moon).",
+      "Urza's Saga is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon).",
       "Urza's Saga stays on the battlefield"
     ],
     "notExpect": [
@@ -48962,10 +48969,10 @@
     "text": "I control Volcanic Island. My opponent controls Blood Moon. I cast Mind Bend targeting Blood Moon, changing Mountain to Island. What happens to Volcanic Island?",
     "expect": [
       "Blood Moon's text now says \"Island\" where it said \"Mountain\"",
-      "Volcanic Island is an Island with no abilities (Blood Moon); it taps for {U} only."
+      "Volcanic Island is an Island whose only ability is \"{T}: Add {U}\" (Blood Moon); it taps for {U} only."
     ],
     "notExpect": [
-      "Volcanic Island is a Mountain with no abilities"
+      "Volcanic Island is a Mountain whose only ability"
     ],
     "cite": [
       "612.1",
@@ -60449,6 +60456,256 @@
     ],
     "cite": [
       "709.3b"
+    ]
+  },
+  {
+    "id": "ta1",
+    "text": "I control Worship and Grizzly Bears. I am at 2 life. My opponent casts Lightning Bolt targeting me. What happens?",
+    "expect": [
+      "You stay at 1 life (Worship).",
+      "You take 3 damage."
+    ],
+    "notExpect": [
+      "so it deals 2 instead",
+      "You take 1 damage."
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "ta2",
+    "text": "They control Teferi, Time Raveler. I cast Duress targeting them. Does Teferi stop my Duress?",
+    "expect": [
+      "No, it doesn't stop it: Duress can be cast"
+    ],
+    "notExpect": [
+      "Yes: Duress can be cast"
+    ],
+    "cite": []
+  },
+  {
+    "id": "ta3",
+    "text": "I control Linvala, Keeper of Silence. Can my opponent activate their Mutavault, and can they then tap it for mana?",
+    "expect": [
+      "Yes, then no: opponent can activate Mutavault's ability; but then Mutavault's ability can't be activated (Linvala, Keeper of Silence)."
+    ],
+    "notExpect": [
+      "No: Mutavault's ability can't be activated"
+    ],
+    "cite": [
+      "602.5"
+    ]
+  },
+  {
+    "id": "ta4",
+    "text": "My opponent controls Blood Moon. What does my Volcanic Island tap for?",
+    "expect": [
+      "Volcanic Island is a Mountain whose only ability is \"{T}: Add {R}\" (Blood Moon)."
+    ],
+    "notExpect": [
+      "Mountain with no abilities (Blood Moon)"
+    ],
+    "cite": [
+      "305.7"
+    ]
+  },
+  {
+    "id": "ta5",
+    "text": "My opponent casts Lightning Bolt targeting me. I cast Mindbreak Trap targeting Lightning Bolt. What happens?",
+    "expect": [
+      "Lightning Bolt: the stack → exile (Mindbreak Trap); it doesn't resolve."
+    ],
+    "notExpect": [
+      "remembers the card for its leaves-the-battlefield ability"
+    ],
+    "cite": [
+      "701.13a"
+    ]
+  },
+  {
+    "id": "ta6",
+    "text": "My Grizzly Bears is enchanted with Rancor. My opponent casts Doom Blade targeting Grizzly Bears. What happens to Rancor?",
+    "expect": [
+      "Rancor's ability triggers on Rancor being put into a graveyard from the battlefield."
+    ],
+    "notExpect": [
+      "Rancor's ability triggers on Rancor dying"
+    ],
+    "cite": [
+      "704.5m"
+    ]
+  },
+  {
+    "id": "ta7",
+    "text": "My opponent controls Chalice of the Void with one counter. I cast Lightning Bolt targeting my opponent. What happens?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ],
+    "notExpect": [
+      "nothing about the spell can stop it"
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "ta8",
+    "text": "My 2/2 blocks a 2/2 and I regenerate my blocker. Does it survive? Is it still blocking?",
+    "expect": [
+      "Yes: your 2/2 creature is still on the battlefield.",
+      "A 2/2 creature had 2 damage marked; regenerating removed it."
+    ],
+    "notExpect": [
+      "A 2/2 creature, a 2/2 creature are all put into their owners' graveyards"
+    ],
+    "cite": [
+      "701.19a"
+    ]
+  },
+  {
+    "id": "ta9",
+    "text": "I control Thornweald Archer and it fights Hill Giant. Who wins the fight?",
+    "expect": [
+      "Hill Giant: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "neither creature fights"
+    ],
+    "cite": [
+      "701.14a",
+      "702.2b"
+    ]
+  },
+  {
+    "id": "ta10",
+    "text": "I control Laboratory Maniac and my library is empty. I cast Brainstorm. What happens?",
+    "expect": [
+      "You win the game (Laboratory Maniac)."
+    ],
+    "notExpect": [
+      "You put 2 cards from your hand"
+    ],
+    "cite": [
+      "104.1"
+    ]
+  },
+  {
+    "id": "ta11",
+    "text": "I cast Gemrazer for its mutate cost onto my Llanowar Elves. What happens?",
+    "expect": [
+      "Gemrazer mutates onto Llanowar Elves"
+    ],
+    "notExpect": [
+      "Gemrazer is cast without paying its mana cost"
+    ],
+    "cite": [
+      "702.140a"
+    ]
+  },
+  {
+    "id": "ta12",
+    "text": "My hand is Thalia, Guardian of Thraben and two Islands. They cast Hymn to Tourach on me. Does Thalia get discarded?",
+    "expect": [
+      "It depends on the random discard: 67% to lose it"
+    ],
+    "notExpect": [
+      "Yes: you discard 2"
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "ta13",
+    "text": "I attack with Grizzly Bears and cast Berserk on it. Is it destroyed at the end step?",
+    "expect": [
+      "Yes: Grizzly Bears is destroyed at the beginning of the end step: it attacked this turn (Berserk)."
+    ],
+    "notExpect": [
+      "Yes: until-end-of-turn effects",
+      "No, not yet"
+    ],
+    "cite": [
+      "603.7"
+    ]
+  },
+  {
+    "id": "ta14",
+    "text": "They have Leyline of Sanctity. I cast Collective Brutality choosing drain. Do I gain life?",
+    "expect": [
+      "\"target opponent\" can't be its own controller"
+    ],
+    "notExpect": [
+      "You lose 2 life",
+      "You gain 2 life in all",
+      "You gain 2 life ("
+    ],
+    "cite": [
+      "115.1"
+    ]
+  },
+  {
+    "id": "ta15",
+    "text": "My opponent controls Dress Down. Then I equip Sword of Fire and Ice to my Grizzly Bears. How big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is now 4/4"
+    ],
+    "notExpect": [
+      "no abilities (Dress Down, layer 6), +2/+2"
+    ],
+    "cite": [
+      "702.6a"
+    ]
+  },
+  {
+    "id": "ta16",
+    "text": "I attack with Vampire Nighthawk. My opponent controls Worship and Grizzly Bears and is at 1 life. How much life do I gain?",
+    "expect": [
+      "You gain 2 life."
+    ],
+    "cite": [
+      "702.15b"
+    ]
+  },
+  {
+    "id": "ta17",
+    "text": "I cast Overlord of the Hauntwoods for its impending cost. What happens?",
+    "expect": [
+      "You get an Everywhere."
+    ],
+    "notExpect": [
+      "Everywhere That Is Every Basic Land Type"
+    ],
+    "cite": [
+      "702.176a"
+    ]
+  },
+  {
+    "id": "ta18",
+    "text": "My Lizard Blades is attached to my Llanowar Elves and the Llanowar Elves dies. Is Lizard Blades a creature again?",
+    "expect": [
+      "Llanowar Elves has left the battlefield, so Lizard Blades is no longer attached to anything"
+    ],
+    "notExpect": [
+      "Lizard Blades is a creature now, and a creature can't be attached",
+      "Llanowar Elves is 1/1 without it"
+    ],
+    "cite": [
+      "702.151b"
+    ]
+  },
+  {
+    "id": "ta19",
+    "text": "I control Enduring Innocence. My opponent casts Doom Blade targeting Enduring Innocence. What happens?",
+    "expect": [
+      "Enduring Innocence is an enchantment, not a creature, after returning."
+    ],
+    "notExpect": [
+      "a creature entering wouldn't see it"
+    ],
+    "cite": [
+      "611.2e"
     ]
   }
 ]

@@ -817,7 +817,7 @@ internal object MoreEffects2 {
         Regex("""^put one of them into your hand, put one of them on the bottom of your library, and exile one of them$""", I).matchEntire(t)?.let {
             you.handSize = you.handSize?.plus(1)
             tr.step("Of the three cards, ${you.subject.lowercase()} ${you.v("puts", "put")} one into ${their(you)} hand (not a draw), one on the bottom of ${their(you)} library, and ${you.v("exiles", "exile")} the third, face up.", "401.4", "121.5", "406.3")
-            state.outcomes += "${you.subject} ${you.v("puts", "put")} one card into ${their(you)} hand, one on the bottom and exiles one ($src)."
+            state.outcomes += "${you.subject} ${you.v("puts", "put")} one card into ${their(you)} hand, one on the bottom and ${you.v("exiles", "exile")} one ($src)."
             return true
         }
         Regex("""^you may play (?:the exiled card|those cards|them) this turn$""", I).matchEntire(t)?.let {
