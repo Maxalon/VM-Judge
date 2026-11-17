@@ -114,6 +114,14 @@ internal object ModernMech {
     fun entersWithExiled(state: GameState, o: GameObject) {
         val r = Regex("""(?i)enters with a ([+-]1/[+-]1) counter on it for each instant and sorcery card exiled with it""").find(o.def.oracleText) ?: return
         val exiled = state.md.delveExiled.remove(o.def.name) ?: return
+        // "They have Dress Down; I cast Murktide Regent delving three instants": which replacement effects apply as it enters is read
+        // off the permanent as it would exist on the battlefield, Dress Down's ability loss included (614.12, 613.1f), so it has no
+        // "enters with counters" ability to apply and comes in as a bare 3/3.
+        state.abilitiesLostOn(o)?.first?.let { lost ->
+            state.trace.step("${lost.name} would take ${o.name}'s abilities away once it is on the battlefield, and that is what decides which replacement effects apply as it enters: its \"enters with a counter for each instant and sorcery card exiled with it\" ability never applies, so ${o.name} enters with no counters.", "614.12", "613.1f")
+            state.outcomes += "${o.name} enters with no +1/+1 counters: ${lost.name} takes its abilities away as it enters, so its own \"enters with counters\" ability never applies (614.12)."
+            return
+        }
         val counted = exiled.filter { (d, _) -> d.types.any { it == "Instant" || it == "Sorcery" } }
         val n = counted.sumOf { it.second }
         val adv = exiled.filter { (d, _) -> d.typeLine.contains("Adventure") }

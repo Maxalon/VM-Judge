@@ -4516,6 +4516,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = redteamRewrites(t2, m, ctx)
+        t2 = exam2Rewrites(t2, m, ctx)
         t2 = policyRewrites(t2, m, ctx)
         t2 = lifeDamageRewrites(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
@@ -6786,7 +6787,8 @@ class SituationParser(private val names: NameIndex) {
         // "a creature with deathtouch and first strike": a keyword list joined by "and" stays in one clause.
         run {
             val kw = """(?:flying|trample|deathtouch|lifelink|first strike|double strike|haste|vigilance|reach|menace|hexproof|indestructible|infect|wither|shroud|defender|flash|regenerate|protection from \w+)"""
-            t2 = t2.replace(Regex("""\b(with $kw(?:(?:,| &) $kw)*) and ($kw)\b"""), "$1 & $2")
+            // "a 3/3 with lifelink, infect and wither": the commas too, or the clause split leaves "infect" on its own.
+            t2 = t2.replace(Regex("""\b(with $kw(?:(?:,| &) $kw)*),? and ($kw)\b""")) { r -> r.groupValues[1].replace(", ", " & ") + " & " + r.groupValues[2] }
         }
         // "attack with a 3/3 and a 2/2" / "blocks with two 2/2s and a 1/1": described creatures joined by "and" stay in one clause.
         if (Regex("""\b(?:attacks?|attacking|swings?|swinging|blocks?|blocked|blocking|chumps?)\b""").containsMatchIn(t2)) t2 = t2.replace(Regex("""\b((?:an? |\d+ |two |three |four |five )?\d+/\d+s?(?: (?!and\b)[a-z]+){0,3}) and ((?:an? |\d+ |two |three |four |five )?\d+/\d+s?(?: (?!and\b|attacks?\b|blocks?\b|swings?\b|then\b|is\b|are\b|gets?\b)[a-z]+){0,3})(?!\s+(?:chump[- ]?)?blocks?\b)"""), "$1 plus $2")
@@ -7670,6 +7672,9 @@ class SituationParser(private val names: NameIndex) {
             val name = { id: String -> ctx.objects[id]?.card?.name ?: id }
             val power = pt(atk)?.first
             val text = if (blockers.isEmpty()) "Nothing is blocking ${name(atk)}: an unblocked attacker deals all its damage to the player or planeswalker it's attacking (510.1b); there is nothing to divide."
+                // "A green 4/4 with trample and deathtouch blocked by Mirran Crusader": trample assigns lethal (1 with deathtouch) and the rest past it (702.19b, 702.2c).
+                else if (blockers.size == 1 && (Regex("""\btrample\b""", RegexOption.IGNORE_CASE).containsMatchIn(name(atk)) || names.lookup(Names.normalize(name(atk)))?.keywords?.contains("Trample") == true))
+                    "${name(atk)} has trample: it must assign lethal damage to ${name(blockers.first())}${if (Regex("""\bdeathtouch\b""", RegexOption.IGNORE_CASE).containsMatchIn(name(atk)) || names.lookup(Names.normalize(name(atk)))?.keywords?.contains("Deathtouch") == true) " (with deathtouch, 1 damage is lethal)" else ""}, judged without regard to protection or prevention, and may assign the rest to the player or planeswalker it's attacking (702.19b, 510.1c)."
                 else if (blockers.size == 1) "${name(atk)} is blocked by ${if (hit.isNotEmpty()) "one creature still in combat (the other left before damage; the attacker stays blocked, 509.1h)" else "one creature"}, so all its damage goes to that blocker (510.1c); there is no choice to make."
                 else {
                     val parts = blockers.map { b -> b to pt(b) }
@@ -9294,6 +9299,7 @@ class SituationParser(private val names: NameIndex) {
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
         readRedteamQuestions(clause0, m, ctx)?.let { return it }
+        readExam2Questions(clause0, m, ctx)?.let { return it }
         readPolicyQuestions(clause0, m, ctx)?.let { return it }
         readLifeDamageQuestions(clause0, m, ctx)?.let { return it }
         readExamQuestions(clause0, m, ctx)?.let { return it }
@@ -16069,7 +16075,7 @@ class SituationParser(private val names: NameIndex) {
                 // "My opponent activates Mutavault. How big is it?": the manland just animated, not some creature of mine.
                 ?: ctx.lastMentioned?.takeIf { lm -> lm in ctx.objects && ctx.events.any { it.verb == "activate" && it.obj == lm } }
                 ?: ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) }?.id
-                ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let) else m.cards[ph]?.let { objectIdForOrCast(it, ctx) ?: addObject(it, "me", false, ctx) } ?: return@let
+                ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let) else m.cards[ph]?.let { objectIdForOrCast(it, ctx) ?: castSpellObject(it, ctx) ?: addObject(it, "me", false, ctx) } ?: return@let
             ctx.asks += EventSpec("ask", obj = id, to = "pt"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
         }
         // "does Serra Angel untap?" / "is the Angel tapped?" / "is it still untapped?": whether it's tapped once everything is done.
@@ -16523,6 +16529,51 @@ class SituationParser(private val names: NameIndex) {
     /** The object for a card, or — when the card is the permanent spell just cast — the object that cast becomes. */
     private fun objectIdForOrCast(card: NameIndex.Entry, ctx: Ctx): String? =
         objectIdFor(card, ctx) ?: (if (ctx.lastMentioned == "cast:" + slug(card.display)) castPermanentObject(ctx) else null)
+
+    /** "I cast Opalescence. I control Dryad Arbor. How big are Humility, Opalescence and Dryad Arbor?": the permanent spell cast earlier, not a second copy already out. */
+    private fun castSpellObject(card: NameIndex.Entry, ctx: Ctx): String? {
+        if (card.isSpellOnly) return null
+        val at = ctx.events.indexOfLast { it.verb == "cast" && it.obj == null && it.card?.oracleId == card.oracleId }
+        if (at < 0) return null
+        val ev = ctx.events[at]
+        val id = addObject(card, ev.player ?: "me", false, ctx, zone = "hand", allowDuplicate = true)
+        ctx.events[at] = ev.copy(obj = id, card = null)
+        if (ctx.events.getOrNull(at + 1)?.verb != "resolveAll") ctx.events.add(at + 1, EventSpec("resolveAll"))
+        return id
+    }
+
+    /**
+     * Judge-exam board states, second set. "What are the power and toughness of Humility, Opalescence and Dryad Arbor?":
+     * one size question per permanent named.
+     */
+    private fun exam2Rewrites(t: String, m: Marked, ctx: Ctx): String {
+        var t2 = t
+        t2 = t2.replace(Regex("""^(?:what (?:are|is) (?:the )?(?:power and toughness|p/t|sizes?) of|how big are) (c\d+(?:(?:,? and |, )c\d+)+)\??$""", RegexOption.IGNORE_CASE)) { r ->
+            Regex("""c\d+""").findAll(r.groupValues[1]).joinToString(", ") { "how big is ${it.value}" } }
+        // "I cast Fire from Fire // Ice" / "I cast the Fire half of Fire // Ice": the split card, with that half chosen (709.3).
+        t2 = t2.replace(Regex("""\bcasts? (?:the )?(c\d+)(?: half| side)? (?:from|of) (?:my |their |the )?(c\d+)\b""", RegexOption.IGNORE_CASE)) { r ->
+            if (m.cards[r.groupValues[2]]?.display?.contains(" // ") == true) "cast ${r.groupValues[2]} choosing ${r.groupValues[1]}" else r.value }
+        // "choosing Ice": the half's name is marked as the whole split card, so the word said is put back from the full text.
+        t2 = t2.replace(Regex("""\bchoosing (c\d+)\b""")) { r ->
+            val full = m.cards[r.groupValues[1]]?.display?.takeIf { it.contains(" // ") } ?: return@replace r.value
+            val said = full.split(" // ").firstOrNull { h -> Regex("""(?i)\b(?:choosing|from|cast) (?:the )?${Regex.escape(h)}\b(?! //)""").containsMatchIn(ctx.fullText) }
+            if (said != null) "choosing ${said.lowercase()}" else r.value }
+        return t2
+    }
+
+    /** Judge-exam questions, second set: "is my copy attached to anything?" after Phyrexian Metamorph copies an attached Equipment. */
+    private fun readExam2Questions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim()
+        Regex("""^is (?:my |the |their )?(copy|it|c\d+) (?:still )?(?:attached|equipped|attached to (?:anything|something|a creature|grizzly bears|it|c\d+))(?: to anything)?\??$""").find(c)?.let { r ->
+            val ph = r.groupValues[1]
+            val id = when {
+                ph.startsWith("c") && ph != "copy" -> m.cards[ph]?.let { e -> objectIdFor(e, ctx) ?: castSpellObject(e, ctx) } ?: return null
+                else -> ctx.events.lastOrNull { it.verb == "cast" }?.let { ev -> ev.obj ?: ev.card?.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { e -> castSpellObject(e, ctx) } } ?: ctx.lastMentioned ?: return null
+            }
+            ctx.asks += EventSpec("ask", obj = id, to = "x2:attached"); ctx.notes += "\"${restore(clause0, m)}?\" is answered by the outcome below."; return true
+        }
+        return null
+    }
 
     private fun castPermanentObject(ctx: Ctx): String? {
         val entry = ctx.lastCastEntry ?: return null

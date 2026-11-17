@@ -299,8 +299,19 @@ internal object MoreEffects2 {
         if (targets.isEmpty()) { step("${src.name} gives ${eff.filter.raw}s the land types $types, and there's none on the battlefield right now.", arrayOf("613.1d")); return true }
         for (t in targets) {
             val mana = eff.subtypes.mapNotNull { basics[it] }
+            // Blood Moon and Dryad of the Ilysian Grove: both layer 4, neither depends on the other, so timestamp order (613.7).
+            state.moonOn(t)?.let { moon ->
+                if (eff.subtypes.all { it in state.subtypesOf(t) }) {
+                    step("${moon.name} and ${src.name} both change ${t.name}'s land types in layer 4, and neither depends on the other, so they apply in timestamp order: ${src.name}'s applies after ${moon.name}'s, so ${t.name} is a Mountain (with no abilities from its own rules text) that is also $types, and each basic land type gives it that type's mana ability.", arrayOf("613.7", "613.1d", "305.7", "305.6"))
+                    out("${t.name} is ${state.subtypesOf(t).joinToString(" ")} land with no rules-text abilities and taps for ${mana.joinToString(" or ")} (${src.name}'s effect applies after ${moon.name}'s).")
+                } else {
+                    step("${moon.name} and ${src.name} both change ${t.name}'s land types in layer 4, and neither depends on the other, so they apply in timestamp order: ${moon.name}'s applies last and overwrites the types ${src.name} added, so ${t.name} is just a Mountain.", arrayOf("613.7", "613.1d", "305.7"))
+                }
+                return@let
+            } ?: run {
             step("${src.name} makes ${t.name} $types in addition to its other types (layer 4); it keeps its own types and abilities${if (mana.isNotEmpty()) ", and each basic land type gives it that type's mana ability, so it can tap for ${mana.joinToString(" or ")}" else ""}.", arrayOf("613.1d", "305.7", *(if (mana.isNotEmpty()) arrayOf("305.6") else emptyArray())))
             out("${t.name} is ${(listOf(t.def.subtypes.joinToString(" ")) + eff.subtypes.filter { it !in t.def.subtypes }).filter { it.isNotBlank() }.joinToString(" ")} land${if (mana.isNotEmpty()) " and taps for ${mana.joinToString(" or ")}" else ""} (${src.name}).")
+            }
         }
         return true
     }

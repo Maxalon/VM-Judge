@@ -183,7 +183,7 @@ object Layers {
                     // Yixlid Jailer: cards in graveyards lose all abilities (layer 6).
                     StaticEffect.GraveyardCardsLoseAbilities -> LayerEffect(src, ts, src.name, listOf(6), true, eff,
                         { c -> c.obj.zone == Zone.GRAVEYARD }, { _, c -> c.abilitiesLostTo = src; c.abilitiesLostEffect = eff })
-                    else -> DeepMech.layerEffect(state, src, eff) ?: continue   // Song of the Dryads (DeepMechanics.kt)
+                    else -> DeepMech.layerEffect(state, src, eff) ?: Exam2Mech.layerEffect(state, src, eff) ?: continue   // Song of the Dryads (DeepMechanics.kt), Spreading Seas (Exam2Mechanics.kt)
                 }
             }
             // A leveler's band sets its base size (702.87b), its own static ability with its own timestamp.

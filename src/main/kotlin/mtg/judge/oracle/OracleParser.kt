@@ -196,6 +196,7 @@ object OracleParser {
                 }
                 mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef)!!   // repartee, power-up, prepared, storied (NewSetMechanics.kt)
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
+                mtg.judge.engine.Exam2Mech.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.Exam2Mech.parseAbilityLine(selfRef)!!   // Kaya's Ghostform (Exam2Mechanics.kt)
                 mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef)!!   // Uro's escape, Mikaeus (MoreEffects.kt)
                 mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef)!!   // Voice of Resurgence (MoreEffects2.kt)
                 mtg.judge.engine.MoreEffects3.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects3.parseAbilityLine(selfRef)!!   // "12+ | Flying" on a station card (MoreEffects3.kt)
@@ -229,6 +230,8 @@ object OracleParser {
     /** Replace the card's own name and "this creature/permanent/…" with "~". */
     private fun selfReference(line: String, name: String): String {
         var s = line.replace(name, "~")
+        // A split card's half refers to itself by its half's name: "Fire deals 2 damage divided as you choose among one or two targets."
+        if (" // " in name) for (h in name.split(" // ")) s = s.replace(Regex("""(^|\. |• )${Regex.escape(h)}(?= deals )"""), "$1~")
         val shortName = name.substringBefore(",")
         if (shortName != name) s = s.replace(shortName, "~")
         // Legendary names shortened in their own text: "Kaalia of the Vast" -> "Kaalia", "Ezuri the Claw" -> "Ezuri", "Arcades, the Strategist" already handled.
@@ -716,6 +719,7 @@ object OracleParser {
         mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
         mtg.judge.engine.DeepMech.parseStatic(line)?.let { return it }   // Song of the Dryads, Animar (DeepMechanics.kt)
         mtg.judge.engine.ExamMech.parseStatic(line)?.let { return it }   // Mirror Gallery, Torbran, High Ground, Lure (ExamMechanics.kt)
+        mtg.judge.engine.Exam2Mech.parseStatic(line)?.let { return it }   // Spreading Seas (Exam2Mechanics.kt)
         mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
         mtg.judge.engine.MoreEffects2.parseStatic(line)?.let { return it }   // Dryad of the Ilysian Grove, Animar (MoreEffects2.kt)
         mtg.judge.engine.MoreEffects3.parseStatic(line)?.let { return it }   // Mondrak, Cranial Plating, Oketra's Monument (MoreEffects3.kt)

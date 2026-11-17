@@ -90,7 +90,8 @@ internal object MoreEffects {
     /** Melira: a permanent saying its controller can't get poison counters (101.2: "can't" beats the infect damage's counters). */
     fun poisonBlocked(e: Engine, playerId: String, count: Int): Boolean {
         val state = e.state
-        val src = notes(state).firstOrNull { (o, t) -> o.controller == playerId && Regex("""(?i)^you can't get poison counters""").containsMatchIn(t) }?.first ?: return false
+        // Solemnity's "Players can't get counters" reaches every player: with Phyrexian Unlife at 0 life, damage then does nothing at all.
+        val src = notes(state).firstOrNull { (o, t) -> (o.controller == playerId && Regex("""(?i)^you can't get poison counters""").containsMatchIn(t)) || Regex("""(?i)^players can't get counters""").containsMatchIn(t) }?.first ?: return false
         val p = state.player(playerId)
         state.trace.step("${src.name} says ${p.subject.lowercase()} can't get poison counters, so the $count poison counter${if (count == 1) "" else "s"} ${if (count == 1) "isn't" else "aren't"} given. Damage from a source with infect still causes no life loss: it's simply wasted.", "101.2", "122.1f", "702.90b")
         state.outcomes += "${p.subject} ${p.v("gets", "get")} no poison counters (${src.name})."

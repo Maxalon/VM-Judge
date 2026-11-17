@@ -161,6 +161,7 @@
 301.1	a player who has priority may
 301.5	some artifacts have the subtype equipment
 301.5a	the creature an equipment is attached
+301.5b	equipment spells are cast like other
 301.5c	an equipment that s also a
 301.5d	an equipment s controller is separate
 301.7	some artifacts have the subtype vehicle

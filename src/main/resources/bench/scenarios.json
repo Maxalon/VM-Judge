@@ -59555,12 +59555,14 @@
     "id": "rt1",
     "text": "I cast Murktide Regent exiling three instants from my graveyard. My opponent controls Dress Down. How big is Murktide?",
     "expect": [
-      "is 3/3 (3/3 base, no abilities (Dress Down"
+      "is 3/3 (3/3 base, no abilities (Dress Down",
+      "enters with no +1/+1 counters"
     ],
     "notExpect": [
       "something else must be allowing it to be cast from a graveyard"
     ],
     "cite": [
+      "614.12",
       "702.66a"
     ]
   },
@@ -60213,5 +60215,240 @@
       "603.7a"
     ],
     "note": "track redteam: Greasefang's haste and return (probe P48)"
+  },
+  {
+    "id": "x2-1",
+    "text": "Humility is on the battlefield. I cast Opalescence. I control Dryad Arbor. What are the power and toughness of Humility, Opalescence and Dryad Arbor?",
+    "expect": [
+      "Opalescence isn't a creature: its ability changes each other non-Aura enchantment",
+      "Humility is 4/4 (4/4 base, base set to 4/4 by Opalescence",
+      "Dryad Arbor is 1/1 (1/1 base, base set to 1/1 by Humility"
+    ],
+    "notExpect": [
+      "Opalescence is a 4/4"
+    ],
+    "cite": [
+      "613.7",
+      "613.1d"
+    ]
+  },
+  {
+    "id": "x2-2",
+    "text": "My opponent controls Blood Moon. I control Dryad of the Ilysian Grove and Steam Vents. What mana can Steam Vents tap for?",
+    "expect": [
+      "taps for {W} or {U} or {B} or {R} or {G} (Dryad of the Ilysian Grove's effect applies after Blood Moon's)"
+    ],
+    "notExpect": [
+      "taps for {R} and nothing else"
+    ],
+    "cite": [
+      "613.7",
+      "305.6"
+    ]
+  },
+  {
+    "id": "x2-3",
+    "text": "I control Dryad of the Ilysian Grove and Steam Vents. My opponent casts Blood Moon. What mana can Steam Vents tap for?",
+    "expect": [
+      "Steam Vents is a Mountain under Blood Moon, so it taps for {R} and nothing else."
+    ],
+    "cite": [
+      "305.7"
+    ]
+  },
+  {
+    "id": "x2-4",
+    "text": "My opponent controls Blood Moon. I control Darksteel Citadel. My opponent casts Shatter targeting Darksteel Citadel. What happens?",
+    "expect": [
+      "Darksteel Citadel isn't indestructible under Blood Moon (305.7): it's destroyed.",
+      "Darksteel Citadel: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "isn't destroyed"
+    ],
+    "cite": [
+      "305.7",
+      "702.12b"
+    ]
+  },
+  {
+    "id": "x2-5",
+    "text": "I control Steam Vents. My opponent enchants it with Spreading Seas, then casts Magus of the Moon. What can Steam Vents tap for?",
+    "expect": [
+      "Steam Vents is a Mountain: Magus of the Moon has the later timestamp, so its effect applies last (613.7); it taps for {R} only."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "613.7",
+      "305.7"
+    ]
+  },
+  {
+    "id": "x2-6",
+    "text": "I control Steam Vents. My opponent controls Magus of the Moon. Then they enchant Steam Vents with Spreading Seas. What can Steam Vents tap for?",
+    "expect": [
+      "Steam Vents is an Island: Spreading Seas has the later timestamp, so its effect applies last (613.7); it taps for {U} only."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "613.7",
+      "305.7"
+    ]
+  },
+  {
+    "id": "x2-7",
+    "text": "I control Solemnity and Phyrexian Unlife and I have 0 life. My opponent attacks me with Colossal Dreadmaw and I don't block. What happens?",
+    "expect": [
+      "You get no poison counters (Solemnity)."
+    ],
+    "notExpect": [
+      "poison counters."
+    ],
+    "cite": [
+      "702.90b",
+      "101.2"
+    ]
+  },
+  {
+    "id": "x2-8",
+    "text": "I control Solemnity. I cast Chalice of the Void with X=1. What does it counter?",
+    "expect": [
+      "Chalice of the Void enters with 0 charge counters. Its ability looks at the counters it actually has, not the X it was cast for, so it counters each spell with mana value 0."
+    ],
+    "cite": [
+      "614.1a",
+      "122.1"
+    ]
+  },
+  {
+    "id": "x2-9",
+    "text": "I control Rest in Peace. My Grizzly Bears is enchanted with Kaya's Ghostform and my opponent casts Murder on it. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → exile (replaced by Rest in Peace).",
+      "Grizzly Bears returns to the battlefield under your control (Kaya's Ghostform)."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.10a",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "x2-10",
+    "text": "My opponent controls Grafdigger's Cage. I cast Snapcaster Mage targeting Lightning Bolt in my graveyard. Can I cast Lightning Bolt?",
+    "expect": [
+      "No: Lightning Bolt has flashback until end of turn, but Grafdigger's Cage says players can't cast spells from graveyards"
+    ],
+    "notExpect": [
+      "Yes: Lightning Bolt has flashback"
+    ],
+    "cite": [
+      "101.2",
+      "702.34a"
+    ]
+  },
+  {
+    "id": "x2-11",
+    "text": "My opponent controls Chalice of the Void with 1 charge counter. I cast Fire from Fire // Ice targeting my opponent. Is it countered?",
+    "expect": [
+      "only Fire is cast, and on the stack its mana value is 2",
+      "Opponent takes 2 damage."
+    ],
+    "notExpect": [
+      "mana value is 4",
+      "Not modeled"
+    ],
+    "cite": [
+      "709.3b"
+    ]
+  },
+  {
+    "id": "x2-12",
+    "text": "I attack with a green 4/4 with trample and deathtouch and my opponent blocks with Mirran Crusader. How is damage assigned?",
+    "expect": [
+      "has trample: it must assign lethal damage to Mirran Crusader (with deathtouch, 1 damage is lethal)",
+      "Opponent takes 3 damage."
+    ],
+    "notExpect": [
+      "there is no choice to make"
+    ],
+    "cite": [
+      "702.19b",
+      "702.2c"
+    ]
+  },
+  {
+    "id": "x2-13",
+    "text": "My opponent's Grizzly Bears is equipped with Bonesplitter. I cast Phyrexian Metamorph copying Bonesplitter. Is my copy attached to anything?",
+    "expect": [
+      "No: Phyrexian Metamorph (copying Bonesplitter) isn't attached to anything.",
+      "Bonesplitter stays on Grizzly Bears."
+    ],
+    "cite": [
+      "707.2",
+      "301.5b"
+    ]
+  },
+  {
+    "id": "x2-14",
+    "text": "I control Doubling Season and The Chain Veil. I cast Liliana of the Veil and activate its -6 ability targeting my opponent. Then I activate The Chain Veil. Can I activate Liliana again?",
+    "expect": [
+      "No: Liliana of the Veil is in your graveyard, so its loyalty abilities can't be activated (113.6).",
+      "Liliana of the Veil: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "Yes: you can activate"
+    ],
+    "cite": [
+      "113.6",
+      "704.5i"
+    ]
+  },
+  {
+    "id": "x2-15",
+    "text": "I attack with a 3/3 with lifelink, infect, wither and trample, and my opponent blocks with Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears has 2 -1/-1 counters.",
+      "Opponent has 1 poison counter.",
+      "You gain 3 life."
+    ],
+    "notExpect": [
+      "You gain 3 life. (×2)"
+    ],
+    "cite": [
+      "702.15e",
+      "702.90c",
+      "702.19b"
+    ]
+  },
+  {
+    "id": "x2-16",
+    "text": "I control Solemnity. I play Dark Depths. What happens?",
+    "expect": [
+      "You get a Marit Lage."
+    ],
+    "notExpect": [
+      "Not modeled"
+    ],
+    "cite": [
+      "603.8",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "x2-17",
+    "text": "They cast Fire // Ice choosing Ice on my Grizzly Bears. My opponent controls Chalice of the Void with 2 charge counters. Is it countered?",
+    "expect": [
+      "Fire // Ice is countered"
+    ],
+    "cite": [
+      "709.3b"
+    ]
   }
 ]

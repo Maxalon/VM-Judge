@@ -849,6 +849,12 @@ class Engine(val state: GameState) {
 
     private fun activate0(playerId: String, objectId: String, abilityIndex: Int?, targets: List<Ref>, choice: String? = null, x: Int? = null, payLife: Int? = null): StackItem? {
         val obj = state.obj(objectId)
+        // "Liliana −6 from 6 with Doubling Season, then The Chain Veil": at 0 loyalty she went to the graveyard, and a permanent's abilities work only on the battlefield (113.6).
+        if (obj.def.isPlaneswalker && !obj.isOnBattlefield() && obj.zone in setOf(Zone.GRAVEYARD, Zone.EXILE)) {
+            trace.step("${obj.name} isn't on the battlefield any more (it's in ${if (obj.zone == Zone.GRAVEYARD) "${state.player(obj.owner).possessive} graveyard" else "exile"}), and a permanent's abilities function only on the battlefield, so none of its loyalty abilities can be activated.", "113.6", "606.3")
+            state.outcomes += "No: ${obj.name} is in ${if (obj.zone == Zone.GRAVEYARD) "${state.player(obj.owner).possessive} graveyard" else "exile"}, so its loyalty abilities can't be activated (113.6)."
+            return null
+        }
         val wasOnBattlefield = obj.isOnBattlefield()   // a fetchland is sacrificed as the cost, but it was a land on the battlefield when activated (Harsh Mentor)
         val abilities = activatedAbilitiesOf(obj)
         state.moonOn(obj)?.let { moon ->
@@ -2393,6 +2399,7 @@ class Engine(val state: GameState) {
     private var leavingTogether: Set<String> = emptySet()
 
     private fun onEvent(event: GameEvent) {
+        if (event is GameEvent.EntersBattlefield) Exam2Mech.stateTriggerOnEnter(this, event.obj)?.let { k -> onEvent(GameEvent.CountersGone(event.obj, k)) }   // Dark Depths under Solemnity (Exam2Mechanics.kt)
         LegacyMech.onEvent(state, event)   // storm's last known information, life lost this turn (LegacyMechanics.kt)
         NewSetMech.onEvent(state, event)   // life gained this turn, for infusion (NewSetMechanics.kt)
         if (event is GameEvent.Attacks) PauperMech.onEvent(state, event.obj)   // Berserk's "if it attacked this turn" (PauperMechanics.kt)
@@ -2523,7 +2530,7 @@ class Engine(val state: GameState) {
                 is GameEvent.CreaturesDealtCombatDamageToPlayer -> event.playerId; is GameEvent.Sacrificed -> event.playerId; is GameEvent.DamageDealt -> if (ability.trigger == Trigger.ThisIsDealtDamage) event.source.controller else (event.target as? Ref.Player)?.id ?: event.source.controller; else -> null
             }
             val causedAmount = when (event) { is GameEvent.LifeGained -> event.amount; is GameEvent.LifeLost -> event.amount; is GameEvent.DamageDealt -> event.amount; else -> null }
-            val causedObject = when (event) { is GameEvent.AttacksAlone -> event.obj.id; is GameEvent.Attacks -> event.obj.id; is GameEvent.EntersBattlefield -> event.obj.id; is GameEvent.Dies -> event.obj.id; is GameEvent.BecomesTarget -> event.sourceId; is GameEvent.SpellCast -> event.item.id; is GameEvent.BecomesBlockedBy -> event.blocker.id; is GameEvent.Blocks -> event.blocked?.id; is GameEvent.Sacrificed -> event.obj.id; else -> null }
+            val causedObject = when (event) { is GameEvent.AttacksAlone -> event.obj.id; is GameEvent.Attacks -> event.obj.id; is GameEvent.EntersBattlefield -> event.obj.id; is GameEvent.Dies -> event.obj.id; is GameEvent.BecomesTarget -> event.sourceId; is GameEvent.SpellCast -> event.item.id; is GameEvent.BecomesBlockedBy -> event.blocker.id; is GameEvent.Blocks -> event.blocked?.id; is GameEvent.Sacrificed -> event.obj.id; is GameEvent.LeavesBattlefield -> event.obj.id; else -> null }
             putTriggerOnStack(obj, ability, emptyList(), causedBy, causedAmount, causedObject)
         }
         if (ordered.size > 1 && triggerHold == null) trace.step("Multiple abilities triggered at once; they are put on the stack in APNAP order, each player choosing the order among their own.", "603.3b")
@@ -2621,6 +2628,7 @@ class Engine(val state: GameState) {
         is MoreTrigger2 -> MoreEffects2.triggerMatches(state, obj, trigger, event)   // Voice of Resurgence (MoreEffects2.kt)
         is MoreTrigger3 -> MoreEffects3.triggerMatches(state, obj, trigger, event)   // Aurelia (MoreEffects3.kt)
         is LdTrigger -> LifeDmgMech.triggerMatches(state, obj, trigger, event)   // Repercussion (LifeDamageMechanics.kt)
+        is Exam2Mech.Exam2Trigger -> Exam2Mech.triggerMatches(state, obj, trigger, event)   // Kaya's Ghostform (Exam2Mechanics.kt)
         }
     }
 
@@ -3045,6 +3053,7 @@ class Engine(val state: GameState) {
             is Effect.NewMech -> if (effect.kind.startsWith("pc:")) PauperMech.resolve(this, effect, item)   // Pestilence, Balance, Timetwister, The Abyss … (PauperMechanics.kt)
                 else if (effect.kind.startsWith("cr:")) CoverageMech.resolve(this, effect, item)   // battle cry, annihilator, rampage, renown … (CoverageMechanics.kt)
                 else if (effect.kind.startsWith("ex:")) ExamMech.resolve(this, effect, item)   // Rabid Elephant, Hydroid Krasis (ExamMechanics.kt)
+                else if (effect.kind.startsWith("ex2:")) Exam2Mech.resolve(this, effect, item)   // Kaya's Ghostform (Exam2Mechanics.kt)
                 else if (effect.kind.startsWith("ns:")) NewSetMech.resolve(this, effect, item)   // empower Jace, recruit, increment, opus … (NewSetMechanics.kt)
                 else NewMech.resolve(this, effect, item) { onEvent(GameEvent.EntersBattlefield(it)) }   // adapt, learn, mobilize, offspring, gift … (NewMechanics.kt)
             is Effect.CantCastThisTurn -> {
@@ -4857,7 +4866,7 @@ class Engine(val state: GameState) {
                     trace.step("${o.name} enters with $n ${e.kind} counter${if (n == 1) "" else "s"} on it, counted as it enters.", "614.1c", "122.6")
                     state.outcomes += "${o.name} enters with $n ${e.kind} counter${if (n == 1) "" else "s"}." }
             } else if (e.count != null) { val n = countersPlaced(o, e.count, e.kind); o.counters[e.kind] = (o.counters[e.kind] ?: 0) + n; trace.step("${o.name} enters with $n ${e.kind} counter${if (n > 1) "s" else ""} on it.", "614.1c", "122.6") }
-                else if (o.x != null) { val n = countersPlaced(o, o.x!!, e.kind); o.counters[e.kind] = (o.counters[e.kind] ?: 0) + n; trace.step("${o.name} enters with $n ${e.kind} counter${if (n == 1) "" else "s"} on it (X was ${o.x}).", "614.1c", "107.3a"); state.outcomes += "${o.name} enters with $n ${e.kind} counter${if (n == 1) "" else "s"}." }
+                else if (o.x != null) { val n = countersPlaced(o, o.x!!, e.kind); o.counters[e.kind] = (o.counters[e.kind] ?: 0) + n; trace.step("${o.name} enters with $n ${e.kind} counter${if (n == 1) "" else "s"} on it (X was ${o.x}).", "614.1c", "107.3a"); state.outcomes += "${o.name} enters with $n ${e.kind} counter${if (n == 1) "" else "s"}." + Exam2Mech.chaliceNote(o, n, o.x!!) }
                 else { state.clarifications += Clarification("${o.name}'s X", "${o.name} enters with X ${e.kind} counters; what was X?") }
             else -> {}
         }
@@ -4918,6 +4927,9 @@ class Engine(val state: GameState) {
 
     /** Destruction with regeneration (701.19a, 614.8): returns true if the destruction was replaced. */
     private fun destroy(obj: GameObject, text: String, vararg rules: String, canRegenerate: Boolean = true): Boolean {
+        state.moonOn(obj)?.takeIf { obj.def.has("indestructible") }?.let { m ->   // "They have Blood Moon and Shatter my Darksteel Citadel"
+            trace.step("${obj.name} would be indestructible, but ${m.name} has taken away every ability from its rules text, indestructible included, so it can be destroyed.", "305.7", "702.12b")
+            state.outcomes += "${obj.name} isn't indestructible under ${m.name} (305.7): it's destroyed." }
         if (obj.has("indestructible")) { trace.step("${obj.name} is indestructible and can't be destroyed.", "702.12b"); state.outcomes += "${obj.name} is indestructible and isn't destroyed."; return true }
         if (CoverageMech.umbraSaves(this, obj) != null) return true   // Hyena Umbra: the Aura is destroyed instead (702.89a, CoverageMechanics.kt)
         // A shield counter: instead of being destroyed, the permanent loses a shield counter (122.1c).
@@ -5164,7 +5176,8 @@ class Engine(val state: GameState) {
             is Ref.Player -> { val p = state.player(target.id)
                 if (amount > 0) p.damagedThisTurn = true
                 if (amount > 0 && inCombatDamage) MoreEffects2.combatDamaged(state, p.id)   // Tymna (MoreEffects2.kt)
-                if (infect) { val got = MoreEffects2.playerCounters(this, p.id, amount, "poison"); p.poison += got; trace.step("$sourceName ${if (unlifeInfect != null && source?.has("infect") != true) "is treated as having infect" else "has infect"}, so instead of losing life ${if (p.you) "you get" else p.name + " gets"} $got poison counter${if (got > 1) "s" else ""} (${p.poison} total).", "702.90b", "120.3b"); poisonLine(p) }
+                if (infect && MoreEffects.poisonBlocked(this, p.id, amount)) Unit   // Melira, Solemnity: infect damage to a player who can't get poison counters is wasted
+                else if (infect) { val got = MoreEffects2.playerCounters(this, p.id, amount, "poison"); p.poison += got; trace.step("$sourceName ${if (unlifeInfect != null && source?.has("infect") != true) "is treated as having infect" else "has infect"}, so instead of losing life ${if (p.you) "you get" else p.name + " gets"} $got poison counter${if (got > 1) "s" else ""} (${p.poison} total).", "702.90b", "120.3b"); poisonLine(p) }
                 else if (!LifeDmgMech.lossBlocked(this, p, amount, sourceName)) { p.life = p.life?.minus(amount); trace.step("$sourceName deals $amount damage to ${if (p.you) "you" else p.name}, ${if (p.you) "and you lose" else "who loses"} $amount life${p.life?.let { " ($it)" } ?: ""}.", "120.3a"); state.outcomes += "${p.subject} ${p.v("takes", "take")} $amount damage."; lifeLost(p, amount) }
                 val toxic = source?.takeIf { inCombatDamage }?.let { src -> Regex("""\bToxic (\d+)""").findAll(src.rulesText).sumOf { it.groupValues[1].toInt() } } ?: 0
                 if (source?.commander == true && inCombatDamage) { val total = (p.commanderDamage[source.id] ?: 0) + amount; p.commanderDamage[source.id] = total; trace.step("${source.name} is a commander: ${if (p.you) "you have" else p.name + " has"} now been dealt $total combat damage by it this game (21 or more loses the game).", "903.10a"); state.outcomes += "${p.subject} ${p.v("has", "have")} taken $total commander damage from ${source.name}." }
@@ -5333,7 +5346,8 @@ class Engine(val state: GameState) {
             val saga = "Saga" in land.def.subtypes
             val mt = DeepMech.moonType(moon)
             trace.step("${moon.name} makes ${land.name} ${if (mt == "Island") "an" else "a"} $mt: it loses its other land types and every ability from its rules text${if (saga) ", chapter abilities included," else ""} and has only \"{T}: Add ${DeepMech.manaOf(mt)}\" (a type-changing effect, layer 4).${if (saga) " It's still an enchantment and a Saga; its lore counters stay, and with no chapter abilities it is neither sacrificed nor able to do anything." else ""}${CoverageMech.nonbasicNote(land)}", "613.1d", "305.7", *CoverageMech.nonbasicCite(land), *(if (saga) arrayOf("715.4") else emptyArray()))
-            state.outcomes += "${land.name} is ${if (mt == "Island") "an" else "a"} $mt with no abilities (${moon.name})."
+            val more = state.subtypesOf(land).filter { it in Layers.landTypes && it != mt }   // a later Dryad of the Ilysian Grove adds types back (613.7)
+            state.outcomes += if (more.isEmpty()) "${land.name} is ${if (mt == "Island") "an" else "a"} $mt with no abilities (${moon.name})." else "${land.name} loses every ability from its rules text (${moon.name})."
             if (land.def.isCreature) {
                 // "They have Blood Moon. I have Dryad Arbor.": a land type set doesn't touch card types or creature types (305.7).
                 val kept = state.subtypesOf(land).filter { it !in Layers.landTypes }
@@ -5378,6 +5392,7 @@ class Engine(val state: GameState) {
             }
         }
         DeepMech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })   // Song of the Dryads (DeepMechanics.kt)
+        Exam2Mech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })   // Spreading Seas against Magus of the Moon (Exam2Mechanics.kt)
         // Type changes that make something a creature, or something else.
         for (e in view.applied[4].orEmpty()) {
             val eff = e.effect as? StaticEffect.BecomesType ?: continue
@@ -5416,7 +5431,9 @@ class Engine(val state: GameState) {
             val last = setters.last(); val pt = c.basePt ?: continue
             val prev = c.ptHistory.getOrNull(c.ptHistory.size - 2)
             step("${setters.joinToString(" and ") { it.label }} each set ${o.name}'s base power and toughness in layer 7b, and neither depends on the other, so they apply in timestamp order (613.4b, 613.7): ${setters.first().source.name} has the earlier timestamp, so ${last.label}'s applies last and ${o.name}'s base power and toughness are ${pt.first}/${pt.second}.", "613.4b", "613.7")
-            if (!state.timestampsStated && setters.all { it.fromStatic } && prev != null && prev.second != pt)
+            // "Humility is out. I cast Opalescence.": a permanent that entered during the events has the later timestamp, nothing to assume.
+            val enteredHere = trace.steps.any { it.text.startsWith("${last.source.name} resolves and enters the battlefield") }
+            if (!state.timestampsStated && !enteredHere && setters.all { it.fromStatic } && prev != null && prev.second != pt)
                 state.assumptions += "Which of ${setters.first().source.name} and ${last.source.name} entered the battlefield first wasn't said; they're taken in the order named. Had ${last.source.name} entered first, ${o.name} would be ${prev.second.first}/${prev.second.second}."
             out("${o.name} is ${describeLayered(o)}.")
         }
@@ -5658,7 +5675,11 @@ class Engine(val state: GameState) {
     fun manaOptions(objectId: String): String {
         val o = state.obj(objectId)
         val moon = state.moonOn(o)
-        if (moon != null) return "${o.name} is a Mountain under ${moon.name}, so it taps for {R} and nothing else."
+        // Blood Moon, then Dryad of the Ilysian Grove: the later effect gives it every basic land type back, and each brings its mana ability (305.6).
+        val basicMana = listOf("Plains" to "{W}", "Island" to "{U}", "Swamp" to "{B}", "Mountain" to "{R}", "Forest" to "{G}").filter { it.first in state.subtypesOf(o) }
+        if (moon != null && basicMana.size > 1) return "${o.name} has no abilities from its own rules text under ${moon.name}, but it's ${basicMana.joinToString(" ") { it.first }}, so it taps for ${basicMana.joinToString(" or ") { it.second }}."
+        if (moon != null) { val t = basicMana.firstOrNull() ?: (DeepMech.moonType(moon) to DeepMech.manaOf(DeepMech.moonType(moon)))
+            return "${o.name} is ${if (t.first == "Island") "an" else "a"} ${t.first} under ${moon.name}, so it taps for ${t.second} and nothing else." }
         val mana = activatedAbilitiesOf(o).filter { a -> isManaEffect(a.effect) }
         if (mana.isEmpty()) return "${o.name} has no mana ability the engine recognises."
         // "Add {B} for each Swamp you control" is more useful with the count worked out for the board described.
@@ -6045,7 +6066,7 @@ class Engine(val state: GameState) {
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
         is More3 -> MoreEffects3.describe(effect, item.source.name)   // MoreEffects3.kt
-        is Effect.NewMech -> if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
+        is Effect.NewMech -> if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex2:")) Exam2Mech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"
