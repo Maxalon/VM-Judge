@@ -82,7 +82,7 @@ internal object AuditMech {
         val agent = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller != searcher && state.abilitiesLostOn(it) == null &&
             it.rulesText.contains("control your opponents while they're searching their libraries", true) } ?: return false
         val p = state.player(searcher); val a = state.player(agent.controller)
-        state.trace.step("${agent.name}: ${a.subject.lowercase()} ${a.v("controls", "control")} ${p.subject.lowercase()} while ${p.subject.lowercase()} ${p.v("searches", "search")}, so ${a.subject.lowercase()} ${a.v("makes", "make")} the search's choices, and the card found, ${found.name}, is exiled instead of being put onto the battlefield.", "723.2", "723.5", "608.2c")
+        state.trace.step("${agent.name}: ${a.subject.lowercase()} ${a.v("controls", "control")} ${p.subject.lowercase()} while ${p.subject.lowercase()} ${p.v("searches", "search")}, so ${a.subject.lowercase()} ${a.v("makes", "make")} the search's choices, and the card found, ${found.name}, is exiled instead of being put onto the battlefield.", "724.2", "724.5", "608.2c")
         found.zone = Zone.EXILE; found.exiledBy = agent.id
         val land = "Land" in found.def.types
         state.trace.step("${a.subject} may play ${found.name} for as long as it stays exiled${if (land) "; playing a land this way uses ${a.possessive} own land drop and follows the normal timing for playing a land (${a.possessive} main phase, empty stack)" else ""}.", *(if (land) arrayOf("305.2", "305.1") else arrayOf("601.2")))

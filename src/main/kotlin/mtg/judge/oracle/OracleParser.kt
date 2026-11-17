@@ -60,7 +60,7 @@ object OracleParser {
                 lines += header + " " + modes.joinToString(" ") { "• $it" }
                 i0 = j
             } else if (Regex("""^(?:I|II|III|IV|V|VI)(?:, (?:I|II|III|IV|V|VI))* — .+$""").matches(l.trim())) {
-                // "I, II — Draw a card." / "III — Search your library…": one chapter ability per numeral (714.2).
+                // "I, II — Draw a card." / "III — Search your library…": one chapter ability per numeral (715.2).
                 val (nums, text) = l.trim().split(" — ", limit = 2).let { it[0] to it[1] }
                 for (num in nums.split(", ")) lines += "When chapter ${mapOf("I" to 1, "II" to 2, "III" to 3, "IV" to 4, "V" to 5, "VI" to 6)[num]}, $text"
                 i0++
@@ -911,8 +911,8 @@ object OracleParser {
         }
         if (Regex("""^(LEVEL \d+.*|\d+/\d+|\{[^}]+\}(?:\{[^}]+\})* — \d+/\d+.*)$""").matches(line)) return listOf(StaticEffect.Note(line, listOf("702.87a")))
         // Opposition Agent: played out where a search puts a card onto the battlefield (AuditMech.agentTakesSearch).
-        if (Regex("""^You control your opponents while they're searching their libraries\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("723.2", "723.5")))
-        if (Regex("""^While an opponent is searching their library, they exile each card they find\. You may play those cards for as long as they remain exiled.*$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("723.2")))
+        if (Regex("""^You control your opponents while they're searching their libraries\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("724.2", "724.5")))
+        if (Regex("""^While an opponent is searching their library, they exile each card they find\. You may play those cards for as long as they remain exiled.*$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("724.2")))
         if (Regex("""^If ~ is in your opening hand, you may begin the game with it on the battlefield\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("103.6")))
         // Chains of Mephistopheles: a draw replacement the engine applies where cards are drawn (LegacyMech.chainsReplacesDraws).
         if (Regex("""^If a player would draw a card except the first one they draw in each of their draw steps, that player discards a card instead\..*$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("614.1a", "121.6")))

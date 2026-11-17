@@ -58,22 +58,22 @@ internal object NewSetAsks {
                 engine?.leave(back.id, mtg.judge.engine.Zone.HAND)
                 state.outcomes += "${back.name} returns to its owner's hand to pay ${def.name}'s sneak cost (702.190a)."
             }
-            // The copy of a prepared creature's prepare spell, cast from exile; casting it unprepares the creature (722.3c, 601.2i).
+            // The copy of a prepared creature's prepare spell, cast from exile; casting it unprepares the creature (723.3c, 601.2i).
             "prepare" -> {
                 val holder = state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller == player && it.printedDef.oracleId == def.oracleId && NewSetMech.isPrepared(it) }
                     ?: state.objects.values.firstOrNull { it.isOnBattlefield() && it.printedDef.oracleId == def.oracleId }
                 if (holder == null || !NewSetMech.isPrepared(holder) || holder.controller != player) {
                     val spellName = holder?.let { state.backFaceOf?.invoke(it.printedDef)?.name } ?: def.name
-                    t.step("A prepare spell can't be cast from the card itself: only the copy created in exile while a permanent with that prepare spell is prepared can be cast, and only by that permanent's controller. ${holder?.let { "${it.name} isn't prepared" } ?: "No such permanent is prepared"}, so there is no $spellName to cast.", "722.3", "722.3c")
-                    state.outcomes += "No: $spellName can be cast only as the copy a prepared ${holder?.name ?: "creature"} gives ${p.subject.lowercase()} in exile, and ${holder?.name ?: "none"} isn't prepared (722.3c)."
+                    t.step("A prepare spell can't be cast from the card itself: only the copy created in exile while a permanent with that prepare spell is prepared can be cast, and only by that permanent's controller. ${holder?.let { "${it.name} isn't prepared" } ?: "No such permanent is prepared"}, so there is no $spellName to cast.", "723.3", "723.3c")
+                    state.outcomes += "No: $spellName can be cast only as the copy a prepared ${holder?.name ?: "creature"} gives ${p.subject.lowercase()} in exile, and ${holder?.name ?: "none"} isn't prepared (723.3c)."
                     if (obj.zone == mtg.judge.engine.Zone.HAND && obj !== holder) state.objects.remove(obj.id)
                     return plain.copy(verb = "statecheck", obj = null)
                 }
                 val copy = NewSetMech.preparedCopy(holder)!!
                 if (obj.zone == mtg.judge.engine.Zone.HAND && obj !== holder && obj !== copy) state.objects.remove(obj.id)
-                t.step("${p.subject} ${p.v("casts", "cast")} the copy of ${copy.name} that ${holder.name} put in exile when it became prepared. It's cast like any spell (paying its mana cost ${copy.def.manaCost ?: "{0}"}), from exile; it isn't cast for an alternative cost.", "722.3c", "601.2")
-                NewSetMech.unprepare(state, holder, "its prepare spell's copy became cast", arrayOf("722.3c", "601.2i"), cast = true)
-                state.outcomes += "${holder.name} is no longer prepared: casting ${copy.name} unprepared it (722.3c)."
+                t.step("${p.subject} ${p.v("casts", "cast")} the copy of ${copy.name} that ${holder.name} put in exile when it became prepared. It's cast like any spell (paying its mana cost ${copy.def.manaCost ?: "{0}"}), from exile; it isn't cast for an alternative cost.", "723.3c", "601.2")
+                NewSetMech.unprepare(state, holder, "its prepare spell's copy became cast", arrayOf("723.3c", "601.2i"), cast = true)
+                state.outcomes += "${holder.name} is no longer prepared: casting ${copy.name} unprepared it (723.3c)."
                 return plain.copy(obj = copy.id, card = null)
             }
         }
@@ -91,7 +91,7 @@ internal object NewSetAsks {
             "story" -> NewSetMech.flags(state)["story:$player"] = 1
             // "I recruit, discarding a Forest": the card the next recruit discards (701.70a).
             "recruitdiscard" -> e.card?.let(cardDef)?.let { NewSetMech.cards(state)["recruit:$player"] = it }
-            // "My Diviner of Victory is prepared" (722.3a).
+            // "My Diviner of Victory is prepared" (723.3a).
             "prepared" -> state.objects[e.obj ?: return]?.let { if (!NewSetMech.isPrepared(it)) NewSetMech.prepare(state, it, "as the situation says") }
             // "I activated its power-up last turn" (702.193a); "it entered this turn".
             "poweredup" -> state.objects[e.obj ?: return]?.let { NewSetMech.flags(it)["poweredUp"] = 1 }
@@ -146,11 +146,11 @@ internal object NewSetAsks {
                 engine.narrateLayers(tok)
                 state.outcomes += "The ${tok.name} is ${state.describePt(tok)}."
             }
-            // "Is Diviner of Victory still prepared?" (722.3a–c).
+            // "Is Diviner of Victory still prepared?" (723.3a–c).
             "prepared" -> {
                 val x = o ?: return false
-                state.outcomes += if (NewSetMech.isPrepared(x)) "Yes: ${x.name} is prepared${NewSetMech.preparedCopy(x)?.let { c -> "; the copy of ${c.name} waits in exile for ${state.player(x.controller).subject.lowercase()} to cast" } ?: ""} (722.3c)."
-                    else "No: ${x.name} isn't prepared${if (state.backFaceOf?.invoke(x.printedDef) == null) " (it has no prepare spell, 722.3a)" else ""}."
+                state.outcomes += if (NewSetMech.isPrepared(x)) "Yes: ${x.name} is prepared${NewSetMech.preparedCopy(x)?.let { c -> "; the copy of ${c.name} waits in exile for ${state.player(x.controller).subject.lowercase()} to cast" } ?: ""} (723.3c)."
+                    else "No: ${x.name} isn't prepared${if (state.backFaceOf?.invoke(x.printedDef) == null) " (it has no prepare spell, 723.3a)" else ""}."
             }
             // "How much does its power-up ability cost?" (702.193a, 702.193b, 118.7).
             "powerupcost" -> {

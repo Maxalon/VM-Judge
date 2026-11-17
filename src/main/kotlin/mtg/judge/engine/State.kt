@@ -236,7 +236,7 @@ class GameState(
     val objects: LinkedHashMap<String, GameObject>,
     val stack: MutableList<StackItem> = mutableListOf(),
     var activePlayer: String? = null,
-    /** The player who is the monarch, if any (725.1). No monarch until an effect makes one. */
+    /** The player who is the monarch, if any (726.1). No monarch until an effect makes one. */
     var monarch: String? = null,
     /** The creature whose attack began combat, while "at the beginning of combat" triggers choose their targets. */
     var combatAttackerHint: String? = null,
@@ -282,7 +282,7 @@ class GameState(
     var firstStrikers: Set<String>? = null
     /** Of those, the ones that had double strike as the first-strike step began (702.4c, 702.4d). */
     var doubleStrikersAtStart: Set<String> = emptySet()
-    /** A loop of mandatory actions repeated with no way to stop it: the game is a draw (104.4b, 732.4). */
+    /** A loop of mandatory actions repeated with no way to stop it: the game is a draw (104.4b, 733.4). */
     var gameDrawn = false
     /** Choices made among several legal options while resolving (an Aura choosing what to enchant): a loop with one isn't mandatory. */
     var choicesMade = 0

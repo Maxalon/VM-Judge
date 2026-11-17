@@ -33,12 +33,12 @@ object RulesAnswers {
 
     // Longest (most specific) first: the first entry whose terms are all present wins.
     private val entries: List<Entry> = listOf(
-        // Loops and shortcuts: how a loop is shown and taken (732.1b–732.2c), and when a loop is a draw (732.4).
-        e("demonstrate + loop", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("show + loop", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("loop + tournament", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("shortcut + loop", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("mandatory + loop", "If a loop is made only of mandatory actions and nothing can stop it, the game is a draw. A loop with even one optional action in it isn't a draw: the player with that choice ends it by choosing differently, and nobody can be forced to take an action outside the loop to end it.", "732.4", "104.4b", "732.5"),
+        // Loops and shortcuts: how a loop is shown and taken (733.1b–733.2c), and when a loop is a draw (733.4).
+        e("demonstrate + loop", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("show + loop", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("loop + tournament", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("shortcut + loop", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("mandatory + loop", "If a loop is made only of mandatory actions and nothing can stop it, the game is a draw. A loop with even one optional action in it isn't a draw: the player with that choice ends it by choosing differently, and nobody can be forced to take an action outside the loop to end it.", "733.4", "104.4b", "733.5"),
         e("any target + planeswalker", "Yes. \"Any target\" means a creature, a player, a planeswalker or a battle, so a spell like Lightning Bolt can target a planeswalker directly; damage dealt to a planeswalker removes that many loyalty counters.", "115.4", "306.8"),
         e("oracle + trigger + draw", "Yes. Thassa's Oracle's ability triggers when it enters and goes on the stack, and opponents get priority before it resolves. If they make you draw from an empty library in response, you lose the game the next time state-based actions are checked, before the trigger resolves. If your library is small but not empty, drawing cards in response just makes it smaller, which only helps the Oracle.", "603.3", "117.4", "704.5b"),
         e("color identity + text", "Yes. A card's color identity is every color in its mana cost plus every color of mana symbol in its rules text (hybrid and Phyrexian symbols included), plus any color indicator. Reminder text doesn't count. Your deck can contain only cards whose color identity is within your commander's.", "903.4", "903.5c"),

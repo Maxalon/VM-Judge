@@ -34,7 +34,7 @@ class KeywordFlags {
     /** Cast from a graveyard with escape (702.138b); [escapeIntent] is set by the cast and read as the spell is put on the stack. */
     var escaped = false
     var escapeIntent = false
-    /** Cast as an Adventure and now waiting in exile to be cast as the creature (715.3d). */
+    /** Cast as an Adventure and now waiting in exile to be cast as the creature (716.3d). */
     var onAdventure = false
     var castAsAdventure = false
     /** Cards that merged with this permanent (mutate, 730): their names and their own definitions. */
@@ -73,7 +73,7 @@ fun costMv(cost: String?): Int = cost?.let { Regex("""\{([^}]+)\}""").findAll(it
 fun Engine.keywordResolutionZone(item: StackItem): Zone? {
     val src = item.source
     if (src.token || item.flashback) return null
-    // A spell that was spliced or cast as an Adventure has the text or characteristics it gained only while it's on the stack (702.47e, 715.4).
+    // A spell that was spliced or cast as an Adventure has the text or characteristics it gained only while it's on the stack (702.47e, 716.4).
     if (src.def !== src.printedDef && (src.kwf.spliced.isNotEmpty() || src.kwf.castAsAdventure)) src.def = src.printedDef
     if (src.kwf.castAsAdventure) return Zone.EXILE
     NewSetMech.resolutionZone(src)?.let { return it }   // paradigm exiles the spell (NewSetMechanics.kt)
@@ -99,8 +99,8 @@ fun Engine.keywordResolutionNote(item: StackItem, zone: Zone) {
         state.outcomes += "${def.name} is exiled (jump-start, 702.133a)."
     } else if (zone == Zone.EXILE && src.kwf.castAsAdventure) {
         src.kwf.castAsAdventure = false; src.kwf.onAdventure = true
-        state.trace.step("The Adventure spell finishes resolving. Instead of putting it into its owner's graveyard, its controller exiles it, and for as long as it stays in exile that player may cast the creature card from there.", "715.3d", "608.2n")
-        state.outcomes += "${src.printedDef.name} goes to exile instead of the graveyard. Yes: ${owner.subject.lowercase()} may cast it as the creature from exile on a later turn (715.3d), but not as the Adventure again."
+        state.trace.step("The Adventure spell finishes resolving. Instead of putting it into its owner's graveyard, its controller exiles it, and for as long as it stays in exile that player may cast the creature card from there.", "716.3d", "608.2n")
+        state.outcomes += "${src.printedDef.name} goes to exile instead of the graveyard. Yes: ${owner.subject.lowercase()} may cast it as the creature from exile on a later turn (716.3d), but not as the Adventure again."
     } else if (zone == Zone.EXILE && LegacyMech.exileOnResolve(src) != null) {
         val by = LegacyMech.exileOnResolve(src)
         state.trace.step("${def.name} finishes resolving and would be put into ${owner.possessive} graveyard, but $by's ability said \"If that spell would be put into your graveyard, exile it instead\", so it's exiled. It can't be cast from the graveyard again.", "614.1a", "608.2n")

@@ -503,7 +503,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "monarch" -> {
                 val p = state.player(e.player ?: throw JudgeException("monarch needs a player"))
                 state.monarch = p.id
-                state.trace.step("${p.subject} ${p.v("is", "are")} the monarch: at the beginning of ${p.possessive} end step ${p.subject.lowercase()} ${p.v("draws", "draw")} a card, and whoever deals combat damage to ${p.subject.lowercase()} becomes the monarch instead.", "725.1", "725.2")
+                state.trace.step("${p.subject} ${p.v("is", "are")} the monarch: at the beginning of ${p.possessive} end step ${p.subject.lowercase()} ${p.v("draws", "draw")} a card, and whoever deals combat damage to ${p.subject.lowercase()} becomes the monarch instead.", "726.1", "726.2")
             }
             // "my Grizzly Bears becomes a 4/4 until end of turn": a base size set outright (layer 7b), so counters
             // and +N/+N effects still apply on top of it.
@@ -544,7 +544,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val card = cards.byOracleId(o.def.oracleId)
                 val back = card?.let { toFaceDef(it, 1) }
                 if (back == null) state.clarifications += mtg.judge.engine.Clarification("${o.name}'s other face", "${o.name} has no back face to transform to.")
-                else { val was = o.name; o.def = back; o.transformed = true; state.trace.step("$was is transformed: it's now ${back.name}${if (back.isCreature) " (${back.power}/${back.toughness})" else ""}, with the back face's characteristics (712.8e).", "712.8e"); state.outcomes += "$was is transformed into ${back.name}." }
+                else { val was = o.name; o.def = back; o.transformed = true; state.trace.step("$was is transformed: it's now ${back.name}${if (back.isCreature) " (${back.power}/${back.toughness})" else ""}, with the back face's characteristics (712.6d).", "712.6d"); state.outcomes += "$was is transformed into ${back.name}." }
             }
             "blink" -> { val o = state.obj(e.obj ?: throw JudgeException("blink needs an object")); engine.blinkObject(o, e.player ?: o.controller) }
             "reanimate" -> { val o = state.obj(e.obj ?: throw JudgeException("reanimate needs an object")); engine.reanimateObject(o, e.player ?: o.owner) }
@@ -1264,13 +1264,13 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         // Scrap Trawler, Myr Retriever: a loop through the hand (return a card, cast it again) isn't played out here.
         val toHand = mine.filter { Regex("""(?i)\breturn\b[^.]*\bto (?:your|its owner's) hand\b""").containsMatchIn(it.def.oracleText) }
         if (toHand.isNotEmpty()) {
-            state.trace.step("A loop on this board would have to go through the hand: ${toHand.joinToString(" and ") { it.name }} return cards to your hand, to be cast again. The loop check plays out free activations and triggers on the battlefield only.", "732.1b")
-            state.outcomes += "Not answered: whether this loops, and whether it nets mana, depends on ${toHand.joinToString(" and ") { it.name }} returning artifact cards to your hand and you casting them again, and that part isn't modeled. Count it out by hand: a loop is only infinite if each time round ends where it started with something left over (732.1b)."
+            state.trace.step("A loop on this board would have to go through the hand: ${toHand.joinToString(" and ") { it.name }} return cards to your hand, to be cast again. The loop check plays out free activations and triggers on the battlefield only.", "733.1b")
+            state.outcomes += "Not answered: whether this loops, and whether it nets mana, depends on ${toHand.joinToString(" and ") { it.name }} returning artifact cards to your hand and you casting them again, and that part isn't modeled. Count it out by hand: a loop is only infinite if each time round ends where it started with something left over (733.1b)."
             state.unsupported += mtg.judge.engine.Unsupported("loop", "Loops that return cards to hand and cast them again aren't played out.")
             return
         }
-        state.trace.step("No sequence of actions on this board comes back to the position it started from with something gained, so there is no loop to shortcut.", "732.1b")
-        state.outcomes += "No: nothing described here forms a loop. A loop is a set of actions that can be repeated because each time round the game comes back to where it started (732.1b); none of what's on this board does that${if (state.unsupported.isNotEmpty()) ", as far as the modeled card text goes (the cards whose text isn't modeled are listed below)" else ""}."
+        state.trace.step("No sequence of actions on this board comes back to the position it started from with something gained, so there is no loop to shortcut.", "733.1b")
+        state.outcomes += "No: nothing described here forms a loop. A loop is a set of actions that can be repeated because each time round the game comes back to where it started (733.1b); none of what's on this board does that${if (state.unsupported.isNotEmpty()) ", as far as the modeled card text goes (the cards whose text isn't modeled are listed below)" else ""}."
         // Grindstone with Painter's Servant: one activation that repeats inside itself, not a loop of actions.
         val painter = state.objects.values.firstOrNull { o -> o.isOnBattlefield() && o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.EverythingIsChosenColour } }
         fun mills(e: Effect?): Effect.Mill? = when (e) { is Effect.Mill -> e; is Effect.Seq -> e.effects.firstNotNullOfOrNull { mills(it) }; else -> null }
@@ -1302,10 +1302,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         }
         val steady = found.rounds.last()
         val cap = found.sentence.replaceFirstChar { it.uppercase() }
-        state.trace.step("Played once on a copy of the board, from the position it repeats from, one round of the loop goes like this:", "732.1b")
+        state.trace.step("Played once on a copy of the board, from the position it repeats from, one round of the loop goes like this:", "733.1b")
         state.trace.steps += steady.after.trace.steps
         val pieces = found.candidate.pieces.toList()
-        state.trace.step("After that round the board is back where it started (${pieces.joinToString(" and ")} ${if (pieces.size == 1) "is back as it was" else "are back as they were"}, ready to go again), and ${found.gainText}. A set of actions that returns to the same position can be repeated as many times as a player likes; a player shortcuts it by naming the number of times (732.1b, 732.2a). Each repetition starts with an action the player chooses to take, so it isn't a loop of mandatory actions and never makes the game a draw (104.4b).", "732.1b", "732.2a", "104.4b")
+        state.trace.step("After that round the board is back where it started (${pieces.joinToString(" and ")} ${if (pieces.size == 1) "is back as it was" else "are back as they were"}, ready to go again), and ${found.gainText}. A set of actions that returns to the same position can be repeated as many times as a player likes; a player shortcuts it by naming the number of times (733.1b, 733.2a). Each repetition starts with an action the player chooses to take, so it isn't a loop of mandatory actions and never makes the game a draw (104.4b).", "733.1b", "733.2a", "104.4b")
         val firstNote = found.firstGainText?.let { " The first time round is different ($it, and it doesn't end where it started); from the second time on it repeats exactly." } ?: ""
         // A life total that was said tells how many rounds it takes.
         val oppLife = state.opponentsOf(e.player ?: "me").firstOrNull()?.let { o -> o.life?.takeIf { it > 0 }?.let { l -> (steady.gain.life[o.id] ?: 0).takeIf { it < 0 }?.let { g ->
@@ -1313,7 +1313,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             val d = -g; val firstD = if (found.firstGainText != null) -(found.rounds.first().gain.life[o.id] ?: 0) else d
             val n = if (l <= firstD) 1 else 1 + (l - firstD + d - 1) / d
             " ${o.name.replaceFirstChar { it.uppercase() }} is at $l life, so $n time${if (n == 1) "" else "s"} round ${if (n == 1) "is" else "are"} enough." } } } ?: ""
-        val repeat = "The loop: ${found.sentence}. The board comes back to the same position and ${found.gainText}, so it's a loop you can repeat as many times as you like: name a number and that many repetitions happen (732.1b, 732.2a).$firstNote$oppLife Every repetition is your choice, so it isn't a mandatory loop and can't make the game a draw (104.4b); you stop whenever you want."
+        val repeat = "The loop: ${found.sentence}. The board comes back to the same position and ${found.gainText}, so it's a loop you can repeat as many times as you like: name a number and that many repetitions happen (733.1b, 733.2a).$firstNote$oppLife Every repetition is your choice, so it isn't a mandatory loop and can't make the game a draw (104.4b); you stop whenever you want."
         val opp = state.opponentsOf(e.player ?: "me").firstOrNull()
         val oppHurt = opp != null && (steady.gain.life[opp.id] ?: 0) < 0
         val myLife = (steady.gain.life[e.player ?: "me"] ?: 0) > 0

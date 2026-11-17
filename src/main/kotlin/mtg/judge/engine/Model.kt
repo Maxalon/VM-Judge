@@ -129,7 +129,7 @@ sealed interface Trigger {
     data class CountersPutOnThis(val kind: String, val atLeast: Int = 1) : Trigger
     /** Dark Depths: "When ~ has no ice counters on it" — a state trigger, once the last counter goes (603.8). */
     data class NoCountersOnThis(val kind: String) : Trigger
-    /** A Saga's chapter ability: triggers as the lore counter that reaches that number is put on it (714.2, 714.3c). */
+    /** A Saga's chapter ability: triggers as the lore counter that reaches that number is put on it (715.2, 715.3c). */
     data class Chapter(val n: Int) : Trigger
     /** Battalion: "~ and at least two other creatures attack" — ~ has to be one of them (702.101a). */
     data class ThisAndNOthersAttack(val others: Int) : Trigger

@@ -232,7 +232,7 @@ internal object EdhMech {
         return true
     }
 
-    /** 725.4: the monarch leaving the game passes the crown to the active player, or the next player in turn order. */
+    /** 726.4: the monarch leaving the game passes the crown to the active player, or the next player in turn order. */
     fun monarchLeaves(state: GameState, p: Player) {
         if (state.monarch != p.id) return
         val seats = state.players.filter { !it.lost || it.id == p.id }
@@ -242,9 +242,9 @@ internal object EdhMech {
             (seats.dropWhile { it.id != from }.drop(1) + seats.takeWhile { it.id != from }).firstOrNull { it.id != p.id && !it.lost }
         }
         state.monarch = next?.id
-        if (next == null) { state.trace.step("${p.subject} was the monarch and ${p.v("leaves", "leave")} the game; nobody is left to become the monarch.", "725.4"); return }
-        state.trace.step("${p.subject} ${p.v("is", "are")} the monarch and ${p.v("leaves", "leave")} the game, so ${if (ap != null && ap != p.id) "the active player, ${nm(next)}," else "the next player in turn order, ${nm(next)},"} ${next.v("becomes", "become")} the monarch at the same time. No creature had to deal combat damage for it.", "725.4")
-        state.outcomes += "${next.subject} ${next.v("becomes", "become")} the monarch (${nm(p)} left the game as the monarch, 725.4)."
+        if (next == null) { state.trace.step("${p.subject} was the monarch and ${p.v("leaves", "leave")} the game; nobody is left to become the monarch.", "726.4"); return }
+        state.trace.step("${p.subject} ${p.v("is", "are")} the monarch and ${p.v("leaves", "leave")} the game, so ${if (ap != null && ap != p.id) "the active player, ${nm(next)}," else "the next player in turn order, ${nm(next)},"} ${next.v("becomes", "become")} the monarch at the same time. No creature had to deal combat damage for it.", "726.4")
+        state.outcomes += "${next.subject} ${next.v("becomes", "become")} the monarch (${nm(p)} left the game as the monarch, 726.4)."
     }
 
     /**

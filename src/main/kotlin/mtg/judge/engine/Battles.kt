@@ -3,7 +3,7 @@ package mtg.judge.engine
 /**
  * Battles (310). "I attack Invasion of Gobakhan with a 3/3": damage dealt to a battle removes that many defense counters
  * (120.3h, 310.6). A Siege whose last defense counter is removed triggers its intrinsic ability (310.12b): its controller
- * exiles it, then may cast it transformed without paying its mana cost (712.11a), so it comes back as its back face. A
+ * exiles it, then may cast it transformed without paying its mana cost (712.8a), so it comes back as its back face. A
  * battle left at 0 defense otherwise goes to its owner's graveyard as a state-based action (704.5v, 704.5w).
  */
 internal object Battles {
@@ -36,7 +36,7 @@ internal object Battles {
             if (back == null) { state.outcomes += "${o.name} is defeated and exiled; ${who.subject.lowercase()} may cast it transformed without paying its mana cost (310.12b)."; any = true; continue }
             o.def = back; o.transformed = true
             state.assumptions += "${who.subject} ${who.v("casts", "cast")} ${back.name} (the back face) when the Siege ability offers it; it's optional (310.12b)."
-            move(o, Zone.BATTLEFIELD, "${who.subject} ${who.v("casts", "cast")} it transformed, without paying its mana cost: it's put on the stack with its back face up as ${back.name} (712.11a), resolves, and enters the battlefield as ${back.name} under ${who.possessive} control.", arrayOf("310.12b", "712.11a"))
+            move(o, Zone.BATTLEFIELD, "${who.subject} ${who.v("casts", "cast")} it transformed, without paying its mana cost: it's put on the stack with its back face up as ${back.name} (712.8a), resolves, and enters the battlefield as ${back.name} under ${who.possessive} control.", arrayOf("310.12b", "712.8a"))
             state.outcomes += "${o.printedDef.name} is defeated: ${who.subject.lowercase()} ${who.v("exiles", "exile")} it and ${who.v("casts", "cast")} it transformed for free, so ${back.name} is on the battlefield."
             any = true
         }

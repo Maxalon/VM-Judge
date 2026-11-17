@@ -103,8 +103,8 @@ internal object MoreEffects3 {
         Regex("""^(each opponent|target player|target opponent|that player) gets? (a|an|one|two|three|\d+) poison counters?$""", I).matchEntire(s)?.let { m ->
             if (m.groupValues[1].lowercase() == "each opponent") return More3("poison", s, listOf("122.1f", "704.5c"), n = num(m.groupValues[2]) ?: 1)
         }
-        // A Class's level bar: "{2}{U}: Level 2" — this Class's level becomes 2 (716.2a).
-        Regex("""^level (\d+)$""", I).matchEntire(s)?.let { m -> return More3("class-level", s, listOf("716.2a"), n = m.groupValues[1].toInt()) }
+        // A Class's level bar: "{2}{U}: Level 2" — this Class's level becomes 2 (717.2a).
+        Regex("""^level (\d+)$""", I).matchEntire(s)?.let { m -> return More3("class-level", s, listOf("717.2a"), n = m.groupValues[1].toInt()) }
         // Boseiju, Who Endures: "This ability costs {1} less to activate for each legendary creature you control." — read as it's activated.
         if (abilityCostRe.matches(s)) return More3("ability-cost", s, listOf("602.2b", "601.2f"))
         return null
@@ -180,7 +180,7 @@ internal object MoreEffects3 {
     private val stationLineRe = Regex("""^(\d+)\+ \| (.+)$""")
     private val gateRe = Regex("""^(?:(\d+)\+|Level (\d+)) \| """)
 
-    /** A station card's "12+ | Flying" (721.2a): the abilities after the bar, kept with the bar in their text so they apply only from N counters on. */
+    /** A station card's "12+ | Flying" (722.2a): the abilities after the bar, kept with the bar in their text so they apply only from N counters on. */
     fun parseAbilityLine(line: String): List<Ability>? {
         val m = stationLineRe.matchEntire(line.trim()) ?: return null
         val rest = m.groupValues[2].trim()
@@ -201,7 +201,7 @@ internal object MoreEffects3 {
         is ActivatedAbility -> a.copy(text = prefix + a.text); is UnparsedAbility -> a.copy(text = prefix + a.text)
     }
 
-    /** A Class (716.2a): each level bar's activated ability gets its restriction, and the abilities below it apply from that level on. */
+    /** A Class (717.2a): each level bar's activated ability gets its restriction, and the abilities below it apply from that level on. */
     fun gateClassLevels(abilities: MutableList<Ability>) {
         var level: Int? = null
         for (i in abilities.indices) {
@@ -221,7 +221,7 @@ internal object MoreEffects3 {
     }
     private fun gatedText(t: String) = t.length > 3 && (t[0].isDigit() || t.startsWith("Level "))
 
-    /** The abilities [o] has right now: a station card's bands and a Class's levels only once reached (721.2a, 716.2a). */
+    /** The abilities [o] has right now: a station card's bands and a Class's levels only once reached (722.2a, 717.2a). */
     fun liveAbilities(o: GameObject, list: List<Ability>): List<Ability> =
         if (list.none { gatedText(it.text) && gateRe.containsMatchIn(it.text) }) list else list.filter { !gatedText(it.text) || gateOpen(o, it.text) }
 
@@ -232,7 +232,7 @@ internal object MoreEffects3 {
     /** A permanent's class level: 1 unless a level bar raised it (716.2d). */
     fun classLevel(o: GameObject): Int = synchronized(classLevels) { classLevels[o] } ?: 1
 
-    /** Types after layer 4, then: an Enduring card returned as an enchantment only; a Spacecraft with enough charge counters is a creature (721.2b). */
+    /** Types after layer 4, then: an Enduring card returned as an enchantment only; a Spacecraft with enough charge counters is a creature (722.2b). */
     fun types(st: GameState, o: GameObject, t: Set<String>): Set<String> {
         if ("Creature" in t) return if (notACreature(st, o) != null) t - "Creature" else t
         if (o.zone != Zone.BATTLEFIELD || o.def.power == null) return t
@@ -362,7 +362,7 @@ internal object MoreEffects3 {
     /** "How big is Ornithopter?" with Cranial Plating on it: the layer 7c step for what its Equipment or Aura counts (613.4c). */
     fun sizeStep(o: GameObject, st: GameState) {
         stationCreatureRe.find(o.def.oracleText)?.groupValues?.get(1)?.toInt()?.let { at -> if ("Creature" !in o.def.types && "Creature" in st.typesOf(o))
-            st.trace.step("${o.name} has ${o.counters["charge"] ?: 0} charge counters, at least the $at of its last station symbol, so it's an artifact creature with its printed power and toughness ${o.def.power}/${o.def.toughness} and the abilities of every band it has reached.", "721.2b", "721.2a") }
+            st.trace.step("${o.name} has ${o.counters["charge"] ?: 0} charge counters, at least the $at of its last station symbol, so it's an artifact creature with its printed power and toughness ${o.def.power}/${o.def.toughness} and the abilities of every band it has reached.", "722.2b", "722.2a") }
         val parts = describeAttachedPt(st, o)
         if (parts.isEmpty()) return
         st.trace.step("${o.name} gets ${parts.joinToString(" and ")}: the count is taken again whenever its size matters, and the bonus applies in layer 7c with the other effects that add to power and toughness.", "613.4c")
@@ -457,14 +457,14 @@ internal object MoreEffects3 {
                 val n = maxOf(0, crew.power ?: 0)
                 st.trace.step("${you.subject} ${you.v("taps", "tap")} ${crew.name} to station $src (the cost), and $src gets charge counters equal to ${crew.name}'s power, $n.", "702.184a")
                 if (n > 0 && o.isOnBattlefield()) e.putCounters(o.id, n, "charge")
-                stationCreatureRe.find(o.def.oracleText)?.groupValues?.get(1)?.toInt()?.let { at -> if ((o.counters["charge"] ?: 0) >= at) st.trace.step("$src now has ${o.counters["charge"]} charge counters, at least $at: it's an artifact creature with its printed power and toughness ${o.def.power}/${o.def.toughness}.", "721.2b") }
+                stationCreatureRe.find(o.def.oracleText)?.groupValues?.get(1)?.toInt()?.let { at -> if ((o.counters["charge"] ?: 0) >= at) st.trace.step("$src now has ${o.counters["charge"]} charge counters, at least $at: it's an artifact creature with its printed power and toughness ${o.def.power}/${o.def.toughness}.", "722.2b") }
             }
             "class-level" -> {
                 val o = item.source; val have = classLevel(o)
-                if (!o.isOnBattlefield()) { st.trace.step("$src has left the battlefield, so its level doesn't change.", "716.2a", "609.3"); return true }
-                if (have != effect.n - 1) { st.trace.step("$src is level $have, and its level ${effect.n} bar can be activated only while it's level ${effect.n - 1}.", "716.2a"); st.outcomes += "$src stays level $have."; return true }
+                if (!o.isOnBattlefield()) { st.trace.step("$src has left the battlefield, so its level doesn't change.", "717.2a", "609.3"); return true }
+                if (have != effect.n - 1) { st.trace.step("$src is level $have, and its level ${effect.n} bar can be activated only while it's level ${effect.n - 1}.", "717.2a"); st.outcomes += "$src stays level $have."; return true }
                 synchronized(classLevels) { classLevels[o] = effect.n }
-                st.trace.step("$src's level becomes ${effect.n}: from now on it has the abilities printed in its level ${effect.n} section as well as those above (a level isn't a counter, and it isn't copied).", "716.2a", "716.2b")
+                st.trace.step("$src's level becomes ${effect.n}: from now on it has the abilities printed in its level ${effect.n} section as well as those above (a level isn't a counter, and it isn't copied).", "717.2a", "717.2b")
                 st.outcomes += "$src is level ${effect.n}."
                 for (ab in o.abilities.filterIsInstance<TriggeredAbility>().filter { (it.trigger as? MoreTrigger3)?.kind == "class-level:${effect.n}" }) {
                     st.trace.step("$src's ability triggers on it becoming level ${effect.n}.", "603.2")

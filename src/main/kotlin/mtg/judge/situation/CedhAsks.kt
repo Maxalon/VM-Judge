@@ -93,10 +93,10 @@ internal object CedhAsks {
             "ce:sundial" -> {
                 val sun = e.card?.name ?: "Sundial of the Infinite"
                 val src = state.trace.steps.firstNotNullOfOrNull { s -> Regex("""^(.+?) also creates a delayed triggered ability: at the beginning of the end step of that extra turn""").find(s.text)?.groupValues?.get(1) }
-                t.step("$sun's ability ends the turn: everything on the stack is exiled, and the game skips straight to the cleanup step, skipping the end step.", "724.1b", "724.1d")
-                t.step("Because the end step is skipped, \"at the beginning of the end step\" abilities don't trigger. ${src?.let { "$it's" } ?: "The"} delayed trigger waits for that turn's end step only, so it never triggers at all.", "724.1e", "603.7b")
+                t.step("$sun's ability ends the turn: everything on the stack is exiled, and the game skips straight to the cleanup step, skipping the end step.", "725.1b", "725.1d")
+                t.step("Because the end step is skipped, \"at the beginning of the end step\" abilities don't trigger. ${src?.let { "$it's" } ?: "The"} delayed trigger waits for that turn's end step only, so it never triggers at all.", "725.1e", "603.7b")
                 state.outcomes.removeAll { it.startsWith("At the beginning of the extra turn's end step") }
-                state.outcomes += "No: ending the extra turn with $sun before its end step skips that end step (724.1d), so ${src?.let { "$it's" } ?: "the"} delayed \"you lose the game\" trigger never triggers (724.1e); it was only for that turn's end step. It must be activated before the end step begins: once it has begun, the trigger has already triggered."
+                state.outcomes += "No: ending the extra turn with $sun before its end step skips that end step (725.1d), so ${src?.let { "$it's" } ?: "the"} delayed \"you lose the game\" trigger never triggers (725.1e); it was only for that turn's end step. It must be activated before the end step begins: once it has begun, the trigger has already triggered."
             }
             // "Can I play Misty Rainforest from Mnemonic Betrayal?"
             "ce:mnemonic" -> {
@@ -162,10 +162,10 @@ internal object CedhAsks {
             .maxOfOrNull { a -> Regex("""\{[WUBRGC]\}""").findAll(a.text.substringAfter(':')).count().coerceAtLeast(if (Regex("""(?i)one mana of any""").containsMatchIn(a.text)) 1 else 0) } ?: 0) }.filter { it.second > 0 }
         val total = made.sumOf { it.second }
         val cost = 2
-        state.trace.step("${scepter.name}'s ability costs {2} and {T}; the copy of ${reversal.name} it casts untaps all nonland permanents ${p.subject.lowercase()} control, ${scepter.name} included, but not lands. So each time round, the nonland mana sources pay for the activation: ${if (made.isEmpty()) "there are none" else made.joinToString(", ") { "${it.first.name} {${it.second}}" }}, $total mana in all against {2}.", "707.12", "605.1a", "732.1b")
+        state.trace.step("${scepter.name}'s ability costs {2} and {T}; the copy of ${reversal.name} it casts untaps all nonland permanents ${p.subject.lowercase()} control, ${scepter.name} included, but not lands. So each time round, the nonland mana sources pay for the activation: ${if (made.isEmpty()) "there are none" else made.joinToString(", ") { "${it.first.name} {${it.second}}" }}, $total mana in all against {2}.", "707.12", "605.1a", "733.1b")
         state.outcomes += when {
-            total > cost -> { state.trace.step("Each round ends where it started (everything untapped again) with ${total - cost} more mana, and every copy is a spell cast. Repeating actions that return to the same position is a loop; it's shortcut by naming how many times.", "732.1b", "732.2a")
-                "Yes: an arbitrarily large amount of mana. Each round taps ${made.joinToString(" and ") { it.first.name }} for $total, pays {2} for ${scepter.name}, and the copy of ${reversal.name} untaps them all, netting ${total - cost} colorless mana (and one cast spell) per round. Name a number (732.2a); lands aren't untapped, so they add nothing." }
+            total > cost -> { state.trace.step("Each round ends where it started (everything untapped again) with ${total - cost} more mana, and every copy is a spell cast. Repeating actions that return to the same position is a loop; it's shortcut by naming how many times.", "733.1b", "733.2a")
+                "Yes: an arbitrarily large amount of mana. Each round taps ${made.joinToString(" and ") { it.first.name }} for $total, pays {2} for ${scepter.name}, and the copy of ${reversal.name} untaps them all, netting ${total - cost} colorless mana (and one cast spell) per round. Name a number (733.2a); lands aren't untapped, so they add nothing." }
             total == cost -> "Not mana: each round makes exactly the {2} the activation costs, so the loop nets no mana, though it can be repeated any number of times (each copy is a cast spell, for storm and \"whenever you cast\" triggers). Lands aren't untapped by ${reversal.name}."
             else -> "No: the nonland permanents make only $total mana per round and ${scepter.name} costs {2}; lands aren't untapped by ${reversal.name}, so the loop can't continue."
         }

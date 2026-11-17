@@ -329,10 +329,10 @@ class Engine(val state: GameState) {
             state.outcomes += "${card.name} can't target ${state.nameOf(ref)} (not ${withArticle(spec.raw)})."; return null
         } }
         // "They Force of Will my Thassa's Oracle trigger": a spell that counters spells can't even be cast at an ability,
-        // which isn't a spell; the cast is illegal and undone (601.2c, 601.2e, 733.1). Stifle-style cards counter abilities.
+        // which isn't a spell; the cast is illegal and undone (601.2c, 601.2e, 734.1). Stifle-style cards counter abilities.
         for ((i, ref) in targets.withIndex()) { val spec = needed.getOrNull(i) ?: continue; val tgt = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: continue
             if (tgt.kind == StackKind.SPELL || Kind.SPELL !in spec.filter.kinds || Kind.ABILITY in spec.filter.kinds) continue
-            trace.step("${tgt.describe} is ${if (tgt.kind == StackKind.TRIGGERED) "a triggered" else "an activated"} ability, not a spell, so it isn't a legal target for ${card.name} (\"${spec.raw}\"). A spell can't be cast without a legal target for each of its targets, so casting ${card.name} this way is illegal and is undone: it stays in its owner's hand and nothing is paid.", "601.2c", "601.2e", "733.1", "115.1a")
+            trace.step("${tgt.describe} is ${if (tgt.kind == StackKind.TRIGGERED) "a triggered" else "an activated"} ability, not a spell, so it isn't a legal target for ${card.name} (\"${spec.raw}\"). A spell can't be cast without a legal target for each of its targets, so casting ${card.name} this way is illegal and is undone: it stays in its owner's hand and nothing is paid.", "601.2c", "601.2e", "734.1", "115.1a")
             state.outcomes += "No: ${card.name} can't be cast targeting ${tgt.describe}: it counters spells, and ${if (tgt.kind == StackKind.TRIGGERED) "a triggered" else "an activated"} ability isn't a spell (601.2c). The ability resolves as normal; only something that counters abilities (Stifle, Tale's End) could stop it."
             return null
         }
@@ -1612,9 +1612,9 @@ class Engine(val state: GameState) {
         state.step = step
         if (step == "precombat_main") for (saga in state.objects.values.filter { it.isOnBattlefield() && it.controller == activePlayer && "Saga" in it.def.subtypes && it.def.abilities.any { a -> a is TriggeredAbility && a.trigger is Trigger.Chapter } }) {
             val n = (saga.counters["lore"] ?: 0) + 1; saga.counters["lore"] = n
-            trace.step("${state.player(activePlayer).possessive.replaceFirstChar { it.uppercase() }} precombat main phase begins, so a lore counter is put on ${saga.name} ($n now); this is a turn-based action that doesn't use the stack, and chapter $n triggers if ${saga.name} has one.", "714.3c", "714.2")
+            trace.step("${state.player(activePlayer).possessive.replaceFirstChar { it.uppercase() }} precombat main phase begins, so a lore counter is put on ${saga.name} ($n now); this is a turn-based action that doesn't use the stack, and chapter $n triggers if ${saga.name} has one.", "715.3c", "715.2")
             state.outcomes += "${saga.name} gets a lore counter ($n)."
-            if (underMoon(saga)) trace.step("${saga.name} is a Mountain with no abilities under Blood Moon, so the lore counter triggers no chapter ability; the counter is still added, since that's a rule for Sagas rather than an ability of the card (714.3c).", "714.3c", "305.7")
+            if (underMoon(saga)) trace.step("${saga.name} is a Mountain with no abilities under Blood Moon, so the lore counter triggers no chapter ability; the counter is still added, since that's a rule for Sagas rather than an ability of the card (715.3c).", "715.3c", "305.7")
             else onEvent(GameEvent.LoreCounter(saga, n))
         }
         state.phase = when (step) { "untap", "upkeep", "draw" -> "beginning"; "precombat_main" -> "precombat_main"; "postcombat_main" -> "postcombat_main"; "end", "cleanup" -> "ending"; else -> "combat" }
@@ -1652,23 +1652,23 @@ class Engine(val state: GameState) {
         if (step == "end") keywordEndStep(activePlayer)   // unearth's delayed exile
         if (step == "end") Turns.endStep(this, activePlayer)   // "at the beginning of the next end step" delayed triggers (603.7a)
         if (step == "end") PauperMech.endStep(this)   // Berserk: destroy it only if it attacked this turn (PauperMechanics.kt)
-        // 725.2: the monarch's end-step draw is an inherent ability with no source, so it isn't on any permanent.
+        // 726.2: the monarch's end-step draw is an inherent ability with no source, so it isn't on any permanent.
         if (step == "end") state.monarch?.let { mid ->
             if (mid == activePlayer) {
                 val p = state.player(mid)
-                trace.step("${p.subject} ${p.v("is", "are")} the monarch, and the monarch draws a card at the beginning of their end step. This ability has no source — it comes with the crown.", "725.2")
+                trace.step("${p.subject} ${p.v("is", "are")} the monarch, and the monarch draws a card at the beginning of their end step. This ability has no source — it comes with the crown.", "726.2")
                 draw(mid, 1)
             }
         }
     }
 
-    /** 725.2: combat damage to the monarch hands the crown to the damaging creature's controller. */
+    /** 726.2: combat damage to the monarch hands the crown to the damaging creature's controller. */
     private fun monarchCombatDamage(source: GameObject, target: Ref) {
         val mid = state.monarch ?: return
         if ((target as? Ref.Player)?.id != mid || source.controller == mid) return
         val taker = state.player(source.controller); val lost = state.player(mid)
         state.monarch = source.controller
-        trace.step("${source.name} dealt combat damage to the monarch, so ${taker.subject.lowercase()} ${taker.v("becomes", "become")} the monarch and ${lost.subject.lowercase()} ${lost.v("stops", "stop")} being it.", "725.2", "725.3")
+        trace.step("${source.name} dealt combat damage to the monarch, so ${taker.subject.lowercase()} ${taker.v("becomes", "become")} the monarch and ${lost.subject.lowercase()} ${lost.v("stops", "stop")} being it.", "726.2", "726.3")
         state.outcomes += "${taker.subject} ${taker.v("is", "are")} the monarch."
     }
 
@@ -1728,7 +1728,7 @@ class Engine(val state: GameState) {
                 if (def.isInstantOrSorcery) heldUntilResolved(item) {
                     if (item.targetsUnknown) trace.step("${def.name} resolves, but its target was never stated, so what it does to it isn't shown.", "608.2c")
                     else item.effect?.let { applyEffect(it, item) } ?: if (!Generic.isGeneric(def)) state.unsupported.add(Unsupported(def.name, "The spell has no modeled effect.")) else Unit
-                    if (state.turns.endedBy == item.id) return   // it ended the turn: exiled with the rest of the stack (724.1b)
+                    if (state.turns.endedBy == item.id) return   // it ended the turn: exiled with the rest of the stack (725.1b)
                     val kwZone = keywordResolutionZone(item)   // buyback and rebound decide where the spell goes (702.27a, 702.88a)
                     val exilesItself = effectContains(item.effect) { it is Effect.ExileSelfSpell }
                     val willExile = item.source.owner in state.exileInsteadThisTurn && !item.source.token && !item.flashback && !exilesItself
@@ -1789,7 +1789,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${item.source.name}'s trigger still resolves even though ${item.source.name} is gone (113.7a)${if (transforms) ", but with nothing left to transform" else ""}."
                 }
                 item.effect?.let { applyEffect(it, item) }
-                if (state.turns.endedBy == item.id) return   // Sundial of the Infinite: the ability ended the turn (724.1b)
+                if (state.turns.endedBy == item.id) return   // Sundial of the Infinite: the ability ended the turn (725.1b)
                 trace.step("${item.describe} finishes resolving and ceases to exist.", "608.2c", "608.2n")
             }
         }
@@ -1815,7 +1815,7 @@ class Engine(val state: GameState) {
         target.kwf.mergedDefs += spell.printedDef; target.kwf.merged += spell.name
         target.def = merged; spell.zone = Zone.BATTLEFIELD
         state.objects.remove(spell.id)
-        trace.step("${spell.name} resolves as a mutating creature spell and its target ${target.printedDef.name} is legal, so ${spell.name} doesn't enter the battlefield: it merges with ${target.printedDef.name}, put ${if (cardUnder) "under" else "on top of"} it, and they become one object, a mutated permanent. A merged permanent has only the characteristics of its topmost card (here ${top.name}: ${top.typeLine}, ${top.power ?: "?"}/${top.toughness ?: "?"}) but has all the abilities of each card that represents it. It's the same object ${target.printedDef.name} was (it hasn't just entered the battlefield and isn't summoning sick again).", "702.140c", "702.140e", "730.2a", "730.2c")
+        trace.step("${spell.name} resolves as a mutating creature spell and its target ${target.printedDef.name} is legal, so ${spell.name} doesn't enter the battlefield: it merges with ${target.printedDef.name}, put ${if (cardUnder) "under" else "on top of"} it, and they become one object, a mutated permanent. A merged permanent has only the characteristics of its topmost card (here ${top.name}: ${top.typeLine}, ${top.power ?: "?"}/${top.toughness ?: "?"}) but has all the abilities of each card that represents it. It's the same object ${target.printedDef.name} was (it hasn't just entered the battlefield and isn't summoning sick again).", "702.140c", "702.140e", "731.2a", "731.2c")
         state.outcomes += "${spell.name} mutates onto ${target.printedDef.name}: one creature, ${top.name} (${state.describePt(target)}, was $before), with the abilities of both cards (702.140c, 702.140e)."
         onEvent(GameEvent.Mutated(target))
         return true
@@ -1824,7 +1824,7 @@ class Engine(val state: GameState) {
     fun resolveAll() {
         var guard = 0
         // Each position the game passes through as the stack resolves, by what is where (not by object identity or
-        // life totals): coming back to one already seen means the stack is going round a loop (104.4b, 732.4).
+        // life totals): coming back to one already seen means the stack is going round a loop (104.4b, 733.4).
         val seen = mutableListOf<Triple<String, Map<String, Int>, Pair<Int, Int>>>()
         while (state.stack.isNotEmpty() && guard++ < 50) {
             resolveTop()
@@ -1847,7 +1847,7 @@ class Engine(val state: GameState) {
 
     /**
      * The stack came back to a position it was in [period] resolutions ago. If nothing in between was optional, that is
-     * a loop of mandatory actions (104.4b): with nothing changing it is a draw (732.4); if each time round a player
+     * a loop of mandatory actions (104.4b): with nothing changing it is a draw (733.4); if each time round a player
      * loses life it runs until one reaches 0 and loses (704.5a). Returns whether it ended the game.
      */
     private fun mandatoryLoop(ledgerThen: Map<String, Int>, traceThen: Int, period: Int, choicesThen: Int): Boolean {
@@ -1860,15 +1860,15 @@ class Engine(val state: GameState) {
         val changes = state.players.filter { delta.getValue(it.id) != 0 }.joinToString(" and ") { p -> "${p.subject.lowercase()} ${p.v(said(delta.getValue(p.id)).replace("gain ", "gains ").replace("lose ", "loses "), said(delta.getValue(p.id)))}" }
         val loser = state.players.filter { delta.getValue(it.id) < 0 }
         if (loser.isEmpty()) {
-            trace.step("The stack is back where it was ${period} resolution${if (period == 1) "" else "s"} ago${if (pieces.isNotEmpty()) " (${pieces.joinToString(", ")})" else ""}, and every action in between was mandatory: the game has entered a loop of mandatory actions with no way to stop, so the game is a draw.", "104.4b", "732.4")
+            trace.step("The stack is back where it was ${period} resolution${if (period == 1) "" else "s"} ago${if (pieces.isNotEmpty()) " (${pieces.joinToString(", ")})" else ""}, and every action in between was mandatory: the game has entered a loop of mandatory actions with no way to stop, so the game is a draw.", "104.4b", "733.4")
             state.mandatoryLoop = "a loop of mandatory actions${if (pieces.isNotEmpty()) " (${pieces.joinToString(", ")})" else ""} that repeats with no way to stop"
-            state.outcomes += "The game is a draw: ${pieces.joinToString(" and ").ifEmpty { "the abilities on the stack" }} keep${if (pieces.size == 1) "s" else ""} triggering each other in a loop of mandatory actions with no way to stop it (104.4b, 732.4). Only an action a player can take while it goes round (each ability uses the stack, so players get priority each time) can break it; no one can be forced to take one (732.5)."
+            state.outcomes += "The game is a draw: ${pieces.joinToString(" and ").ifEmpty { "the abilities on the stack" }} keep${if (pieces.size == 1) "s" else ""} triggering each other in a loop of mandatory actions with no way to stop it (104.4b, 733.4). Only an action a player can take while it goes round (each ability uses the stack, so players get priority each time) can break it; no one can be forced to take one (733.5)."
             state.gameDrawn = true; state.stack.clear(); return true
         }
         // Each time round someone loses life, and nothing in the loop is optional: it goes on until that player is at 0.
         val known = loser.filter { it.life != null }
         val rounds = known.minOfOrNull { p -> (p.life!! + (-delta.getValue(p.id)) - 1) / (-delta.getValue(p.id)) }
-        trace.step("The stack is back where it was ${period} resolution${if (period == 1) "" else "s"} ago, and every action in between was mandatory: it's a loop, and each time round $changes. It can't be stopped, but it isn't a draw: it ends when ${loser.joinToString(" or ") { it.subject.lowercase() }} ${if (loser.size == 1) loser[0].v("reaches", "reach") else "reach"} 0 life.", "104.4b", "732.4")
+        trace.step("The stack is back where it was ${period} resolution${if (period == 1) "" else "s"} ago, and every action in between was mandatory: it's a loop, and each time round $changes. It can't be stopped, but it isn't a draw: it ends when ${loser.joinToString(" or ") { it.subject.lowercase() }} ${if (loser.size == 1) loser[0].v("reaches", "reach") else "reach"} 0 life.", "104.4b", "733.4")
         for (p in state.players) {
             val d = delta.getValue(p.id); if (d == 0) continue
             if (rounds != null) { p.life = p.life?.plus(d * rounds); p.lifeLedger += d * rounds }
@@ -1888,12 +1888,12 @@ class Engine(val state: GameState) {
             changed = false
             // 310.12b, 704.5v-w: a defeated Siege's ability, and battles left with no defense.
             if (Battles.check(state) { o, z, t, r -> move(o, z, t, *r) }) changed = true
-            // 714.4: a Saga with lore counters at or past its last chapter, and no chapter ability of its on the stack, is sacrificed.
+            // 715.4: a Saga with lore counters at or past its last chapter, and no chapter ability of its on the stack, is sacrificed.
             for (saga in state.objects.values.filter { it.isOnBattlefield() && "Saga" in it.def.subtypes }) {
-                if (underMoon(saga)) continue   // no chapter abilities, so 714.4 never applies
+                if (underMoon(saga)) continue   // no chapter abilities, so 715.4 never applies
                 val last = saga.def.abilities.filterIsInstance<TriggeredAbility>().mapNotNull { (it.trigger as? Trigger.Chapter)?.n }.maxOrNull() ?: continue
                 if ((saga.counters["lore"] ?: 0) >= last && state.stack.none { it.source === saga && it.kind == StackKind.TRIGGERED }) {
-                    trace.step("${saga.name} has ${saga.counters["lore"]} lore counters, its final chapter is $last, and none of its chapter abilities is on the stack, so its controller sacrifices it (state-based action).", "714.4", "704.5s")
+                    trace.step("${saga.name} has ${saga.counters["lore"]} lore counters, its final chapter is $last, and none of its chapter abilities is on the stack, so its controller sacrifices it (state-based action).", "715.4", "704.5s")
                     sacrifice(saga.controller, saga.id); changed = true
                 }
             }
@@ -3135,12 +3135,12 @@ class Engine(val state: GameState) {
             is Effect.BecomeMonarch -> {
                 val who = resolvePlayers(effect.who, item).firstOrNull() ?: state.player(item.controller)
                 val old = state.monarch
-                if (old == who.id) trace.step("${who.subject} ${who.v("is", "are")} already the monarch, so nothing changes.", "725.3")
+                if (old == who.id) trace.step("${who.subject} ${who.v("is", "are")} already the monarch, so nothing changes.", "726.3")
                 else {
                     state.monarch = who.id
                     trace.step("${who.subject} ${who.v("becomes", "become")} the monarch" +
                         (if (old != null) ", and ${state.player(old).subject.lowercase()} ${state.player(old).v("stops", "stop")} being it — only one player is the monarch at a time" else "") +
-                        ". The monarch draws a card at the beginning of their end step, and a creature dealing combat damage to the monarch takes the crown for its controller.", "725.1", "725.2", "725.3")
+                        ". The monarch draws a card at the beginning of their end step, and a creature dealing combat damage to the monarch takes the crown for its controller.", "726.1", "726.2", "726.3")
                     state.outcomes += "${who.subject} ${who.v("is", "are")} the monarch."
                 }
             }
@@ -4765,9 +4765,9 @@ class Engine(val state: GameState) {
         MoreEffects2.asEnters(this, o)   // riot (MoreEffects2.kt)
         val startingLoyalty = o.def.loyalty?.let { NewMech.compleatedLoyalty(state, o, it) }
         if ("Saga" in o.def.subtypes && o.def.abilities.any { it is TriggeredAbility && it.trigger is Trigger.Chapter } && (o.counters["lore"] ?: 0) == 0) {
-            // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (714.3a), not its rules text (305.7), but the chapter abilities are gone.
+            // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (715.3a), not its rules text (305.7), but the chapter abilities are gone.
             val gone = state.abilitiesGone(o)
-            o.counters["lore"] = 1; trace.step("${o.name} is a Saga, so it enters with a lore counter on it; ${if (gone != null) "it has no chapter abilities under ${gone.name}, so nothing triggers" else "its chapter I ability triggers"}.", "714.3a", "714.2"); state.outcomes += "${o.name} enters with 1 lore counter."
+            o.counters["lore"] = 1; trace.step("${o.name} is a Saga, so it enters with a lore counter on it; ${if (gone != null) "it has no chapter abilities under ${gone.name}, so nothing triggers" else "its chapter I ability triggers"}.", "715.3a", "715.2"); state.outcomes += "${o.name} enters with 1 lore counter."
             onEvent(GameEvent.LoreCounter(o, 1))
         }
         // Mox Diamond: it enters only if a land card is discarded as it would enter.
@@ -4869,11 +4869,11 @@ class Engine(val state: GameState) {
 
     private fun moveRaw(obj: GameObject, to: Zone) {
         if (to == Zone.BATTLEFIELD && obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
-        // A merged permanent that leaves: each card that made it up goes to the new zone as its own object (730.3).
+        // A merged permanent that leaves: each card that made it up goes to the new zone as its own object (731.3).
         if (obj.kwf.mergedDefs.isNotEmpty() && obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD) {
             val extra = obj.kwf.mergedDefs.toList(); obj.kwf.mergedDefs.clear(); obj.kwf.merged.clear(); obj.def = obj.printedDef
             for (d in extra) { val o2 = state.add(GameObject(freshObjectId(d.name), d, to, obj.owner, obj.owner)); o2.timestamp = state.tick() }
-            trace.step("${obj.printedDef.name} was a merged permanent, so each card that represented it (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) goes to ${zoneName(to, obj)} separately.", "730.3", "400.7")
+            trace.step("${obj.printedDef.name} was a merged permanent, so each card that represented it (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) goes to ${zoneName(to, obj)} separately.", "731.3", "400.7")
             state.outcomes += "Both cards of the merged creature (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) go to ${zoneName(to, obj)}."
         }
         // A face-down permanent or spell that goes anywhere but the battlefield is revealed as it goes (708.9), and is the card again.
@@ -5324,7 +5324,7 @@ class Engine(val state: GameState) {
         for (moon in moons) for (land in state.objects.values.filter { it.isOnBattlefield() && "Land" in it.def.types && "Basic" !in it.def.supertypes && (land == null || it === land) && state.moonOn(it) != null }) {
             val saga = "Saga" in land.def.subtypes
             val mt = DeepMech.moonType(moon)
-            trace.step("${moon.name} makes ${land.name} ${if (mt == "Island") "an" else "a"} $mt: it loses its other land types and every ability from its rules text${if (saga) ", chapter abilities included," else ""} and has only \"{T}: Add ${DeepMech.manaOf(mt)}\" (a type-changing effect, layer 4).${if (saga) " It's still an enchantment and a Saga; its lore counters stay, and with no chapter abilities it is neither sacrificed nor able to do anything." else ""}${CoverageMech.nonbasicNote(land)}", "613.1d", "305.7", *CoverageMech.nonbasicCite(land), *(if (saga) arrayOf("714.4") else emptyArray()))
+            trace.step("${moon.name} makes ${land.name} ${if (mt == "Island") "an" else "a"} $mt: it loses its other land types and every ability from its rules text${if (saga) ", chapter abilities included," else ""} and has only \"{T}: Add ${DeepMech.manaOf(mt)}\" (a type-changing effect, layer 4).${if (saga) " It's still an enchantment and a Saga; its lore counters stay, and with no chapter abilities it is neither sacrificed nor able to do anything." else ""}${CoverageMech.nonbasicNote(land)}", "613.1d", "305.7", *CoverageMech.nonbasicCite(land), *(if (saga) arrayOf("715.4") else emptyArray()))
             state.outcomes += "${land.name} is ${if (mt == "Island") "an" else "a"} $mt with no abilities (${moon.name})."
             if (land.def.isCreature) {
                 // "They have Blood Moon. I have Dryad Arbor.": a land type set doesn't touch card types or creature types (305.7).
@@ -5333,7 +5333,7 @@ class Engine(val state: GameState) {
                 if (kept.isNotEmpty() || lost.isNotEmpty()) trace.step("Setting a land type doesn't add or remove card types, so ${land.name} is still a land creature${if (kept.isNotEmpty()) " and keeps its creature type ${kept.joinToString(" and ")}" else ""}${if (lost.isNotEmpty()) "; it loses ${lost.joinToString(" and ")}, and with it the intrinsic mana ability ${lost.joinToString(" and ") { it }} gave it (305.6), so it taps for {R} instead" else ""}.", "305.7", "305.6", "613.1d")
                 state.outcomes += "${land.name} is still a creature (${state.describePt(land)}): ${moon.name} changes only its land type and abilities."
             }
-            if (saga) state.outcomes += "${land.name} stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (714.4)."
+            if (saga) state.outcomes += "${land.name} stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (715.4)."
             state.unsupported.removeAll { it.what == land.name }
         }
     }

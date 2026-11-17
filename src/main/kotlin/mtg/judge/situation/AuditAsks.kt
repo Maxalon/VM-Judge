@@ -70,7 +70,7 @@ internal object AuditAsks {
      * "Devoted Druid and Vizier of Remedies: how much mana?" A creature that taps for mana and untaps itself for a counter is
      * played round by round with the engine: tap for mana, untap, tap again. If a round leaves it as it started (Vizier turns the
      * -1/-1 counter into none), the round repeats as often as its controller likes — an arbitrarily large amount, named as a number
-     * under the shortcut rules (732.1b, 732.2a). If each round costs a counter, it is the toughness that runs out.
+     * under the shortcut rules (733.1b, 733.2a). If each round costs a counter, it is the toughness that runs out.
      */
     fun untapLoop(player: String, state: GameState, engine: Engine): Boolean {
         val costRe = Regex("""^Put (?:a|an|one) ([+-]\d+/[+-]\d+|[a-z]+) counter on (?:~|this\b)""", RegexOption.IGNORE_CASE)
@@ -82,7 +82,7 @@ internal object AuditAsks {
             val kind = costRe.find(abs[untap].cost)!!.groupValues[1]
             val before = o.counters[kind] ?: 0
             val made = (abs[mana].effect as? mtg.judge.engine.Effect.AddMana)?.text ?: "mana"
-            state.trace.step("Testing a loop: ${o.name} taps for $made, then its other ability untaps it for the cost of a $kind counter, and it taps again.", "732.1b")
+            state.trace.step("Testing a loop: ${o.name} taps for $made, then its other ability untaps it for the cost of a $kind counter, and it taps again.", "733.1b")
             engine.activate(player, o.id, mana, emptyList())
             engine.activate(player, o.id, untap, emptyList())?.let { engine.resolveTop() }
             if (!o.isOnBattlefield() || o.tapped == true) return false
@@ -90,8 +90,8 @@ internal object AuditAsks {
             val after = o.counters[kind] ?: 0
             if (after == before) {
                 val by = state.trace.steps.lastOrNull { it.text.contains("replaces the counter placement") }?.text?.substringBefore(" replaces")
-                state.trace.step("One round (tap for $made, untap, tap again) leaves ${o.name} exactly as it was${by?.let { ": $it turns the $kind counter the cost puts on it into none" } ?: ""}, so the round can be repeated any number of times. Under the shortcut rules ${state.player(player).subject.lowercase()} ${state.player(player).v("names", "name")} how many times; the mana made is that many.", "732.1b", "732.2a", *(if (by != null) arrayOf("614.1a") else emptyArray()))
-                state.outcomes += "${state.player(player).subject} can make an arbitrarily large amount of mana with ${o.name}${by?.let { " and $it" } ?: ""}: each round taps it for $made and untaps it for no net counters. Name a number (732.2a); it can't be \"infinite\"."
+                state.trace.step("One round (tap for $made, untap, tap again) leaves ${o.name} exactly as it was${by?.let { ": $it turns the $kind counter the cost puts on it into none" } ?: ""}, so the round can be repeated any number of times. Under the shortcut rules ${state.player(player).subject.lowercase()} ${state.player(player).v("names", "name")} how many times; the mana made is that many.", "733.1b", "733.2a", *(if (by != null) arrayOf("614.1a") else emptyArray()))
+                state.outcomes += "${state.player(player).subject} can make an arbitrarily large amount of mana with ${o.name}${by?.let { " and $it" } ?: ""}: each round taps it for $made and untaps it for no net counters. Name a number (733.2a); it can't be \"infinite\"."
             } else {
                 val more = ((o.toughness ?: 0) - 1).coerceAtLeast(0)
                 state.trace.step("Each untap leaves another $kind counter on ${o.name}; it's ${state.describePt(o)} now. ${if (more == 0) "Another untap would bring its toughness to 0, and it would die as a state-based action before that untap resolved" else "It can survive $more more untap${if (more == 1) "" else "s"}"}.", "704.5f")

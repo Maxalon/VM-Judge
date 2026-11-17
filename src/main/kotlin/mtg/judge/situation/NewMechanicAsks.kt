@@ -66,14 +66,14 @@ internal object NewMechanicAsks {
                 state.outcomes += "${def.name} is cast for its impending cost $cost: it will enter with $n time counters and won't be a creature until the last one is removed (702.176a)."
                 return plain
             }
-            // Prototype (702.160a, 718.3b): the inset mana cost, power and toughness, and the colour of that mana cost.
+            // Prototype (702.160a, 719.3b): the inset mana cost, power and toughness, and the colour of that mana cost.
             "prototype" -> {
                 val m = Regex("""(?i)prototype\s*((?:\{[^}]+\})+)\s*[—–-]\s*(\d+)/(\d+)""").find(def.oracleText) ?: run { state.outcomes += "${def.name} doesn't have prototype, so it is cast normally."; return plain }
                 val cost = m.groupValues[1]; val cs = colorsIn(cost)
                 obj.def = def.copy(manaCost = cost, manaValue = costMv(cost).toDouble(), colors = cs, power = m.groupValues[2].toInt(), toughness = m.groupValues[3].toInt())
                 NewMech.flags(obj)["prototype"] = 1
-                t.step("${p.subject} ${p.v("casts", "cast")} ${def.name} prototyped: the spell, and the permanent it becomes, have only its alternative mana cost $cost, power ${m.groupValues[2]} and toughness ${m.groupValues[3]}, so its mana value is ${costMv(cost)} and it is ${say(cs)}. Its types and abilities stay the same. In every other zone the card has its normal characteristics (mana value ${def.manaValue.toInt()}, ${say(def.colors)}).", "702.160a", "718.3b", "718.4", "718.5")
-                state.outcomes += "${def.name} is cast prototyped: a ${m.groupValues[2]}/${m.groupValues[3]} ${say(cs)} spell with mana cost $cost (mana value ${costMv(cost)}) (718.3b)."
+                t.step("${p.subject} ${p.v("casts", "cast")} ${def.name} prototyped: the spell, and the permanent it becomes, have only its alternative mana cost $cost, power ${m.groupValues[2]} and toughness ${m.groupValues[3]}, so its mana value is ${costMv(cost)} and it is ${say(cs)}. Its types and abilities stay the same. In every other zone the card has its normal characteristics (mana value ${def.manaValue.toInt()}, ${say(def.colors)}).", "702.160a", "719.3b", "719.4", "719.5")
+                state.outcomes += "${def.name} is cast prototyped: a ${m.groupValues[2]}/${m.groupValues[3]} ${say(cs)} spell with mana cost $cost (mana value ${costMv(cost)}) (719.3b)."
             }
             // Casualty N (702.153a): sacrifice a creature with power N or greater as an additional cost; when you do, the spell is copied.
             "casualty" -> {
@@ -354,11 +354,11 @@ internal object NewMechanicAsks {
                 state.outcomes += if (copied) "Once: only the original spell was cast. The casualty copy was put on the stack, not cast, so it doesn't trigger prowess or other \"whenever you cast\" abilities (707.10, 702.153a)."
                     else "Once: one spell was cast, and no casualty copy was made (702.153a)."
             }
-            // "What color is it and what is its mana value?" for a prototyped permanent (718.3b).
+            // "What color is it and what is its mana value?" for a prototyped permanent (719.3b).
             "prototype" -> {
                 val x = o ?: return false
                 val cs = state.colorsOf(x)
-                state.outcomes += "${x.name} is ${say(cs)} with mana value ${x.def.manaValue.toInt()} and is ${state.describePt(x)}${if ((NewMech.flags(x)["prototype"] ?: 0) > 0) " (prototyped: mana cost ${x.def.manaCost}, 718.3b); back in the hand or graveyard it is ${say(x.printedDef.colors)} with mana value ${x.printedDef.manaValue.toInt()} again (718.4)" else ""}."
+                state.outcomes += "${x.name} is ${say(cs)} with mana value ${x.def.manaValue.toInt()} and is ${state.describePt(x)}${if ((NewMech.flags(x)["prototype"] ?: 0) > 0) " (prototyped: mana cost ${x.def.manaCost}, 719.3b); back in the hand or graveyard it is ${say(x.printedDef.colors)} with mana value ${x.printedDef.manaValue.toInt()} again (719.4)" else ""}."
             }
             else -> return false
         }

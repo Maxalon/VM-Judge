@@ -2313,7 +2313,7 @@ class SituationParser(private val names: NameIndex) {
             if (ctx.events.none { it.verb == "lt" && it.to == "putattacking" && it.obj == id }) return@let
             ask("lt:attacktrigger", obj = id); return true
         }
-        // "Is The Eldest Reborn sacrificed before chapter III resolves?" (714.4).
+        // "Is The Eldest Reborn sacrificed before chapter III resolves?" (715.4).
         Regex("""^is (it|the saga|(?:my |their )?c\d+) sacrificed (?:before|while) (?:its |the )?(?:chapter (?:iii|3|three|ii|2|two|iv|4|four)|(?:last|final) chapter)(?: ability| trigger)?(?: resolves| is on the stack)?$""").find(q)?.let { r ->
             val id = ref(r.groupValues[1]) ?: ctx.objects.values.lastOrNull { it.counters.containsKey("lore") }?.id ?: return@let
             ask("lt:sagasac", obj = id); return true
@@ -2334,7 +2334,7 @@ class SituationParser(private val names: NameIndex) {
         }
         // "Do I get my mana back?" after an ability or spell didn't resolve.
         if (Regex("""^(?:and )?(?:do|does|will|can) (?:i|we|they|my opponent) (?:get|keep) (?:my |their |the |that )?mana back$""").matches(q)) { ask("lt:refund", player = "me"); return true }
-        // "Can I cast Bonecrusher Giant later?" after its Adventure was countered or resolved (715.3d).
+        // "Can I cast Bonecrusher Giant later?" after its Adventure was countered or resolved (716.3d).
         Regex("""^can (i|we|they|my opponent) (?:still )?cast (?:my |their )?(c\d+)(?: later| from exile| afterwards?| next turn)?$""").find(q)?.let { r ->
             val card = m.cards[r.groupValues[2]] ?: return@let
             val adv = ctx.events.lastOrNull { it.verb == "cast" && it.card?.oracleId == card.oracleId && it.card.name != card.display } ?: return@let
@@ -2953,11 +2953,11 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^(?:do|did|will) (?:i|we|they) (?:get|make|create) an? (?:human )?soldier(?: token)?$""").matches(q)) return "nssaid"
         if (Regex("""^how many times does (?:its|the|that|c\\d+'s) (?:ability|trigger|triggered ability) (?:trigger|resolve)$""").matches(q)) return "nssaid"
         if (Regex("""^how big is (?:the|that|my) (?:new )?(?:human )?(?:soldier )?token$""").matches(q)) return "nstokensize"
-        // Preparation cards: the word "prepared" read as the card Prepare // Fight goes back to being a word (722.3a).
+        // Preparation cards: the word "prepared" read as the card Prepare // Fight goes back to being a word (723.3a).
         fun prep(ph: String) = m.cards[ph]?.display?.let { it == "Prepare" || it.startsWith("Prepare //") } == true
         Regex("""^(?:my|the) (c\d+) (?:is|was|became|is already) (c\d+)$""").find(q)?.takeIf { prep(it.groupValues[2]) }?.let { r -> return "nsprepared ${r.groupValues[1]}" }
         Regex("""^is (c\d+|it) (?:still )?(c\d+)(?: again| now)?$""").find(q)?.takeIf { prep(it.groupValues[2]) }?.let { r -> return "nsisprepared ${r.groupValues[1]}" }
-        // "I cast Unwind History …" while a Diviner of Victory is out: the copy of its prepare spell, cast from exile (722.3c).
+        // "I cast Unwind History …" while a Diviner of Victory is out: the copy of its prepare spell, cast from exile (723.3c).
         Regex("""^(?:then )?(i|we) cast (c\d+)\b(.*)$""").find(q)?.let { r ->
             val e = m.cards[r.groupValues[2]] ?: return@let
             val full = names.fullNameOf(e.oracleId) ?: return@let
@@ -7250,13 +7250,13 @@ class SituationParser(private val names: NameIndex) {
         }
         Regex("""^delver-reveal-question (c\d+|[a-z ]+)$""").find(clause0)?.let { r ->
             val card = m.cards[r.groupValues[1]]?.let { it.display to it.typeLine } ?: (r.groupValues[1] to r.groupValues[1].replaceFirstChar { it.uppercase() })
-            // "I reveal Brazen Borrower": an adventurer card in the library has only its normal characteristics (715.4), so Petty Theft's
-            // instant type doesn't count; a double-faced card likewise has only its front face's (712.8a).
+            // "I reveal Brazen Borrower": an adventurer card in the library has only its normal characteristics (716.4), so Petty Theft's
+            // instant type doesn't count; a double-faced card likewise has only its front face's (712.6a).
             val adventurer = card.second.contains(" // ")
             val front = if (adventurer) card.second.substringBefore(" // ") else card.second
             val flips = front.contains("Instant") || front.contains("Sorcery")
             if (adventurer && !flips && (card.second.contains("Instant") || card.second.contains("Sorcery"))) {
-                ctx.asks += EventSpec("ask", to = "text:No. In the library ${card.first} has only its normal characteristics, a ${front.substringBefore(" —").lowercase()} card (${if (card.second.contains("Adventure")) "715.4" else "712.8a"}); its ${card.second.substringAfter(" // ").substringBefore(" —")} side exists only while it's cast ${if (card.second.contains("Adventure")) "as an Adventure" else "with that face up"}. Delver of Secrets transforms only if the revealed card is an instant or sorcery card, so it stays a 1/1 Human Wizard this upkeep.")
+                ctx.asks += EventSpec("ask", to = "text:No. In the library ${card.first} has only its normal characteristics, a ${front.substringBefore(" —").lowercase()} card (${if (card.second.contains("Adventure")) "716.4" else "712.6a"}); its ${card.second.substringAfter(" // ").substringBefore(" —")} side exists only while it's cast ${if (card.second.contains("Adventure")) "as an Adventure" else "with that face up"}. Delver of Secrets transforms only if the revealed card is an instant or sorcery card, so it stays a 1/1 Human Wizard this upkeep.")
                 return true
             }
             if (flips) ctx.notes += "Delver of Secrets transforms: ${card.first} is an instant or sorcery card."
@@ -8023,7 +8023,7 @@ class SituationParser(private val names: NameIndex) {
             "sorcerybetween" -> { val card = m.cards[parts[1]] ?: return false; addObject(card, "me", false, ctx); ask("turn:sorceryBetween", "me", card = CardRef(name = card.display, oracleId = card.oracleId)) }
             "controlplayer" -> { m.cards[parts[1]]?.let { ctx.notes += "\"Controlling their turn\" with ${it.display} is read as controlling that player during their turn (723.1)." }; ctx.note("opp") }
             "say" -> ask("turn:say:${parts[1]}")
-            "initiativelost" -> { ctx.notes += "\"Takes the initiative from you\": their creatures dealt combat damage to you while you had the initiative (726.2)."; ctx.note("opp") }
+            "initiativelost" -> { ctx.notes += "\"Takes the initiative from you\": their creatures dealt combat damage to you while you had the initiative (727.2)."; ctx.note("opp") }
             "monarchdraw" -> { ctx.events += EventSpec("step", player = ctx.activePlayer ?: "me", to = "end"); ask("whoDoes:draw") }
             "night", "day" -> ctx.notes += "\"It becomes ${parts[0]}\": the game has the ${parts[0]} designation from now on (731.1)."
             "giveextra" -> {
@@ -9098,7 +9098,7 @@ class SituationParser(private val names: NameIndex) {
         if (clause0 == "sagachapter-question") {
             val saga = ctx.objects.values.lastOrNull { it.card.name == "Urza's Saga" } ?: return false
             val moon = ctx.objects.values.any { it.card.name in setOf("Blood Moon", "Magus of the Moon") } || ctx.events.any { it.verb == "cast" && it.card?.name in setOf("Blood Moon", "Magus of the Moon") }
-            ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (714.3c), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (714.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
+            ctx.asks += EventSpec("ask", to = if (moon) "text:No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities: a lore counter still gets added each precombat main phase (715.3c), but no chapter II triggers to make a Construct (and no chapter III to search). A Construct it made earlier stays, with its own ability intact. The Saga isn't sacrificed either, since the final-chapter check applies only to a Saga with chapter abilities (715.4)." else "text:Yes, when its second lore counter is put on it: chapter II triggers (\"{2}, {T}: Create a 0/0 colorless Construct artifact creature token with 'This token gets +1/+1 for each artifact you control'\" is the ability it grants itself from chapter II on), and the token comes from paying {2} and tapping the Saga (714.2b).")
             return true
         }
         // "Does it stay a creature?": the animated land, whatever was cast after it.
@@ -9490,7 +9490,7 @@ class SituationParser(private val names: NameIndex) {
             val name = (ctx.objects.values.map { o -> o.card.name } + ctx.events.filter { it.verb == "cast" }.map { it.card?.name }).lastOrNull { nm -> nm?.let { names.lookup(Names.normalize(it))?.typeLine?.contains("Saga") } == true } ?: "the Saga"
             val urza = name == "Urza's Saga"
             val detail = if (!urza) "" else when (n) {
-                3 -> " For Urza's Saga that is chapter III itself: they still search for an artifact with mana cost {0} or {1} and put it onto the battlefield, and the Saga would have been sacrificed right after that chapter anyway (714.4), so destroying it in response to chapter III changes almost nothing."
+                3 -> " For Urza's Saga that is chapter III itself: they still search for an artifact with mana cost {0} or {1} and put it onto the battlefield, and the Saga would have been sacrificed right after that chapter anyway (715.4), so destroying it in response to chapter III changes almost nothing."
                 2 -> " For Urza's Saga, chapter II only grants the Saga an ability (\"{2}, {T}: Create a 0/0 Construct\"); with the Saga gone as the trigger resolves there is nothing to grant, so they never get to make a Construct, and chapter III never comes. Responding to the chapter II trigger is the usual moment to Wasteland it."
                 else -> " For Urza's Saga, chapter I only grants the Saga \"{T}: Add {C}\"; with the Saga gone there is nothing to grant, and the later chapters never happen."
             }
@@ -11929,7 +11929,7 @@ class SituationParser(private val names: NameIndex) {
                 targets = if (tg.isEmpty()) ctx.events[i].targets else ctx.events[i].targets + tg)
             return true
         }
-        // "my opponent is the monarch": whoever it is keeps drawing at their end step until someone takes it (725.1).
+        // "my opponent is the monarch": whoever it is keeps drawing at their end step until someone takes it (726.1).
         Regex("""^(?:(i|we|they|he|she|my opponent|the opponent|opponent|@\w+) )?(?:is|am|are|becomes?|became|'m|'re) the monarch$|^(?:(i|we|they|he|she|my opponent|the opponent|opponent|@\w+) )?(?:has|have) the monarch(?:ship)?$|^(i|we|they|he|she)(?:'m|'re|'s) the monarch$""").find(c)?.let { r ->
             val said = r.groupValues[1].ifEmpty { r.groupValues[2] }.ifEmpty { r.groupValues[3] }.let { w -> when (w) { "" -> null; "i", "we" -> "me"; "my opponent", "the opponent", "opponent" -> pronounPlayer(ctx, "their"); else -> if (w.startsWith("@")) w.removePrefix("@") else pronounPlayer(ctx, w) } }
             val who = said ?: actor ?: ctx.lastActor ?: "me"

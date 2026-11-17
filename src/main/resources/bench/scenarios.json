@@ -3169,7 +3169,7 @@
     ],
     "cite": [
       "305.7",
-      "714.4"
+      "715.4"
     ]
   },
   {
@@ -5944,8 +5944,8 @@
       "Not modeled"
     ],
     "cite": [
-      "725.1",
-      "725.3"
+      "726.1",
+      "726.3"
     ]
   },
   {
@@ -5959,7 +5959,7 @@
       "Not modeled"
     ],
     "cite": [
-      "725.2"
+      "726.2"
     ]
   },
   {
@@ -5973,8 +5973,8 @@
       "Not modeled"
     ],
     "cite": [
-      "725.2",
-      "725.3"
+      "726.2",
+      "726.3"
     ]
   },
   {
@@ -11188,7 +11188,7 @@
       "Not understood"
     ],
     "cite": [
-      "725.2"
+      "726.2"
     ]
   },
   {
@@ -15466,8 +15466,8 @@
       "Nothing changes"
     ],
     "cite": [
-      "714.3c",
-      "714.4"
+      "715.3c",
+      "715.4"
     ]
   },
   {
@@ -16142,13 +16142,13 @@
     "text": "I control Blood Moon. My opponent plays Urza's Saga. What happens?",
     "expect": [
       "Urza's Saga is a Mountain with no abilities (Blood Moon).",
-      "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (714.4)."
+      "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (715.4)."
     ],
     "notExpect": [
       "sacrifices Urza's Saga"
     ],
     "cite": [
-      "714.4"
+      "715.4"
     ]
   },
   {
@@ -28387,7 +28387,7 @@
     "text": "I have Blood Moon. My opponent has an Urza's Saga. What happens?",
     "expect": [
       "Urza's Saga is a Mountain with no abilities (Blood Moon).",
-      "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (714.4)."
+      "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities, and it has none now (715.4)."
     ]
   },
   {
@@ -31504,7 +31504,7 @@
       "Insectile Aberration turns back to its front face, Delver of Secrets, as it leaves the battlefield (712.8)"
     ],
     "cite": [
-      "712.8e"
+      "712.6d"
     ]
   },
   {
@@ -32491,7 +32491,7 @@
       "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities"
     ],
     "cite": [
-      "714.3c"
+      "715.3c"
     ]
   },
   {
@@ -33274,7 +33274,7 @@
       "Urza's Saga stays on the battlefield"
     ],
     "cite": [
-      "714.4"
+      "715.4"
     ]
   },
   {
@@ -34292,7 +34292,7 @@
       "No. Under Blood Moon, Urza's Saga is a Mountain with no abilities (305.7), so it has no chapter abilities"
     ],
     "cite": [
-      "714.3c"
+      "715.3c"
     ]
   },
   {
@@ -34611,7 +34611,7 @@
       "Urza's Saga stays on the battlefield"
     ],
     "cite": [
-      "714.4"
+      "715.4"
     ]
   },
   {
@@ -37060,7 +37060,7 @@
       "Urza's Saga stays on the battlefield"
     ],
     "cite": [
-      "714.4"
+      "715.4"
     ]
   },
   {
@@ -38334,8 +38334,8 @@
     "notExpect": [],
     "cite": [
       "702.79a",
-      "732.1b",
-      "732.2a",
+      "733.1b",
+      "733.2a",
       "104.4b"
     ]
   },
@@ -38349,7 +38349,7 @@
     "notExpect": [],
     "cite": [
       "702.79a",
-      "732.2a",
+      "733.2a",
       "608.2h"
     ]
   },
@@ -38365,7 +38365,7 @@
     ],
     "cite": [
       "707.9b",
-      "732.1b"
+      "733.1b"
     ]
   },
   {
@@ -38407,8 +38407,8 @@
     "notExpect": [],
     "cite": [
       "702.93a",
-      "732.1b",
-      "732.2a"
+      "733.1b",
+      "733.2a"
     ]
   },
   {
@@ -38446,7 +38446,7 @@
     ],
     "notExpect": [],
     "cite": [
-      "732.4",
+      "733.4",
       "104.4b",
       "303.4f"
     ]
@@ -38475,7 +38475,7 @@
       "No: nothing described here forms a loop"
     ],
     "cite": [
-      "732.1b"
+      "733.1b"
     ]
   },
   {
@@ -38498,8 +38498,8 @@
     ],
     "notExpect": [],
     "cite": [
-      "732.2a",
-      "732.2b"
+      "733.2a",
+      "733.2b"
     ]
   },
   {
@@ -38512,7 +38512,7 @@
       "arbitrarily large"
     ],
     "cite": [
-      "732.1b"
+      "733.1b"
     ]
   },
   {
@@ -38949,7 +38949,7 @@
     ],
     "cite": [
       "601.2c",
-      "733.1"
+      "734.1"
     ]
   },
   {
@@ -39015,7 +39015,7 @@
       "310.6",
       "120.3h",
       "310.12b",
-      "712.11a",
+      "712.8a",
       "310.9b"
     ]
   },
@@ -39273,8 +39273,8 @@
       "sacrifices Urza's Saga"
     ],
     "cite": [
-      "714.3a",
-      "714.4",
+      "715.3a",
+      "715.4",
       "305.7"
     ]
   },
@@ -39699,12 +39699,12 @@
     "text": "I cast Stomp. Where does Bonecrusher Giant go, and can I cast it later?",
     "expect": [
       "opponent takes 2 damage.",
-      "Bonecrusher Giant goes to exile instead of the graveyard. Yes: you may cast it as the creature from exile on a later turn (715.3d), but not as the Adventure again."
+      "Bonecrusher Giant goes to exile instead of the graveyard. Yes: you may cast it as the creature from exile on a later turn (716.3d), but not as the Adventure again."
     ],
     "cite": [
-      "715.3",
-      "715.3b",
-      "715.3d"
+      "716.3",
+      "716.3b",
+      "716.3d"
     ]
   },
   {
@@ -39715,7 +39715,7 @@
       "Bonecrusher Giant enters the battlefield."
     ],
     "cite": [
-      "715.3d"
+      "716.3d"
     ]
   },
   {
@@ -39729,7 +39729,7 @@
       "702.140a",
       "702.140c",
       "702.140e",
-      "730.2a"
+      "731.2a"
     ]
   },
   {
@@ -40070,11 +40070,11 @@
     "text": "I cast Murderous Rider's Swift End on their Grizzly Bears. Where does Murderous Rider go, and can I cast it later?",
     "expect": [
       "Grizzly Bears: the battlefield → opponent's graveyard.",
-      "Murderous Rider goes to exile instead of the graveyard. Yes: you may cast it as the creature from exile on a later turn (715.3d)"
+      "Murderous Rider goes to exile instead of the graveyard. Yes: you may cast it as the creature from exile on a later turn (716.3d)"
     ],
     "cite": [
-      "715.3b",
-      "715.3d"
+      "716.3b",
+      "716.3d"
     ]
   },
   {
@@ -40743,13 +40743,13 @@
     "text": "My opponent casts Time Stop during my combat after attackers are declared. What happens to my attackers and to the end step?",
     "expect": [
       "Time Stop ends the turn: everything on the stack is exiled, all creatures are removed from combat",
-      "The end step is skipped, so \"at the beginning of the end step\" abilities don't trigger this turn (724.1e)"
+      "The end step is skipped, so \"at the beginning of the end step\" abilities don't trigger this turn (725.1e)"
     ],
     "cite": [
-      "724.1b",
-      "724.1c",
-      "724.1d",
-      "724.1e",
+      "725.1b",
+      "725.1c",
+      "725.1d",
+      "725.1e",
       "514.2"
     ]
   },
@@ -40762,7 +40762,7 @@
     ],
     "cite": [
       "603.7b",
-      "724.1b",
+      "725.1b",
       "603.7a"
     ]
   },
@@ -40807,10 +40807,10 @@
     "id": "tu7",
     "text": "I control my opponent's turn with Mindslaver. Can I make them concede?",
     "expect": [
-      "No: the controller of another player can't make that player concede (723.6)"
+      "No: the controller of another player can't make that player concede (724.6)"
     ],
     "cite": [
-      "723.6",
+      "724.6",
       "104.3a"
     ]
   },
@@ -40818,11 +40818,11 @@
     "id": "tu8",
     "text": "I control my opponent with Mindslaver. Can I see their hand and make them cast their spells?",
     "expect": [
-      "Yes to both. Anything in the game the controlled player could see, you see too, their hand included (723.4)"
+      "Yes to both. Anything in the game the controlled player could see, you see too, their hand included (724.4)"
     ],
     "cite": [
-      "723.4",
-      "723.5"
+      "724.4",
+      "724.5"
     ]
   },
   {
@@ -40830,11 +40830,11 @@
     "text": "My opponent takes the initiative from me by attacking. When do I venture?",
     "expect": [
       "Not until you take it back.",
-      "you stopped having it (726.3)"
+      "you stopped having it (727.3)"
     ],
     "cite": [
-      "726.2",
-      "726.3"
+      "727.2",
+      "727.3"
     ]
   },
   {
@@ -40845,8 +40845,8 @@
       "opponent draws 1 card."
     ],
     "cite": [
-      "725.2",
-      "725.3"
+      "726.2",
+      "726.3"
     ]
   },
   {
@@ -42688,8 +42688,8 @@
       "You may play Island from exile while it stays there, as your land drop."
     ],
     "cite": [
-      "723.2",
-      "723.5",
+      "724.2",
+      "724.5",
       "305.2"
     ],
     "notExpect": [
@@ -42912,8 +42912,8 @@
       "You can make an arbitrarily large amount of mana with Devoted Druid and Vizier of Remedies"
     ],
     "cite": [
-      "732.1b",
-      "732.2a",
+      "733.1b",
+      "733.2a",
       "614.1a"
     ]
   },
@@ -42921,11 +42921,11 @@
     "id": "au28",
     "text": "I cast Emrakul, the Aeons Torn. With its cast trigger on the stack my opponent casts Time Stop. What happens?",
     "expect": [
-      "Emrakul, the Aeons Torn's triggered ability is exiled from the stack and never resolves: no extra turn is taken (724.1b).",
+      "Emrakul, the Aeons Torn's triggered ability is exiled from the stack and never resolves: no extra turn is taken (725.1b).",
       "Emrakul, the Aeons Torn: the stack → exile (the turn was ended)."
     ],
     "cite": [
-      "724.1b",
+      "725.1b",
       "603.3"
     ],
     "notExpect": [
@@ -44274,7 +44274,7 @@
     ],
     "cite": [
       "603.7b",
-      "724.1b",
+      "725.1b",
       "603.7a"
     ]
   },
@@ -44321,11 +44321,11 @@
     "text": "opp takes the initiative from me by attacking. when do i venture",
     "expect": [
       "Not until you take it back.",
-      "you stopped having it (726.3)"
+      "you stopped having it (727.3)"
     ],
     "cite": [
-      "726.2",
-      "726.3"
+      "727.2",
+      "727.3"
     ]
   },
   {
@@ -44336,8 +44336,8 @@
       "opponent draws 1 card."
     ],
     "cite": [
-      "725.2",
-      "725.3"
+      "726.2",
+      "726.3"
     ]
   },
   {
@@ -44911,8 +44911,8 @@
       "sacrifices Urza's Saga"
     ],
     "cite": [
-      "714.3a",
-      "714.4",
+      "715.3a",
+      "715.4",
       "305.7"
     ]
   },
@@ -45096,7 +45096,7 @@
     ],
     "cite": [
       "106.6",
-      "732.2a"
+      "733.2a"
     ]
   },
   {
@@ -45167,7 +45167,7 @@
       "Bob is the monarch"
     ],
     "cite": [
-      "725.2"
+      "726.2"
     ]
   },
   {
@@ -45178,7 +45178,7 @@
       "Bob is the monarch."
     ],
     "cite": [
-      "725.4",
+      "726.4",
       "800.4a"
     ]
   },
@@ -45608,7 +45608,7 @@
       "Arcane Proxy is blue with mana value 3 and is 2/1"
     ],
     "cite": [
-      "718.3b",
+      "719.3b",
       "702.160a"
     ]
   },
@@ -45859,7 +45859,7 @@
       "Delver transforms into Insectile Aberration"
     ],
     "cite": [
-      "715.4"
+      "716.4"
     ]
   },
   {
@@ -46276,7 +46276,7 @@
     ],
     "cite": [
       "205.2a",
-      "715.4"
+      "716.4"
     ]
   },
   {
@@ -46288,7 +46288,7 @@
     "cite": [
       "702.66a",
       "614.1c",
-      "715.4"
+      "716.4"
     ]
   },
   {
@@ -46359,7 +46359,7 @@
     ],
     "cite": [
       "701.23a",
-      "714.4"
+      "715.4"
     ]
   },
   {
@@ -46958,7 +46958,7 @@
       "No: the Adventure was countered, so Bonecrusher Giant went to your graveyard"
     ],
     "cite": [
-      "715.3d"
+      "716.3d"
     ]
   },
   {
@@ -46969,7 +46969,7 @@
       "The Eldest Reborn: the battlefield → your graveyard."
     ],
     "cite": [
-      "714.4"
+      "715.4"
     ]
   },
   {
@@ -48006,7 +48006,7 @@
       "Delver transforms into Insectile Aberration"
     ],
     "cite": [
-      "715.4"
+      "716.4"
     ]
   },
   {
@@ -48184,7 +48184,7 @@
     ],
     "cite": [
       "205.2a",
-      "715.4"
+      "716.4"
     ]
   },
   {
@@ -48196,7 +48196,7 @@
     "cite": [
       "702.66a",
       "614.1c",
-      "715.4"
+      "716.4"
     ]
   },
   {
@@ -48531,7 +48531,7 @@
     ],
     "cite": [
       "106.6",
-      "732.2a"
+      "733.2a"
     ]
   },
   {
@@ -50038,7 +50038,7 @@
       "Not modeled"
     ],
     "cite": [
-      "715.3b"
+      "716.3b"
     ]
   },
   {
@@ -50052,8 +50052,8 @@
       "Not modeled"
     ],
     "cite": [
-      "712.8a",
-      "712.8f",
+      "712.6a",
+      "712.6e",
       "202.3a"
     ]
   },
@@ -50384,7 +50384,7 @@
     ],
     "cite": [
       "707.12",
-      "732.2a"
+      "733.2a"
     ]
   },
   {
@@ -50473,14 +50473,14 @@
     "id": "ce16",
     "text": "I cast Last Chance. In the extra turn I activate Sundial of the Infinite during my upkeep. Do I lose the game?",
     "expect": [
-      "No: ending the extra turn with Sundial of the Infinite before its end step skips that end step (724.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (724.1e)"
+      "No: ending the extra turn with Sundial of the Infinite before its end step skips that end step (725.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (725.1e)"
     ],
     "notExpect": [
       "At the beginning of the extra turn's end step you lose"
     ],
     "cite": [
-      "724.1d",
-      "724.1e",
+      "725.1d",
+      "725.1e",
       "603.7b"
     ]
   },
@@ -50829,7 +50829,7 @@
     "id": "ns4",
     "text": "My Diviner of Victory is prepared. I cast Unwind History targeting my opponent's Grizzly Bears. Is Diviner of Victory still prepared?",
     "expect": [
-      "Diviner of Victory is no longer prepared: casting Unwind History unprepared it (722.3c).",
+      "Diviner of Victory is no longer prepared: casting Unwind History unprepared it (723.3c).",
       "Grizzly Bears: the battlefield → opponent's hand.",
       "Diviner of Victory is 2/2 until end of turn.",
       "No: Diviner of Victory isn't prepared."
@@ -50839,8 +50839,8 @@
       "Not modeled"
     ],
     "cite": [
-      "722.3a",
-      "722.3c",
+      "723.3a",
+      "723.3c",
       "601.2i",
       "701.25a"
     ]
@@ -50849,9 +50849,9 @@
     "id": "ns5",
     "text": "My Emergency Phytomedic is prepared. I cast Seed Suture targeting it, then I cast Ephemerate on Emergency Phytomedic. Is it prepared again?",
     "expect": [
-      "Emergency Phytomedic is no longer prepared: casting Seed Suture unprepared it (722.3c).",
+      "Emergency Phytomedic is no longer prepared: casting Seed Suture unprepared it (723.3c).",
       "Emergency Phytomedic has 1 +1/+1 counter.",
-      "Yes: Emergency Phytomedic is prepared; the copy of Seed Suture waits in exile for you to cast (722.3c)."
+      "Yes: Emergency Phytomedic is prepared; the copy of Seed Suture waits in exile for you to cast (723.3c)."
     ],
     "notExpect": [
       "Prepare // Fight",
@@ -50859,8 +50859,8 @@
       "Not modeled"
     ],
     "cite": [
-      "722.3a",
-      "722.3c",
+      "723.3a",
+      "723.3c",
       "400.7"
     ]
   },
@@ -51230,7 +51230,7 @@
       "Not modeled"
     ],
     "cite": [
-      "725.2",
+      "726.2",
       "603.2",
       "122.1d"
     ]
@@ -52602,8 +52602,8 @@
     ],
     "notExpect": [],
     "cite": [
-      "732.1b",
-      "732.2a",
+      "733.1b",
+      "733.2a",
       "707.9b"
     ],
     "note": "The 'one round of the loop' step cites the shortcut rule."
@@ -52660,9 +52660,9 @@
     "notExpect": [],
     "cite": [
       "702.93a",
-      "732.1b",
-      "732.2a",
-      "732.1b"
+      "733.1b",
+      "733.2a",
+      "733.1b"
     ]
   },
   {
@@ -53329,7 +53329,7 @@
       "You draw 2 cards in all."
     ],
     "cite": [
-      "716.2a"
+      "717.2a"
     ]
   },
   {
@@ -53351,7 +53351,7 @@
       "The Seriema is 5/5."
     ],
     "cite": [
-      "721.2b"
+      "722.2b"
     ]
   },
   {
@@ -53375,7 +53375,7 @@
     ],
     "cite": [
       "702.184a",
-      "721.2b"
+      "722.2b"
     ]
   },
   {
@@ -53482,7 +53482,7 @@
     ],
     "cite": [
       "100.6",
-      "714.3c",
+      "715.3c",
       "IPG 2.1"
     ],
     "note": "track policy probe P07"
@@ -54255,11 +54255,11 @@
     "id": "ip64",
     "text": "I have Thopter Foundry and Sword of the Meek and I loop it a million times. Is that allowed?",
     "expect": [
-      "Yes, if you can actually do it: a loop is a tournament shortcut, so you announce the exact number of iterations (a million is fine) and the resulting game state, and your opponent agrees or names a lower number at which they'll act (MTR 4.4, 732.2a)."
+      "Yes, if you can actually do it: a loop is a tournament shortcut, so you announce the exact number of iterations (a million is fine) and the resulting game state, and your opponent agrees or names a lower number at which they'll act (MTR 4.4, 733.2a)."
     ],
     "cite": [
       "100.6",
-      "732.2a",
+      "733.2a",
       "MTR 4.4"
     ],
     "note": "track policy probe P64"
@@ -54268,11 +54268,11 @@
     "id": "ip65",
     "text": "My opponent says they'll do their loop \"a bunch of times\" but won't say how many. What happens?",
     "expect": [
-      "They must name a number: a loop is a shortcut in which the player proposing it states exactly how many times it's repeated, and you agree or name a lower number at which you'll act (MTR 4.4, 732.2a)."
+      "They must name a number: a loop is a shortcut in which the player proposing it states exactly how many times it's repeated, and you agree or name a lower number at which you'll act (MTR 4.4, 733.2a)."
     ],
     "cite": [
       "100.6",
-      "732.2a",
+      "733.2a",
       "MTR 4.4",
       "IPG 3.3"
     ],
@@ -54282,12 +54282,12 @@
     "id": "ip66",
     "text": "Both players have a mandatory loop that can't be stopped. What happens?",
     "expect": [
-      "The game is a draw: a loop of only mandatory actions that no one can stop is a draw (104.4b, 732.4), and under the tournament rules, when no player is maintaining the loop and every player chooses not to act, the game is a draw (MTR 4.4)."
+      "The game is a draw: a loop of only mandatory actions that no one can stop is a draw (104.4b, 733.4), and under the tournament rules, when no player is maintaining the loop and every player chooses not to act, the game is a draw (MTR 4.4)."
     ],
     "cite": [
       "100.6",
       "104.4b",
-      "732.4",
+      "733.4",
       "MTR 4.4"
     ],
     "note": "track policy probe P66"
@@ -54495,7 +54495,7 @@
     ],
     "cite": [
       "100.6",
-      "714.3c",
+      "715.3c",
       "IPG 2.1"
     ],
     "note": "track policy probe Q09"

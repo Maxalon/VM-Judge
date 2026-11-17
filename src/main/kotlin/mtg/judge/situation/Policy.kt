@@ -5,7 +5,7 @@ import mtg.judge.engine.CardDef
 /**
  * Tournament policy (track policy): the judge's ruling when a game at a sanctioned event went wrong. The Comprehensive
  * Rules say what the game should have done; once it didn't, the tournament documents say which infraction it is, its
- * penalty and how the game is repaired (100.6, 732.1c): the Magic Infraction Procedure Guide at Competitive and
+ * penalty and how the game is repaired (100.6, 733.1c): the Magic Infraction Procedure Guide at Competitive and
  * Professional REL, Judging at Regular REL (FNM, prereleases) at Regular REL, and the Magic Tournament Rules at both
  * (communication, shortcuts, out-of-order sequencing, loops). Policy citations ("IPG 2.1", "MTR 4.2", "JAR") travel
  * through the trace like rule numbers; PolicyCitationsTest checks every "IPG x.y" / "MTR x.y" against the documents'
@@ -47,7 +47,7 @@ internal object Policy {
     fun rule(x: Facts): Ruling {
         val r = Ruling()
         // The bridge from the game rules to the tournament documents, and which document the event uses.
-        r.step("Tournaments add their own rules to the game's: the Magic Tournament Rules, and for infractions the Infraction Procedure Guide (Competitive and Professional REL) or Judging at Regular REL (Regular REL). Where they differ from the Comprehensive Rules on shortcuts and loops, the tournament rules win.", "100.6", "732.1c")
+        r.step("Tournaments add their own rules to the game's: the Magic Tournament Rules, and for infractions the Infraction Procedure Guide (Competitive and Professional REL) or Judging at Regular REL (Regular REL). Where they differ from the Comprehensive Rules on shortcuts and loops, the tournament rules win.", "100.6", "733.1c")
         x["relsaid"]?.let { said -> r.step("${said.replaceFirstChar { it.uppercase() }} is run at ${relName(x.rel)}, so ${if (x.rel == "reg") "Judging at Regular REL" else "the Infraction Procedure Guide"} applies.", "MTR 1.12") }
         when (x.kind) {
             "missed" -> missed(x, r)
@@ -197,7 +197,7 @@ internal object Policy {
         val What = what.replaceFirstChar { it.uppercase() }
         // The rules part: it triggered whether or not anyone remembered it.
         when {
-            lore -> r.step("Putting a lore counter on each Saga as the precombat main phase begins is a turn-based action, not a trigger; the tournament rules handle forgetting it as a missed trigger.", "714.3c")
+            lore -> r.step("Putting a lore counter on each Saga as the precombat main phase begins is a turn-based action, not a trigger; the tournament rules handle forgetting it as a missed trigger.", "715.3c")
             t != null -> r.step("$name's ability (\"${t.text}\") triggered when its event happened, whether or not anyone remembered it; its controller had to put it on the stack the next time a player would receive priority.", *listOfNotNull("603.2", if (t.text.startsWith("At ", true)) "603.2b" else null, "603.3").toTypedArray())
             else -> r.step("A triggered ability triggers whenever its event happens, whether or not anyone remembers it; its controller has to put it on the stack the next time a player would receive priority.", "603.2", "603.3")
         }
@@ -302,7 +302,7 @@ internal object Policy {
             t != null && t.choosesOnStack -> "it needs a target or mode, so it had to be announced before ${s.subj} next passed priority"
             else -> "it changes what everyone can see${if (may) " (or needs a choice as it resolves)" else ""}, so it had to be acknowledged before ${s.subj} took an action that can only come after it would have resolved"
         }
-        if (lore) r += "Why: the lore counter is a turn-based action as the precombat main phase begins (714.3c); forgetting it is handled as a missed trigger (IPG 2.1)."
+        if (lore) r += "Why: the lore counter is a turn-based action as the precombat main phase begins (715.3c); forgetting it is handled as a missed trigger (IPG 2.1)."
         else if (fix != Fix.DELAYED && fix != Fix.RESOLVE_NOW) r += "Why: the ability still triggered (603.2), but $point${actText(x)?.let { a -> " — $a did that" } ?: ""}. Opponents don't have to point out triggers they don't control (IPG 2.1)."
         if (det) {
             r.step("Upgrade: a trigger that is usually detrimental to its controller, from a card they own, makes the missed trigger a Warning; the current game state isn't a factor.", "IPG 2.1")
@@ -591,7 +591,7 @@ internal object Policy {
 
     private fun shortcut(x: Facts, r: Ruling) {
         val said = x["said"]; val want = x["want"]
-        r.step("Players take tournament shortcuts to skip parts of the technical play sequence; the conventional ones define a default communication, and any player may interrupt a shortcut by saying how they deviate from it or where they want to act.", "732.1c", "MTR 4.2")
+        r.step("Players take tournament shortcuts to skip parts of the technical play sequence; the conventional ones define a default communication, and any player may interrupt a shortcut by saying how they deviate from it or where they want to act.", "733.1c", "MTR 4.2")
         when {
             x["sub"] == "interrupt" -> r += "Yes: any player may interrupt a tournament shortcut by explaining how they're deviating from it or at which point in it they want to take an action (MTR 4.2). A player may interrupt their own shortcut the same way."
             x["sub"] == "scry" -> {
@@ -648,20 +648,20 @@ internal object Policy {
     private fun loop(x: Facts, r: Ruling) {
         when (x["sub"]) {
             "mandatory" -> {
-                r.step("A loop of mandatory actions that no player can stop makes the game a draw.", "104.4b", "732.4")
+                r.step("A loop of mandatory actions that no player can stop makes the game a draw.", "104.4b", "733.4")
                 r.step("If no player is involved in maintaining a loop and every player chooses to take no action, the game is a draw.", "MTR 4.4")
-                r += "The game is a draw: a loop of only mandatory actions that no one can stop is a draw (104.4b, 732.4), and under the tournament rules, when no player is maintaining the loop and every player chooses not to act, the game is a draw (MTR 4.4)."
+                r += "The game is a draw: a loop of only mandatory actions that no one can stop is a draw (104.4b, 733.4), and under the tournament rules, when no player is maintaining the loop and every player chooses not to act, the game is a draw (MTR 4.4)."
                 r += "If anyone can take an action to break it, each player in turn order names how many iterations they'll let pass first, and the lowest number wins (MTR 4.4)."
             }
             "vague" -> {
-                r.step("A loop shortcut names the exact number of iterations; continuing a loop without being able to give an exact number of iterations and the expected resulting game state is Slow Play.", "MTR 4.4", "IPG 3.3", "732.2a")
-                r += "They must name a number: a loop is a shortcut in which the player proposing it states exactly how many times it's repeated, and you agree or name a lower number at which you'll act (MTR 4.4, 732.2a)."
+                r.step("A loop shortcut names the exact number of iterations; continuing a loop without being able to give an exact number of iterations and the expected resulting game state is Slow Play.", "MTR 4.4", "IPG 3.3", "733.2a")
+                r += "They must name a number: a loop is a shortcut in which the player proposing it states exactly how many times it's repeated, and you agree or name a lower number at which you'll act (MTR 4.4, 733.2a)."
                 r += "Continuing a loop without being able to give an exact number of iterations and the resulting game state is Slow Play, a Warning (IPG 3.3)."
             }
             else -> {
-                r.step("A loop is a tournament shortcut: the player maintaining it names a number of iterations, and each other player in turn order agrees or names a lower number at which they'll intervene. A player may not opt out of shortcutting a loop.", "732.2a", "MTR 4.4")
+                r.step("A loop is a tournament shortcut: the player maintaining it names a number of iterations, and each other player in turn order agrees or names a lower number at which they'll intervene. A player may not opt out of shortcutting a loop.", "733.2a", "MTR 4.4")
                 val costs = x.cards.flatMap { c -> c.oracleText.split('\n').mapNotNull { l -> Regex("""^((?:\{[^}]+\})+)(?:, [^:]+)?:""").find(l.trim())?.groupValues?.get(1)?.takeIf { it.contains(Regex("""\{\d+\}|\{[WUBRGC]\}""")) }?.let { "$it for ${c.name}" } } }
-                r += "Yes, if you can actually do it: a loop is a tournament shortcut, so you announce the exact number of iterations (a million is fine) and the resulting game state, and your opponent agrees or names a lower number at which they'll act (MTR 4.4, 732.2a)."
+                r += "Yes, if you can actually do it: a loop is a tournament shortcut, so you announce the exact number of iterations (a million is fine) and the resulting game state, and your opponent agrees or names a lower number at which they'll act (MTR 4.4, 733.2a)."
                 if (costs.isNotEmpty()) r += "Each time round still has to be paid for (${costs.joinToString(", ")}), so you can name only as many iterations as you can pay for."
                 r += "A loop with no exact number is Slow Play (IPG 3.3), and proposing loops to use up time is Stalling (MTR 4.4)."
             }

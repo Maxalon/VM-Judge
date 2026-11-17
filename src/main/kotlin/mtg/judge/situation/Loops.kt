@@ -18,7 +18,7 @@ import mtg.judge.engine.Zone
 /**
  * "Can I gain infinite life?", "How much damage can I deal?", "Can I win this turn?" asked of a board: whether it
  * holds a sequence of actions that comes back to the same position with something gained each time round — a loop
- * the shortcut rules let a player repeat any number of times by naming the number (732.1b, 732.2a).
+ * the shortcut rules let a player repeat any number of times by naming the number (733.1b, 733.2a).
  *
  * It is found by playing it, not by knowing combos. The candidates come from what the cards can do: a free
  * "sacrifice a creature" ability and a creature that comes back when it dies (persist, undying); a creature that

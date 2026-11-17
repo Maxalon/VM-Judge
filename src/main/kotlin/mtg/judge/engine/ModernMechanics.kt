@@ -108,7 +108,7 @@ internal object ModernMech {
 
     /**
      * Murktide Regent: "enters with a +1/+1 counter on it for each instant and sorcery card exiled with it" — the cards delve
-     * exiled to cast it (702.66a), counted by what they are in the graveyard: an adventurer card is only a creature card there (715.4).
+     * exiled to cast it (702.66a), counted by what they are in the graveyard: an adventurer card is only a creature card there (716.4).
      */
     fun entersWithExiled(state: GameState, o: GameObject) {
         val r = Regex("""(?i)enters with a ([+-]1/[+-]1) counter on it for each instant and sorcery card exiled with it""").find(o.def.oracleText) ?: return
@@ -117,7 +117,7 @@ internal object ModernMech {
         val n = counted.sumOf { it.second }
         val adv = exiled.filter { (d, _) -> d.typeLine.contains("Adventure") }
         val list = exiled.joinToString(", ") { (d, k) -> "${if (k > 1) "$k " else ""}${d.name.substringBefore(" // ")}" }
-        state.trace.step("Delve exiled $list from the graveyard to pay for ${o.name}. As it enters it gets a ${r.groupValues[1]} counter for each instant and sorcery card among them: $n.${if (adv.isNotEmpty()) " ${adv.joinToString(" and ") { it.first.name.substringBefore(" // ") }} was a creature card in the graveyard (an adventurer card has only its normal characteristics there), so it doesn't count." else ""}", "702.66a", "614.1c", *(if (adv.isNotEmpty()) arrayOf("715.4") else emptyArray()))
+        state.trace.step("Delve exiled $list from the graveyard to pay for ${o.name}. As it enters it gets a ${r.groupValues[1]} counter for each instant and sorcery card among them: $n.${if (adv.isNotEmpty()) " ${adv.joinToString(" and ") { it.first.name.substringBefore(" // ") }} was a creature card in the graveyard (an adventurer card has only its normal characteristics there), so it doesn't count." else ""}", "702.66a", "614.1c", *(if (adv.isNotEmpty()) arrayOf("716.4") else emptyArray()))
         if (n > 0) o.counters[r.groupValues[1]] = (o.counters[r.groupValues[1]] ?: 0) + n
     }
 

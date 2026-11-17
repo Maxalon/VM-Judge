@@ -8,7 +8,7 @@ import mtg.judge.engine.Turns
 /**
  * Turn-structure questions ("turn:…" asks) and events ("turn" verb): which extra turn comes first, whether a turn or
  * step is skipped, what ending the turn did, whether an extra combat brings a main phase with it (500–514, 614.10,
- * 724.1). The engine side (Turns.kt) keeps the plan; these read it back as a judge would say it.
+ * 725.1). The engine side (Turns.kt) keeps the plan; these read it back as a judge would say it.
  */
 internal object TurnAsks {
 
@@ -67,15 +67,15 @@ internal object TurnAsks {
         // "I cast a sorcery in my second main phase after combat. Then I want another combat. Can I?"
         "anotherCombat" to ("No: a turn has one combat phase, and the phases go in order: beginning, precombat main, combat, postcombat main, ending (500.1). Once you're in your second main phase, the combat phase is over. You get another one only if an effect adds it, like Relentless Assault (500.8)." to listOf("500.1", "505.1", "500.8")),
         // "I control my opponent's turn with Mindslaver. Can I make them concede?"
-        "controlConcede" to ("No: the controller of another player can't make that player concede (723.6). Conceding is that player's own choice, which they can make at any time, even while you control them (104.3a)." to listOf("723.6", "104.3a")),
+        "controlConcede" to ("No: the controller of another player can't make that player concede (724.6). Conceding is that player's own choice, which they can make at any time, even while you control them (104.3a)." to listOf("724.6", "104.3a")),
         // "I control my opponent with Mindslaver. Can I see their hand and make them cast their spells?"
-        "controlSeeCast" to ("Yes to both. Anything in the game the controlled player could see, you see too, their hand included (723.4). You make all the choices and decisions they're allowed to make, including which spells they cast, what those target and how they're paid for, using only their cards and mana (723.5, 723.5a). You control the player, not their permanents or spells (723.3), and you can't make choices the rules or cards don't call for, or make them concede (723.5b, 723.6)." to listOf("723.4", "723.5", "723.5a", "723.3", "723.5b", "723.6")),
+        "controlSeeCast" to ("Yes to both. Anything in the game the controlled player could see, you see too, their hand included (724.4). You make all the choices and decisions they're allowed to make, including which spells they cast, what those target and how they're paid for, using only their cards and mana (724.5, 724.5a). You control the player, not their permanents or spells (724.3), and you can't make choices the rules or cards don't call for, or make them concede (724.5b, 724.6)." to listOf("724.4", "724.5", "724.5a", "724.3", "724.5b", "724.6")),
         // "My opponent takes the initiative from me by attacking. When do I venture?"
-        "initiativeLost" to ("Not until you take it back. When their creatures dealt combat damage to you, your opponent took the initiative, you stopped having it (726.3), and they ventured into Undercity at once (726.2). The player with the initiative also ventures at the beginning of their own upkeep. Deal combat damage to them with one or more creatures and you take the initiative back and venture right away, then again at the beginning of each of your upkeeps while you keep it (726.2, 701.49d)." to listOf("726.2", "726.3", "701.49d")),
+        "initiativeLost" to ("Not until you take it back. When their creatures dealt combat damage to you, your opponent took the initiative, you stopped having it (727.3), and they ventured into Undercity at once (727.2). The player with the initiative also ventures at the beginning of their own upkeep. Deal combat damage to them with one or more creatures and you take the initiative back and venture right away, then again at the beginning of each of your upkeeps while you keep it (727.2, 701.49d)." to listOf("727.2", "727.3", "701.49d")),
         // "When do I venture?" with the initiative, nothing said about losing it.
-        "initiativeVenture" to ("The player who has the initiative ventures into Undercity as they take it, and again at the beginning of their upkeep while they have it (726.2). A player whose creatures deal combat damage to the player with the initiative takes it, and ventures then (726.2, 726.3)." to listOf("726.2", "726.3")),
+        "initiativeVenture" to ("The player who has the initiative ventures into Undercity as they take it, and again at the beginning of their upkeep while they have it (727.2). A player whose creatures deal combat damage to the player with the initiative takes it, and ventures then (727.2, 727.3)." to listOf("727.2", "727.3")),
         // "It becomes night. What happens to my daybound creature?"
-        "nightDaybound" to ("It transforms to its nightbound face as it becomes night (702.145b), and any daybound permanent that's front face up while it's night is transformed right away; that isn't a state-based action and doesn't use the stack (702.145c). It stays that way until it becomes day: that happens as a turn's untap step begins if the previous turn's active player cast two or more spells (731.2b, 502.2), and then nightbound permanents transform back (702.145e)." to listOf("702.145b", "702.145c", "731.2b", "702.145e")),
+        "nightDaybound" to ("It transforms to its nightbound face as it becomes night (702.145b), and any daybound permanent that's front face up while it's night is transformed right away; that isn't a state-based action and doesn't use the stack (702.145c). It stays that way until it becomes day: that happens as a turn's untap step begins if the previous turn's active player cast two or more spells (732.2b, 502.2), and then nightbound permanents transform back (702.145e)." to listOf("702.145b", "702.145c", "732.2b", "702.145e")),
     )
 
     fun answer(e: EventSpec, state: GameState, @Suppress("UNUSED_PARAMETER") engine: Engine): Boolean {
@@ -111,8 +111,8 @@ internal object TurnAsks {
             // "Time Stop during my combat: what happens to my attackers and to the end step?"
             to == "endTurn" -> {
                 if (plan.endedBy == null) { state.outcomes += "Nothing here ended the turn, so combat and the end step go on as usual."; return true }
-                state.outcomes += "Attacking and blocking creatures are removed from combat${if (plan.removedFromCombat.isEmpty()) "" else " (" + plan.removedFromCombat.joinToString(", ") + ")"}: no combat damage is dealt, and attackers that were tapped stay tapped (724.1d). " +
-                    "The end step is skipped, so \"at the beginning of the end step\" abilities don't trigger this turn (724.1e). The cleanup step still happens: the active player discards to hand size, damage is removed and \"until end of turn\" effects end (514.1, 514.2)."
+                state.outcomes += "Attacking and blocking creatures are removed from combat${if (plan.removedFromCombat.isEmpty()) "" else " (" + plan.removedFromCombat.joinToString(", ") + ")"}: no combat damage is dealt, and attackers that were tapped stay tapped (725.1d). " +
+                    "The end step is skipped, so \"at the beginning of the end step\" abilities don't trigger this turn (725.1e). The cleanup step still happens: the active player discards to hand size, damage is removed and \"until end of turn\" effects end (514.1, 514.2)."
             }
             // "I control Stasis. Do I skip my untap step? Does my opponent?"
             to.startsWith("skipStep:") -> {
