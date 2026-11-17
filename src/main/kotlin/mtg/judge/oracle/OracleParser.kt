@@ -710,6 +710,7 @@ object OracleParser {
     fun parseStatic(line: String): List<StaticEffect> {
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
+        mtg.judge.engine.RedteamMech.parseStatic(line)?.let { return it }   // Colossus Hammer's "gets +10/+10 and loses flying" (RedteamMechanics.kt)
         mtg.judge.engine.CedhMech.parseStatic(line)?.let { return it }   // Underworld Breach, Ashiok (CedhMechanics.kt)
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
@@ -2019,6 +2020,12 @@ object OracleParser {
             // Two targets with the same words are two different targets (601.2c); the second is worded apart so they stay two.
             val a = target(m.groupValues[2]); val b0 = target(m.groupValues[3]); val b = if (b0 == a) b0.copy(raw = "another " + b0.raw) else b0
             if (a.filter.verifiable && b.filter.verifiable) return if (m.groupValues[1].lowercase() == "destroy") Effect.Seq(listOf(Effect.Destroy(a), Effect.Destroy(b))) else Effect.Seq(listOf(Effect.Exile(a), Effect.Exile(b)))
+        }
+        // Force of Vigor: "Destroy up to two target artifacts and/or enchantments": two targets of the same kind, each destroyed.
+        Regex("""^destroy (up to )?two target (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val what = m.groupValues[2].replace(" and/or ", " or ").split(" or ").joinToString(" or ") { singular(it.trim()) }
+            val a = target(what); val b = a.copy(raw = (if (m.groupValues[1].isNotEmpty()) "up to one other " else "another ") + a.raw)
+            if (a.filter.verifiable) return Effect.Seq(listOf(Effect.Destroy(a), Effect.Destroy(b)))
         }
         destroyRe.matchEntire(s)?.let { return Effect.Destroy(target(it.groupValues[1])) }
         bounceRe.matchEntire(s)?.let { m -> return Effect.Bounce(if (m.groupValues[1] == "~") null else target(m.groupValues[1])) }

@@ -59550,5 +59550,668 @@
       "IPG 2.1"
     ],
     "note": "track policywording: extra paraphrase of ip78"
+  },
+  {
+    "id": "rt1",
+    "text": "I cast Murktide Regent exiling three instants from my graveyard. My opponent controls Dress Down. How big is Murktide?",
+    "expect": [
+      "is 3/3 (3/3 base, no abilities (Dress Down"
+    ],
+    "notExpect": [
+      "something else must be allowing it to be cast from a graveyard"
+    ],
+    "cite": [
+      "702.66a"
+    ]
+  },
+  {
+    "id": "rt2",
+    "text": "I have Delver of Secrets transformed into Insectile Aberration. My opponent casts Dress Down. Does it still fly?",
+    "expect": [
+      "No: Insectile Aberration doesn't have flying"
+    ],
+    "notExpect": [
+      "Dress Down doesn't have flying"
+    ],
+    "cite": [
+      "613.1f"
+    ]
+  },
+  {
+    "id": "rt3",
+    "text": "My opponent has Back to Basics. I control Urza's Saga with 2 lore counters. Do I get chapter three in my precombat main phase?",
+    "expect": [
+      "Yes: Urza's Saga keeps its chapter abilities"
+    ],
+    "cite": [
+      "715.3c"
+    ]
+  },
+  {
+    "id": "rt4",
+    "text": "I control Chalice of the Void with one counter. My opponent casts Shardless Agent and cascades into Ancestral Vision. Does Chalice counter it?",
+    "expect": [
+      "No: Ancestral Vision has mana value 0"
+    ],
+    "cite": [
+      "702.85a"
+    ]
+  },
+  {
+    "id": "rt5",
+    "text": "I cast Demonic Consultation naming a card not in my deck with Thassa's Oracle on the stack. In what order should I cast them?",
+    "expect": [
+      "Either order works by the rules"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "rt6",
+    "text": "I attack with Griselbrand from Sneak Attack. At the end step, can I activate Griselbrand's draw ability in response to the sacrifice trigger?",
+    "expect": [
+      "Yes: Sneak Attack's \"sacrifice it at the beginning of the next end step\" is a delayed triggered ability"
+    ],
+    "cite": [
+      "603.7a"
+    ]
+  },
+  {
+    "id": "rt7",
+    "text": "I cast Show and Tell. I put Omniscience onto the battlefield and my opponent puts Archon of Emeria onto the battlefield. What happens?",
+    "expect": [
+      "so you can't cast another spell until next turn"
+    ],
+    "cite": [
+      "101.2"
+    ]
+  },
+  {
+    "id": "rt8",
+    "text": "My opponent casts Pithing Needle naming Urza's Saga. Do I still get chapter abilities?",
+    "expect": [
+      "Its chapter abilities are triggered abilities, so they still trigger"
+    ],
+    "cite": [
+      "602.5",
+      "715.2"
+    ]
+  },
+  {
+    "id": "rt9",
+    "text": "I cycle Troll of Khazad-dum. How much does it cost?",
+    "expect": [
+      "Swampcycling Troll of Khazad-dûm costs {1} plus discarding it"
+    ],
+    "cite": [
+      "702.29e"
+    ]
+  },
+  {
+    "id": "rt10",
+    "text": "I cast Troll of Khazad-dum. Can it be blocked by one creature?",
+    "expect": [
+      "No: Troll of Khazad-dûm can't be blocked except by 3 or more creatures"
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "rt11",
+    "text": "I take the initiative and venture into Undercity. My opponent hits me with a creature. What happens?",
+    "expect": [
+      "they take it (727.2), you stop having it (727.3)"
+    ],
+    "cite": [
+      "727.2"
+    ]
+  },
+  {
+    "id": "rt12",
+    "text": "My opponent activates Karn Liberated -3 targeting my Boseiju. Can I channel Boseiju in response?",
+    "expect": [
+      "No: Boseiju, Who Endures is on the battlefield, and its channel ability can be activated only from your hand"
+    ],
+    "notExpect": [
+      "Yes: you can cast Channel"
+    ],
+    "cite": [
+      "207.2c"
+    ]
+  },
+  {
+    "id": "rt13",
+    "text": "I evoke Grief and respond to the sacrifice trigger with Undying Malice. What happens?",
+    "expect": [
+      "Grief returns to the battlefield tapped with a +1/+1 counter on it",
+      "Grief: opponent discards a nonland card (which one depends on opponent's hand). (×2)"
+    ],
+    "cite": [
+      "702.74a"
+    ]
+  },
+  {
+    "id": "rt14",
+    "text": "I evoke Grief and cast Not Dead After All on it in response to the evoke trigger. What happens?",
+    "expect": [
+      "Grief returns to the battlefield tapped with a Wicked Role token attached to it"
+    ],
+    "cite": [
+      "702.74a"
+    ]
+  },
+  {
+    "id": "rt15",
+    "text": "Fable of the Mirror-Breaker gets its third lore counter. What happens to the Saga?",
+    "expect": [
+      "Fable of the Mirror-Breaker is exiled and returns transformed as Reflection of Kiki-Jiki (2/2)"
+    ],
+    "cite": [
+      "712.11a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "rt16",
+    "text": "I control Puresteel Paladin with metalcraft. How much does equip cost?",
+    "expect": [
+      "{0}: with metalcraft on, Puresteel Paladin gives each Equipment you control equip {0}"
+    ],
+    "cite": [
+      "702.6d"
+    ]
+  },
+  {
+    "id": "rt17",
+    "text": "I cast Colossus Hammer with Sigarda's Aid on the battlefield. What happens?",
+    "expect": [
+      "attach it to target creature you control for free, skipping equip {8}"
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "rt18",
+    "text": "I equip Colossus Hammer to a creature equipped with Shadowspear. Does it have trample and lifelink?",
+    "expect": [
+      "The creature gets +11/+11 in all"
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "rt19",
+    "text": "I control Yawgmoth, Thran Physician and a creature with undying and Blood Artist. Can I loop forever?",
+    "expect": [
+      "No, not forever: each activation costs 1 life"
+    ],
+    "cite": [
+      "704.5q"
+    ]
+  },
+  {
+    "id": "rt20",
+    "text": "I cast Through the Breach on Emrakul, the Aeons Torn. When does the annihilator trigger happen and when do I sacrifice Emrakul?",
+    "expect": [
+      "annihilator 6 triggers as Emrakul is declared as an attacker"
+    ],
+    "cite": [
+      "603.7a",
+      "702.86a"
+    ]
+  },
+  {
+    "id": "rt21",
+    "text": "I cast Murktide Regent from exile with Ragavan. Does it get counters?",
+    "expect": [
+      "you can still delve"
+    ],
+    "cite": [
+      "702.66b"
+    ]
+  },
+  {
+    "id": "rt22",
+    "text": "My opponent casts Solitude by evoking it targeting my Psychic Frog. Can I exile cards to give Frog flying in response?",
+    "expect": [
+      "Yes, they can respond, but it won't save the Frog"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "rt23",
+    "text": "I control Ocelot Pride and gained life this turn. I have a token copy of a creature. What happens at my end step?",
+    "expect": [
+      "You get a Cat token."
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "rt24",
+    "text": "I control Guide of Souls and Ajani, Nacatl Pariah. Ajani's cat dies. What happens?",
+    "expect": [
+      "Guide of Souls doesn't trigger for him"
+    ],
+    "cite": [
+      "712.11a"
+    ]
+  },
+  {
+    "id": "rt25",
+    "text": "I cast Monstrous Rage on my Goblin Guide that is blocked by a 1/1. How much damage does it deal?",
+    "expect": [
+      "4: opponent takes 4 damage in all.",
+      "Goblin Guide gets a Monster Role (gets +1/+1 and has trample): Goblin Guide is 5/3"
+    ],
+    "cite": [
+      "111.10k",
+      "702.19b"
+    ]
+  },
+  {
+    "id": "rt26",
+    "text": "I cast Abuelo's Awakening targeting Fable of the Mirror-Breaker in my graveyard. What happens?",
+    "expect": [
+      "Fable returns as a 1/1 white Spirit creature with flying"
+    ],
+    "cite": [
+      "715.3a"
+    ]
+  },
+  {
+    "id": "rt27",
+    "text": "I attack with Greasefang, Okiba Boss with Parhelion II in my graveyard. What happens?",
+    "expect": [
+      "Greasefang triggers at the beginning of combat on your turn, not when it attacks"
+    ],
+    "cite": [
+      "507.1",
+      "702.122a"
+    ]
+  },
+  {
+    "id": "rt28",
+    "text": "I control Time Vault and Manifold Key. Can I take infinite turns?",
+    "expect": [
+      "Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault"
+    ],
+    "cite": [
+      "500.7"
+    ]
+  },
+  {
+    "id": "rt29",
+    "text": "I control Oath of Druids and no creatures. My opponent controls a creature. What happens at my upkeep?",
+    "expect": [
+      "At the beginning of your upkeep Oath of Druids triggers for you"
+    ],
+    "cite": [
+      "115.1d"
+    ]
+  },
+  {
+    "id": "rt30",
+    "text": "I control Necropotence. I discard a card to hand size. Where does it go?",
+    "expect": [
+      "It's exiled: Necropotence says"
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "rt31",
+    "text": "I activate Mystic Forge. What can I cast off the top of my library?",
+    "expect": [
+      "Artifact spells and colorless spells, from the top of your library"
+    ],
+    "cite": [
+      "601.3"
+    ]
+  },
+  {
+    "id": "rt32",
+    "text": "My companion is Lurrus of the Dream-Den. How do I put it in my hand?",
+    "expect": [
+      "Pay {3} as a special action to put Lurrus from outside the game into your hand"
+    ],
+    "cite": [
+      "116.2g"
+    ]
+  },
+  {
+    "id": "rt33",
+    "text": "My opponent controls Null Rod. I cast Force of Vigor targeting it by exiling a green card. What happens?",
+    "expect": [
+      "Null Rod: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "701.8a"
+    ]
+  },
+  {
+    "id": "rt34",
+    "text": "I control Mox Sapphire, Mox Jet and Sol Ring. I cast Paradoxical Outcome. How many cards do I draw?",
+    "expect": [
+      "3: you draw 3 cards.",
+      "Sol Ring: the battlefield → your hand."
+    ],
+    "cite": [
+      "601.2c"
+    ]
+  },
+  {
+    "id": "rt35",
+    "text": "I cast Ad Nauseam with 4 mana rocks in my deck. What happens when I reveal Mana Crypt?",
+    "expect": [
+      "Mana Crypt goes to your hand and you lose 0 life"
+    ],
+    "cite": [
+      "202.3"
+    ]
+  },
+  {
+    "id": "rt36",
+    "text": "I cast my commander from the command zone with Command Beacon. What is the commander tax next time?",
+    "expect": [
+      "Command Beacon doesn't cast your commander"
+    ],
+    "notExpect": [
+      "Yes. Command Beacon's cost is an alternative cost"
+    ],
+    "cite": [
+      "903.8"
+    ]
+  },
+  {
+    "id": "rt37",
+    "text": "I have partner commanders Rograkh and Silas Renn. Rograkh died twice. What does Silas cost?",
+    "expect": [
+      "Each partner commander has its own commander tax"
+    ],
+    "cite": [
+      "702.124d"
+    ]
+  },
+  {
+    "id": "rt38",
+    "text": "My opponent's commander deals combat damage. A clone of the commander deals damage too. Does it count as commander damage?",
+    "expect": [
+      "No: a copy of a commander isn't a commander"
+    ],
+    "cite": [
+      "903.10a"
+    ]
+  },
+  {
+    "id": "rt39",
+    "text": "In a 4-player game I cast Thassa's Oracle with an empty library. Can each opponent respond?",
+    "expect": [
+      "Yes: every player gets priority, in turn order"
+    ],
+    "cite": [
+      "117.4"
+    ]
+  },
+  {
+    "id": "rt40",
+    "text": "I control Kinnan, Bonder Prodigy and Basalt Monolith. Can I generate infinite mana?",
+    "expect": [
+      "Yes: tap Basalt Monolith for {C}{C}{C}"
+    ],
+    "cite": [
+      "733.2a"
+    ]
+  },
+  {
+    "id": "rt41",
+    "text": "I control Underworld Breach and cast Brain Freeze. What is the storm count in multiplayer?",
+    "expect": [
+      "Storm counts every spell cast before it this turn by any player"
+    ],
+    "cite": [
+      "702.40a"
+    ]
+  },
+  {
+    "id": "rt42",
+    "text": "I control Food Chain and exile Eternal Scourge. My opponent controls Opposition Agent. What happens?",
+    "expect": [
+      "Opposition Agent doesn't stop it"
+    ],
+    "cite": [
+      "106.6"
+    ]
+  },
+  {
+    "id": "rt43",
+    "text": "My opponent casts Daze returning an Island. Can I pay 1?",
+    "expect": [
+      "Yes: Daze says \"Counter target spell unless its controller pays {1}\""
+    ],
+    "cite": [
+      "608.2d"
+    ]
+  },
+  {
+    "id": "rt44",
+    "text": "I cast Sneak Attack and put Emrakul, the Aeons Torn onto the battlefield. Does it get annihilator?",
+    "expect": [
+      "Yes when it attacks: Sneak Attack gives Emrakul haste"
+    ],
+    "cite": [
+      "702.86a"
+    ]
+  },
+  {
+    "id": "rt45",
+    "text": "My opponent controls Containment Priest. I cast Show and Tell and put Griselbrand onto the battlefield. What happens?",
+    "expect": [
+      "Griselbrand: your hand → exile (replaced by Containment Priest): it wasn't cast."
+    ],
+    "notExpect": [
+      "Griselbrand enters the battlefield"
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "rt46",
+    "text": "I cast Force of Will by pitching a blue card with Chalice of the Void on 5. Does it get countered?",
+    "expect": [
+      "Yes: Force of Will is countered (by Chalice of the Void)."
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "rt47",
+    "text": "I control Thalia, Guardian of Thraben. My opponent casts Force of Will by pitching. How much does it cost?",
+    "expect": [
+      "Pitched, Force of Will costs 1 life, exiling a blue card from its caster's hand, and {1}"
+    ],
+    "cite": [
+      "118.9d"
+    ]
+  },
+  {
+    "id": "rt48",
+    "text": "My opponent controls Teferi, Time Raveler. I cast Living End off cascade. Can I?",
+    "expect": [
+      "No: Living End can't be cast (Teferi, Time Raveler: sorcery speed only)."
+    ],
+    "notExpect": [
+      "Yes: Living End can be cast"
+    ],
+    "cite": [
+      "307.1",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "rt49",
+    "text": "I play Urza's Saga and my opponent activates Pithing Needle naming Urza's Saga. What happens with chapter III?",
+    "expect": [
+      "Its chapter abilities are triggered abilities, so they still trigger"
+    ],
+    "cite": [
+      "602.5"
+    ]
+  },
+  {
+    "id": "rt50",
+    "text": "I control Fable of the Mirror-Breaker. At chapter III it transforms into Reflection of Kiki-Jiki. Is Reflection summoning sick?",
+    "expect": [
+      "Yes: Reflection of Kiki-Jiki came under your control this turn"
+    ],
+    "notExpect": [
+      "isn't a creature, so summoning sickness"
+    ],
+    "cite": [
+      "712.11a"
+    ]
+  },
+  {
+    "id": "rt51",
+    "text": "I control Yawgmoth, Thran Physician. I pay 1 life and sacrifice a creature with undying. What happens?",
+    "expect": [
+      "The undying creature had no +1/+1 counter, so it returns with one"
+    ],
+    "cite": [
+      "702.93a"
+    ]
+  },
+  {
+    "id": "rt52",
+    "text": "My opponent controls Psychic Frog. I cast Solitude targeting it. Can they discard cards in response to make it bigger?",
+    "expect": [
+      "Yes, they can respond, but it won't save the Frog"
+    ],
+    "cite": [
+      "602.2"
+    ]
+  },
+  {
+    "id": "rt53",
+    "text": "I have the initiative. My opponent deals combat damage to me. Who has the initiative?",
+    "expect": [
+      "Your opponent: when their creatures deal combat damage to you while you have the initiative"
+    ],
+    "cite": [
+      "727.3"
+    ]
+  },
+  {
+    "id": "rt54",
+    "text": "I control Ocelot Pride. I gained life this turn and have the city's blessing. What happens at my end step?",
+    "expect": [
+      "you create a token copy of each token you control that entered this turn, that Cat included"
+    ],
+    "cite": [
+      "702.131c"
+    ]
+  },
+  {
+    "id": "rt55",
+    "text": "I control Guide of Souls. A token enters the battlefield under my control. What happens?",
+    "expect": [
+      "If the token is a creature, Guide of Souls triggers"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "rt56",
+    "text": "I sacrifice Lotus Petal for mana in response to Null Rod. What happens?",
+    "expect": [
+      "Null Rod enters the battlefield."
+    ],
+    "notExpect": [
+      "fizzl",
+      "targets Lotus Petal"
+    ],
+    "cite": [
+      "605.3b"
+    ]
+  },
+  {
+    "id": "rt57",
+    "text": "I control Necropotence. I pay 5 life. What happens?",
+    "expect": [
+      "Necropotence exiles the top card of your library face down"
+    ],
+    "cite": [
+      "603.7a"
+    ]
+  },
+  {
+    "id": "rt58",
+    "text": "I control Underworld Breach. I cast Brain Freeze from my graveyard. How many copies are made if I cast 5 spells before it this turn?",
+    "expect": [
+      "5: Storm puts 5 copies of Brain Freeze on the stack",
+      "18 cards in all"
+    ],
+    "cite": [
+      "702.40a"
+    ]
+  },
+  {
+    "id": "rt59",
+    "text": "I control Opposition Agent. My opponent cracks a fetchland. What happens?",
+    "expect": [
+      "You control your opponent while they search"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "rt60",
+    "text": "I control Serra Angel and Colossus Hammer. I equip Colossus Hammer to Serra Angel. Does it still fly?",
+    "expect": [
+      "No: Serra Angel doesn't have flying: Colossus Hammer makes it lose flying"
+    ],
+    "cite": [
+      "613.1f"
+    ],
+    "note": "track redteam: Colossus Hammer's \"loses flying\" (probes P35/P36)"
+  },
+  {
+    "id": "rt61",
+    "text": "I control Sigarda's Aid and Delver of Secrets. I cast Colossus Hammer. What happens?",
+    "expect": [
+      "Colossus Hammer is attached to Delver of Secrets for free (Sigarda's Aid): Delver of Secrets is 11/11"
+    ],
+    "notExpect": [
+      "not tracked in detail"
+    ],
+    "cite": [
+      "701.3a",
+      "613.7e"
+    ],
+    "note": "track redteam: Sigarda's Aid attaches without equip (probe P35)"
+  },
+  {
+    "id": "rt62",
+    "text": "It's my turn. I control Greasefang, Okiba Boss and Parhelion II is in my graveyard. I move to combat.",
+    "expect": [
+      "Parhelion II enters the battlefield."
+    ],
+    "cite": [
+      "702.10b",
+      "603.7a"
+    ],
+    "note": "track redteam: Greasefang's haste and return (probe P48)"
   }
 ]

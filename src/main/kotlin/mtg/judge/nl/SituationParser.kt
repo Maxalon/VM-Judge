@@ -2907,6 +2907,251 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- competitive hard cases (see RedteamMechanics.kt and RedteamAsks.kt) ----
+
+    /**
+     * Table talk from competitive tables (RCQ, Legacy, Vintage, cEDH) that other readers took for something else: responses
+     * said inside the sentence that set them up, rulings asked about a named interaction. Becomes "rt…" markers read by
+     * [readRedteamQuestions]; the rulings themselves are in RedteamAsks.
+     */
+    private fun redteamRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val t2 = t.trim()
+        val io = RegexOption.IGNORE_CASE
+        val q = t2.trimEnd('?', '.', '!').trim()
+        fun name(ph: String) = m.cards[ph]?.display ?: ""
+        fun onBoard(n: String, who: String? = null) = ctx.objects.values.any { it.zone == "battlefield" && it.card.name == n && (who == null || it.controller == who) }
+        fun anyOnBoard(vararg n: String) = n.any { onBoard(it) }
+        val lastCast = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name
+        // "I cast Show and Tell and put Griselbrand onto the battlefield": the choice made as Show and Tell resolves, its own clause.
+        Regex("""^((?:i|we) cast (c\d+)),? and (?:i |we )?put (?:my |an? )?(c\d+) (?:onto|into) (?:the battlefield|play)(.*)$""", io).find(q)?.let { r ->
+            if (name(r.groupValues[2]) != "Show and Tell") return@let
+            return "${r.groupValues[1]}, i put ${r.groupValues[3]} onto the battlefield${r.groupValues[4]}"
+        }
+        // "I evoke Grief and respond to the sacrifice trigger with Undying Malice" / "… and cast Not Dead After All on it in response to the
+        // evoke trigger": the response comes once the creature has resolved, with the evoke sacrifice trigger still on the stack.
+        Regex("""^((?:i|we) evoke (c\d+))(?: targeting [^,]+?)?,? and (?:i |we )?(?:respond to (?:the|its|that) (?:evoke )?(?:sacrifice |sac )?trigger with (?:an? )?(c\d+)|cast (c\d+) (?:on|targeting) (?:it|c\d+) in response to (?:the|its|that) (?:evoke )?(?:sacrifice |sac )?trigger)$""", io).find(q)?.let { r ->
+            val resp = r.groupValues[3].ifEmpty { r.groupValues[4] }
+            return "${r.groupValues[1]}, rtevokeetb, i cast $resp targeting ${r.groupValues[2]}"
+        }
+        // "I control Ocelot Pride and gained life this turn": the life gain is its own statement.
+        Regex("""^((?:i|we) (?:control|have) .+?),? and (?:i |we )?(?:have )?(?:already )?gained (?:(\d+) )?life (?:earlier )?this turn$""", io).find(q)?.let { r ->
+            return "${r.groupValues[1]}, i gained ${r.groupValues[2].ifEmpty { "1" }} life this turn"
+        }
+        // "I cast Force of Will by exiling a blue card with Chalice of the Void on 5": the Chalice and its counters, said first.
+        Regex("""^(.+?) with (c\d+) on (\d+)$""", io).find(q)?.let { r ->
+            if (name(r.groupValues[2]) != "Chalice of the Void" || onBoard("Chalice of the Void")) return@let
+            return "my opponent controls ${r.groupValues[2]} with ${r.groupValues[3]} charge counters, ${r.groupValues[1]}"
+        }
+        // "I cast Living End off cascade": cast as a cascade trigger resolves, not at a time of the caster's choosing.
+        Regex("""^((?:i|we|they|my opponent)) casts? (c\d+) (?:off|from|via|through|with|by) (?:a )?cascade$""", io).find(q)?.let { r ->
+            return "rtoffcascade ${if (r.groupValues[1].lowercase() in setOf("i", "we")) "me" else "opp"} ${r.groupValues[2]}"
+        }
+        // "At chapter III it transforms into Reflection of Kiki-Jiki" / "Fable gets its third lore counter": the Saga reaches that
+        // chapter as its controller's precombat main phase begins (715.3c).
+        Regex("""^(?:at|on|when it (?:hits|reaches|gets to)) chapter (iii|3|three),? (?:it|c\d+) (?:transforms|flips|turns)(?: into c\d+)?$""", io).find(q)?.let { return "rtchapter 3 -" }
+        Regex("""^(?:my |the )?(c\d+) (?:gets|got|receives|reaches) (?:its|a|the) (third|second|3rd|2nd) lore counter$""", io).find(q)?.let { r ->
+            return "rtchapter ${if (r.groupValues[2].startsWith("3") || r.groupValues[2] == "third") 3 else 2} ${r.groupValues[1]}" }
+        // "I cast my commander from the command zone with Command Beacon": the Beacon isn't a way to cast; it moves the commander to hand.
+        Regex("""^(?:i|we) (?:cast|play) (?:my commander|(c\d+))(?: from the command zone)? (?:with|using|via|through|after(?: using)?) (c\d+)$""", io).find(q)?.let { r ->
+            if (name(r.groupValues[2]) != "Command Beacon") return@let
+            return "rtask beacon ${r.groupValues[2]}"
+        }
+        // "I cast Monstrous Rage on my Goblin Guide that is blocked by a 1/1": the attack and the block come first.
+        Regex("""^((?:i|we) cast c\d+ (?:on|targeting) (?:my )?(c\d+)) (?:that|which|while it|after it) (?:is|was|gets|got|has been) blocked by (an? (?:\d+/\d+(?: creature)?|c\d+)|(?:their|my opponent's) c\d+)$""", io).find(q)?.let { r ->
+            return "i attack with ${r.groupValues[2]} and my opponent blocks with ${r.groupValues[3]}, ${r.groupValues[1]}"
+        }
+        // "How many copies are made if I cast 5 spells before it this turn?": the count, stated, then the question.
+        Regex("""^(.+?),? if (?:i|we) (?:cast|have cast|had cast|'ve cast) (\d+) (?:other )?spells before it(?: this turn)?$""", io).find(q)?.let { r ->
+            ctx.spellsThisTurn["me"] = r.groupValues[2].toInt()
+            ctx.notes += "You cast ${r.groupValues[2]} spells this turn before it."
+            return rtTable(r.groupValues[1], m, ctx)?.let { a -> if (a.startsWith("rtask r_stormcount")) "rtask r_stormcount - ${r.groupValues[2]}" else a } ?: r.groupValues[1]
+        }
+        // "I gained life this turn and have the city's blessing" (Ocelot Pride): the life gain, and the ruling on the copies.
+        Regex("""^((?:i|we) (?:have )?(?:gained|gains?) (?:\d+ )?life this turn),? and (?:i |we )?have (?:the city's blessing|(?:the )?(c\d+))$""", io).find(q)?.let { r ->
+            if (r.groupValues[2].isNotEmpty() && !name(r.groupValues[2]).startsWith("City's Blessing")) return@let
+            return "i gained 1 life this turn, rtask r_ocelotcity" }
+        // "My opponent activates Pithing Needle naming Urza's Saga": Needle's naming happens as it enters; it's the cast that names.
+        Regex("""\b(my opponent|the opponent|they|he|she|i|we) (?:activates?|uses?|plays?) (c\d+) naming (c\d+)$""", io).find(q)?.let { r ->
+            if (name(r.groupValues[2]) !in setOf("Pithing Needle", "Sorcerous Spyglass", "Phyrexian Revoker")) return@let
+            return q.substring(0, r.range.first) + "${r.groupValues[1]} casts ${r.groupValues[2]} naming ${r.groupValues[3]}" }
+        // "I cast Murktide Regent exiling three instants from my graveyard": delve's exile is a cost, not a cast from the graveyard.
+        Regex("""^((?:i|we) cast (c\d+)),? (?:by )?exiling (.+?) from (?:my|our) graveyard(.*)$""", io).find(q)?.let { r ->
+            val spell = m.cards[r.groupValues[2]]?.takeIf { it.keywords.contains("Delve", true) } ?: return@let
+            // Unnamed cards ("three instants and a sorcery"): only whether they are instants or sorceries matters to Murktide's counters.
+            val items = r.groupValues[3].split(Regex(""",? and |, """)).map { it.trim() }
+            val generic = items.map { Regex("""^(a|an|\d+) (instants?|sorcer(?:y|ies)|lands?|creatures?|cards?|other cards?)(?: cards?)?$""", io).find(it) }
+            if (generic.all { it != null }) {
+                val parts = generic.filterNotNull().filter { it.groupValues[2].startsWith("instant") || it.groupValues[2].startsWith("sorcer") }.map { g ->
+                    "${if (g.groupValues[2].startsWith("instant")) "an instant" else "a sorcery"}*${g.groupValues[1].toIntOrNull() ?: 1}" }
+                ctx.events += EventSpec("md", player = "me", to = "delve:${spell.display}|${parts.joinToString("|")}")
+                ctx.notes += "Delve exiled ${r.groupValues[3]} from your graveyard to pay for ${spell.display}: a cost, not a cast from the graveyard."
+                return "${r.groupValues[1]}${r.groupValues[4]}"
+            }
+            return "${r.groupValues[1]} with delve, exiling ${r.groupValues[3]}${r.groupValues[4]}" }
+        rtTable(q, m, ctx)?.let { return it }
+        // "Does it still fly?" (Dress Down, Humility): whether the creature has that keyword now.
+        Regex("""^(?:does|will) (it|c\d+) (?:still )?(fly|c\d+|have (?:flying|trample|lifelink|haste|vigilance|deathtouch|first strike|double strike|hexproof|reach|menace|indestructible))$""", io).find(q)?.let { r ->
+            if (r.groupValues[2].startsWith("c") && name(r.groupValues[2]) != "Fly") return@let
+            val kw = r.groupValues[2].removePrefix("have ").let { if (it == "fly" || it.startsWith("c")) "flying" else it }.replace(' ', '_')
+            return "rtask haskw ${if (r.groupValues[1].startsWith("c")) r.groupValues[1] else "-"} $kw" }
+        // "Does Chalice counter it?" right after cascading into a card: the card cascade hit, not the spell with cascade.
+        Regex("""^(?:does|will|would) (c\d+) counter (?:it|that|that spell)$""", io).find(q)?.let { r ->
+            if (ctx.events.lastOrNull()?.verb != "cascade") return@let
+            return "rtchalicecascade ${r.groupValues[1]}" }
+        // "Can it be blocked by one creature?" (Troll of Khazad-dûm, menace).
+        Regex("""^can (it|c\d+) be blocked by (one|a single|1|two|2|only one|just one) creatures?$""", io).find(q)?.let { r ->
+            return "rtask blockmin ${if (r.groupValues[1].startsWith("c")) r.groupValues[1] else "-"} ${when (r.groupValues[2]) { "two", "2" -> 2; else -> 1 }}" }
+        // Ad Nauseam: "What happens when I reveal Mana Crypt?"
+        Regex("""^what happens (?:when|if) (?:i|we) reveal (c\d+)$""", io).find(q)?.let { r -> if ("ad nauseam" in ctx.fullText.lowercase()) return "rtask adnaus ${r.groupValues[1]}" }
+        // Back to Basics, Blood Moon: "Do I get chapter III in my precombat main phase?"
+        Regex("""^do (?:i|we) (?:still )?get chapter (?:iii|3|three|ii|2|two)(?: (?:in|at|during) (?:my|our) (?:next )?(?:precombat|first) main(?: phase)?)?$""", io).find(q)?.let { return "rtgetchapter" }
+        // "I cycle Troll of Khazad-dûm. How much does it cost?": the cycling cost, not the spell's.
+        if (Regex("""^how much (?:does|did|will) (?:it|that|cycling(?: it)?|c\d+) cost(?: to cycle)?$""", io).matches(q) && ctx.events.lastOrNull()?.let { it.verb == "kw" && it.to?.startsWith("cycl") == true } == true)
+            return "rtask cyclecost ${ctx.events.last().obj ?: "-"}"
+        // "Can I channel Boseiju in response?": channel works only from the hand.
+        // ("channel" is also the card Channel, so it may arrive as a placeholder.)
+        Regex("""^can (?:i|we) (?:still )?(channel|c\d+) (c\d+)(?: in response| now| to save it)?$""", io).find(q)?.let { r ->
+            if (r.groupValues[1].startsWith("c") && name(r.groupValues[1]) != "Channel") return@let
+            return "rtask channel ${r.groupValues[2]}" }
+        // "Does it get countered?" right after casting a spell: that spell, not the one it targets.
+        // (Only with Chalice of the Void out, whose trigger counters the spell being cast; otherwise "it" is the counterspell's target.)
+        if (Regex("""^(?:does|will|would) it (?:get|be) countered$""", io).matches(q) && lastCast != null && "chalice of the void" in ctx.fullText.lowercase() && ctx.events.lastOrNull { it.verb == "cast" }?.targets?.isNotEmpty() == true)
+            return "rtcountered"
+        return t2
+    }
+
+    /**
+     * Named competitive interactions answered by a fixed ruling (RedteamAsks.ruling): the cards that must have been named in the
+     * question, a statement that sets it up (read as noted, nothing more), and the question that asks it. Both regexes see the
+     * sentence lowercased, with card names restored.
+     */
+    private class RtRule(val key: String, val cards: List<String>, val ask: Regex?, val noted: Regex? = null)
+    private val rtRules = listOf(
+        RtRule("sneakend", listOf("sneak attack", "griselbrand"), Regex("""\b(?:in response to|respond to|with) (?:the |its |that )?(?:sacrifice|sac|end step|delayed) trigger"""), Regex("""^(?:i|we) attack with griselbrand (?:from|off|via|through|after) sneak attack$""")),
+        RtRule("oracle4p", listOf("thassa's oracle"), Regex("""^can (?:each|every|all|the other|my|any) (?:opponents?|players?|other players?) respond(?: to it)?$""")),
+        RtRule("oracleconsult", listOf("thassa's oracle", "demonic consultation"), Regex("""\b(?:what|which) order\b|\bwhich (?:one )?(?:do i cast )?first\b"""), Regex("""^(?:i|we) cast demonic consultation naming .+ with thassa's oracle on the stack$""")),
+        RtRule("kinnanbasalt", listOf("kinnan", "basalt monolith"), Regex("""\b(?:infinite|unlimited|loop|forever)\b""")),
+        RtRule("timevault", listOf("time vault", "manifold key"), Regex("""\b(?:infinite|unlimited|loop|forever|extra turns?)\b""")),
+        RtRule("oath", listOf("oath of druids"), Regex("""^what happens (?:at|during|in) (?:my|our|the|their|each) (?:next )?upkeep$""")),
+        RtRule("necrodiscard", listOf("necropotence"), Regex("""^(?:i|we) discard (?:a card|cards|\w+ cards?)(?: (?:to|for|at|down to) (?:my )?(?:maximum )?hand size| at (?:the )?cleanup| at end of turn)?$"""), Regex("""^where does (?:it|the card|that card) go$""")),
+        RtRule("necropay", listOf("necropotence"), Regex("""^(?:i|we) (?:pay|activate (?:it|necropotence)(?: and pay)?) (?:\d+|a|one|some) life$""")),
+        RtRule("mysticforge", listOf("mystic forge"), Regex("""^what (?:can|may) (?:i|we) cast (?:off|from) the top(?: of (?:my|our) library)?$""")),
+        RtRule("companion", listOf("companion"), Regex("""^how (?:do|can) (?:i|we) (?:put|get|bring) (?:it|my companion|lurrus(?: of the dream-den)?|the companion) (?:in|into|to) (?:my |our )?hand$""")),
+        RtRule("clonecmd", listOf("commander"), Regex("""^(?:does|do|will|would) (?:it|that|the clone's damage|its damage|that damage) count (?:as|for|towards?) commander damage$"""), Regex("""^(?:an? (?:clone|copy) of (?:the|their|my opponent's|my) commander deals (?:combat )?damage(?: to me)?(?: too| as well)?|(?:my opponent's|their|the) commander deals (?:combat )?damage(?: to me)?)$""")),
+        RtRule("foodchain", listOf("food chain", "eternal scourge"), Regex("""^(?:what happens|is (?:it|that|this) (?:infinite|a loop)|can (?:i|we) (?:loop|go infinite))$""")),
+        RtRule("dazepay", listOf("daze"), Regex("""^can (?:i|we) pay(?: for it| the| for)? ?(?:\{?1\}?|one|it|the 1)?$""")),
+        RtRule("sneakemrakul", listOf("sneak attack", "emrakul"), Regex("""\bannihilator\b""")),
+        RtRule("breach", listOf("through the breach", "emrakul"), Regex("""\bannihilator\b|\bwhen do (?:i|we) sacrifice\b"""), Regex("""^(?:i|we) cast through the breach (?:on|putting in|for|targeting) emrakul, the aeons torn$""")),
+        RtRule("murktideexile", listOf("murktide regent", "exile"), Regex("""^(?:does|will) (?:it|murktide(?: regent)?) (?:get|have|enter with) (?:any )?(?:\+1/\+1 )?counters$""")),
+        RtRule("frogsolitude", listOf("psychic frog", "solitude"), Regex("""\bin response\b.*\b(?:bigger|flying|grow|save)\b|\b(?:bigger|flying|grow|save)\b.*\bin response\b""")),
+        RtRule("ajaniguide", listOf("ajani, nacatl pariah"), Regex("""^what happens$"""), Regex("""^ajani(?:, nacatl pariah)?'s (?:cat|cat warrior|token)(?: token)? dies$""")),
+        RtRule("abuelofable", listOf("abuelo's awakening", "fable of the mirror-breaker"), Regex("""^what happens$""")),
+        RtRule("greasefang", listOf("greasefang", "parhelion ii"), Regex("""^what happens$""")),
+        RtRule("puresteel", listOf("puresteel paladin"), Regex("""^how much (?:does|do) (?:equip|equipping|my equip(?: abilities| costs?)?|the equip(?: cost)?) cost$""")),
+        RtRule("sigardahammer", listOf("sigarda's aid", "colossus hammer"), Regex("""^what happens$""")),
+        RtRule("hammerspear", listOf("colossus hammer", "shadowspear"), Regex("""^(?:does|do) (?:it|the creature|they) (?:have|get) (?:trample|lifelink)(?: and (?:trample|lifelink))?$"""), Regex("""^(?:i|we) (?:equip|attach) colossus hammer (?:to|on(?:to)?) (?:a|my) creature (?:equipped with|that has|wearing) shadowspear$""")),
+        RtRule("yawgonce", listOf("yawgmoth", "undying"), Regex("""^what happens$""")),
+        RtRule("yawgloop", listOf("yawgmoth", "undying"), Regex("""\b(?:loop|forever|infinite)\b"""), Regex("""^(?:i|we) pay 1 life and sacrifice (?:a|my) creature with undying$""")),
+        RtRule("thaliafow", listOf("thalia", "force of will"), Regex("""^how much does (?:it|force of will) cost$""")),
+        RtRule("guidetoken", listOf("guide of souls", "token"), Regex("""^what happens$""")),
+        RtRule("oppagent", listOf("opposition agent", "fetch"), Regex("""^what happens$""")),
+        RtRule("spelllimit", listOf("show and tell", "archon of emeria"), Regex("""^what happens$""")),
+        RtRule("needle", listOf("pithing needle"), Regex("""\bchapter\b|\btrigger""")),
+        RtRule("partnertax", listOf("partner"), Regex("""^(?:what|how much) does .+ cost(?: now)?$|\bcommander tax\b"""), Regex("""^(?:i|we) (?:have|play|run) partner commanders .+$|^.+ (?:died|has died) (?:once|twice|\d+ times|three times)$""")),
+        RtRule("stormcount", listOf("brain freeze"), Regex("""^(?:what|how)\b.*\bstorm count\b|^how many copies(?: are made| do (?:i|we) get)?(?: if (?:i|we) (?:cast|have cast) (\d+) (?:other )?spells(?: before it)?(?: this turn)?)?$""")),
+        RtRule("initiativehit", listOf("initiative"), Regex("""^who (?:has|gets|takes) the initiative(?: now)?$|^what happens$"""), Regex("""^(?:i|we) (?:have|had|took|take) the initiative(?: and venture into (?:undercity|the undercity))?$|^(?:my opponent|they|he|she) (?:deals?|dealt) combat damage to (?:me|us)$""")),
+    )
+
+    /** The table above, for one sentence: "rtask r_<key>", "rtnoted", or null. */
+    private fun rtTable(q: String, m: Marked, ctx: Ctx): String? {
+        val rq = restore(q, m).lowercase().replace(Regex("""\s+"""), " ").trim().trimEnd('?', '.', '!')
+        val full = ctx.fullText.lowercase()
+        for (r in rtRules) {
+            if (r.cards.any { it !in full }) continue
+            r.ask?.find(rq)?.let { hit -> return if (ctx.asks.any { it.to == "rt:r_${r.key}" }) "rtnoted" else "rtask r_${r.key} - ${hit.groupValues.getOrNull(1)?.ifEmpty { null } ?: ""}".trimEnd() }
+            if (r.noted?.containsMatchIn(rq) == true) return "rtnoted"
+        }
+        return null
+    }
+
+    /** Markers [redteamRewrites] leaves. */
+    private fun readRedteamQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?')
+        if (!q.startsWith("rt")) return null
+        fun ref(ph: String?) = ph?.let { m.cards[it] }?.let { CardRef(name = it.display, oracleId = it.oracleId) }
+        Regex("""^rtask (\w+)(?: (\S+))?(?: (\S+))?$""").find(q)?.let { r ->
+            val a = r.groupValues[2].takeIf { it.isNotEmpty() && it != "-" }
+            val card = ref(a)
+            val obj = a?.takeIf { it in ctx.objects } ?: card?.let { c -> ctx.objects.values.lastOrNull { it.card.oracleId == c.oracleId }?.id }
+                ?: if (a == null && r.groupValues[1] in setOf("haskw", "blockmin")) {
+                    fun creature(id: String?) = id?.let { ctx.objects[it] }?.takeIf { o -> names.lookup(Names.normalize(o.card.name ?: ""))?.typeLine?.contains("Creature") == true }?.id
+                    creature(ctx.lastMentioned) ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && creature(it.id) != null }?.id
+                        ?: ctx.events.lastOrNull { it.verb == "cast" }?.card?.name?.let { n -> ctx.objects.values.lastOrNull { it.card.name == n }?.id }
+                } else null
+            if (ctx.asks.any { it.to == "rt:${r.groupValues[1]}" }) return true
+            // Pithing Needle's chosen name, as said ("… naming Urza's Saga"), for when the cast didn't record it.
+            val said = if (r.groupValues[1] == "r_needle") Regex("""(?i)\bnaming ([^.?!,]+?)(?:[.?!,]|$)""").find(ctx.fullText)?.groupValues?.get(1)?.trim() else null
+            val lastCastRef = if (obj == null && card == null && r.groupValues[1] in setOf("haskw", "blockmin")) ctx.events.lastOrNull { it.verb == "cast" }?.card else null
+            ctx.asks += EventSpec("ask", player = "me", to = "rt:${r.groupValues[1]}", obj = obj, card = card ?: obj?.let { ctx.objects[it]?.card } ?: lastCastRef, source = r.groupValues[3].takeIf { it.isNotEmpty() } ?: said)
+            ctx.notes += "The question is answered by the outcome below."
+            return true
+        }
+        if (q == "rtevokeetb") {
+            val i = ctx.events.indexOfLast { it.verb == "cast" }
+            if (i < 0 || ctx.events[i].to != "evoke") return true
+            val ev = ctx.events[i]
+            if (ev.obj == null) ev.card?.name?.let { n -> names.lookup(Names.normalize(n)) }?.let { entry ->
+                val id = addObject(entry, ev.player ?: "me", false, ctx, zone = "hand", allowDuplicate = true)
+                ctx.events[i] = ev.copy(obj = id, card = null); ctx.lastMentioned = id
+            }
+            ctx.events += EventSpec("md", to = "evokeetb")
+            ctx.notes += "${ev.card?.name ?: "The creature"} has resolved; its controller put the evoke sacrifice trigger on the stack first and its own enters trigger above it (603.3b), which has resolved. The response comes with the sacrifice trigger still on the stack."
+            return true
+        }
+        Regex("""^rtchapter (\d) (\S+)$""").find(q)?.let { r ->
+            val n = r.groupValues[1].toInt()
+            val id = m.cards[r.groupValues[2]]?.let { c -> objectIdFor(c, ctx) ?: addObject(c, "me", false, ctx) }
+                ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && names.lookup(Names.normalize(it.card.name ?: ""))?.typeLine?.contains("Saga") == true }?.id ?: return true
+            val o = ctx.objects.getValue(id)
+            ctx.objects[id] = o.copy(counters = o.counters + ("lore" to n - 1))
+            ctx.activePlayer = ctx.activePlayer ?: o.controller
+            ctx.events += EventSpec("step", player = o.controller, to = "precombat_main")
+            ctx.notes += "${o.card.name} has ${n - 1} lore counters as ${if (o.controller == "me") "your" else "their"} precombat main phase begins, and gets the ${if (n == 3) "third" else "second"} then (715.3c)."
+            ctx.lastMentioned = id
+            return true
+        }
+        if (q == "rtnoted") return true
+        Regex("""^rtchalicecascade (c\d+)$""").find(q)?.let { r ->
+            val lock = m.cards[r.groupValues[1]] ?: return true
+            val lockId = objectIdFor(lock, ctx) ?: return true
+            val spell = ctx.events.lastOrNull { it.verb == "cascade" }?.card?.name ?: return true
+            ctx.asks += EventSpec("ask", to = "au:counters:$lockId:$spell"); ctx.notes += "\"Does ${lock.display} counter it?\" is read as about $spell, the card cascade hit."
+            return true
+        }
+        if (q == "rtgetchapter") {
+            val saga = ctx.objects.values.lastOrNull { it.zone == "battlefield" && names.lookup(Names.normalize(it.card.name ?: ""))?.typeLine?.contains("Saga") == true } ?: return true
+            ctx.activePlayer = ctx.activePlayer ?: saga.controller
+            ctx.events += EventSpec("step", player = saga.controller, to = "precombat_main")
+            ctx.asks += EventSpec("ask", player = saga.controller, to = "rt:chapter", obj = saga.id, card = saga.card)
+            ctx.notes += "The question is answered by the outcome below."
+            return true
+        }
+        if (q == "rtcountered") {
+            val name = ctx.events.lastOrNull { it.verb == "cast" }?.card?.name ?: return true
+            ctx.asks += EventSpec("ask", player = "me", to = "countered", card = CardRef(name = name))
+            ctx.notes += "\"Does it get countered?\" is read as about $name, the spell just cast."
+            return true
+        }
+        Regex("""^rtoffcascade (me|opp) (c\d+)$""").find(q)?.let { r ->
+            val c = m.cards[r.groupValues[2]] ?: return null
+            ctx.events += EventSpec("rt", player = r.groupValues[1], to = "offcascade", card = CardRef(name = c.display, oracleId = c.oracleId))
+            ctx.castCards += c.display; ctx.note(r.groupValues[1])
+            ctx.notes += "${c.display} is cast as a cascade trigger resolves (702.85a): from exile, without paying its mana cost."
+            return true
+        }
+        return null
+    }
+
     // ---- the newest sets (see NewSetMechanics.kt and NewSetAsks.kt) ----
 
     /**
@@ -4270,6 +4515,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = redteamRewrites(t2, m, ctx)
         t2 = policyRewrites(t2, m, ctx)
         t2 = lifeDamageRewrites(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
@@ -9047,6 +9293,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readRedteamQuestions(clause0, m, ctx)?.let { return it }
         readPolicyQuestions(clause0, m, ctx)?.let { return it }
         readLifeDamageQuestions(clause0, m, ctx)?.let { return it }
         readExamQuestions(clause0, m, ctx)?.let { return it }
@@ -11735,7 +11982,8 @@ class SituationParser(private val names: NameIndex) {
                     }
                 // The thing being responded to was cast after whatever this player did just before ("I cast Elder and sacrifice it in response to Bolt").
                 if (ctx.events.lastOrNull()?.let { it.verb in setOf("cast", "activate") && it.player != caster } == true) ctx.events += EventSpec("resolveAll")
-                var guess = guess0
+                // "I sacrifice Lotus Petal in response to Null Rod": a permanent spell other than an Aura has no targets (115.1), so it isn't aimed at anything.
+                var guess = guess0?.takeIf { card.isSpellOnly || card.typeLine.contains("Aura") || card.typeLine.isEmpty() }
                 if (guess == null && needsSpellTarget(card)) {
                     val responder = ctx.other(caster) ?: "me"
                     ctx.events += EventSpec("cast", player = responder, card = CardRef(name = "a spell")); guess = "a_spell:spell"

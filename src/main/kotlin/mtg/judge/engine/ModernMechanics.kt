@@ -42,8 +42,9 @@ internal object ModernMech {
     /** Subtlety: "choose up to one target creature spell or planeswalker spell. Its owner puts it on the top or bottom of their library." */
     private val subtletyChooseRe = Regex("""^choose (?:up to one )?target creature spell or planeswalker spell\.?$""", RegexOption.IGNORE_CASE)
     private val subtletyPutRe = Regex("""^its owner puts it on (?:their choice of )?the top or bottom of their library\.?$""", RegexOption.IGNORE_CASE)
-    private val gainsHasteRe = Regex("""^it gains haste(?: until end of turn)?\.?$""", RegexOption.IGNORE_CASE)
-    private val returnAtEndRe = Regex("""^return it to your hand at the beginning of the next end step\.?$""", RegexOption.IGNORE_CASE)
+    // (Greasefang's "It gains haste" arrives with "it" spelled out as its target: "Target Vehicle card in your graveyard gains haste".)
+    private val gainsHasteRe = Regex("""^(?:it|target vehicle card in your graveyard) gains haste(?: until end of turn)?\.?$""", RegexOption.IGNORE_CASE)
+    private val returnAtEndRe = Regex("""^return it to (?:your|its owner's) hand at the beginning of (?:the|your) next end step\.?$""", RegexOption.IGNORE_CASE)
 
     /** A card's exact mana cost matches one of [costs]: an {X} cost is {X}, not {0} — X is 0 only on the stack (107.3, 202.1). */
     fun exactCost(d: CardDef, costs: List<String>) = (d.manaCost ?: "") in costs.map { it.trim() }

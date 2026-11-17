@@ -92,8 +92,10 @@ class Engine(val state: GameState) {
             if (active == null) state.clarifications += Clarification("whose turn it is", "${dosan.name} lets a player cast spells only during their own turn; whose turn is it?")
         }
         state.objects.values.firstOrNull { it.isOnBattlefield() && it.controller != playerId && it.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.any { s -> s is StaticEffect.OpponentsSorcerySpeed } }?.let { teferi ->
-            val offTiming = state.stack.isNotEmpty() || state.phase == "combat" || (state.activePlayer != null && state.activePlayer != playerId) || state.step in setOf("upkeep", "draw", "end", "cleanup", "untap")
+            // Cast while a cascade trigger or another spell is resolving (608.2g) is never "any time you could cast a sorcery".
+            val offTiming = state.castDuringResolution || state.stack.isNotEmpty() || state.phase == "combat" || (state.activePlayer != null && state.activePlayer != playerId) || state.step in setOf("upkeep", "draw", "end", "cleanup", "untap")
             if (offTiming) {
+                if (state.castDuringResolution) trace.step("${card.name} would be cast in the middle of another ability's resolution, and a sorcery can be cast only when its caster has priority with an empty stack, so that is never a time a sorcery could be cast.", "307.1", "608.2g")
                 trace.step("${teferi.name} says ${state.player(playerId).subject.lowercase()} can cast spells only any time ${state.player(playerId).subject.lowercase()} could cast a sorcery: during ${state.player(playerId).possessive} own main phase with an empty stack. ${card.name} can't be cast now${if (state.stack.isNotEmpty()) " (something is on the stack)" else ""}.", "307.1", "117.1a")
                 state.outcomes += "${card.name} can't be cast (${teferi.name}: sorcery speed only)."; return null
             }
@@ -216,7 +218,10 @@ class Engine(val state: GameState) {
             if (fit >= 0) {
                 val other = needed[1 - fit]
                 val inferred = inferTarget(card.name, other, playerId, harmful = other.filter.controller != Who.YOU, source = obj, beneficial = other.filter.controller == Who.YOU)
-                if (inferred != null && inferred.size == 1) targets = if (fit == 0) listOf(given, inferred[0]) else listOf(inferred[0], given)
+                // "Destroy up to two target artifacts": the second target must be a different object (115.3), so the first can't fill it again.
+                val sameAgain = (other.raw.startsWith("another ") || other.raw.startsWith("up to one other ")) && inferred?.singleOrNull() == given
+                if (sameAgain) state.assumptions.removeAll { it.contains("\"${other.raw}\"") }
+                if (inferred != null && inferred.size == 1 && !sameAgain) targets = if (fit == 0) listOf(given, inferred[0]) else listOf(inferred[0], given)
             }
         }
         // Two targets and none named ("target creature you control fights target creature you don't control"): each one inferred on its own.
@@ -261,7 +266,7 @@ class Engine(val state: GameState) {
         // modes ("If you control a commander …, you may choose both instead") makes the spell a Seq, not a Modal.
         // "A source of your choice" (Deflecting Palm) is chosen as the spell resolves, not targeted; a source named
         // with the spell is that choice, not a target the spell doesn't have.
-        else if (needed.size != targets.size && !unmodeledTarget && !isModal(effect) && !(needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Player && ((effect != null && targetsAPlayer(effect)) || Regex("""(?i)\btarget (?:player|opponent)\b""").containsMatchIn(card.oracleText)))
+        else if (needed.size != targets.size && !unmodeledTarget && !isModal(effect) && !RedteamMech.fewerUpTo(needed.map { it.raw }, targets.size) && !(needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Player && ((effect != null && targetsAPlayer(effect)) || Regex("""(?i)\btarget (?:player|opponent)\b""").containsMatchIn(card.oracleText)))
                  && !(needed.isEmpty() && targets.size == 1 && card.oracleText.contains("source of your choice", true))
                  && !(needed.isEmpty() && targets.size == 1 && targets[0] is Ref.Obj && card.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.EntersAsCopy })) {
             // "I Swords my Mulldrifter in response to Wrath": Wrath has no targets, so a permanent named with it is
@@ -526,7 +531,7 @@ class Engine(val state: GameState) {
         AuditMech.splitCastNote(state, item)
         wardTriggers(item)
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
-        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
+        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         // A spell at a player ("any target") can be sent to Spellskite too, it being a creature.
         val skiteCouldTake = item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" } || (item.targets.any { it is Ref.Player } && Regex("""(?i)\bany target\b""").containsMatchIn(card.oracleText))
         if (skiteCouldTake) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
@@ -1093,7 +1098,7 @@ class Engine(val state: GameState) {
         targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, playerId, item.id)) } }
         if (wasOnBattlefield) onEvent(GameEvent.AbilityActivated(obj, playerId))
         state.player(playerId).let { p -> trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s ability (${ability.cost})${describeTargets(targets)}. It goes on top of the stack.", "602.2a", "405.2") }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -2789,7 +2794,8 @@ class Engine(val state: GameState) {
                 targets = listOf(Ref.Player(causedBy))
             }
             // "At the beginning of combat on your turn, target creature you control gets +2/+0": the creature about to attack is the natural choice.
-            state.combatAttackerHint?.let { state.objects[it] }?.takeIf { hint -> !isHarmful(ability.effect) && targetingProblem(obj, obj.controller, Ref.Obj(hint.id)) == null }?.let { hint ->
+            // (Only when the attacker fits the target's words: Greasefang's "Vehicle card in your graveyard" isn't the creature about to attack.)
+            state.combatAttackerHint?.let { state.objects[it] }?.takeIf { hint -> !isHarmful(ability.effect) && !spec.filter.inGraveyard && filterMatches(spec.filter, Ref.Obj(hint.id), obj.controller, obj) && targetingProblem(obj, obj.controller, Ref.Obj(hint.id)) == null }?.let { hint ->
                 state.assumptions += "${obj.name}'s triggered ability targets ${hint.name} (\"${spec.raw}\"; assuming the creature about to attack)."
                 targets = listOf(Ref.Obj(hint.id))
             }
@@ -2897,7 +2903,7 @@ class Engine(val state: GameState) {
         splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -4083,6 +4089,7 @@ class Engine(val state: GameState) {
                 else trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${missing.joinToString(" or ") { "an $it" }}, so ${item.source.name} adds only what it says first, not ${effect.text}.", "605.1a")
             }
             is Effect.Narrated -> {
+                if (RedteamMech.resolve(this, effect.text, item)) return   // Fable's transformed return, Role tokens (RedteamMechanics.kt)
                 if (Turns.resolve(this, effect.text, item)) return   // extra turns, skips, ending the turn, extra phases (Turns.kt)
                 if (LifeDmgMech.resolve(this, effect.text, item)) return   // life totals set and exchanged, Transcendence, Repercussion (LifeDamageMechanics.kt)
                 if (Zones.resolve(this, effect.text, item)) return   // Flickerwisp's return at the next end step (Zones.kt)
@@ -4194,6 +4201,7 @@ class Engine(val state: GameState) {
                 state.outcomes += "${sp.source.name} can't be countered (${item.source.name})."
             } }
             is Effect.Unparsed -> {
+                if (RedteamMech.resolve(this, effect.text, item)) return   // (RedteamMechanics.kt)
                 if (Turns.resolve(this, effect.text, item)) return
                 if (ModernMech.unparsed(this, state, effect.text, item)) return   // Undying Malice, Not Dead After All (ModernMechanics.kt)
                 if (LimitedMech.unparsed(this, state, effect.text, item)) return   // Cytoshape, Preeminent Captain (LimitedMechanics.kt)
@@ -5927,7 +5935,7 @@ class Engine(val state: GameState) {
     private inline fun forEachLegalTarget(item: StackItem, spec: TargetSpec, block: (Ref) -> Unit) {
         val specs = effectiveEffect(item)?.targets() ?: emptyList()
         val idx = specs.indexOf(spec)
-        val ref = item.targets.getOrNull(idx) ?: run { if (!DeepMech.noTargetPart(state, item, spec) && !MoreEffects2.targetlessModeSaid(state, item, spec)) state.unsupported += Unsupported(item.describe, "No target was given for \"${spec.raw}\"."); return }
+        val ref = item.targets.getOrNull(idx) ?: run { if (!DeepMech.noTargetPart(state, item, spec) && !MoreEffects2.targetlessModeSaid(state, item, spec) && !RedteamMech.upToMissing(state, spec)) state.unsupported += Unsupported(item.describe, "No target was given for \"${spec.raw}\"."); return }
         if (isTargetLegal(item, ref)) block(ref) else trace.step("${state.nameOf(ref)} is an illegal target now, so that part of the effect doesn't affect it.", "608.2b")
     }
 
@@ -6096,6 +6104,31 @@ class Engine(val state: GameState) {
     internal fun meSearchNote(searcher: String, what: String) = searchLimitNote(searcher, what)
     internal fun meApply(e: Effect, item: StackItem) = applyEffect(e, item)
     internal fun meEnterBlockers(item: StackItem, text: String) = enterBlockersNote(item, text)
+    /** Redteam: Fable of the Mirror-Breaker's "exile this Saga, then return it transformed": the back face enters as a new object (400.7, 712.11a). */
+    internal fun rtExileReturnTransformed(o: GameObject, back: CardDef?, controller: String): GameObject? {
+        move(o, Zone.EXILE, "${o.name} is exiled.", "701.13a")
+        if (back == null) { trace.step("${o.name} isn't a double-faced card, so it can't return transformed; it stays in exile.", "712.11a"); return null }
+        val n = state.add(GameObject(freshObjectId(back.name), back, Zone.BATTLEFIELD, controller, o.owner)); n.timestamp = state.tick(); n.transformed = true; n.enteredFrom = Zone.EXILE
+        n.summoningSick = state.isCreature(n); o.successor = n.id
+        applyEntersReplacements(n); onEvent(GameEvent.EntersBattlefield(n)); stateBasedActions()
+        return n
+    }
+    /** Redteam: a token Aura (a Role) created attached to [host] (303.4f). */
+    internal fun rtCreateAttached(def: CardDef, controller: String, host: GameObject): GameObject {
+        val t = state.add(GameObject(freshObjectId(def.name), def, Zone.BATTLEFIELD, controller, token = true)); t.timestamp = state.tick(); t.attachedTo = host.id
+        onEvent(GameEvent.EntersBattlefield(t))
+        return t
+    }
+    internal fun rtPutIntoGraveyard(o: GameObject, text: String, vararg rules: String) = move(o, Zone.GRAVEYARD, text, *rules)
+    internal fun rtMove(o: GameObject, to: Zone, text: String, vararg rules: String) = move(o, to, text, *rules)
+    /** Redteam: a card put onto the battlefield from [from] without being cast meets Containment Priest / Grafdigger's Cage; true when it doesn't enter. */
+    internal fun rtUncastEntry(o: GameObject, from: Zone): Boolean {
+        val (by, how) = uncastEntryBlocked(o, from) ?: return false
+        if (how == "cant") { trace.step("$by stops ${o.name} from entering the battlefield, so it stays where it was.", "614.1", "616.1"); state.outcomes += "${o.name} can't enter the battlefield ($by)."; return true }
+        trace.step("${o.name} would enter the battlefield without having been cast (it's put there by an effect), so $by exiles it instead. It never enters, so none of its enters-the-battlefield abilities trigger.", "614.1a", "614.6")
+        moveRaw(o, Zone.EXILE); state.outcomes += "${o.name}: ${state.player(o.owner).possessive} ${from.name.lowercase()} → exile (replaced by $by): it wasn't cast."
+        return true
+    }
     internal fun meDestroy(o: GameObject, text: String, vararg rules: String) = destroy(o, text, *rules)
     // MoreEffects2.kt's.
     internal fun me2ForEachLegal(item: StackItem, spec: TargetSpec, block: (Ref) -> Unit) = forEachLegalTarget(item, spec, block)

@@ -573,8 +573,9 @@ internal object MoreEffects2 {
                     else -> { tr.step("${p.subject} may put ${article(what)} $what card from ${their(p)} hand onto the battlefield too; whether ${p.subject.lowercase()} ${p.v("does", "do")}, and which, wasn't said.", "608.2d"); state.outcomes += "${p.subject} may put ${article(what)} $what card from ${their(p)} hand onto the battlefield ($src); which, if any, wasn't said." }
                 }
             }
-            for (o in entering) e.enter(o.id)
-            for (o in put) if (o.def.abilities.filterIsInstance<TriggeredAbility>().any { it.trigger is Trigger.ThisCast }) {
+            // "Containment Priest is out and I Show and Tell in Griselbrand": it wasn't cast, so the Priest exiles it instead (614.1a).
+            for (o in entering) if (!e.rtUncastEntry(o, Zone.HAND)) e.enter(o.id)
+            for (o in put) if (o.isOnBattlefield()) if (o.def.abilities.filterIsInstance<TriggeredAbility>().any { it.trigger is Trigger.ThisCast }) {
                 tr.step("${o.name} was put onto the battlefield, not cast, so its \"when you cast\" ability doesn't trigger.", "601.2", "603.2")
                 state.outcomes += "${o.name} wasn't cast, so its \"when you cast\" ability doesn't trigger."
             }
@@ -587,7 +588,7 @@ internal object MoreEffects2 {
             val what = r.groupValues[2]; val tapped = r.groupValues[3].isNotEmpty()
             val f = OracleParser.parseFilter(what, Kind.CARD)
             val known = state.objects.values.filter { it.zone == Zone.HAND && it.owner == you.id && !Generic.isGeneric(it.def) && (!f.verifiable || state.matches(f, it, you.id, anyZone = true)) }.take(n)
-            for (o in known) { tr.step("${you.subject} ${you.v("puts", "put")} ${o.name} from ${their(you)} hand onto the battlefield${if (tapped) " tapped" else ""}. It's put there, not cast.", "110.2", "608.2c"); you.handSize = you.handSize?.minus(1); e.enter(o.id); if (tapped) o.tapped = true }
+            for (o in known) { tr.step("${you.subject} ${you.v("puts", "put")} ${o.name} from ${their(you)} hand onto the battlefield${if (tapped) " tapped" else ""}. It's put there, not cast.", "110.2", "608.2c"); you.handSize = you.handSize?.minus(1); if (e.rtUncastEntry(o, Zone.HAND)) continue; e.enter(o.id); if (tapped) o.tapped = true }
             if (known.isEmpty()) {
                 tr.step("${you.subject} ${you.v("puts", "put")} up to ${r.groupValues[1]} $what cards from ${their(you)} hand onto the battlefield${if (tapped) " tapped" else ""}, all at the same time; they're put there, not cast. Which cards (if any) wasn't said.", "110.2", "608.2c")
                 state.outcomes += "$src: ${you.subject.lowercase()} ${you.v("puts", "put")} up to ${r.groupValues[1]} $what cards from ${their(you)} hand onto the battlefield; which ones wasn't said."

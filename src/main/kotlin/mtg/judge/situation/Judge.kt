@@ -964,6 +964,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "ex" -> ExamAsks.applyEvent(e, state, engine)
             "cedh" -> CedhAsks.applyEvent(e, state)
             "lifedmg" -> LifeDamageAsks.applyEvent(e, state)
+            "rt" -> RedteamAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1015,6 +1016,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         WinLossAsks.describe(e, who)?.let { return it }
         EdhAsks.describe(e, state, who)?.let { return it }
         CedhAsks.describe(e, state)?.let { return it }
+        RedteamAsks.describe(e, state)?.let { return it }
         LifeDamageAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
@@ -2329,6 +2331,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("ld:") == true) return LifeDamageAsks.answer(e, state, engine)
                 if (e.to?.startsWith("yn:") == true) return YesNoAsks.answer(e, state, engine)
                 if (e.to?.startsWith("ip:") == true) return PolicyAsks.answer(e, state) { c -> cardDef(c, state) }
+                if (e.to?.startsWith("rt:") == true) return RedteamAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

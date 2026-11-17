@@ -54,6 +54,7 @@
 111.7	a token that s in a
 111.8	a token that has left the
 111.10	some effects instruct a player to
+111.10k	a monster role token is a
 113.3	there are four general categories of
 113.3b	activated abilities have a cost and
 113.3d	static abilities are written as statements
@@ -66,6 +67,7 @@
 114.4	abilities of emblems function in the
 115.1	some spells and abilities require their
 115.1a	an instant or sorcery spell is
+115.1d	a triggered ability is targeted if
 115.2	only permanents are legal targets for
 115.3	the same target can t be
 115.4	some spells and abilities that refer
@@ -147,6 +149,7 @@
 202.3g	each phyrexian mana symbol in a
 205.1	the type line is printed directly
 205.1a	some effects set an object s
+205.1b	some effects change an object s
 205.2a	the card types are artifact battle
 205.3i	lands have their own unique set
 205.3j	planeswalkers have their own unique set
@@ -156,9 +159,11 @@
 207.2c	an ability word appears in italics
 208.2a	the card may have a characteristic
 301.1	a player who has priority may
+301.5	some artifacts have the subtype equipment
 301.5a	the creature an equipment is attached
 301.5c	an equipment that s also a
 301.5d	an equipment s controller is separate
+301.7	some artifacts have the subtype vehicle
 302.1	a player who has priority may
 302.6	a creature s activated ability with
 303.1	a player who has priority may
@@ -168,6 +173,7 @@
 303.4f	if an aura is entering the
 303.4g	if an aura is entering the
 303.7	some aura enchantments also have the
+303.7a	if a permanent has more than
 304.1	a player who has priority may
 305.1	a player who has priority may
 305.2	a player can normally play one
@@ -229,6 +235,7 @@
 506.4	a permanent is removed from combat
 506.4b	tapping or untapping a creature that
 506.4c	if a creature is attacking a
+507.1	first if the game being played
 508.1	first the active player declares attackers
 508.1a	the active player chooses which creatures
 508.1b	if the defending player controls any
@@ -237,6 +244,7 @@
 508.1f	the active player taps the chosen
 508.1g	if there are any optional costs
 508.1h	if any of the chosen creatures
+508.1m	any abilities that trigger on attackers
 508.2	second the active player gets priority
 508.3a	an ability that reads whenever a
 508.4	if a creature is put onto
@@ -488,6 +496,7 @@
 702.4e	multiple instances of double strike on
 702.5a	enchant is a static ability written
 702.6a	equip is an activated ability of
+702.6d	if a permanent has multiple equip
 702.7b	if at least one attacking or
 702.7c	giving first strike to a creature
 702.7d	multiple instances of first strike on
@@ -629,6 +638,7 @@
 702.126a	improvise is a static ability that
 702.130a	afflict is a triggered ability afflict
 702.131a	ascend on an instant or sorcery
+702.131c	the city s blessing is a
 702.133a	jump start appears on some instants
 702.134a	mentor is a triggered ability mentor
 702.135a	afterlife is a triggered ability afterlife
@@ -718,6 +728,7 @@
 704.5s	if the number of lore counters
 704.5v	if a siege battle has defense
 704.5w	if a non siege battle has
+704.5z	if a permanent has more than
 704.6c	in a commander game a player
 704.6d	in a commander game if a
 705.1	some cards refer to flipping a
@@ -750,7 +761,9 @@
 712.6d	while a nonmodal double faced permanent
 712.6e	while a modal double faced spell
 712.8a	if a double faced card or
+712.11a	if a spell or ability puts
 715.2	a chapter symbol is a keyword
+715.2b	rn effect means when one or
 715.3a	each saga without read ahead has
 715.3c	as a player s precombat main
 715.4	if the number of lore counters
