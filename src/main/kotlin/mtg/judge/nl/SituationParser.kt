@@ -154,7 +154,7 @@ class SituationParser(private val names: NameIndex) {
         "manland" to "Celestial Colonnade, Raging Ravine, …", "creature land" to "Celestial Colonnade, Raging Ravine, …")
 
     /** Table talk first ("dont", "my guy", "swords"), then the ordinary reading. */
-    fun parse(text: String): Parsed = parseCore(perturbRewrites(Slang.normalize(text)))
+    fun parse(text: String): Parsed = parseCore(perturbRewrites(PolicyCanon.canon(Slang.normalize(text))))
 
     /**
      * "I cast the lightning bolt", "they have the sphere of resistance": the article in front of a card named in full is
@@ -8423,7 +8423,7 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^is (?:it|that|this) (?:a |still a )?missed trigger\b""").containsMatchIn(s)) f["q"] = "missed"
         Regex("""\b(forgot|forget|forgets|missed|miss|misses|didn't remember|did not remember|never put|failed to)\b""").findAll(s).firstOrNull { v -> Regex("""\b$who\b""").containsMatchIn(s.substring(0, v.range.first)) }?.let { v ->
             val before = s.substring(0, v.range.first); val after = s.substring(v.range.last + 1)
-            val missWords = Regex("""\btrigger|\babilit|\bdash\b|\bunearth\b|\bupkeep\b|\blore counter|\btime counter|\bchapter|\bcumulative upkeep|\btax\b|\bexalted\b|\bto (?:pay|sacrifice|exile|return|remove|add|put|pick|choose|reveal|announce)\b|\babout (?:my|the|their|his|her) c\d+""")
+            val missWords = Regex("""\btrigger|\babilit|\bdash\b|\bunearth\b|\bupkeep\b|\blore counter|\btime counter|\bchapter|\bcumulative upkeep|\btax\b|\bexalted\b|\bto (?:pay|sacrifice|exile|return|remove|add|put|pick|choose|reveal|announce)\b|\babout (?:my|the|their|his|her) c\d+|^\s*(?:(?:my|the|their|his|her) )?c\d+\s*$""")
             if (!missWords.containsMatchIn(after)) return@let
             val subj = Regex("""^(?:what happens if |if )?(?:at [^,]+, )?$who\b""").find(before)?.groupValues?.get(1) ?: Regex("""\b$who\b""").find(before)?.groupValues?.get(1) ?: return@let
             f["who"] = side(subj)
@@ -8501,7 +8501,7 @@ class SituationParser(private val names: NameIndex) {
 
         // ---- details said in a sentence of their own, once a policy question is open ----
         val relOnly = Regex("""^(?:(?:it's|it is|this is|this was|it was|we're|we are|i'm|i am|we were|i was)\s+)?(?:(?:at|playing(?: in| at)?|in)\s+)?(?:an?\s+|the\s+|my\s+)?(rcq|fnm|friday night magic|prerelease|regional championship(?: qualifier)?|ptq|grand prix|gp|pro tour|tournament|competitive(?: rel)?|comp rel|regular rel|casual (?:store )?event|commander night|lgs)(?:\s+(?:event|tournament|match))?$""")
-        if (relOnly.matches(s0) && (inPolicy || Regex("""\b(?:forg[eo]t|missed|penalt|judge|infraction|shortcut|loop|late|slow|shuffle|decklist|drew|lied|lie)""").containsMatchIn(ctx.fullText.lowercase()))) return mk("fact")
+        if (relOnly.matches(s0) && (inPolicy || Regex("""\b(?:forg[eo]t|missed|penalt|judge|infraction|shortcut|loop|late|slow|shuffle|decklist|drew|lied|lie|tell|ask|answer|card does|hand|life|trigger|remind|warning|extra|lands|untap|game loss)""").containsMatchIn(ctx.fullText.lowercase()))) return mk("fact")
         if (!inPolicy) return t
         notice.find(s)?.takeIf { s.startsWith(it.value) || Regex("""^(?:we|i|they|he|she|my opponent) (?:only )?""").find(s)?.let { p -> s.removePrefix(p.value).startsWith(it.value.substringBefore(' ')) } == true }?.let { r ->
             policyTiming(r.value, f); return mk("fact") }

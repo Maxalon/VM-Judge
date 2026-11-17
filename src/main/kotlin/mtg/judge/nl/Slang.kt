@@ -24,7 +24,7 @@ object Slang {
         "murktide" to "murktide regent", "arcanist" to "dreadhorde arcanist", "borrower" to "brazen borrower", "skite" to "spellskite", "tnn" to "true name nemesis",
         "esg" to "elvish spirit guide", "trop" to "tropical island", "drc" to "dragon s rage channeler", "canonist" to "ethersworn canonist",
         "bowmasters" to "orcish bowmasters", "seize" to "thoughtseize", "tendrils" to "tendrils of agony", "bridge" to "ensnaring bridge", "birds" to "birds of paradise",
-        "led" to "lion s eye diamond", "swords to plowshare" to "swords to plowshares", "path to exhile" to "path to exile",
+        "led" to "lion s eye diamond", "manik vandal" to "manic vandal", "manic vandle" to "manic vandal", "swords to plowshare" to "swords to plowshares", "path to exhile" to "path to exile",
     )
 
     /** Nicknames that win over a real card of the same name: nobody at the table means the white instant by "tithe". */
