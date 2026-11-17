@@ -17,6 +17,7 @@ import mtg.judge.engine.Trigger
 import mtg.judge.engine.TriggeredAbility
 import mtg.judge.engine.UnparsedAbility
 import mtg.judge.engine.Who
+import mtg.judge.engine.WinLoss
 
 /**
  * Turns Oracle text into abilities and effects the engine understands.
@@ -34,7 +35,7 @@ object OracleParser {
         // A split card (Fire // Ice): its two halves are two modes, chosen as it is cast; a double-faced card keeps its front face only.
         val halves = typeLine.split(" // ")
         val text = if (oracleText.contains("\n//\n") && halves.size == 2 && halves.all { it.contains("Instant") || it.contains("Sorcery") })
-                oracleText.split("\n//\n").let { hs -> "Choose one —\n" + hs.joinToString("\n") { h -> "• " + h.lines().map { it.replace(reminder, "").trim() }.filter { it.isNotEmpty() }.joinToString(" ") } }
+                oracleText.split("\n//\n").let { hs -> "Choose one —\n" + hs.joinToString("\n") { h -> "• " + h.lines().map { it.replace(reminder, "").trim() }.filter { it.isNotEmpty() && !it.equals("Fuse", true) }.joinToString(" ") } }   // fuse is a keyword on the card (702.102a), not part of either half's effect
             else oracleText.substringBefore("\n//\n")   // front face only, for now
         val rawLines = text.lines().map { it.replace(reminder, "").trim() }.filter { it.isNotEmpty() }
         // Modal text: "Choose one —" followed by "• mode" lines becomes one line the effect parser understands.
@@ -68,7 +69,8 @@ object OracleParser {
                 var j = i0 + 1; val parts = mutableListOf(l.trim())
                 while (j < rawLines.size && (Regex("""^\d+/\d+$""").matches(rawLines[j].trim()) || keywordsIn(rawLines[j]) != null)) { parts += rawLines[j].trim(); j++ }
                 lines += parts.joinToString(" "); i0 = j
-            } else { lines += l; i0++ }
+            // "Enchant creature, land, or planeswalker" (Imprisoned in the Moon): one enchant ability with three kinds, not three keywords.
+            } else { lines += mtg.judge.engine.DeepMech.splitLine(l.replace(Regex("""^(Enchant [a-z]+), ([a-z]+),? or ([a-z]+)$"""), "$1 or $2 or $3")); i0++ }
         }
         val abilities = mutableListOf<Ability>()
         var spellEffect: Effect? = null
@@ -87,12 +89,13 @@ object OracleParser {
                     if (i >= 0) abilities[i] = (abilities[i] as ActivatedAbility).copy(restriction = selfRef.trimEnd('.'), text = abilities[i].text + " " + selfRef) else abilities += UnparsedAbility(selfRef)
                 }
                 isKeywordLine(selfRef, keywords) && statics.isEmpty() -> selfRef.split(',', ';').map { it.trim() }.filter { it.isNotEmpty() }.forEach { part ->
-                    val kw = keywords.map { it.lowercase() }.filter { part.lowercase() == it || part.lowercase().startsWith("$it ") }.maxByOrNull { it.length } ?: part.substringBefore(' ').lowercase()
+                    val kw = keywords.map { it.lowercase() }.filter { part.lowercase() == it || part.lowercase().startsWith("$it ") || part.lowercase().startsWith("$it—") }.maxByOrNull { it.length } ?: part.substringBefore(' ').lowercase()
                     when (kw) {
                         "enchant" -> { val what = part.substring(7).trim().trimEnd('.'); enchant = if (what.equals("player", true)) ObjFilter(setOf(Kind.PLAYER), raw = what)
                             // Animate Dead: "Enchant creature card in a graveyard" — a card, not a permanent.
                             else if (Regex("""(?i)^(?:creature|permanent|artifact|enchantment|land|planeswalker) card in an? graveyard$""").matches(what)) ObjFilter(setOf(Kind.CARD), raw = what, inGraveyard = true)
-                            else parseFilter(what, Kind.PERMANENT); abilities += StaticAbility(part, kw) }
+                            // Imprisoned in the Moon: "Enchant creature, land, or planeswalker" is one filter of three kinds (702.5a).
+                            else parseFilter(what.replace(Regex(""",? or |, """), " or "), Kind.PERMANENT); abilities += StaticAbility(part, kw) }
                         "equip" -> abilities += ActivatedAbility(part.trimEnd('.'), Effect.Attach(TargetSpec(ObjFilter(setOf(Kind.CREATURE), controller = Who.YOU, raw = "creature you control"), "creature you control")), part, "Activate only as a sorcery")
                         "cycling" -> abilities += ActivatedAbility(part.trimEnd('.') + " (discard this card from your hand)", Effect.Draw(Who.YOU, 1), part, "Activate only while this card is in your hand")
                         // "Basic landcycling {1}{B}", "Plainscycling {2}": cycling that fetches a land (702.29b).
@@ -100,6 +103,14 @@ object OracleParser {
                             val what = when (val k = kw.removeSuffix("cycling")) { "", "type" -> "a card of the named type"; "basic land" -> "a basic land card"; "land" -> "a land card of the named type"; "sliver" -> "a Sliver card"; else -> "a ${k.replaceFirstChar { it.uppercase() }} card" }
                             abilities += ActivatedAbility(part.trimEnd('.') + " (discard this card from your hand)", Effect.Narrated("search your library for $what, reveal it, put it into your hand, then shuffle", listOf("702.29b")), part, "Activate only while this card is in your hand")
                         }
+                        // Afflict N (702.130a): whenever it becomes blocked, the defending player loses N life.
+                        "afflict" -> { val n = part.substringAfter(' ').trim().trimEnd('.').toIntOrNull()
+                            if (n == null) abilities += StaticAbility(part, kw)
+                            else abilities += TriggeredAbility(Trigger.ThisBecomesBlocked, Effect.LoseLife(Who.OPPONENT, n), "Afflict $n (Whenever this creature becomes blocked, defending player loses $n life.)") }
+                        // Hideaway N (702.75a): when it enters, look at the top N cards and exile one face down.
+                        "hideaway" -> { val n = part.substringAfter(' ').trim().trimEnd('.').substringBefore(' ').toIntOrNull()
+                            if (n == null) abilities += StaticAbility(part, kw)
+                            else abilities += TriggeredAbility(Trigger.ThisEnters, Effect.Hideaway(n), "Hideaway $n (When this permanent enters, look at the top $n cards of your library, exile one face down, then put the rest on the bottom in a random order.)") }
                         "prowess" -> abilities += TriggeredAbility(Trigger.SpellCast(Who.YOU, ObjFilter(setOf(Kind.SPELL), notKinds = setOf(Kind.CREATURE), raw = "noncreature spell")), Effect.PumpSelf(1, 1), "Prowess (Whenever you cast a noncreature spell, ~ gets +1/+1 until end of turn.)")
                         "unearth" -> abilities += ActivatedAbility(part.trimEnd('.') + " (from your graveyard)", Effect.Narrated("return ~ from your graveyard to the battlefield; it gains haste; exile it at the beginning of the next end step or if it would leave the battlefield", listOf("702.84a")), part, "Activate only as a sorcery")
                         "level up" -> abilities += ActivatedAbility(part.trimEnd('.'), Effect.PutCounters(null, "level", 1), part, "Activate only as a sorcery")
@@ -145,12 +156,50 @@ object OracleParser {
                             abilities += ActivatedAbility(part.trimEnd('.') + " (tap any number of other untapped creatures you control with total power N or more)", eff, part)
                         }
                         // Saddle works like crew, but the Mount is already a creature: saddling only turns on
-                        // what its own text does while saddled (702.166a).
+                        // what its own text does while saddled (702.171a).
                         "saddle" -> abilities += ActivatedAbility(part.trimEnd('.') + " (tap any number of other untapped creatures you control with total power N or more)", Effect.SaddleSelf, part)
-                        else -> abilities += StaticAbility(part, kw)
+                        // Extort (702.101a): each spell cast triggers a payment of {W/B}; if it's paid, a one-life drain.
+                        "extort" -> abilities += TriggeredAbility(Trigger.SpellCast(Who.YOU), Effect.IfYouDo(Effect.Narrated("pay {W/B}", listOf("702.101a")), Effect.Seq(listOf(Effect.LoseLife(Who.EACH_OPPONENT, 1), Effect.GainLifeLostThisWay)), "{W/B}"),
+                            "Extort (Whenever you cast a spell, you may pay {W/B}. If you do, each opponent loses 1 life and you gain that much life.)")
+                        // Exploit (702.110a): sacrificing a creature as the enters-trigger resolves is what "exploits a creature" (702.110b).
+                        "exploit" -> abilities += TriggeredAbility(Trigger.ThisEnters, Effect.May(Effect.Exploit), "Exploit (When this creature enters, you may sacrifice a creature.)")
+                        // Mentor (702.134a): a counter on an attacking creature that has less power than this one.
+                        "mentor" -> abilities += TriggeredAbility(Trigger.ThisAttacks, Effect.Mentor(TargetSpec(ObjFilter(setOf(Kind.CREATURE), attacking = true, raw = "attacking creature with lesser power"), "attacking creature with lesser power")),
+                            "Mentor (Whenever this creature attacks, put a +1/+1 counter on target attacking creature with lesser power.)")
+                        // Bloodthirst N (702.54a): enters with N +1/+1 counters if an opponent was dealt damage this turn.
+                        "bloodthirst" -> {
+                            val n = part.substringAfter(' ').trim().trimEnd('.').toIntOrNull()
+                            if (n == null) abilities += StaticAbility(part, kw)
+                            else abilities += StaticAbility("Bloodthirst $n (If an opponent was dealt damage this turn, this creature enters with $n +1/+1 counters on it.)", null, listOf(StaticEffect.EntersWithCounters("+1/+1", n, onlyIfOpponentDamaged = true)))
+                        }
+                        // Backup N (702.165a): what it grants is whatever is printed below it; filled in once the card's other lines are read.
+                        "backup" -> {
+                            val n = part.substringAfter(' ').trim().trimEnd('.').toIntOrNull()
+                            if (n == null) abilities += StaticAbility(part, kw)
+                            else abilities += TriggeredAbility(Trigger.ThisEnters, Effect.Backup(TargetSpec(ObjFilter(setOf(Kind.CREATURE), raw = "creature"), "creature"), n, emptySet(), ""),
+                                "Backup $n (When this creature enters, put ${if (n == 1) "a +1/+1 counter" else "$n +1/+1 counters"} on target creature. If that's another creature, it gains the following abilities until end of turn.)")
+                        }
+                        // Mobilize, afterlife, decayed, ravenous: expanded into the abilities their rules define (NewMechanics.kt).
+                        else -> abilities += mtg.judge.engine.DeepMech.keywordAbilities(kw, part) ?: mtg.judge.engine.CoverageMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewMech.keywordAbilities(kw, part) ?: mtg.judge.engine.NewSetMech.keywordAbilities(kw, part) ?: mtg.judge.engine.MoreEffects3.keywordAbilities(kw, part) ?: listOf(StaticAbility(part, kw))
                     }
                 }
+                // Animate Dead / Dance of the Dead: one paragraph holding the enters ability that returns the card it enchants
+                // (done as the Aura enters, 303.4a) and a separate leaves-the-battlefield trigger that sacrifices that creature.
+                // Exert (701.43d): "You may exert ~ as it attacks. When you do, [effect]." — the effect is a trigger linked to the choice.
+                Regex("""^You may exert ~ as it attacks\. When you do, (.+)$""", RegexOption.IGNORE_CASE).matches(selfRef) ->
+                    abilities += parseTriggeredAll("When ~ is exerted, " + Regex("""^You may exert ~ as it attacks\. When you do, (.+)$""", RegexOption.IGNORE_CASE).matchEntire(selfRef)!!.groupValues[1])
+                Regex("""^You may exert ~ as it attacks\.?$""", RegexOption.IGNORE_CASE).matches(selfRef) -> abilities += StaticAbility(selfRef, "exert")
+                animateDeadRe.matches(selfRef) -> {
+                    val ltb = selfRef.substring(selfRef.indexOf("When ~ leaves the battlefield"))
+                    abilities += StaticAbility(selfRef.removeSuffix(ltb).trim(), null, listOf(StaticEffect.Note(selfRef.removeSuffix(ltb).trim(), listOf("303.4a"))))
+                    abilities += TriggeredAbility(Trigger.ThisLeavesBattlefield, Effect.SacrificeEnchanted, ltb)
+                }
+                mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef)!!   // repartee, power-up, prepared, storied (NewSetMechanics.kt)
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
+                mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects.parseAbilityLine(selfRef)!!   // Uro's escape, Mikaeus (MoreEffects.kt)
+                mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects2.parseAbilityLine(selfRef)!!   // Voice of Resurgence (MoreEffects2.kt)
+                mtg.judge.engine.MoreEffects3.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.MoreEffects3.parseAbilityLine(selfRef)!!   // "12+ | Flying" on a station card (MoreEffects3.kt)
+                isSpell && WinLoss.isSpellLine(selfRef) -> spellLines += selfRef   // Pact of Negation's delayed trigger is part of the spell
                 selfRef.startsWith("When ", true) || selfRef.startsWith("Whenever ", true) || selfRef.startsWith("At ", true) || abilityWord.containsMatchIn(selfRef) -> abilities += parseTriggeredAll(selfRef)
                 isActivated(selfRef) -> abilities += parseActivated(selfRef)
                 isSpell -> spellLines += selfRef
@@ -160,12 +209,22 @@ object OracleParser {
             }
         }
         if (isSpell && spellLines.isNotEmpty()) spellEffect = parseEffect(spellLines.joinToString(" "))
+        // Backup (702.165a): the abilities printed below the backup ability are what another creature gains.
+        abilities.indexOfFirst { it is TriggeredAbility && it.effect is Effect.Backup }.takeIf { it >= 0 }?.let { bi ->
+            val ta = abilities[bi] as TriggeredAbility; val bk = ta.effect as Effect.Backup
+            val below = abilities.drop(bi + 1)
+            val kwBelow = below.filterIsInstance<StaticAbility>().mapNotNull { it.keyword?.takeIf { k -> k in keywordList } }.toSet()
+            abilities[bi] = ta.copy(effect = bk.copy(keywords = kwBelow, grantedText = below.joinToString("; ") { it.text.trimEnd('.') }))
+        }
         val kws = keywords.map { it.lowercase() }.toSet()
         // Basic land types carry intrinsic mana abilities (305.6): "({T}: Add {G} or {U}.)" is reminder text, so add them from the type line.
         if ("Land" in types) for (sub in subs) basicLandMana[sub]?.let { sym -> if (abilities.none { it is ActivatedAbility && it.cost == "{T}" && (it.effect as? Effect.AddMana)?.text == sym }) abilities += ActivatedAbility("{T}", Effect.AddMana(sym), "{T}: Add $sym. (intrinsic, from being ${if (sub.first() in "AEIOU") "an" else "a"} $sub)") }
+        mtg.judge.engine.MoreEffects3.gateClassLevels(abilities)   // a Class's abilities below its level bars (MoreEffects3.kt)
         return CardDef(oracleId, name, typeLine, supers, types, subs, manaCost, manaValue, if ("devoid" in kws) emptySet() else colors.toSet(), CardDef.parseStat(power), CardDef.parseStat(toughness),
             kws, abilities, spellEffect, oracleText, enchant, "changeling" in kws, loyalty?.toIntOrNull())
     }
+
+    private val animateDeadRe = Regex("""^When ~ enters, if it's on the battlefield, it loses "enchant creature card in a graveyard" and gains "enchant creature put onto the battlefield with ~\." Return enchanted creature card to the battlefield under your control(?: tapped)? and attach ~ to it\.(?: .+?)? When ~ leaves the battlefield, that creature's controller sacrifices it\.$""")
 
     /** Replace the card's own name and "this creature/permanent/…" with "~". */
     private fun selfReference(line: String, name: String): String {
@@ -174,15 +233,16 @@ object OracleParser {
         if (shortName != name) s = s.replace(shortName, "~")
         // Legendary names shortened in their own text: "Kaalia of the Vast" -> "Kaalia", "Ezuri the Claw" -> "Ezuri", "Arcades, the Strategist" already handled.
         Regex("""^([A-Z][\w'-]+) (?:of|the|,)\b""").find(name)?.groupValues?.get(1)?.let { first -> if (first.length >= 3) s = s.replace(Regex("""\b${Regex.escape(first)}\b(?! (?:of|the))"""), "~") }
-        s = s.replace(Regex("""\b[Tt]his (creature|permanent|artifact|enchantment|land|planeswalker|spell|card|Aura|Equipment|Vehicle|token|battle|Saga|Class|Room)\b"""), "~")
+        s = s.replace(Regex("""\b[Tt]his (creature|permanent|artifact|enchantment|land|planeswalker|spell|card|Aura|Equipment|Vehicle|token|battle|Saga|Class|Room|Spacecraft|Planet)\b"""), "~")
         return s
     }
 
     /** Keyword actions (701): verbs a card's keyword list carries ("Double", "Scry", "Mill") that head an effect sentence, never a keyword ability line. */
-    private val keywordActions = setOf("activate", "attach", "cast", "counter", "create", "destroy", "discard", "double", "exchange", "exile", "fight", "mill", "play", "regenerate", "reveal", "sacrifice", "scry", "search", "shuffle", "tap", "untap", "vote", "transform", "detain", "populate", "monstrosity", "bolster", "manifest", "support", "investigate", "meld", "goad", "exert", "explore", "assemble", "surveil", "adapt", "amass", "learn", "venture into the dungeon", "connive", "open an attraction", "roll to visit your attractions", "convert", "incubate", "the ring tempts you", "face a villainous choice", "time travel", "discover", "cloak", "collect evidence", "suspect", "forage", "manifest dread", "endure", "behold")
+    private val keywordActions = setOf("activate", "attach", "cast", "counter", "create", "destroy", "discard", "double", "exchange", "exile", "fight", "mill", "play", "regenerate", "reveal", "sacrifice", "scry", "search", "shuffle", "tap", "untap", "vote", "transform", "detain", "populate", "monstrosity", "bolster", "manifest", "support", "investigate", "meld", "goad", "exert", "explore", "assemble", "surveil", "adapt", "amass", "learn", "venture into the dungeon", "connive", "open an attraction", "roll to visit your attractions", "convert", "incubate", "the ring tempts you", "face a villainous choice", "time travel", "discover", "cloak", "collect evidence", "suspect", "forage", "manifest dread", "endure", "behold", "empower jace", "recruit", "power-up")   // power-up heads an activated ability (702.193a)
 
     private fun isKeywordLine(line: String, keywords: Collection<String>): Boolean {
-        val parts = line.trimEnd('.').split(',', ';').map { it.trim().lowercase() }
+        // "Blitz—{2}{B}{B}, Pay 2 life": the life is part of the keyword's cost, not a keyword of its own.
+        val parts = line.trimEnd('.').replace(Regex(""",\s*pay \d+ life""", RegexOption.IGNORE_CASE), "").split(',', ';').map { it.trim().lowercase() }
         val kws = keywords.map { it.lowercase() }.toSet() - keywordActions
         // "Evoke—Exile a black card from your hand": a keyword whose cost follows an em-dash with no space.
         return parts.isNotEmpty() && parts.all { p -> kws.any { k -> p == k || p.startsWith("$k ") || p.startsWith("$k—") || p.startsWith("$k–") } }
@@ -193,10 +253,15 @@ object OracleParser {
         if (colon <= 0) return false
         val cost = line.substring(0, colon)
         if (Regex("""^[+\u2212-]?(?:\d+|X)$""").matches(cost.trim())) return true   // loyalty ability (606.2)
+        // Devoted Druid: "Put a -1/-1 counter on this creature: Untap this creature."
+        if (Regex("""^Put (?:a|an|one|two|\d+) \S+ counters? on """, RegexOption.IGNORE_CASE).containsMatchIn(cost.trim())) return true
         return cost.contains('{') || cost.contains("Sacrifice", true) || cost.contains("Discard", true) || cost.contains("Pay", true) || cost.contains("Tap ", true) || cost.contains("Remove", true) || cost.contains("Exile", true)
     }
 
     private val manaRe = Regex("""^Add (\{[^}]+\}(?:\{[^}]+\})*(?:(?:, or |, | or | and )\{[^}]+\}(?:\{[^}]+\})*)*|(?:one|two|three|four|five|N|X) mana (?:of any (?:one )?color(?: in your commander's color identity)?|in any combination of colors|of any color(?: or type)?)|an amount of mana .+)\.?$""", RegexOption.IGNORE_CASE)
+
+    /** "{T}: Add {G}." quoted inside a grant (Abundant Growth): read as the activated ability it is (MoreEffects3.kt). */
+    internal fun parseActivatedLine(line: String): Ability = parseActivated(line)
 
     private fun parseActivated(line: String): Ability {
         val colon = line.indexOf(':')
@@ -232,12 +297,23 @@ object OracleParser {
     private val abilityWordStatic = Regex("""^[A-Z][A-Za-z'’]*(?: [A-Za-z'’]+){0,4}\s*[—–]\s*(?=As long as\b|~|Creatures\b|Each\b|You\b|If\b)""")
 
     private fun parseTriggered(line: String): Ability {
+        mtg.judge.engine.EdhMech.parseTriggered(line) { parseEffect(it) }?.let { return it }   // Tergrid, command-zone abilities (EdhMechanics.kt)
+        mtg.judge.engine.PauperMech.parseTriggered(line)?.let { return it }   // Standstill, Nether Void, The Abyss (PauperMechanics.kt)
+        mtg.judge.engine.LifeDmgMech.parseTriggered(line)?.let { return it }   // Transcendence, Lich's Mastery, Repercussion (LifeDamageMechanics.kt)
+        // Harsh Mentor: "Whenever an opponent activates an ability of an artifact, creature, or land on the battlefield, if it
+        // isn't a mana ability, ~ deals 2 damage to that player." The list's commas aren't the trigger's comma.
+        Regex("""^Whenever (an opponent|a player|you) activates? an ability of (.+?)(?: on the battlefield)?, if it isn't a mana ability, (.+)$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val f = parseFilter(m.groupValues[2].replace(Regex(""",? or """), " or ").replace(", ", " or "), Kind.PERMANENT)
+            if (!f.verifiable) return@let
+            val who = when (m.groupValues[1].lowercase()) { "an opponent" -> Who.OPPONENT; "you" -> Who.YOU; else -> Who.ANY_PLAYER }
+            return TriggeredAbility(Trigger.AbilityActivated(who, f, nonManaOnly = true), parseEffect(m.groupValues[3]), line)
+        }
         val m = triggerRe.matchEntire(joinTypeLists(line)) ?: return UnparsedAbility(line)
         val cond = m.groupValues[2].trim().replace(Regex("""^Landfall — """), "")
         val trigger = parseTrigger(cond)
         // "Whenever ~ attacks, it gets +1/+1" / "…, put a +1/+1 counter on it": in a self-trigger, a leading "it" is ~.
         val selfTrigger = trigger is Trigger.ThisDies || trigger is Trigger.ThisLeavesBattlefield || trigger is Trigger.ThisAttacks || trigger is Trigger.ThisEnters || trigger is Trigger.ThisDealsDamage || trigger is Trigger.ThisBecomesBlocked || trigger is Trigger.ThisBecomesBlockedByCreature || trigger is Trigger.ThisBlocks || trigger is Trigger.ThisBlocks || trigger is Trigger.ThisAttacksUnblocked ||
-            trigger is Trigger.ThisBecomesTarget || trigger is Trigger.ThisBecomesTapped || trigger is Trigger.ThisBecomesMonstrous || trigger is Trigger.ThisIsDealtDamage || trigger is Trigger.ThisCast
+            trigger is Trigger.ThisBecomesTarget || trigger is Trigger.ThisBecomesTapped || trigger is Trigger.ThisBecomesMonstrous || trigger is Trigger.ThisMutates || trigger is Trigger.ThisExerts || trigger is Trigger.ThisIsDealtDamage || trigger is Trigger.ThisCast
         val effText = if (selfTrigger) selfEffText(m.groupValues[3]) else m.groupValues[3]
         // "Whenever a creature you control attacks alone, it gains double strike / gets +2/+2 until end of turn": the attacking creature.
         // "Whenever a creature attacks you, it gets -1/-1 until end of turn": the attacking creature, too.
@@ -251,6 +327,8 @@ object OracleParser {
                 return TriggeredAbility(trigger, Effect.PumpCausing(0, 0, kws.toList()), line)
             }
         }
+        // Narcomoeba: "you may put it onto the battlefield" — it is the card in the graveyard, returned from there.
+        if (trigger is Trigger.ThisMilled && Regex("""^you may put (?:it|~) onto the battlefield\.?$""", RegexOption.IGNORE_CASE).matches(effText.trim())) return TriggeredAbility(trigger, Effect.May(Effect.ReturnSelfFromGraveyard()), line)
         // "Whenever ~ blocks a creature, ~ deals 1 damage to that creature": the creature it blocks (or that blocks it).
         if (trigger is Trigger.ThisBlocks || trigger is Trigger.ThisBecomesBlockedByCreature) causingEffect(effText)?.let { return TriggeredAbility(trigger, it, line) }
         // Vexing Devil: "any opponent may have it deal 4 damage to them. If a player does, sacrifice ~."
@@ -261,6 +339,7 @@ object OracleParser {
     /** "~ deals N damage to that creature" in a block trigger: the creature it blocks or is blocked by. */
     private fun causingEffect(effText: String): Effect? =
         Regex("""^~ deals (\d+) damage to that creature\.?$""", RegexOption.IGNORE_CASE).matchEntire(effText)?.let { Effect.DamageCausing(it.groupValues[1].toInt()) }
+            ?: mtg.judge.engine.CoverageMech.causingEffect(effText)   // Engulfing Slagwurm, Thicket Basilisk: destroy that creature
 
     /** In a trigger about ~ itself, a leading "it" is ~. */
     private fun selfEffText(t: String) = t.replace(Regex("""^it (gets|gains|deals) """), "~ $1 ")
@@ -278,13 +357,18 @@ object OracleParser {
         }
         // "Whenever ~ blocks or becomes blocked(, by a creature)" — the two halves are separate triggers, and the
         // "by a creature" half triggers once for each creature blocking it, so it keeps its own trigger.
-        Regex("""^~ blocks or becomes blocked( by a creature)?$""", RegexOption.IGNORE_CASE).matchEntire(cond)?.let { bm ->
-            val eff = causingEffect(selfEffText(m.groupValues[3])) ?: parseEffect(selfEffText(m.groupValues[3]))
+        Regex("""^~ blocks or becomes blocked( by a (?:non-Wall )?creature)?$""", RegexOption.IGNORE_CASE).matchEntire(cond)?.let { bm ->
+            val eff = (causingEffect(selfEffText(m.groupValues[3])) ?: parseEffect(selfEffText(m.groupValues[3]))).let { e -> if (cond.contains("non-Wall", true) && e is Effect.NewMech) e.copy(text = e.text + "|nonwall") else e }
             val blocked = if (bm.groupValues[1].isEmpty()) Trigger.ThisBecomesBlocked else Trigger.ThisBecomesBlockedByCreature
             return listOf(TriggeredAbility(Trigger.ThisBlocks, eff, line), TriggeredAbility(blocked, eff, line))
         }
         Regex("""^~ attacks or blocks$""", RegexOption.IGNORE_CASE).matchEntire(cond)?.let {
             val eff = parseEffect(selfEffText(m.groupValues[3])); return listOf(TriggeredAbility(Trigger.ThisAttacks, eff, line), TriggeredAbility(Trigger.ThisBlocks, eff, line))
+        }
+        // Orcish Bowmasters: "When ~ enters and whenever an opponent draws a card except the first …": two triggers, one effect.
+        Regex("""^~ enters and whenever (.+)$""", RegexOption.IGNORE_CASE).matchEntire(cond)?.let { w ->
+            val other = parseTrigger(w.groupValues[1]); if (other is Trigger.Unknown) return@let
+            val eff = parseEffect(selfEffText(m.groupValues[3])); return listOf(TriggeredAbility(Trigger.ThisEnters, eff, line), TriggeredAbility(other, eff, line))
         }
         Regex("""^~ enters or dies$""", RegexOption.IGNORE_CASE).matchEntire(cond)?.let {
             val eff = parseEffect(selfEffText(m.groupValues[3])); return listOf(TriggeredAbility(Trigger.ThisEnters, eff, line), TriggeredAbility(Trigger.ThisDies, eff, line))
@@ -299,6 +383,8 @@ object OracleParser {
 
     fun parseTrigger(cond: String): Trigger {
         val c = cond.trim().trimEnd(',')
+        mtg.judge.engine.Turns.trigger(c)?.let { return it }   // Paradox Haze: "enchanted player's first upkeep each turn"
+        mtg.judge.engine.MoreEffects3.parseTrigger(c)?.let { return it }   // Megrim, Aurelia (MoreEffects3.kt)
         Regex("""^the beginning of (?:(your|each player's|each|an opponent's|each opponent's|the) )?(upkeep|draw step|precombat main phase|first main phase|combat on your turn|combat on each of your turns|combat on each opponent's turn|combat|end step|next end step|postcombat main phase|second main phase|untap step|end of combat step|turn)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             val whose = when (m.groupValues[1].lowercase()) { "your" -> Who.YOU; "an opponent's", "each opponent's" -> Who.OPPONENT; else -> Who.ANY_PLAYER }
             val stepKey = m.groupValues[2].lowercase().substringBefore(" on ")
@@ -321,7 +407,10 @@ object OracleParser {
             return Trigger.ThisBecomesTarget(m.groupValues[1].trim() == "an opponent controls", m.groupValues[2].isNotEmpty())
         }
         if (Regex("""^~ becomes tapped$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisBecomesTapped
+        if (Regex("""^~ is put into your graveyard from your library$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisMilled
         if (Regex("""^~ becomes monstrous$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisBecomesMonstrous
+        if (Regex("""^~ mutates$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisMutates
+        if (Regex("""^~ is exerted$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisExerts
         if (Regex("""^you cycle ~$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisCycled
         if (Regex("""^~ blocks(?: a creature)?$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisBlocks
         if (Regex("""^~ attacks and isn't blocked$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisAttacksUnblocked
@@ -330,10 +419,11 @@ object OracleParser {
         // Umezawa's Jitte: "whenever equipped creature deals combat damage" — to a blocker as well as to a player.
         Regex("""^(.+?) deals combat damage$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m -> if (!m.groupValues[1].equals("~", true)) { val f = parseFilter(m.groupValues[1], Kind.CREATURE); if (f.verifiable) return Trigger.PermanentDealsCombatDamage(f) } }
         if (Regex("""^you gain life$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.YouGainLife
+        Regex("""^(an opponent|a player) loses life$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { return Trigger.PlayerLosesLife(if (it.groupValues[1].lowercase() == "an opponent") Who.OPPONENT else Who.ANY_PLAYER) }
         if (Regex("""^you draw a card$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.YouDraw
         if (Regex("""^a creature you control attacks alone$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.CreatureAttacksAlone
         Regex("""^one or more (.+?) cards? (?:are|is) put into your graveyard from anywhere$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m -> val f = parseFilter(m.groupValues[1], Kind.PERMANENT); return if (f.verifiable) Trigger.CardsToYourGraveyard(f) else Trigger.Unknown(c) }
-        Regex("""^(an opponent|a player) draws a card$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { return Trigger.PlayerDraws(if (it.groupValues[1].lowercase() == "an opponent") Who.OPPONENT else Who.ANY_PLAYER) }
+        Regex("""^(an opponent|a player) draws a card( except the first one (?:they|that player) draws? in each of their draw steps)?$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { return Trigger.PlayerDraws(if (it.groupValues[1].lowercase() == "an opponent") Who.OPPONENT else Who.ANY_PLAYER, it.groupValues[2].isNotEmpty()) }
         Regex("""^you draw your (first|second|third) card each turn$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { return Trigger.YouDrawNth(mapOf("first" to 1, "second" to 2, "third" to 3).getValue(it.groupValues[1].lowercase())) }
         Regex("""^~ or another (.+?) enters(?: the battlefield)?(?: under your control)?$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.CREATURE).let { if (c.contains("under your control", true) || it.controller == null) it.copy(controller = Who.YOU) else it }
@@ -348,12 +438,27 @@ object OracleParser {
             val f = parseFilter(pw?.groupValues?.get(1) ?: m.groupValues[2], Kind.PERMANENT).let { f0 -> if (pw == null) f0 else if (pw.groupValues[3].equals("less", true)) f0.copy(maxPower = pw.groupValues[2].toInt(), raw = m.groupValues[2]) else f0.copy(minPower = pw.groupValues[2].toInt(), raw = m.groupValues[2]) }
                 .let { if (underYou && it.controller == null) it.copy(controller = Who.YOU) else it }
             if (!f.verifiable) return Trigger.Unknown(c)
-            return Trigger.PermanentEnters(f, m.groupValues[1].trim().equals("another", true))
+            return Trigger.PermanentEnters(f, m.groupValues[1].trim().equals("another", true), oneOrMore = m.groupValues[1].trim().equals("one or more", true))
+        }
+        // Vengeful Townsfolk: "one or more other creatures you control die" — one trigger for the creatures dying together (603.2c).
+        Regex("""^one or more (other )?(.+?) die$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
+            val f = parseFilter(m.groupValues[2].split(" ").joinToString(" ") { w -> singular(w) }, Kind.CREATURE)
+            if (f.verifiable) return Trigger.PermanentDies(f, m.groupValues[1].isNotEmpty(), oneOrMore = true)
+        }
+        // Dandân: "you control no Islands" — a state trigger (603.8).
+        Regex("""^you control no (other )?(.+?)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
+            val f = parseFilter(m.groupValues[2].split(" ").joinToString(" ") { w -> singular(w) }, Kind.PERMANENT).let { if (it.controller == null) it.copy(controller = Who.YOU) else it }
+            if (f.verifiable) return Trigger.YouControlNo(f, m.groupValues[1].isNotEmpty())
         }
         // "~ or another creature dies" (Blood Artist): any creature, this one included.
         Regex("""^~ or another (.+?) dies$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.CREATURE)
             return if (f.verifiable) Trigger.PermanentDies(f, false) else Trigger.Unknown(c)
+        }
+        // Tireless Tracker: "you sacrifice a Clue".
+        Regex("""^you sacrifice (another |a |an )(.+?)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
+            val f = parseFilter(m.groupValues[2], Kind.PERMANENT)
+            return if (f.verifiable) Trigger.YouSacrifice(f) else Trigger.Unknown(c)
         }
         Regex("""^(another |a |an )?(.+?) dies$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             if (m.groupValues[2].equals("~", true)) return Trigger.ThisDies
@@ -415,7 +520,7 @@ object OracleParser {
         Regex("""^~ has no ([a-z+/0-9-]+) counters on it$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             return Trigger.NoCountersOnThis(m.groupValues[1].lowercase())
         }
-        // "~ attacks while saddled" / "~ becomes saddled (for the first time each turn)" (702.166b).
+        // "~ attacks while saddled" / "~ becomes saddled (for the first time each turn)" (702.171b).
         if (Regex("""^~ attacks while saddled$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisAttacksSaddled
         Regex("""^~ becomes saddled( for the first time each turn)?$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             return Trigger.ThisBecomesSaddled(m.groupValues[1].isNotEmpty())
@@ -424,6 +529,7 @@ object OracleParser {
         if (Regex("""^~ dies$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisDies
         if (Regex("""^~ leaves the battlefield$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisLeavesBattlefield
         if (Regex("""^~ attacks(?: an opponent| a player)?$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisAttacks
+        if (Regex("""^~ exploits a creature$""", RegexOption.IGNORE_CASE).matches(c)) return Trigger.ThisExploits
         return Trigger.Unknown(c)
     }
 
@@ -500,9 +606,14 @@ object OracleParser {
             val n = if (m.groupValues[1].equals("an", true)) 1 else number(m.groupValues[1]) ?: return@let
             return StaticEffect.ExtraLandPlays(n, Who.YOU)
         }
-        // "Each player can't cast more than one spell each turn." (Rule of Law, Arcane Laboratory)
-        Regex("""^each player can't cast more than (one|two|three|\d+) spells? each turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
-            number(m.groupValues[1])?.let { return StaticEffect.SpellsPerTurn(it, null) }
+        // "Each player can't cast more than one spell each turn." (Rule of Law, Arcane Laboratory); "… one noncreature spell …" (Deafening Silence)
+        Regex("""^each player can't cast more than (one|two|three|\d+) (noncreature |nonartifact )?spells? each turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val f = when (m.groupValues[2].trim().lowercase()) {
+                "noncreature" -> ObjFilter(setOf(Kind.SPELL), notKinds = setOf(Kind.CREATURE), raw = "noncreature spell")
+                "nonartifact" -> ObjFilter(setOf(Kind.SPELL), notKinds = setOf(Kind.ARTIFACT), raw = "nonartifact spell")
+                else -> null
+            }
+            number(m.groupValues[1])?.let { return StaticEffect.SpellsPerTurn(it, f) }
         }
         // "Each player who has cast a nonartifact spell this turn can't cast additional nonartifact spells." (Ethersworn Canonist)
         Regex("""^each player who has cast an? (.+?) spell this turn can't cast additional \1 spells\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -570,6 +681,10 @@ object OracleParser {
         Regex("""^whenever a player taps a land for mana, that player adds one (?:additional )?mana of any type that land produced\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let {
             return StaticEffect.Replace(Replacement.ManaBoost(1, 1, false, trigger = true, anyPlayer = true, landOnly = true))
         }
+        // Wild Growth, Utopia Sprawl: "Whenever enchanted land is tapped for mana, its controller adds an additional {G}." A triggered mana ability (605.1b).
+        Regex("""^whenever enchanted land is tapped for mana, its controller adds an additional ((?:\{[WUBRGC]\})+)\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            return StaticEffect.Replace(Replacement.ManaBoost(1, 0, false, trigger = true, anyPlayer = true, landOnly = true, enchantedOnly = true, adds = m.groupValues[1].uppercase()))
+        }
         // Trinisphere.
         Regex("""^as long as ~ is untapped, each spell that would cost less than (three|\d+) mana to cast costs (?:three|\d+) mana to cast\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
             return StaticEffect.CostFloor(if (m.groupValues[1].lowercase() == "three") 3 else m.groupValues[1].toInt(), whileUntapped = true)
@@ -577,6 +692,11 @@ object OracleParser {
         // Kinnan, Bonder Prodigy: "Whenever you tap a nonland permanent for mana, add one mana of any type that permanent produced."
         Regex("""^whenever you tap a (permanent|nonland permanent) for mana, add one (?:additional )?mana of any type that permanent produced\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
             return StaticEffect.Replace(Replacement.ManaBoost(1, 1, m.groupValues[1].startsWith("nonland", true), trigger = true))
+        }
+        // Vizier of Remedies: "If one or more -1/-1 counters would be put on a creature you control, that many -1/-1 counters minus one are put on it instead."
+        Regex("""^if one or more ([+-]\d+/[+-]\d+|\w+) counters would be put on an? (?:creature|artifact|permanent) you control, that many \1 counters minus (one|two|\d+) are put on it instead\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val n = number(m.groupValues[2]) ?: return@let
+            return StaticEffect.Replace(Replacement.CounterMultiplier(1, extra = -n, kind = m.groupValues[1]))
         }
         // Hardened Scales: "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead."
         Regex("""^if one or more ([+-]\d+/[+-]\d+|\w+) counters would be put on an? (?:creature|artifact|permanent) you control, that many plus (one|two|\d+) \1 counters are put on it instead\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -588,6 +708,18 @@ object OracleParser {
 
     /** "Creatures you control get +1/+1", "Other Elf creatures you control get +1/+1 and have trample", "Creatures you control have haste". */
     fun parseStatic(line: String): List<StaticEffect> {
+        WinLoss.parseStatic(line)?.let { return it }
+        mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
+        mtg.judge.engine.CedhMech.parseStatic(line)?.let { return it }   // Underworld Breach, Ashiok (CedhMechanics.kt)
+        mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
+        mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
+        mtg.judge.engine.DeepMech.parseStatic(line)?.let { return it }   // Song of the Dryads, Animar (DeepMechanics.kt)
+        mtg.judge.engine.ExamMech.parseStatic(line)?.let { return it }   // Mirror Gallery, Torbran, High Ground, Lure (ExamMechanics.kt)
+        mtg.judge.engine.MoreEffects.parseStatic(line)?.let { return it }   // Melira (MoreEffects.kt)
+        mtg.judge.engine.MoreEffects2.parseStatic(line)?.let { return it }   // Dryad of the Ilysian Grove, Animar (MoreEffects2.kt)
+        mtg.judge.engine.MoreEffects3.parseStatic(line)?.let { return it }   // Mondrak, Cranial Plating, Oketra's Monument (MoreEffects3.kt)
+        mtg.judge.engine.LifeDmgMech.parseStatic(line)?.let { return it }   // Platinum Emperion, Rampaging Ferocidon, Palisade Giant (LifeDamageMechanics.kt)
+        mtg.judge.engine.CounterRules.staticNote(line)?.let { return listOf(it) }   // Vorinclex (CounterRules.kt)
         parseReplacementStatic(line)?.let { return listOf(it) }
         Regex("""^~ enters(?: the battlefield)? tapped\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EntersTapped()) }
         Regex("""^all cards that aren't on the battlefield, spells, and permanents are the chosen colou?r in addition to their other colou?rs\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { return listOf(StaticEffect.EverythingIsChosenColour) }
@@ -679,6 +811,8 @@ object OracleParser {
             val per = parseCount("the number of " + m.groupValues[2].trim())
             if (per !is CountExpr.Unknown) return listOf(StaticEffect.EntersWithCounters(m.groupValues[1], null, per = per))
         }
+        // Everflowing Chalice: one counter each time it was kicked.
+        Regex("""^~ enters(?: the battlefield)? with (?:a|an) (\w+) counter on it for each time it was kicked\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m -> return listOf(StaticEffect.EntersWithKickCounters(m.groupValues[1])) }
         // Kavu Primarch: "If ~ was kicked, it enters with four +1/+1 counters on it."
         Regex("""^if ~ was kicked, it enters(?: the battlefield)? with (a|an|\w+) ([+-]\d/[+-]\d|\w+) counters? on it\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
             val n = number(m.groupValues[1]) ?: return emptyList()
@@ -714,7 +848,8 @@ object OracleParser {
         }
         Regex("""^you can't lose the game and your opponents can't win the game\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.CantLose) }
         Regex("""^you don't lose the game for having 0 or less life\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NoLossAtZeroLife) }
-        Regex("""^nonbasic lands are mountains\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NonbasicLandsAreMountains) }
+        Regex("""^as long as you have 0 or less life, all damage is dealt to you as though its source had infect\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.DamageAsInfectAtZeroLife) }
+        Regex("""^nonbasic lands are (?:mountains|islands|plains|swamps|forests)\.?$""", RegexOption.IGNORE_CASE).matches(line).let { if (it) return listOf(StaticEffect.NonbasicLandsAreMountains) }
         // "Creatures without flying can't attack" (Moat), "Non-Eye creatures you control can't block": a filter
         // and a restriction, the same shape the engine already checks for enchanted creatures.
         Regex("""^([a-z][a-z0-9' -]*) can't (attack|block|attack or block)(?: this turn)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
@@ -775,7 +910,14 @@ object OracleParser {
             return listOf(StaticEffect.LevelBand(m.groupValues[1].toInt(), m.groupValues[2].toIntOrNull(), m.groupValues[3].toInt(), m.groupValues[4].toInt(), m.groupValues[5].takeIf { it.isNotEmpty() }?.let { keywordsIn(it) } ?: emptySet()))
         }
         if (Regex("""^(LEVEL \d+.*|\d+/\d+|\{[^}]+\}(?:\{[^}]+\})* — \d+/\d+.*)$""").matches(line)) return listOf(StaticEffect.Note(line, listOf("702.87a")))
+        // Opposition Agent: played out where a search puts a card onto the battlefield (AuditMech.agentTakesSearch).
+        if (Regex("""^You control your opponents while they're searching their libraries\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("723.2", "723.5")))
+        if (Regex("""^While an opponent is searching their library, they exile each card they find\. You may play those cards for as long as they remain exiled.*$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("723.2")))
         if (Regex("""^If ~ is in your opening hand, you may begin the game with it on the battlefield\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("103.6")))
+        // Chains of Mephistopheles: a draw replacement the engine applies where cards are drawn (LegacyMech.chainsReplacesDraws).
+        if (Regex("""^If a player would draw a card except the first one they draw in each of their draw steps, that player discards a card instead\..*$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("614.1a", "121.6")))
+        // Murktide Regent: its counters as it enters, counted from the cards delve exiled for it (LegacyMech.onEvent).
+        if (Regex("""^~ enters with a \+1/\+1 counter on it for each (instant and sorcery|instant|sorcery|creature) card exiled with it\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("614.1c", "702.66a")))
         // "If you control a commander, you may cast this spell without paying its mana cost" (Fierce Guardianship
         // and the rest of that cycle): permission to cast for an alternative cost, which is not an effect the
         // spell has on resolution. Read as a static ability of the card, the way it works from hand.
@@ -784,6 +926,11 @@ object OracleParser {
         // (the Force cycle, Daze, Misdirection): the same thing said as an alternative cost rather than as none.
         if (Regex("""^(?:if [^,]+, )?you may .+? rather than pay (?:~'s|this spell's) mana cost\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("118.9", "601.3")))
         Regex("""^If you control a creature, damage that would reduce your life total to less than (\d+) reduces it to \1 instead\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m -> return listOf(StaticEffect.LifeFloorIfCreature(m.groupValues[1].toInt())) }
+        // Splinter Twin: "Enchanted creature has "{T}: Create a token that's a copy of this creature, except it has haste. …"" —
+        // the quoted ability is the creature's own while the Aura is on it, so "this creature" is the creature.
+        Regex("""^(enchanted|equipped) creature has "(.+)"\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            if (m.groupValues[2].contains(':')) { val act = parseActivated(m.groupValues[2].trimEnd('.')); if (act is ActivatedAbility) return listOf(StaticEffect.GrantActivated(ObjFilter(setOf(Kind.CREATURE), raw = "${m.groupValues[1].lowercase()} creature", attachedToSource = true), act)) }
+        }
         // Kira, Great Glass-Spinner: "Creatures you control have "Whenever …, …""
         Regex("""^(?:all |each )?((?:creatures|artifacts|lands|permanents|enchantments)(?: you control)?) have "(.+)"\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
             val inner = parseTriggered(m.groupValues[2].trimEnd('.').replace("this creature", "~").replace("this permanent", "~").replace("this artifact", "~").replace("this enchantment", "~").replace("this land", "~"))
@@ -798,6 +945,27 @@ object OracleParser {
             return listOf(StaticEffect.SpellsCantBeCountered(f))
         }
         if (Regex("""^All permanents are artifacts in addition to their other types\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.AllPermanentsAreArtifacts)
+        // Urborg, Tomb of Yawgmoth / Yavimaya, Cradle of Growth: every land gains a basic land type (layer 4).
+        Regex("""^each land is an? (Plains|Island|Swamp|Mountain|Forest) in addition to its other land types\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            return listOf(StaticEffect.LandsAlsoType(m.groupValues[1].lowercase().replaceFirstChar { it.uppercase() })) }
+        // Opalescence, March of the Machines: "each other non-Aura enchantment is a creature in addition to its other types and
+        // has base power and base toughness each equal to its mana value" (layers 4 and 7b).
+        Regex("""^each (other )?(?:non-?([a-z]+) )?(artifact|enchantment|land|permanent) is an? (?:(artifact|enchantment) )?creature(?: in addition to its other types)? (?:and has|with) (?:base )?power and (?:base )?toughness each equal to its mana value\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val kind = Kind.valueOf(m.groupValues[3].uppercase())
+            val non = m.groupValues[2].lowercase()
+            val nonKind = Kind.entries.firstOrNull { it.name.equals(non, true) }
+            val f = ObjFilter(setOf(kind), notKinds = setOfNotNull(nonKind), notSubtypes = if (non.isNotEmpty() && nonKind == null) listOf(non.replaceFirstChar { it.uppercase() }) else emptyList(),
+                other = m.groupValues[1].isNotEmpty(), raw = "each ${m.groupValues[1]}${if (non.isNotEmpty()) "non-${m.groupValues[2]} " else ""}${m.groupValues[3].lowercase()}")
+            return listOf(StaticEffect.BecomesType(f, setOfNotNull("Creature", m.groupValues[4].takeIf { it.isNotEmpty() }?.replaceFirstChar { it.uppercase() }), ptManaValue = true))
+        }
+        // Darksteel Mutation: "Enchanted creature is an Insect artifact creature with base power and toughness 0/1 and has
+        // indestructible, and it loses all other abilities, card types, and creature types." (layers 4, 6 and 7b)
+        Regex("""^enchanted creature is an? ((?!artifact )[a-z]+ )?(artifact )?creature with base power and toughness (\d+)/(\d+)(?: and has ([a-z ]+?))?, and it loses all other abilities, card types, and creature types\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            return listOf(StaticEffect.BecomesType(ObjFilter(setOf(Kind.CREATURE), attachedToSource = true, raw = "enchanted creature"),
+                setOfNotNull("Creature", if (m.groupValues[2].isNotEmpty()) "Artifact" else null), setOfNotNull(m.groupValues[1].trim().takeIf { it.isNotEmpty() }),
+                replaceTypes = true, power = m.groupValues[3].toInt(), toughness = m.groupValues[4].toInt(),
+                keywords = m.groupValues[5].takeIf { it.isNotEmpty() }?.split(Regex(""",? and |, """))?.map { it.trim().lowercase() }?.toSet() ?: emptySet(), loseOtherAbilities = true))
+        }
         if (Regex("""^All cards that aren't on the battlefield, spells, and permanents are colorless\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("613.1e")))
         if (Regex("""^Players may spend mana as though it were mana of any (?:color|type)\.?$""", RegexOption.IGNORE_CASE).matches(line)) return listOf(StaticEffect.Note(line, listOf("106.1")))
         // Mox Diamond.
@@ -895,6 +1063,7 @@ object OracleParser {
     /** "you control a Swamp", "you control an artifact", "it's your turn", "you control three or more creatures". */
     fun parseCondition(text: String): Condition? {
         val t = text.trim().trimEnd('.')
+        mtg.judge.engine.MoreEffects3.parseCondition(t)?.let { return it }   // "you have two or more opponents" (MoreEffects3.kt)
         if (Regex("""^(?:~|it|this spell) was kicked$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.WasKicked
         if (Regex("""^~ is untapped$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.SourceTapped(false)
         if (Regex("""^~ is tapped$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.SourceTapped(true)
@@ -956,7 +1125,7 @@ object OracleParser {
 
     private fun keywordsIn(text: String): Set<String>? {
         // "protection from colorless or from the color of your choice": one grant with a choice in it.
-        if (Regex("""^protection from colou?rless or from the colou?r of your choice$""", RegexOption.IGNORE_CASE).matches(text.trim().trimEnd('.')))
+        if (Regex("""^protection from (?:colou?rless|artifacts) or from the colou?r of your choice$""", RegexOption.IGNORE_CASE).matches(text.trim().trimEnd('.')))
             return setOf("protection from the color of your choice")
         val parts = text.lowercase().trimEnd('.').replace(" and from ", " and protection from ").split(Regex(""",\s*|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() }
         val ok = parts.isNotEmpty() && parts.all { it in keywordList || Regex("""^ward (?:\{[^}]+\})+$""").matches(it) ||
@@ -969,6 +1138,11 @@ object OracleParser {
     private val sentenceSplit = Regex("""(?<=\.)\s+(?=[A-Z~])""")
 
     fun parseEffect(text: String): Effect {
+        mtg.judge.engine.MoreEffects3.parseSpell(text)?.let { return it }   // spree's "+ {1} — mode" lines (MoreEffects3.kt)
+        WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
+        mtg.judge.engine.CedhMech.parseSpell(text)?.let { return it }   // Tainted Pact, Peer into the Abyss, Bonus Round (CedhMechanics.kt)
+        mtg.judge.engine.EdhMech.parseSpell(text) { parseEffect(it) }?.let { return it }   // Demonic Consultation, Expropriate (EdhMechanics.kt)
+        mtg.judge.engine.PauperMech.parseSpell(text.trim()) { target(it) }?.let { return it }   // Balance, Berserk, Goblin Charbelcher, Donate (PauperMechanics.kt)
         Regex("""^look at the top X cards of your library, where X is your devotion to (white|blue|black|red|green)\. Put up to one of them on top of your library and the rest on the bottom of your library in a random order\. If X is greater than or equal to the number of cards in your library, you win the game\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfDevotionCoversLibrary(mapOf("white" to 'W', "blue" to 'U', "black" to 'B', "red" to 'R', "green" to 'G').getValue(it.groupValues[1].lowercase())) }
         if (Regex("""^If ~ was cast from your hand and you've cast another spell named ~ this game, you win the game\. Otherwise, put ~ into its owner's library seventh from the top and you gain (\d+) life\.?$""", RegexOption.IGNORE_CASE).matchEntire(text.trim())?.let { return Effect.WinIfCastBefore(it.groupValues[1].toInt()) } != null) Unit
         // "Exile up to one other target creature" (Solitude): read as one target. A spell cast with none chosen
@@ -1059,6 +1233,9 @@ object OracleParser {
                 } else if (repeatRe.matches(cur) && next != null) {
                     val w = repeatRe.find(cur)!!.groupValues[1]
                     out += Effect.Repeat(parseSentence(next), if (w.equals("X", true)) 0 else (w.toIntOrNull() ?: number(w) ?: 1), x = w.equals("X", true)); i += 2
+                } else if (next != null && Regex("""^If two cards that share a colou?r were milled this way, repeat this process\.?$""", RegexOption.IGNORE_CASE).matches(next) && parseSentence(cur) is Effect.Mill) {
+                    // Grindstone: the mill and its own "repeat this process" are one effect.
+                    out += (parseSentence(cur) as Effect.Mill).copy(repeatIfShare = "color"); i += 2
                 } else if (mayPay != null && next != null && ifNot.containsMatchIn(next)) {
                     val payer = when (mayPay.groupValues[1].lowercase()) { "you" -> Who.YOU; "its controller" -> Who.CONTROLLER_OF_TARGET; "target player" -> Who.TARGET_PLAYER; "each opponent" -> Who.EACH_OPPONENT; else -> Who.THAT_PLAYER }
                     out += Effect.UnlessPays(parseSentence(ifNot.find(next)!!.groupValues[1].replaceFirstChar { it.uppercase() }), payer, mayPay.groupValues[2])
@@ -1078,6 +1255,14 @@ object OracleParser {
                     val cost = payRe.matchEntire(choice)?.groupValues?.get(1)
                     out += Effect.IfYouDo(if (cost != null) Effect.Narrated("pay $cost", listOf("608.2g")) else parseSentence(choice.replaceFirstChar { it.uppercase() }), parseSentence(next.removePrefix("If you do, ").removePrefix("if you do, ").replaceFirstChar { it.uppercase() }), cost)
                     i += 2
+                } else if (cur.startsWith("You may ", true) && next != null && next.startsWith("When you do, ", true)) {
+                    // Sparktongue Dragon: "You may pay {2}{R}. When you do, it deals 3 damage to any target." The second
+                    // sentence is a reflexive triggered ability, put on the stack on its own once the choice is made (603.12).
+                    val choice = cur.removePrefix("You may ").removePrefix("you may ").trimEnd('.')
+                    val cost = payRe.matchEntire(choice)?.groupValues?.get(1)
+                    val then = next.substring("When you do, ".length).replace(Regex("""^(?:it|this creature|this permanent) (?=deals|gets|gains)""", RegexOption.IGNORE_CASE), "~ ").replaceFirstChar { it.uppercase() }
+                    out += Effect.IfYouDo(if (cost != null) Effect.Narrated("pay $cost", listOf("608.2g")) else parseSentence(choice.replaceFirstChar { it.uppercase() }), parseSentence(then), cost, reflexive = true, reflexiveText = next.trimEnd('.'))
+                    i += 2
                 } else if (Regex("""^Spell mastery — If there are two or more instant and/or sorcery cards in your graveyard, ~ deals (\d+) damage instead\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.lastOrNull() is Effect.Damage) {
                     val n = Regex("""(\d+) damage""").find(cur)!!.groupValues[1].toInt()
                     out[out.lastIndex] = (out.last() as Effect.Damage).copy(masteryAmount = n); i++
@@ -1088,6 +1273,10 @@ object OracleParser {
                     // "Tap target creature. It doesn't untap during its controller's next untap step." (Frost Breath and its kin)
                     val prev = out.removeAt(out.lastIndex) as Effect.Tap
                     out += Effect.Seq(listOf(prev, Effect.FreezeUntap(prev.target))); i++
+                } else if (Regex("""^If (?:two|both|the) cards that share a (colou?r|card type) were milled this way, repeat this process\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.lastOrNull() is Effect.Mill) {
+                    // Grindstone: the mill loops for as long as each pair milled shares a colour.
+                    val shared = Regex("""share a (colou?r|card type)""", RegexOption.IGNORE_CASE).find(cur)!!.groupValues[1].lowercase().replace("colour", "color")
+                    out[out.lastIndex] = (out.last() as Effect.Mill).copy(repeatIfShare = shared); i++
                 } else if (Regex("""^(?:It|They) can't be regenerated\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.isNotEmpty()) {
                     val prev = out.removeAt(out.lastIndex)
                     out += when (prev) { is Effect.Destroy -> prev.copy(noRegen = true); is Effect.ForAll -> prev.copy(noRegen = true); else -> Effect.Seq(listOf(prev, Effect.Narrated("it can't be regenerated", listOf("701.19c")))) }
@@ -1161,9 +1350,12 @@ object OracleParser {
         Regex("""^put (?:a|an|\w+|\d+) cards? from your hand on top of your library(?: in any order)?\.?$""", RegexOption.IGNORE_CASE) to listOf("401.4"),
         Regex("""^the flashback cost is equal to its mana cost\.?$""", RegexOption.IGNORE_CASE) to listOf("702.34a"),
         Regex("""^scry (\d+)\.?$""", RegexOption.IGNORE_CASE) to listOf("701.22a"),
+        // Tooth and Nail: "Put up to two creature cards from your hand onto the battlefield." — which cards depends on a hand the engine doesn't hold.
+        Regex("""^put up to (?:\w+|\d+) (.+?) cards from your hand onto the battlefield\.?$""", RegexOption.IGNORE_CASE) to listOf("608.2c"),
         Regex("""^surveil (\d+)\.?$""", RegexOption.IGNORE_CASE) to listOf("701.25a"),
         Regex("""^(?:you |target player |each player )?mills? (\w+|\d+) cards?\.?$""", RegexOption.IGNORE_CASE) to listOf("701.17a"),
-        Regex("""^look at the top (?:(\w+|\d+) )?cards? of your library.*$""", RegexOption.IGNORE_CASE) to listOf("701.22a"),
+        // Looking at the top cards isn't scrying: an effect lets the player see part of a library they normally can't (401.2).
+        Regex("""^look at the top (?:(\w+|\d+) )?cards? of your library.*$""", RegexOption.IGNORE_CASE) to listOf("701.20e"),
         // Looking at a hidden zone: the engine doesn't track what is in one, so the answer says it happened and why nothing turns on it.
         Regex("""^look at (?:target player's|that player's|each opponent's|an opponent's) hand\.?$""", RegexOption.IGNORE_CASE) to listOf("400.2"),
         Regex("""^look at the top (?:(\w+|\d+) )?cards? of (?:target player's|that player's|an opponent's) library\.?$""", RegexOption.IGNORE_CASE) to listOf("400.2"),
@@ -1196,6 +1388,8 @@ object OracleParser {
         Regex("""^you may have ~ enter as a copy of .+$""", RegexOption.IGNORE_CASE) to listOf("707.9", "614.1c"),
         Regex("""^copy target .+$""", RegexOption.IGNORE_CASE) to listOf("707.10"),
         Regex("""^at the beginning of (?:your|the) next .+, .+$""", RegexOption.IGNORE_CASE) to listOf("603.7a"),
+        // Splinter Twin's token: "Exile that token at the beginning of the next end step." — a delayed trigger, after this turn's loop.
+        Regex("""^(?:exile|sacrifice) (?:that token|it|them|those tokens) at the beginning of the next end step\.?$""", RegexOption.IGNORE_CASE) to listOf("603.7a"),
         Regex("""^~ deals (\d+) damage to you\.?$""", RegexOption.IGNORE_CASE) to listOf("120.3a"),
         Regex("""^~ fights target .+$""", RegexOption.IGNORE_CASE) to listOf("701.14a"),
         Regex("""^(?:each|target) (?:opponent|player) (?:discards|sacrifices|mills|exiles) .+$""", RegexOption.IGNORE_CASE) to listOf("701.9a"),
@@ -1238,12 +1432,46 @@ object OracleParser {
         // A leading "Then" only orders the sentence after the one before it ("Then amass Orcs 1"); the pronoun
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
+        mtg.judge.engine.PauperMech.parseSentence(s) { target(it) }?.let { return it }   // Pestilence, Earthquake, Skred, Ghostly Flicker, Timetwister (PauperMechanics.kt)
+        mtg.judge.engine.CedhMech.parseSentence(s)?.let { return it }   // Isochron Scepter's copy (CedhMechanics.kt)
+        mtg.judge.engine.LifeDmgMech.parseSentence(s)?.let { return it }   // life totals set, exchanged, redistributed (LifeDamageMechanics.kt)
+        mtg.judge.engine.MoreEffects2.parseSentence(s)?.let { return it }   // Stomp, Banefire, "target opponent draws", Show and Tell (MoreEffects2.kt)
+        mtg.judge.engine.MoreEffects3.parseSentence(s)?.let { return it }   // once each turn, copy that spell, Frantic Search's untap (MoreEffects3.kt)
+        mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
+        mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
+        mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
+        mtg.judge.engine.EdhMech.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Ranger-Captain, Leadership Vacuum, Command Beacon (EdhMechanics.kt)
         manaRe.matchEntire(s.trimEnd('.'))?.let { return Effect.AddMana(it.groupValues[1]) }
+        mtg.judge.engine.DeepMech.parseSentence(s) { target(it) }?.let { return it }   // Twisted Image, Mind Bend (DeepMechanics.kt)
+        mtg.judge.engine.NewMech.parseSentence(s)?.let { return it }   // adapt, learn, discover, the Ring tempts you (NewMechanics.kt)
+        mtg.judge.engine.NewSetMech.parseSentence(s)?.let { return it }   // empower Jace, recruit, opus and infusion conditions (NewSetMechanics.kt)
+        mtg.judge.engine.NewMech.stripWhereX(s)?.let { return parseSentence(it) }   // domain: "…, where X is the number of basic land types among lands you control"
+        mtg.judge.engine.ExamMech.parseSentence(s) { parseSentence(it) }?.let { return it }   // Grim Affliction's "then proliferate", Rabid Elephant (ExamMechanics.kt)
+        // Lavinia, Azorius Renegade: "if no mana was spent to cast it, counter that spell."
+        if (Regex("""^if no mana was spent to cast it, counter that spell\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.CounterIfNoManaSpent
+        // Skyclave Apparition: "the exiled card's owner creates an X/X blue Illusion creature token, where X is the mana value of the exiled card."
+        Regex("""^the exiled card's owner creates an? X/X (.+? token), where X is the mana value of the exiled card\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.ExiledOwnerTokenMv(it.groupValues[1]) }
+        WinLoss.parseSentence(s) { target(it, Kind.PLAYER) }?.let { return it }
+        // Populate (701.36) and amass [subtype] N (701.47), alone or after "you lose N life and".
+        if (Regex("""^populate\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Populate
+        Regex("""^(?:you lose (\d+) life and )?amass (?:([A-Za-z]+) )?(\d+)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m ->
+            val raw = m.groupValues[2].ifEmpty { "Zombies" }; val sub = raw.replaceFirstChar { it.uppercase() }.let { if (it == "Elves") "Elf" else if (it == "Wolves") "Wolf" else if (it.endsWith("s")) it.dropLast(1) else it }
+            val amass = Effect.Amass(sub, m.groupValues[3].toInt())
+            return if (m.groupValues[1].isNotEmpty()) Effect.Seq(listOf(Effect.LoseLife(Who.YOU, m.groupValues[1].toInt()), amass)) else amass
+        }
         // Spell Queller's leave trigger: the engine plays it out from the card it remembered exiling.
         Regex("""^the exiled card's owner may cast (?:that card|it) without paying its mana cost\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("608.2c", "118.7a")) }
         // "(You may) have ~ deal 3 damage to any target" says what "~ deals 3 damage to any target" says.
         Regex("""^have (?:~|it) deal (.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return parseSentence("~ deals " + it.groupValues[1]) }
         Regex("""^target (player|opponent) reveals their hand\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "reveals their hand", listOf("701.20a")) }
+        // Children of Korlis: the life lost this turn, counted by the engine (LegacyMech.narratedAs).
+        if (Regex("""^you gain life equal to the (?:amount of )?life you've lost this turn\.?(?: \(.*\))?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Narrated(s.trim().substringBefore(" (").trimEnd('.'), listOf("119.3"))
+        // Thespian's Stage: "~ becomes a copy of target land, except it has this ability." (707.2, 707.9b; LegacyMech.becomeCopy)
+        Regex("""^~ becomes a copy of target (land|artifact|creature|permanent|nonland permanent)(?:,? except it has this ability)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "becomes a copy" + (if (s.contains("except it has this ability", true)) " keeping this ability" else ""), listOf("707.2")) }
+        // Protean Hulk: the search and what it finds, said rather than played out (the library isn't tracked).
+        if (Regex("""^search your library for any number of creature cards with total mana value \d+ or less, put them onto the battlefield, then shuffle\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Narrated(s.trim().trimEnd('.'), listOf("701.23a", "202.3"))
+        // Vision Charm, Oubliette-style "Target artifact phases out." (702.26b): the engine phases the target out (Zones.phaseOut).
+        Regex("""^target ((?:nonland )?(?:artifact|creature|permanent|nonland permanent|land))s? phases out\.?(?: \(.*\))?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "phases out", listOf("702.26b")) }
         // "If you control a commander as you cast this spell, you may choose both instead." / "Each mode must
         // target a different player.": riders on a modal spell's mode count, said rather than played out.
         Regex("""^if .+?, (?:you may )?choose (?:$modeCount|both) instead[.\u2014-]?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("700.2d")) }
@@ -1258,7 +1486,7 @@ object OracleParser {
         // Sylvan Library: the two extra cards are kept for 4 life each or put back.
         Regex("""^choose two cards in your hand drawn this turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated("you choose two cards in your hand drawn this turn", listOf("608.2c")) }
         Regex("""^for each of those cards, pay 4 life or put the card on top of your library\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated("for each of those two cards, you pay 4 life to keep it or put it back on top of your library; a card you keep costs 4 life, so keeping both costs 8", listOf("608.2c", "119.4")) }
-        Regex("""^each mode must target a different (player|opponent|creature|permanent)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("700.2c")) }
+        Regex("""^each mode must target a different (player|opponent|creature|permanent)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.Narrated(s.trim().trimEnd('.'), listOf("700.2f")) }
         // "You can't lose the game this turn and your opponents can't win the game this turn." (Angel's Grace)
         Regex("""^you can't lose the game(?: this turn)?(?: and your opponents can't win the game(?: this turn)?)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.CantLoseThisTurn }
         // "Until end of turn, creatures your opponents control lose hexproof and indestructible and can't have hexproof or indestructible." (Arcane Lighthouse)
@@ -1266,6 +1494,12 @@ object OracleParser {
             val kws = keywordsIn(m.groupValues[2].replace(" or ", " and ")) ?: return@let
             val f = parseFilter(m.groupValues[1].replace("creatures", "creature"), Kind.CREATURE)
             return Effect.LoseKeywordsAll(f, kws)
+        }
+        // "Permanents your opponents control lose hexproof and indestructible until end of turn." (Shadowspear): the same effect, the duration last.
+        Regex("""^(permanents|creatures) (your opponents control|an opponent controls) lose ([a-z ]+?) until end of turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m ->
+            val kws = keywordsIn(m.groupValues[3].replace(" or ", " and ")) ?: return@let
+            val k = if (m.groupValues[1].equals("permanents", true)) Kind.PERMANENT else Kind.CREATURE
+            return Effect.LoseKeywordsAll(parseFilter(m.groupValues[1].removeSuffix("s") + " " + m.groupValues[2], k), kws)
         }
         // "Until end of turn, damage that would reduce your life total to less than 1 reduces it to 1 instead." (Angel's Grace)
         Regex("""^(?:until end of turn, )?damage that would reduce your life total to less than (\d+) reduces it to \1 instead\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.DamageLifeFloor(it.groupValues[1].toInt()) }
@@ -1400,6 +1634,9 @@ object OracleParser {
             val f = parseFilter(m.groupValues[1], Kind.CREATURE); val count = parseCount(m.groupValues[2])
             if (f.verifiable && count !is CountExpr.Unknown && !m.groupValues[1].startsWith("target", true)) return Effect.PumpAllCount(f, count, emptyList())
         }
+        if (Regex("""^you gain that much life\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.GainLifeThatMuch(Who.YOU)
+        // Pestermite: "tap or untap target permanent".
+        Regex("""^tap or untap (target .+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.TapOrUntap(target(m.groupValues[1], Kind.PERMANENT)) }
         Regex("""^(target opponent|target player|that player|each opponent|you) loses? that much life\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             return Effect.LoseLifeThatMuch(when (m.groupValues[1].lowercase()) { "target opponent", "target player" -> Who.TARGET_PLAYER; "each opponent" -> Who.EACH_OPPONENT; "you" -> Who.YOU; else -> Who.THAT_PLAYER })
         }
@@ -1457,6 +1694,9 @@ object OracleParser {
             if (!m.groupValues[1].startsWith("target", true) && !m.groupValues[1].startsWith("another target", true) && m.groupValues[1] != "~") { val f = parseFilter(m.groupValues[1], Kind.PERMANENT); val kws = keywordsIn(m.groupValues[2]); if (f.verifiable && kws != null) return Effect.PumpAll(f, 0, 0, kws.toList()) }
         }
         Regex("""^Remove all counters from (target .+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.RemoveAllCounters(target(m.groupValues[1])) }
+        // Yawgmoth, Thran Physician: "Put a -1/-1 counter on up to one target creature and draw a card": the counter, then the draw.
+        Regex("""^(put .+? counters? on target .+?) and draw (a|one|two|three) cards?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            countersOnRe.matchEntire(m.groupValues[1])?.let { return Effect.Seq(listOf(parseSentence(m.groupValues[1]), Effect.Draw(Who.YOU, number(m.groupValues[2]) ?: 1))) } }
         countersOnRe.matchEntire(s)?.let { m ->
             val isX = m.groupValues[1].equals("X", true)
             val n = if (isX) 0 else (number(m.groupValues[1]) ?: return Effect.Unparsed(s))
@@ -1468,11 +1708,17 @@ object OracleParser {
                 else -> Effect.Unparsed(s)
             }
         }
-        forAllRe.matchEntire(s)?.let { m -> val f = parseFilter(m.groupValues[2], Kind.PERMANENT); if (f.verifiable) return Effect.ForAll(f, m.groupValues[1].lowercase()) }
+        forAllRe.matchEntire(s)?.let { m -> val f = parseFilter(m.groupValues[2], Kind.PERMANENT).let { if (m.groupValues[2].trim().startsWith("other ", true)) it.copy(other = true) else it }; if (f.verifiable) return Effect.ForAll(f, m.groupValues[1].lowercase()) }
         // Aetherize, Evacuation: "Return all attacking creatures to their owner's hand." / "Return all creatures to their owners' hands."
         Regex("""^return (?:all|each) (.+?) to (?:their owners?' hands?|its owner's hand|their owner's hands?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> val f = parseFilter(m.groupValues[1], Kind.PERMANENT); if (f.verifiable) return Effect.ForAll(f, "bounce") }
         // "Each player discards their hand." on its own.
         if (Regex("""^each player discards (?:their|his or her) hand\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.DiscardHand(Who.EACH_PLAYER)
+        // "Target player draws two cards and loses 2 life." (Fell Stinger, Phyrexian Arena's kin)
+        Regex("""^(target player|you) draws? (a|\w+|\d+) cards? and loses? (\d+|\w+) life\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val who = if (m.groupValues[1].equals("you", true)) Who.YOU else Who.TARGET_PLAYER
+            val n = number(m.groupValues[2]); val l = number(m.groupValues[3])
+            if (n != null && l != null) return Effect.Seq(listOf(Effect.Draw(who, n), Effect.LoseLife(who, l)))
+        }
         // "Each player discards their hand, then draws seven cards." (Wheel of Fortune, Windfall-style)
         Regex("""^each player discards (?:their|his or her) hand, then draws (\w+|\d+) cards?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             number(m.groupValues[1])?.let { return Effect.Seq(listOf(Effect.DiscardHand(Who.EACH_PLAYER), Effect.Draw(Who.EACH_PLAYER, it))) }
@@ -1523,6 +1769,8 @@ object OracleParser {
             return Effect.SacrificeThatMany(Who.THAT_PLAYER, parseFilter(m.groupValues[1].removeSuffix("s"), Kind.PERMANENT))
         }
         Regex("""^~ deals damage equal to the sacrificed (?:creature|permanent)'s power to (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.Damage(0, target(m.groupValues[1]), sacrificedPower = true) }
+        // Murderous Redcap: "When ~ enters, it deals damage equal to its power to any target."
+        Regex("""^(?:~|it) deals damage equal to its power to (any target|target .+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.Damage(0, target(m.groupValues[1]), selfPower = true) }
         Regex("""^put (?:a|an) ((?:[A-Z][a-z]+, )*(?:[A-Z][a-z]+,? or [A-Z][a-z]+ )?(?:creature|land|artifact|permanent|enchantment|Equipment|Aura|Vehicle|Fortification)) card(?: with mana value equal to the number of (charge|\w+) counters on ~)? from your hand onto the battlefield( tapped)?( and attacking(?: that opponent| that player)?)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             return Effect.PutFromHand(parseFilter(m.groupValues[1], Kind.PERMANENT), m.groupValues[2].ifEmpty { null }, tapped = m.groupValues[3].isNotEmpty(), attacking = m.groupValues[4].isNotEmpty())
         }
@@ -1700,6 +1948,11 @@ object OracleParser {
         }
         // "Sacrifice ~ unless you pay {1}" (Kataki's granted upkeep): the unless-payment wraps a modeled effect, so it is
         // read as one before the narrated "sacrifice …" pattern swallows it.
+        // Reality Smasher: "counter that spell unless its controller discards a card" — a discard as the payment.
+        Regex("""^(.+?) unless (its controller|that player|they) discards? a card\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val inner = parseSentence(m.groupValues[1].replaceFirstChar { it.uppercase() })
+            if (inner !is Effect.Unparsed) return Effect.UnlessPays(inner, Who.THAT_PLAYER, "discard a card")
+        }
         unlessRe.matchEntire(s)?.let { m ->
             val inner = parseSentence(m.groupValues[1])
             if (inner !is Effect.Unparsed && inner !is Effect.Narrated) {
@@ -1707,14 +1960,22 @@ object OracleParser {
                 return Effect.UnlessPays(inner, payer, m.groupValues[3].replace(Regex(""", where X is (.+)$"""), " (X = $1)"))
             }
         }
+        if (Regex("^sacrifice (?:it|~) unless it escaped\\.?$", RegexOption.IGNORE_CASE).matches(s)) return Effect.SacrificeUnlessEscaped
+        if (Regex("^investigate\\.?$", RegexOption.IGNORE_CASE).matches(s)) return Effect.Investigate
+        Regex("^surveil (\\d+)\\.?$", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.Surveil(it.groupValues[1].toInt()) }
+        mtg.judge.engine.MoreEffects.parseSentence(s)?.let { return it }   // shuffles, loot spells, Jace's bottom (MoreEffects.kt)
         for ((re, rules) in narratedRes) if (re.matches(s)) return Effect.Narrated(s.trimEnd('.'), rules)
         // "You draw a card and you lose 1 life." / "Each opponent loses 1 life and you gain 1 life.": two effects joined by "and".
-        Regex("""^(.+?)(?: and |, then |, and then )(you |each opponent |target player |that player |it |~ |create |draw |gain |lose |put |exile |destroy |sacrifice |tap |untap |return |scry |mill |discard )(.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trimEnd('.'))?.let { m ->
+        Regex("""^(.+?)(?: and |, then |, and then )(you |each opponent |target player |that player |it |~ |create |draw |gain |lose |put |exile |destroy |sacrifice |tap |untap |return |scry |mill |discard |discards )(.+)$""", RegexOption.IGNORE_CASE).matchEntire(s.trimEnd('.'))?.let { m ->
             if (!m.groupValues[1].contains(" and ", true) && !m.groupValues[1].startsWith("if ", true)) {
                 val left = parseSentence(m.groupValues[1].replaceFirstChar { it.uppercase() })
                 // "You draw a card and lose 1 life." (Phyrexian Arena's current wording): the second verb keeps the first's subject.
                 val rightText = (m.groupValues[2] + m.groupValues[3]).replaceFirstChar { it.uppercase() }
-                val right = parseSentence(rightText).let { r0 ->
+                // "Each player draws three cards, then discards three cards at random" (Burning Inquiry): a third-person
+                // verb with no subject of its own is the left half's subject acting again, every player, not "you".
+                val carried = Regex("""^(you|each opponent|each player|target player|that player) """, RegexOption.IGNORE_CASE).find(m.groupValues[1])?.groupValues?.get(1)
+                    ?.takeIf { it.lowercase() != "you" && Regex("""^(?:discards|draws|loses|gains|sacrifices|mills) """, RegexOption.IGNORE_CASE).containsMatchIn(rightText) }
+                val right = (if (carried != null) parseSentence(carried.replaceFirstChar { it.uppercase() } + " " + rightText.replaceFirstChar { it.lowercase() }) else parseSentence(rightText)).let { r0 ->
                     if (r0 is Effect.Unparsed && Regex("""^(you|each opponent|each player|target player|that player) """, RegexOption.IGNORE_CASE).find(m.groupValues[1])?.let { subj -> !rightText.startsWith(subj.groupValues[1], true) } == true)
                         parseSentence(Regex("""^(you|each opponent|each player|target player|that player) """, RegexOption.IGNORE_CASE).find(m.groupValues[1])!!.groupValues[1].replaceFirstChar { it.uppercase() } + " " + rightText.replaceFirstChar { it.lowercase() })
                     else r0 }
@@ -1746,6 +2007,8 @@ object OracleParser {
         }
         counterRe.matchEntire(s)?.let { return Effect.Counter(target(it.groupValues[1], Kind.SPELL)) }
         Regex("""^exile (target spell(?: with mana value \d+ or less)?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.ExileSpell(target(it.groupValues[1], Kind.SPELL)) }
+        // Mindbreak Trap: "Exile any number of target spells." — played out for the spell named (one target each time it's said).
+        if (Regex("""^exile any number of target spells\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ExileSpell(target("target spell", Kind.SPELL))
         Regex("""^(all creatures|creatures your opponents control|creatures you control|all other creatures|other creatures) get -X/-X until end of turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val f = parseFilter(m.groupValues[1].removePrefix("all ").removePrefix("All "), Kind.CREATURE); if (f.verifiable) return Effect.PumpAll(f, 0, 0, x = true)
         }
@@ -1786,7 +2049,11 @@ object OracleParser {
         if (Regex("""^its controller may search their library for a basic land card, put that card onto the battlefield tapped, then shuffle\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.May(Effect.Narrated("search their library for a basic land card, put it onto the battlefield tapped, then shuffle", listOf("701.23a", "701.23e")), Who.CONTROLLER_OF_TARGET)
         // "Draw three cards, then put two cards from your hand on top of your library in any order."
         Regex("""^(.+?), then (.+)$""").matchEntire(s)?.let { m ->
-            val a = parseSentence(m.groupValues[1].trimEnd('.') + "."); val b = parseSentence(m.groupValues[2].replaceFirstChar { it.uppercase() })
+            val a = parseSentence(m.groupValues[1].trimEnd('.') + "."); val b = parseSentence(m.groupValues[2].replaceFirstChar { it.uppercase() }).let { b0 ->
+                // Chaos Warp: "The owner of target permanent shuffles it into their library, then reveals the top card of their
+                // library": the second verb is still the owner's, not the caster's.
+                if (b0 is Effect.Narrated && Regex("""^the owner of target """, RegexOption.IGNORE_CASE).containsMatchIn(m.groupValues[1]) && Regex("""^[a-z]+s\b""").containsMatchIn(m.groupValues[2]))
+                    b0.copy(text = "Its owner " + m.groupValues[2].trimEnd('.')) else b0 }
             if (!a.hasUnparsed() && !b.hasUnparsed()) return Effect.Seq(listOf(a, b))
         }
         Regex("""^exile (target .+?), then return (?:that card|it|them|that creature) to the battlefield under (your|its owner's|their owner's) control\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.Blink(target(m.groupValues[1]), ownersControl = !m.groupValues[2].equals("your", true)) }
@@ -1796,7 +2063,8 @@ object OracleParser {
         Regex("""^exile another target (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> val t = target("target " + m.groupValues[1]); return Effect.Exile(t.copy(filter = t.filter.copy(other = true))) }
         // Ajani Vengeant: "Target permanent doesn't untap during its controller's next untap step."
         Regex("""^(target .+?) doesn't untap during its controller's next untap step\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.FreezeUntap(target(m.groupValues[1])) }
-        if (Regex("""^return the exiled card to the battlefield under its owner's control\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ReturnExiledCard
+        // Oblivion Ring "the exiled card"; Worldgorger Dragon "the exiled cards … under their owners' control" (607.2a: only what it exiled).
+        if (Regex("""^return the exiled cards? to the battlefield under (?:its owner's|their owners') control\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ReturnExiledCard
         if (Regex("""^(?:its owner|you) shuffles? (?:their|your) graveyard into (?:their|your) library\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ShuffleGraveyardIntoLibrary(Who.YOU)
         exileRe.matchEntire(s)?.let { return Effect.Exile(target(it.groupValues[1])) }
         tapRe.matchEntire(s)?.let { return Effect.Tap(target(it.groupValues[1])) }
@@ -1867,7 +2135,8 @@ object OracleParser {
     private fun target(desc: String, defaultKind: Kind? = null): TargetSpec {
         // "target instant or sorcery spell, except that the copy is red" (Fork): the rider isn't part of what the target has to be.
         val d = desc.trim().let { if (it.startsWith("target ", true)) it.drop(7) else it }.trim().replace(Regex("""(?i),?\s*except that\b.*$"""), "").trim()
-        return TargetSpec(parseFilter(d, defaultKind), d)
+        // "exile up to one other target creature" (Solitude): "other" excludes the source itself, so it can't aim at itself.
+        return TargetSpec(parseFilter(d, defaultKind).let { if (Regex("""(?i)^other\b""").containsMatchIn(d)) it.copy(other = true) else it }, d)
     }
 
     private val landTypes = setOf("plains", "island", "swamp", "mountain", "forest", "desert", "gate", "lair", "locus", "mine", "power-plant", "tower", "urza's", "sphere", "cave", "town", "cloud")
@@ -1902,6 +2171,10 @@ object OracleParser {
             controller = when (m.groupValues[1]) { "you control" -> Who.YOU; else -> Who.OPPONENT }
             core = core.removeRange(m.range)
         }
+        // "creatures of the chosen type" (Plague Engineer, Engineered Plague): the type the source chose as it entered,
+        // matched against the source's chosen name when the filter is applied (State.matches).
+        var chosenType = false
+        Regex("""\s+of the chosen (?:creature )?type""").find(core)?.let { m -> chosenType = true; core = core.removeRange(m.range) }
         var inGraveyard = false
         Regex("""\s+(?:in|from) (?:your|a|an opponent's|their) graveyard$""").find(core)?.let { m -> inGraveyard = true; core = core.removeRange(m.range) }
         val kinds = mutableSetOf<Kind>(); val notKinds = mutableSetOf<Kind>(); val unknown = mutableListOf<String>()
@@ -1984,6 +2257,7 @@ object OracleParser {
         if (kinds.isEmpty() && notKinds.isNotEmpty()) kinds += defaultKind ?: Kind.PERMANENT
         if (kinds.isEmpty() && defaultKind != null) kinds += defaultKind
         if (kinds.isEmpty() && notSubtypes.isNotEmpty()) kinds += defaultKind ?: Kind.CREATURE
+        if (chosenType) subtypes += "chosen-type"
         return ObjFilter(kinds, notKinds, notSubtypes, controller, attacking, blocking, tapped, unknown, desc, subtypes, keywords, notKeywords, token, legendary, attachedToSource = attachedToSource, minPower = minPower, maxPower = maxPower, subtypesAny = subtypesAny && subtypes.size > 1, colors = colors, notColors = notColors, maxManaValue = maxManaValue, minManaValue = minManaValue, inGraveyard = inGraveyard)
     }
 }

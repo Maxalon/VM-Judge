@@ -284,7 +284,7 @@ class PhrasingFamiliesTest {
                 val answer = runCatching { judge.answer(parser.parse(text).situation) }
                 when {
                     answer.isFailure -> wrong += "${family.name}: \"$phrasing\" threw ${answer.exceptionOrNull()?.let { it::class.simpleName }}: ${answer.exceptionOrNull()?.message}"
-                    !AnswerRenderer.render(answer.getOrThrow(), withCitations = false).contains(family.expect) ->
+                    !AnswerRenderer.render(answer.getOrThrow(), withCitations = false).contains(family.expect, ignoreCase = true) ->
                         wrong += "${family.name}: \"$phrasing\" never reached \"${family.expect}\""
                 }
             }

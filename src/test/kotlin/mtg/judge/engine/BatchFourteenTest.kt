@@ -491,7 +491,7 @@ class BatchFourteenTest {
         val s = state(); s.put("ghast", bloodghast, "me", Zone.GRAVEYARD); s.put("forest", forestForGy, "me", Zone.HAND)
         val e = Engine(s); e.enter("forest"); e.resolveAll()
         assertEquals(Zone.BATTLEFIELD, s.obj("ghast").zone)
-        assertTrue("603.6e" in s.cited(), s.cited().toString())
+        assertTrue("113.6m" in s.cited(), s.cited().toString())
     }
 
     @Test

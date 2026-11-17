@@ -11,7 +11,11 @@ class Player(val id: String, val name: String, var life: Int?) {
     var protectedFromEverything = false
     /** Veil of Summer: colours this player has hexproof from until end of turn. */
     val hexproofFrom = mutableSetOf<Char>()
+    /** Life gained minus life lost in this situation, kept even when the life total itself was never said (a loop that drains it). */
+    var lifeLedger = 0
     var drew = 0
+    /** Dealt damage this turn (Bloodthirst, 702.54a); cleared in the cleanup step. */
+    var damagedThisTurn = false
     /** Cards drawn this turn, for "can't draw more than one card each turn" (Narset). */
     var drewThisTurn = 0
     var lost = false
@@ -77,13 +81,20 @@ class GameObject(
     /** Whether the spell that became this permanent was kicked (702.33d): "if this was kicked, it enters with …". */
     var wasKicked: Boolean = false,
 ) {
+    /** Keyword bookkeeping (buyback, rebound, plot, suspend...), see Keywords.kt. */
+    val kwf = KeywordFlags()
     /** Until-end-of-turn power/toughness modifications from resolved effects (611.2a). */
     val pumps = mutableListOf<Pair<Int, Int>>()
     /** An until-end-of-turn "base power and toughness N/N" (layer 7b, 613.4b); applied before counters and pumps. */
     var basePt: Pair<Int, Int>? = null
+        set(v) { field = v; basePtTs = state?.tick() ?: 0 }
+    /** When [basePt] was set: it applies in timestamp order with Humility and the other 7b effects (613.7b). */
+    var basePtTs: Int = 0
     /** Set while "until end of turn, ~ becomes a creature" is in effect (Mutavault). Cleared at cleanup and on a zone change. */
     var animatedAs: Animation? = null
-    /** Saddled until end of turn (702.166a). A Mount is a creature either way; only its own triggers care. */
+        set(v) { field = v; animatedTs = state?.tick() ?: 0 }
+    var animatedTs: Int = 0
+    /** Saddled until end of turn (702.171a). A Mount is a creature either way; only its own triggers care. */
     var saddled: Boolean = false
     /** How many times it has been saddled this turn, for "becomes saddled for the first time each turn". */
     var saddledThisTurn: Int = 0
@@ -105,6 +116,13 @@ class GameObject(
     var exiledBy: String? = null
     /** Power as it last was on the battlefield (last known information, 113.7a) for "equal to its power" after a zone change. */
     var lkiPower: Int? = null
+    /** "A Clone of Fiend Hunter dies": what it was a copy of as it left. Its leaves-the-battlefield abilities look back to it (603.10a). */
+    var lkiCopyDef: CardDef? = null
+    /** What took its abilities away as it last existed on the battlefield (Oko's Elk, Humility): a leaves-the-battlefield or
+     *  dies ability looks back at that object, so it had nothing to trigger (603.10a). Set as it leaves the battlefield. */
+    var lkiAbilitiesGone: String? = null
+    /** "Loses all abilities and becomes a 3/3 Elk" (Oko): the source of that effect, which ends with the object (400.7). */
+    var transmogrifiedBy: String? = null
 
     /** Until-end-of-turn keyword grants from resolved effects. */
     val tempKeywords = mutableSetOf<String>()
@@ -122,11 +140,13 @@ class GameObject(
     var manaAvailableAtCast: Int? = null
     /** "pitching a blue card": the alternative cost this spell was cast for, in the card's words, so "what did it cost?" answers with it. */
     var castForAlternativeCost: String? = null
+    /** How it was paid for as it was cast: free, Phyrexian life, delve, convoke, and the locked-in total (Costs.kt). */
+    val castCost = CastCost()
     /** A double-faced card showing its back face (Insectile Aberration); it turns back to the front face when it leaves the battlefield (712.8). */
     var transformed: Boolean = false
     /** The cost-raising permanents that applied as it was cast (name to amount), for "how much did it cost?" asked once they have left. */
     var taxesAtCast: List<Pair<String, Int>>? = null
-    /** Monstrous: set by monstrosity and never unset while the permanent stays on the battlefield (701.31b). */
+    /** Monstrous: set by monstrosity and never unset while the permanent stays on the battlefield (701.37b). */
     var monstrous: Boolean = false
     /** Phased out (702.26b): still in the battlefield zone, but treated as though it doesn't exist until it phases in. */
     var phasedOut: Boolean = false
@@ -136,6 +156,10 @@ class GameObject(
     val power: Int? get() = state?.powerOf(this) ?: def.power?.let { it + pumps.sumOf { p -> p.first } + (counters["+1/+1"] ?: 0) - (counters["-1/-1"] ?: 0) }
     val toughness: Int? get() = state?.toughnessOf(this) ?: def.toughness?.let { it + pumps.sumOf { p -> p.second } + (counters["+1/+1"] ?: 0) - (counters["-1/-1"] ?: 0) }
     fun has(keyword: String): Boolean = state?.hasKeyword(this, keyword) ?: (def.has(keyword) || keyword.lowercase() in tempKeywords)
+    /** The abilities it has right now: the printed ones unless Humility, Darksteel Mutation or Blood Moon took them away (613.1f, 305.7). Copiable values and "card named" questions read [def] instead. */
+    val abilities: List<Ability> get() = if (state?.abilitiesGone(this) != null) emptyList() else MoreEffects3.liveAbilities(this, MoreEffects2.liveAbilities(this, DeepMech.live(this, def.abilities)))   // Animar's reduction counted now (DeepMechanics.kt)
+    /** The rules text it has right now: empty while its abilities are gone (613.1f). */
+    val rulesText: String get() = if (state?.abilitiesGone(this) != null) "" else def.oracleText
     val name get() = def.name
     fun isOnBattlefield() = zone == Zone.BATTLEFIELD && !phasedOut
     override fun toString() = "$name [$id]"
@@ -250,23 +274,65 @@ class GameState(
     var activePlayerStated: Boolean = false,
 ) {
     val trace = Trace()
+    /** Battles (310.12b): the back face of a transforming card, which only the card database knows (set by the judge),
+     *  and the Sieges whose last defense counter was removed and whose ability hasn't resolved yet. */
+    var backFaceOf: ((CardDef) -> CardDef?)? = null
+    val siegesDefeated: MutableSet<String> = mutableSetOf()
+    /** Creatures that had first strike or double strike as the first combat damage step began, once it has (702.7b). */
+    var firstStrikers: Set<String>? = null
+    /** Of those, the ones that had double strike as the first-strike step began (702.4c, 702.4d). */
+    var doubleStrikersAtStart: Set<String> = emptySet()
+    /** A loop of mandatory actions repeated with no way to stop it: the game is a draw (104.4b, 732.4). */
+    var gameDrawn = false
+    /** Choices made among several legal options while resolving (an Aura choosing what to enchant): a loop with one isn't mandatory. */
+    var choicesMade = 0
+    /** What a mandatory loop found while resolving the stack did, in a sentence, for a question about the loop. */
+    var mandatoryLoop: String? = null
+    /**
+     * Who a trigger with an unnamed target aims at, by the name of the card it comes from: "obj:<card name>" or
+     * "player:<id>". A loop is described once and repeated, and each time round the trigger's source is a new object
+     * (400.7), so the choice is kept by name ("the token's untap targets Pestermite", "Redcap shoots the opponent").
+     */
+    val triggerAim = mutableMapOf<String, String>()
     var combatDamageDealt = false
+    /** Commander-table state: goad, votes, Ranger-Captain's lock (EdhMechanics.kt). */
+    internal val edh = EdhMech.Table()
     /** The question is whether a spell can be paid for ("they have one Mountain … can they?"): then even a single described land is the whole mana base. */
     var describedLandsAreTheBase = false
     /** "Can I cast Path to Exile?" with no creature named: the question is whether the cast is allowed, so a stand-in target is fine. */
     var castabilityAsked = false
+    /** Payment choices said for the next spell cast ("without paying its mana cost", "kicking it"), see Costs.kt. */
+    var pendingCost: CastCost? = null
+    /** Cards a cascade said it hit ("I cast Violent Outburst and cascade into Crashing Footfalls"), in order (702.85a). */
+    val cascadeHits = mutableListOf<CardDef>()
+    /** The Modern track's per-situation memory (ModernMechanics.kt). */
+    val md = ModernState()
+    /** The Limited track's per-situation memory (LimitedMechanics.kt). */
+    internal val lt = LimitedMech.Table()
+    /** A spell being cast while another spell or ability resolves (cascade): timing permissions don't apply (608.2g). */
+    var castDuringResolution = false
     /** Tokens that ceased to exist, by object id, with the name they had: a question about one can still be answered. */
     val ceased = mutableMapOf<String, String>()
-    /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.19b). */
+    /** Players whose library holds no basic land card ("they have no basics left"): a search for one finds nothing (701.23b). */
     val noBasicsInLibrary = mutableSetOf<String>()
+    /** Commanders put into a graveyard or exile since state-based actions were last checked (903.9a, 704.6d), by object id. */
+    val commanderPending = mutableMapOf<String, Zone>()
     /** Players whose discard to a spell was said outright ("they take my Thalia"), so an unknown hand needn't be asked for. */
     val explicitDiscards = mutableSetOf<String>()
     /** Spell Queller: the card a permanent exiled from the stack, by the permanent's id, for "the exiled card's owner may cast it" when it leaves. */
     val quelled = mutableMapOf<String, String>()
     /** The game's turn number, when the situation said so. */
     var turnNumber: Int? = null
+    /** Extra turns, skips, extra phases and delayed end-step triggers this turn has set up (see Turns.kt). */
+    val turns = TurnPlan()
+    /** What zone changes this game have set up for later (see Zones.kt). */
+    val zones = ZoneMemo()
+    /** Loyalty activations and The Chain Veil this turn (see CounterRules.kt). */
+    val counterMemo = CounterMemo()
     /** Creatures whose combat damage, dealt and received, is prevented this turn (Maze of Ith). */
     val combatDamageMuted = mutableSetOf<String>()
+    /** "… but there is no spell on the stack": said outright, so a mode needing a spell to target can be ruled out (700.2a). */
+    var stackSaidEmpty = false
     /** Spells cast this turn, per player (storm counts, Aetherflux Reservoir). */
     val spellsThisTurn = mutableMapOf<String, Int>()
     /** Attackers whose "attacks and isn't blocked" trigger has already been put on the stack this combat. */
@@ -277,6 +343,8 @@ class GameState(
     val matchingSpellsThisTurn = mutableMapOf<String, MutableList<CardDef>>()
     /** Spells cast this game by name (Approach of the Second Sun). */
     val spellsCast = mutableMapOf<String, Int>()
+    /** Winning and losing (WinLoss.kt): Pact upkeep triggers waiting, emblems, objects that left with a player. */
+    val winLoss = WinLossState()
     /** Prevention/regeneration shields created by resolved effects this turn (615.7, 701.19a). */
     val shields = mutableListOf<Shield>()
     val outcomes = mutableListOf<String>()
@@ -289,6 +357,12 @@ class GameState(
     /** The permanent most recently sacrificed (Fling's "the sacrificed creature's power"), with last-known information. */
     var lastSacrificed: GameObject? = null
     val assumptions = mutableListOf<String>()
+    /** Each time abilities of several players triggered at once: their controllers in the order put on the stack (603.3b). */
+    val apnapBatches = mutableListOf<List<String>>()
+    /** The player the question is about ("how much life do I lose?"): with several opponents, a harmful "target player" trigger is taken as aimed at them. */
+    var focusPlayer: String? = null
+    /** Mana paid for an "unless pays" counter aimed at a spell (ward, Mana Leak), by the spell's object id: (source name, amount). */
+    val paidToSaveSpell = mutableMapOf<String, MutableList<Pair<String, Int>>>()
     /** Players who said they will pay the next "unless … pays" cost asked of them (Rhystic Study, Mana Leak…). */
     val willPay = mutableSetOf<String>()
     /** Choices announced for a permanent's next triggered ability, by source object id ("put Rakdos with Kaalia's trigger"): an object id. */
@@ -312,7 +386,7 @@ class GameState(
         val out = mutableListOf<Pair<GameObject, StaticEffect>>()
         for (src in objects.values) {
             if (!src.isOnBattlefield()) continue
-            if (src.def.isCreature && abilitiesLostOn(src) != null) continue
+            if (abilitiesGone(src) != null) continue
             for (ab in src.def.abilities.filterIsInstance<StaticAbility>()) for (eff in ab.effects) {
                 val filter = when (eff) { is StaticEffect.PtModify -> eff.filter; is StaticEffect.KeywordGrant -> eff.filter; else -> continue }
                 if (filter.other && src === obj) continue
@@ -333,6 +407,8 @@ class GameState(
     /** The name of the ability keeping this permanent from being a creature right now, or null when it is one (or never was). */
     fun notACreatureBecause(o: GameObject): String? {
         if (!o.def.isCreature || !o.isOnBattlefield()) return null
+        NewMech.notACreature(this, o)?.let { return it }   // impending, reconfigure (NewMechanics.kt)
+        MoreEffects3.notACreature(this, o)?.let { return it }   // the Enduring cycle (MoreEffects3.kt)
         val god = o.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.NotACreatureUnlessDevotion>().firstOrNull() ?: return null
         val have = devotion(o.controller, god.colour)
         val colourName = when (god.colour) { 'W' -> "white"; 'U' -> "blue"; 'B' -> "black"; 'R' -> "red"; else -> "green" }
@@ -346,14 +422,46 @@ class GameState(
 
     private fun colourChar(name: String?): Char? = when (name?.lowercase()) { "white" -> 'W'; "blue" -> 'U'; "black" -> 'B'; "red" -> 'R'; "green" -> 'G'; else -> null }
 
-    /** An object's colours right now — printed, plus the colour Painter's Servant names (layer 5). */
-    fun colorsOf(o: GameObject): Set<Char> {
-        val own = o.animatedAs?.colors?.takeIf { it.isNotEmpty() } ?: o.def.colors
-        return painter()?.let { (_, c) -> own + c } ?: own
-    }
+    /** An object's colours right now (layer 5): printed, an animation's colour, plus the colour Painter's Servant names. */
+    fun colorsOf(o: GameObject): Set<Char> = charsOf(o).colors
 
-    /** Whether a permanent is a creature right now — printed type, minus anything currently turning it off. */
-    fun isCreature(o: GameObject): Boolean = o.animatedAs != null || (o.def.isCreature && notACreatureBecause(o) == null)
+    // ---- the layer view (Layers.kt), worked out again whenever something it reads has changed ----
+    private var layerCache: Pair<Long, LayerView>? = null
+    /** The situation said which permanents entered first ("Humility entered first"), so timestamp order isn't a guess. */
+    var timestampsStated = false
+    private var computingLayers = false
+    private fun layerKey(): Long {
+        var h = objects.size.toLong()
+        for (o in objects.values) {
+            h = h * 31 + o.id.hashCode(); h = h * 31 + o.zone.ordinal + (if (o.phasedOut) 17 else 0); h = h * 31 + o.controller.hashCode()
+            h = h * 31 + System.identityHashCode(o.def); h = h * 31 + (o.attachedTo?.hashCode() ?: 0); h = h * 31 + o.timestamp
+            h = h * 31 + (o.chosenName?.hashCode() ?: 0); h = h * 31 + (o.basePt?.hashCode() ?: 0) + o.basePtTs
+            h = h * 31 + (o.animatedAs?.hashCode() ?: 0) + o.animatedTs; h = h * 31 + (o.counters["level"] ?: 0)
+        }
+        return h
+    }
+    /** Every object's characteristics after layers 4 to 7b, or null while they are being worked out (a filter asking mid-way sees printed values). */
+    fun layers(): LayerView? {
+        if (computingLayers) return null
+        val key = layerKey()
+        layerCache?.let { (k, v) -> if (k == key) return v }
+        computingLayers = true
+        try { return Layers.compute(this).also { layerCache = key to it } } finally { computingLayers = false }
+    }
+    fun charsOf(o: GameObject): Chars = layers()?.of(o) ?: Chars(o)
+    /** Card types, subtypes and supertypes right now (layer 4, 613.1d). */
+    fun typesOf(o: GameObject): Set<String> = MoreEffects3.types(this, o, charsOf(o).types)   // the Enduring cycle returns as an enchantment only; a Spacecraft at 12+ is a creature (MoreEffects3.kt)
+    fun subtypesOf(o: GameObject): Set<String> = charsOf(o).subtypes
+    fun supertypesOf(o: GameObject): Set<String> = charsOf(o).supertypes
+    /** Blood Moon or Magus of the Moon, when it has made this land a Mountain and taken its rules text away (305.7). */
+    fun moonOn(o: GameObject): GameObject? = if (o.isOnBattlefield()) charsOf(o).rulesTextLostTo else null
+    /** Whatever has taken this permanent's own abilities away right now: Blood Moon (layer 4) or Humility (layer 6). */
+    fun abilitiesGone(o: GameObject): GameObject? = if (o.isOnBattlefield()) charsOf(o).let { it.rulesTextLostTo ?: it.abilitiesLostTo } else null
+    /** The creature type is on it right now (layer 4), whatever devotion says about gods. */
+    fun hasCreatureType(o: GameObject): Boolean = o.animatedAs != null || "Creature" in typesOf(o)
+
+    /** Whether a permanent is a creature right now — its types after layer 4, minus anything currently turning it off. */
+    fun isCreature(o: GameObject): Boolean = o.animatedAs != null || ("Creature" in typesOf(o) && notACreatureBecause(o) == null)
 
     /** Whether a static ability's condition currently holds for its source. */
     fun conditionHolds(c: Condition?, src: GameObject): Boolean = when (c) {
@@ -366,7 +474,7 @@ class GameState(
         Condition.YourTurn -> activePlayer == src.controller
         Condition.NotYourTurn -> activePlayer != null && activePlayer != src.controller
         Condition.ExiledWasCreature -> lastExiledDef?.isCreature == true
-        Condition.LandEnteredThisTurn -> (landsPlayed[src.controller] ?: 0) > 0 || objects.values.any { it.isOnBattlefield() && it.controller == src.controller && "Land" in it.def.types && it.enteredFrom != null }
+        Condition.LandEnteredThisTurn -> (landsPlayed[src.controller] ?: 0) > 0 || objects.values.any { it.isOnBattlefield() && it.controller == src.controller && "Land" in typesOf(it) && it.enteredFrom != null }
         is Condition.ControlsMatching -> objects.values.count { it !== src && matches(c.filter, it, src.controller, src) || (it === src && matches(c.filter, it, src.controller, src)) } >= c.atLeast
         is Condition.GraveyardAtLeast -> {
             val cards = objects.values.filter { it.zone == Zone.GRAVEYARD && it.controller == src.controller && !it.token }
@@ -377,7 +485,7 @@ class GameState(
         }
         Condition.WasKicked -> src.wasKicked
         is Condition.SourceTapped -> (src.tapped == true) == c.tapped
-        is Condition.Unknown -> false
+        is Condition.Unknown -> NewSetMech.condition(this, c.text, src) ?: MoreEffects3.condition(this, c.text, src) ?: false
     }
 
     /** What a static ability's condition asks for, for traces and for saying why one doesn't apply. */
@@ -392,7 +500,7 @@ class GameState(
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"
         is Condition.SourceTapped -> "it to be ${if (c.tapped) "tapped" else "untapped"}"
-        is Condition.Unknown -> c.text
+        is Condition.Unknown -> NewSetMech.describeCondition(c.text) ?: MoreEffects3.describeCondition(c.text) ?: c.text
     }
 
     /** Layer 7a: a characteristic-defining ability's value, or null when it depends on something the situation doesn't say. */
@@ -413,30 +521,26 @@ class GameState(
             val note = if (alive) "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; ${obj.name} is on the battlefield, so it must be 12 or less, and it's taken as 12 (${obj.name} a 1/1) minus any life paid or lost here. Say the real total for exact sizes." else "${p.possessive.replaceFirstChar { it.uppercase() }} life total wasn't said; it's taken as the starting 20 (103.4) for ${obj.name}'s size, minus any life paid or lost here."
             if (note !in assumptions) assumptions += note; p.life = guess; guess } }
         is CountExpr.CountersOn -> obj.counters[expr.kind] ?: 0
-        is CountExpr.Unknown -> null
+        is CountExpr.Unknown -> NewSetMech.count(this, expr.text, obj)   // unspent mana (Omnath), colors spent (NewSetMechanics.kt)
     }
     /** The card types among cards in every graveyard (Tarmogoyf); tokens are not cards, and a Kindred card counts its type. */
     fun cardTypesInGraveyards(): Set<String> = objects.values.filter { it.zone == Zone.GRAVEYARD && !it.token }.flatMap { o -> o.def.types.filter { it in graveyardCardTypes }.map { if (it == "Tribal") "Kindred" else it } }.toSet()
     private val graveyardCardTypes = setOf("Artifact", "Battle", "Creature", "Enchantment", "Instant", "Kindred", "Tribal", "Land", "Planeswalker", "Sorcery")
     fun cdaOf(obj: GameObject): StaticEffect.PtCda? = obj.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.PtCda>().firstOrNull()
 
-    /** A Humility-style effect applying to [obj] right now, with the permanent it comes from. */
-    fun abilitiesLostOn(obj: GameObject): Pair<GameObject, StaticEffect.LoseAbilitiesSetPt>? {
+    /** A Humility-style effect (layer 6) that has taken [obj]'s abilities away right now, with the permanent it comes from. */
+    fun abilitiesLostOn(obj: GameObject): Pair<GameObject, StaticEffect>? {
         if (!obj.isOnBattlefield()) return null
-        for (src in objects.values) {
-            if (!src.isOnBattlefield()) continue
-            for (ab in src.def.abilities.filterIsInstance<StaticAbility>()) for (eff in ab.effects) {
-                if (eff !is StaticEffect.LoseAbilitiesSetPt) continue
-                if (matches(eff.filter, obj, src.controller, src)) return src to eff
-            }
-        }
-        return null
+        val c = charsOf(obj)
+        return c.abilitiesLostTo?.let { src -> c.abilitiesLostEffect?.let { src to it } }
     }
 
     /** The level band a leveler is in for its level counters (702.87b); null below the first band or for other creatures. */
     fun levelBand(obj: GameObject): StaticEffect.LevelBand? { val n = obj.counters["level"] ?: 0; return obj.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.LevelBand>().firstOrNull { n >= it.min && (it.max == null || n <= it.max) } }
-    private fun basePower(obj: GameObject): Int? = obj.animatedAs?.power ?: obj.basePt?.first ?: levelBand(obj)?.power ?: abilitiesLostOn(obj)?.second?.takeIf { it.setPt }?.power ?: cdaOf(obj)?.let { c -> if (c.power != null) cdaValue(obj, c.power)?.plus(c.plus) else obj.def.power } ?: obj.def.power
-    private fun baseToughness(obj: GameObject): Int? = obj.animatedAs?.toughness ?: obj.basePt?.second ?: levelBand(obj)?.toughness ?: abilitiesLostOn(obj)?.second?.takeIf { it.setPt }?.toughness ?: cdaOf(obj)?.let { c -> if (c.toughness != null) cdaValue(obj, c.toughness)?.plus(c.toughnessPlus ?: c.plus) else obj.def.toughness } ?: obj.def.toughness
+    // Layer 7a, a characteristic-defining ability (gone with the object's abilities: a * is then 0), then whatever 7b set last.
+    private fun cdaGone(obj: GameObject) = obj.isOnBattlefield() && abilitiesGone(obj) != null
+    private fun basePower(obj: GameObject): Int? = charsOf(obj).basePt?.first ?: (if (cdaGone(obj)) cdaOf(obj)?.let { obj.def.power ?: 0 } else cdaOf(obj)?.let { c -> if (c.power != null) cdaValue(obj, c.power)?.plus(c.plus) else obj.def.power }) ?: obj.def.power
+    private fun baseToughness(obj: GameObject): Int? = charsOf(obj).basePt?.second ?: (if (cdaGone(obj)) cdaOf(obj)?.let { obj.def.toughness ?: 0 } else cdaOf(obj)?.let { c -> if (c.toughness != null) cdaValue(obj, c.toughness)?.plus(c.toughnessPlus ?: c.plus) else obj.def.toughness }) ?: obj.def.toughness
 
     /** "~ gets -X/-X, where X is your life total": the amount, recomputed each time it's asked for. */
     fun selfCountPt(obj: GameObject, toughness: Boolean = false): Int {
@@ -450,11 +554,14 @@ class GameState(
         return out
     }
 
-    fun powerOf(obj: GameObject): Int? = basePower(obj)?.let { base ->
-        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.power ?: 0 } + selfCountPt(obj) + obj.pumps.sumOf { it.first } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
+    /** Layer 7d last: a switch (Twisted Image) swaps what 7a-7c left, whenever the other effects began (613.4d). */
+    fun powerOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) toughness7c(obj) else power7c(obj)
+    fun toughnessOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) power7c(obj) else toughness7c(obj)
+    private fun power7c(obj: GameObject): Int? = basePower(obj)?.let { base ->
+        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.power ?: 0 } + selfCountPt(obj) + MoreEffects3.attachedPt(this, obj, false) + obj.pumps.sumOf { it.first } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
-    fun toughnessOf(obj: GameObject): Int? = baseToughness(obj)?.let { base ->
-        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.toughness ?: 0 } + selfCountPt(obj, toughness = true) + obj.pumps.sumOf { it.second } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
+    private fun toughness7c(obj: GameObject): Int? = baseToughness(obj)?.let { base ->
+        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.toughness ?: 0 } + selfCountPt(obj, toughness = true) + MoreEffects3.attachedPt(this, obj, true) + obj.pumps.sumOf { it.second } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
     /** Keywords a keyword counter can be (122.1b). */
     val keywordCounters = setOf("flying", "first strike", "double strike", "deathtouch", "decayed", "exalted", "haste", "hexproof", "indestructible", "lifelink", "menace", "reach", "shadow", "trample", "vigilance")
@@ -462,10 +569,14 @@ class GameState(
     fun hasKeyword(obj: GameObject, keyword: String): Boolean {
         val k = keyword.lowercase()
         if (k in obj.lostKeywords) return false
+        if (MoreEffects.keywordLost(this, obj, k)) return false   // Melira: opponents' creatures lose infect (MoreEffects.kt)
+        if (obj.isOnBattlefield() && k in charsOf(obj).keywords) return true   // given in layer 6 (Darksteel Mutation's indestructible)
         val stripped = abilitiesLostOn(obj) != null
         if (!stripped && (obj.def.has(k) || k in obj.tempKeywords)) return true
+        if (!stripped && MoreEffects3.gatedKeyword(obj, k)) return true   // "12+ | Flying" with 12 charge counters (MoreEffects3.kt)
         if (!stripped && levelBand(obj)?.keywords?.contains(k) == true) return true   // 702.87b: the band's abilities while it has that many level counters
         if (k in keywordCounters && (obj.counters[k] ?: 0) > 0) return true   // 122.1b: a keyword counter grants the keyword, and isn't an ability of the creature
+        if (k == "lifelink" && LifeDmgMech.spellLifelink(this, obj)) return true   // Soulfire Grand Master's instants and sorceries (LifeDamageMechanics.kt)
         return staticEffectsOn(obj).any { (src, e) ->
             e is StaticEffect.KeywordGrant && k in e.keywords && (e.filter.raw != "~" || src === obj) && conditionalKeywordOk(src, e) &&
                 abilitiesLostOn(src) == null   // a lord that lost its own abilities grants nothing
@@ -496,8 +607,8 @@ class GameState(
     }
 
     /** Ward cost on an object, if any ("Ward {2}", "Ward—Pay 3 life"). */
-    fun wardCost(obj: GameObject): String? = obj.def.abilities.filterIsInstance<StaticAbility>().firstNotNullOfOrNull { a ->
-        Regex("""^Ward(?:\s*[—-]\s*|\s+)(.+?)\.?$""", RegexOption.IGNORE_CASE).find(a.text)?.groupValues?.get(1)
+    fun wardCost(obj: GameObject): String? = obj.abilities.filterIsInstance<StaticAbility>().firstNotNullOfOrNull { a ->
+        Regex("""^Ward(?:\s*[—-]\s*|\s+)(.+?)\.?$""", RegexOption.IGNORE_CASE).find(a.text)?.groupValues?.get(1)?.replace(Regex("""^(?i)pay (?=\d+ life$)"""), "")   // "Ward—Pay 2 life": the cost is 2 life (702.21a)
     // A ward granted for the turn (an animated creature-land, say) counts the same as a printed one.
     } ?: obj.tempKeywords.firstNotNullOfOrNull { k -> Regex("""^ward(?:\s*[—-]\s*|\s+)(.+)$""", RegexOption.IGNORE_CASE).find(k)?.groupValues?.get(1) }
 
@@ -508,10 +619,16 @@ class GameState(
         val t = obj.toughness ?: return "no power/toughness"
         val parts = mutableListOf<String>()
         val lost = abilitiesLostOn(obj)
-        if (lost != null) parts += "base set to ${lost.second.power}/${lost.second.toughness} by ${lost.first.name}, which also takes its abilities away (layers 6 and 7b)"
+        val set7b = charsOf(obj).basePt
+        val by7b = charsOf(obj).basePtBy
+        if (lost != null && by7b == lost.first.name && set7b != null) parts += "base set to ${set7b.first}/${set7b.second} by ${lost.first.name}, which also takes its abilities away (layers 6 and 7b)"
+        else if (lost != null && by7b != null && set7b != null && by7b != "its level") parts += "base set to ${set7b.first}/${set7b.second} by $by7b, applied after ${lost.first.name}'s in timestamp order (layer 7b); ${lost.first.name} takes its abilities away (layer 6)"
+        else if (lost != null) parts += "no abilities (${lost.first.name}, layer 6)"
+        else if (by7b != null && set7b != null && by7b != "its level" && obj.animatedAs == null) parts += "base set to ${set7b.first}/${set7b.second} by $by7b (layer 7b)"
         if (lost == null) cdaOf(obj)?.let { c -> parts += "base set by its own ability (layer 7a${if (c.power is CountExpr.CardTypesInGraveyards || c.toughness is CountExpr.CardTypesInGraveyards) ": ${cardTypesInGraveyards().size} card type${if (cardTypesInGraveyards().size == 1) "" else "s"} in graveyards${cardTypesInGraveyards().takeIf { it.isNotEmpty() }?.let { t -> " (" + t.sorted().joinToString(", ") + ")" } ?: ""}" else ""})" }
         val statics = staticEffectsOn(obj).filter { it.second is StaticEffect.PtModify && !((it.second as StaticEffect.PtModify).power == 0 && (it.second as StaticEffect.PtModify).toughness == 0) }
         for ((src, e) in statics) { e as StaticEffect.PtModify; parts += "${sign(e.power)}/${sign(e.toughness)} from ${if (src === obj) "its own ability" + (e.condition?.let { " (condition met)" } ?: "") else src.name}" }
+        parts += MoreEffects3.describeAttachedPt(this, obj)   // Cranial Plating's count (MoreEffects3.kt)
         // A size-changing ability of its own whose condition isn't met: saying so is the difference between "it is
         // 1/1" and "it is 1/1 because the graveyard you described has three cards in it, not seven".
         if (lost == null) for (e in obj.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.PtModify>())
@@ -520,13 +637,14 @@ class GameState(
         if (obj.pumps.isNotEmpty()) parts += "${sign(obj.pumps.sumOf { it.first })}/${sign(obj.pumps.sumOf { it.second })} until end of turn"
         (obj.counters["+1/+1"] ?: 0).let { if (it > 0) parts += "$it +1/+1 counter${if (it > 1) "s" else ""}" }
         (obj.counters["-1/-1"] ?: 0).let { if (it > 0) parts += "$it -1/-1 counter${if (it > 1) "s" else ""}" }
+        if (DeepMech.switched(obj)) parts += "then power and toughness switched (layer 7d)"
         return if (parts.isEmpty()) "$p/$t" else "$p/$t (${basePower(obj)}/${baseToughness(obj)} base, ${parts.joinToString(", ")})"
     }
     private fun sign(n: Int) = if (n >= 0) "+$n" else "$n"
 
     /** Whether a permanent matches a filter, relative to [controller] (the source's controller). Mirrors Engine.filterMatches for battlefield objects. */
     /** An artifact by its types, or any permanent while Mycosynth Lattice is out (layer 4, 613.1d). */
-    fun isArtifact(o: GameObject): Boolean = "Artifact" in o.def.types || (o.isOnBattlefield() && objects.values.any { l -> l.isOnBattlefield() && abilitiesLostOn(l) == null && l.def.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.AllPermanentsAreArtifacts } })
+    fun isArtifact(o: GameObject): Boolean = "Artifact" in typesOf(o)
 
     fun matches(f: ObjFilter, o: GameObject, controller: String, source: GameObject? = null, anyZone: Boolean = false): Boolean {
         // "instant or sorcery card in your graveyard": a card there, its owner's, never a permanent.
@@ -535,25 +653,28 @@ class GameState(
         if (f.attachedToSource && (source == null || source.attachedTo != o.id)) return false
         if (f.other && source != null && source === o) return false
         val typeOk = f.kinds.any { k -> when (k) {
-            Kind.CREATURE -> isCreature(o); Kind.ARTIFACT -> isArtifact(o); Kind.ENCHANTMENT -> "Enchantment" in o.def.types
-            Kind.LAND -> "Land" in o.def.types; Kind.PLANESWALKER -> "Planeswalker" in o.def.types; Kind.BATTLE -> "Battle" in o.def.types
+            Kind.CREATURE -> isCreature(o); Kind.ARTIFACT -> isArtifact(o); Kind.ENCHANTMENT -> "Enchantment" in typesOf(o)
+            Kind.LAND -> "Land" in typesOf(o); Kind.PLANESWALKER -> "Planeswalker" in typesOf(o); Kind.BATTLE -> "Battle" in typesOf(o)
             // A "permanent card" in a graveyard, hand or library is never an instant or sorcery; a "source" on the stack still counts.
             Kind.PERMANENT -> !(o.def.isInstantOrSorcery && o.zone in setOf(Zone.GRAVEYARD, Zone.LIBRARY, Zone.HAND, Zone.EXILE)); Kind.CARD -> !o.token
             // A card in a graveyard described as an instant or sorcery (a card, not a spell on the stack).
             Kind.SPELL -> f.inGraveyard && ("Instant" in o.def.types || "Sorcery" in o.def.types); else -> false
         } }
-        val notOk = f.notKinds.none { k -> when (k) { Kind.CREATURE -> isCreature(o); Kind.LAND -> "Land" in o.def.types; Kind.ARTIFACT -> isArtifact(o); Kind.ENCHANTMENT -> "Enchantment" in o.def.types; else -> false } }
-        val notSubOk = f.notSubtypes.none { st -> o.def.subtypes.any { it.equals(st, true) } || ((st == "basic" || st == "snow") && o.def.supertypes.any { it.equals(st, true) }) }
+        val ch = charsOf(o)
+        val notOk = f.notKinds.none { k -> when (k) { Kind.CREATURE -> isCreature(o); Kind.LAND -> "Land" in ch.types; Kind.ARTIFACT -> isArtifact(o); Kind.ENCHANTMENT -> "Enchantment" in ch.types; else -> false } }
+        val notSubOk = f.notSubtypes.none { st -> ch.subtypes.any { it.equals(st, true) } || ((st == "basic" || st == "snow") && ch.supertypes.any { it.equals(st, true) }) }
         val ctrlOk = when (f.controller) { null -> true; Who.YOU -> o.controller == controller; Who.OPPONENT -> o.controller != controller; else -> true }
         val anim = o.animatedAs
         // "instant or sorcery card": the filter parser files card types alongside subtypes; a card type is on the type line.
-        fun hasSub(st: String) = o.def.subtypes.any { it.equals(st, true) } || o.def.types.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
-            (o.def.changeling && o.def.isCreature) || anim?.allCreatureTypes == true
+        // "of the chosen type" (Plague Engineer): the creature type its source chose as it entered; none chosen matches nothing.
+        if ("chosen-type" in f.subtypes) { val t = source?.chosenName ?: return false; return matches(f.copy(subtypes = f.subtypes - "chosen-type" + t), o, controller, source, anyZone) }
+        fun hasSub(st: String) = ch.subtypes.any { it.equals(st, true) } || ch.types.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
+            (o.def.changeling && "Creature" in ch.types) || anim?.allCreatureTypes == true
         val subOk = if (f.subtypesAny && f.subtypes.isNotEmpty()) f.subtypes.any { st -> hasSub(st) }
-                    else f.subtypes.all { st -> hasSub(st) || (st.equals("basic", true) && o.def.supertypes.any { it.equals("Basic", true) }) || (st.equals("snow", true) && o.def.supertypes.any { it.equals("Snow", true) }) }
+                    else f.subtypes.all { st -> hasSub(st) || (st.equals("basic", true) && ch.supertypes.any { it.equals("Basic", true) }) || (st.equals("snow", true) && ch.supertypes.any { it.equals("Snow", true) }) }
         val kwOk = f.keywords.all { hasKeyword(o, it) } && f.notKeywords.none { hasKeyword(o, it) }
         val tokenOk = f.token == null || f.token == o.token
-        val legOk = f.legendary == null || f.legendary == ("Legendary" in o.def.supertypes)
+        val legOk = f.legendary == null || f.legendary == ("Legendary" in ch.supertypes)
         // "attacking or blocking creature" (Divine Verdict): either role satisfies the filter.
         val roleOk = when {
             f.attacking == true && f.blocking == true -> o.attacking != null || o.blocking != null || o.alsoBlocking.isNotEmpty()

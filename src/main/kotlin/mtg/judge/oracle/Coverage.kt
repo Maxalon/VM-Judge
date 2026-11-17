@@ -24,10 +24,12 @@ object Coverage {
         "cascade", "bestow", "disguise", "escape", "mutate", "companion", "split second", "buyback", "overload", "surge", "emerge", "spectacle", "jump-start", "retrace", "delve", "prototype", "casualty", "offspring", "gift", "impending", "harmonize", "level up", "cycling", "equip", "prowess", "unearth", "crew",
         "toxic", "exalted", "landwalk", "swampwalk", "islandwalk", "forestwalk", "mountainwalk", "plainswalk",
         // Triggered keywords the engine plays out in full.
-        "undying", "persist", "living weapon", "bushido", "storm", "flanking", "soulshift", "ascend",
+        "undying", "persist", "living weapon", "bushido", "extort", "exploit", "mentor", "bloodthirst", "backup", "storm", "flanking", "soulshift", "ascend",
         "landcycling", "basic landcycling", "typecycling", "plainscycling", "islandcycling", "swampcycling", "mountaincycling", "forestcycling", "wastescycling", "slivercycling",
         // Deck-building keywords: they say who may share a deck, and do nothing at all during a game.
-        "choose a background", "doctor's companion", "friends forever")
+        "choose a background", "doctor's companion", "friends forever",
+        // Played out where it happens: ninjutsu by the situation reader and Judge (702.49a), station in MoreEffects3.kt (702.184a).
+        "ninjutsu", "station", "spree")
 
     data class Stats(var cards: Int = 0, var fully: Int = 0, var partly: Int = 0, var none: Int = 0, var noText: Int = 0, var abilities: Int = 0, var modeledAbilities: Int = 0)
 
@@ -45,7 +47,7 @@ object Coverage {
                 stats.cards++
                 val units = mutableListOf<Pair<Boolean, String?>>()   // (modeled, unparsed text)
                 for (a in def.abilities) when (a) {
-                    is StaticAbility -> if (a.keyword != null) units += (a.keyword in modeledKeywords) to (if (a.keyword in modeledKeywords) null else "keyword: ${a.keyword}")
+                    is StaticAbility -> if (a.keyword != null) units += (a.keyword.lowercase() in modeledKeywords) to (if (a.keyword.lowercase() in modeledKeywords) null else "keyword: ${a.keyword}")   // "Affinity" is capitalised as DeepMechanics builds it
                                         else units += a.effects.isNotEmpty() to (if (a.effects.isNotEmpty()) null else a.text)
                     is TriggeredAbility -> { val ok = a.trigger !is Trigger.Unknown && !a.effect.hasUnparsed(); units += ok to (if (ok) null else (if (a.trigger is Trigger.Unknown) "trigger: " + (a.trigger as Trigger.Unknown).text else unparsed(a.effect))) }
                     is ActivatedAbility -> { val ok = !a.effect.hasUnparsed(); units += ok to (if (ok) null else unparsed(a.effect)) }

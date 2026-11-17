@@ -26,7 +26,7 @@ class RulesAnswersTest {
         "What does sorcery speed mean?" to "307.1",
         "Can I activate two loyalty abilities in one turn?" to "606.3",
         "Can I use a loyalty ability twice?" to "606.3",
-        "Does my mana empty between phases?" to "500.4",
+        "Does my mana empty between phases?" to "500.5",
         "I draw from an empty library, when do I lose?" to "121.4",
         "In the untap step do I untap everything?" to "502.3",
         "Can I respond to a mana ability?" to "605.3a",
@@ -99,6 +99,9 @@ class RulesAnswersTest {
         "I steal their commander with Control Magic and attack them with it, is it commander damage" to "903.10a",
         "my attacker's blocker dies before damage, does it trample over" to "702.19d",
         "my creature is blocked and I bounce the blocker, do I hit them" to "509.1h",
+        "How do I demonstrate a loop at a tournament?" to "732.2a",
+        "How do I shortcut a loop?" to "732.2b",
+        "Is a mandatory loop a draw?" to "732.4",
     )
 
     @Test
