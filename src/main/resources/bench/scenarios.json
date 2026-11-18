@@ -52713,19 +52713,18 @@
     "id": "ci10",
     "text": "I cast Counterspell on their Lightning Bolt targeting my Grizzly Bears. What happens?",
     "expect": [
-      "Lightning Bolt is countered.",
-      "Grizzly Bears enters the battlefield."
+      "Lightning Bolt is countered."
     ],
-    "notExpect": [],
+    "notExpect": [
+      "Grizzly Bears enters the battlefield.",
+      "You cast Grizzly Bears"
+    ],
     "cite": [
       "601.2a",
       "405.2",
-      "109.2",
-      "608.2b",
       "701.6a",
       "608.2c",
       "608.2n",
-      "608.3a",
       "117.3b"
     ]
   },
@@ -54609,15 +54608,20 @@
     "id": "ip89",
     "text": "I played two lands this turn at FNM. What happens?",
     "expect": [
-      "Game Rule Violation, Warning: caught right away, a simple backup returns the second land to hand; later, it goes back to hand only if that's a minor disruption (an object in the wrong zone that everyone can identify), otherwise the game is left as it is (IPG 2.5)."
+      "No penalty at Regular REL",
+      "Caught right away, the second land goes back to hand."
     ],
     "cite": [
       "100.6",
       "305.2",
       "MTR 1.12",
-      "IPG 2.5"
+      "JAR"
     ],
-    "note": "track policy probe Q17"
+    "note": "track policy probe Q17",
+    "notExpect": [
+      "Failure to Maintain Game State",
+      "Game Rule Violation, Warning"
+    ]
   },
   {
     "id": "ip90",
@@ -58421,43 +58425,58 @@
     "id": "pw265",
     "text": "What happens at FNM if I played two lands this turn?",
     "expect": [
-      "Game Rule Violation, Warning: caught right away, a simple backup returns the second land to hand; later, it goes back to hand only if that's a minor disruption (an object in the wrong zone that everyone can identify), otherwise the game is left as it is (IPG 2.5)."
+      "No penalty at Regular REL",
+      "Caught right away, the second land goes back to hand."
     ],
     "cite": [
       "100.6",
       "305.2",
       "MTR 1.12",
-      "IPG 2.5"
+      "JAR"
     ],
-    "note": "track policywording: paraphrase 1 of ip89"
+    "note": "track policywording: paraphrase 1 of ip89",
+    "notExpect": [
+      "Failure to Maintain Game State",
+      "Game Rule Violation, Warning"
+    ]
   },
   {
     "id": "pw266",
     "text": "At FNM last night I played 2 lands in one turn. What happens?",
     "expect": [
-      "Game Rule Violation, Warning: caught right away, a simple backup returns the second land to hand; later, it goes back to hand only if that's a minor disruption (an object in the wrong zone that everyone can identify), otherwise the game is left as it is (IPG 2.5)."
+      "No penalty at Regular REL",
+      "Caught right away, the second land goes back to hand."
     ],
     "cite": [
       "100.6",
       "305.2",
       "MTR 1.12",
-      "IPG 2.5"
+      "JAR"
     ],
-    "note": "track policywording: paraphrase 2 of ip89"
+    "note": "track policywording: paraphrase 2 of ip89",
+    "notExpect": [
+      "Failure to Maintain Game State",
+      "Game Rule Violation, Warning"
+    ]
   },
   {
     "id": "pw267",
     "text": "I played two lands this turn at Friday Night Magic. What do we do?",
     "expect": [
-      "Game Rule Violation, Warning: caught right away, a simple backup returns the second land to hand; later, it goes back to hand only if that's a minor disruption (an object in the wrong zone that everyone can identify), otherwise the game is left as it is (IPG 2.5)."
+      "No penalty at Regular REL",
+      "Caught right away, the second land goes back to hand."
     ],
     "cite": [
       "100.6",
       "305.2",
       "MTR 1.12",
-      "IPG 2.5"
+      "JAR"
     ],
-    "note": "track policywording: paraphrase 3 of ip89"
+    "note": "track policywording: paraphrase 3 of ip89",
+    "notExpect": [
+      "Failure to Maintain Game State",
+      "Game Rule Violation, Warning"
+    ]
   },
   {
     "id": "pw268",
@@ -59792,7 +59811,7 @@
     "id": "rt22",
     "text": "My opponent casts Solitude by evoking it targeting my Psychic Frog. Can I exile cards to give Frog flying in response?",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "cite": [
       "608.2h"
@@ -59834,7 +59853,7 @@
     "id": "rt26",
     "text": "I cast Abuelo's Awakening targeting Fable of the Mirror-Breaker in my graveyard. What happens?",
     "expect": [
-      "Fable returns as a 1/1 white Spirit creature with flying"
+      "Fable returns as a 1/1 Spirit creature with flying"
     ],
     "cite": [
       "715.3a"
@@ -60126,7 +60145,7 @@
     "id": "rt52",
     "text": "My opponent controls Psychic Frog. I cast Solitude targeting it. Can they discard cards in response to make it bigger?",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "cite": [
       "602.2"
@@ -61285,7 +61304,7 @@
     "id": "lo54",
     "text": "My opponent casts Solitude targeting my Psychic Frog. Can I discard cards in response to save it?",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "notExpect": [],
     "cite": []
@@ -61294,7 +61313,7 @@
     "id": "lo55",
     "text": "My opponent controls Psychic Frog. I evoke Solitude targeting it. In response can they make it bigger?",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "notExpect": [],
     "cite": []
@@ -61321,7 +61340,7 @@
     "id": "lo58",
     "text": "I cast Abuelo's Awakening on Fable of the Mirror-Breaker in my graveyard. What happens?",
     "expect": [
-      "Fable returns as a 1/1 white Spirit creature with flying"
+      "Fable returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -61330,7 +61349,7 @@
     "id": "lo59",
     "text": "Fable of the Mirror-Breaker is in my graveyard and I cast Abuelo's Awakening targeting it. What happens?",
     "expect": [
-      "Fable returns as a 1/1 white Spirit creature with flying"
+      "Fable returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -66333,7 +66352,7 @@
     "id": "w4-86",
     "text": "Can I exile cards to give Frog flying in response? My opponent evokes Solitude targeting my Psychic Frog.",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "notExpect": [],
     "cite": [
@@ -66368,7 +66387,7 @@
     "id": "w4-89",
     "text": "What happens? I cast Abuelo's Awakening targeting Fable of the Mirror-Breaker in my graveyard.",
     "expect": [
-      "Fable returns as a 1/1 white Spirit creature with flying"
+      "Fable returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": [
@@ -66379,7 +66398,7 @@
     "id": "w4-90",
     "text": "I cast Abuelo's Awakening on the Fable of the Mirror-Breaker in my yard so what happens",
     "expect": [
-      "Fable returns as a 1/1 white Spirit creature with flying"
+      "Fable returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": [
@@ -66795,7 +66814,7 @@
     "id": "w4-125",
     "text": "Can they discard cards in response to make it bigger? My opponent controls Psychic Frog and I cast Solitude targeting it.",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "notExpect": [],
     "cite": [
@@ -66806,7 +66825,7 @@
     "id": "w4-126",
     "text": "he has Psychic Frog and I cast Solitude on it, can he discard cards in response to make it bigger",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "notExpect": [],
     "cite": [
@@ -67265,7 +67284,7 @@
     "id": "w4-161",
     "text": "my opp casts Solitude by evoking it and targets my Psychic Frog, can I exile cards to give it flying in response",
     "expect": [
-      "Yes, they can respond, but it won't save the Frog"
+      "can respond, but it won't save the Frog"
     ],
     "notExpect": [],
     "cite": [
@@ -71667,6 +71686,406 @@
     ],
     "cite": [
       "603.4"
+    ]
+  },
+  {
+    "id": "t2-1",
+    "text": "I control Ocelot Pride and I gained 3 life this turn. What happens at the beginning of my end step?",
+    "expect": [
+      "\"if you gained life this turn\" asks whether you gained any life"
+    ],
+    "notExpect": [
+      "Infusion is an ability word"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "t2-2",
+    "text": "I control Greasefang, Okiba Boss and Parhelion II is in my graveyard. What happens?",
+    "expect": [
+      "that are attacking (they weren't declared as attackers, and they enter untapped)"
+    ],
+    "notExpect": [
+      "Angels tapped and attacking"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-3",
+    "text": "I cast Abuelo's Awakening with Fable of the Mirror-Breaker in my graveyard as the target. What happens?",
+    "expect": [
+      "returns as a 1/1 Spirit creature with flying"
+    ],
+    "notExpect": [
+      "white Spirit"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-4",
+    "text": "It's my opponent's turn. They control Null Rod. I cast Force of Vigor by exiling a green card, targeting Null Rod. What happens?",
+    "expect": [
+      "Only one target was chosen; \"up to two\" allows fewer"
+    ],
+    "notExpect": [
+      "up to one other artifact or enchantment"
+    ],
+    "cite": [
+      "601.2c"
+    ]
+  },
+  {
+    "id": "t2-5",
+    "text": "I have Solemnity on the battlefield and I play Dark Depths. What happens?",
+    "expect": [
+      "You must sacrifice Dark Depths; it isn't a choice"
+    ],
+    "notExpect": [
+      "You may sacrifice Dark Depths",
+      "You choose to sacrifice Dark Depths"
+    ],
+    "cite": [
+      "701.21a"
+    ]
+  },
+  {
+    "id": "t2-6",
+    "text": "I cast Absorb Essence from Purging Stormbrood and my opponent tries to Essence Scatter it. What happens?",
+    "expect": [
+      "isn't cast at all: the illegal cast is reversed"
+    ],
+    "notExpect": [
+      "Players call this fizzling"
+    ],
+    "cite": [
+      "734.1"
+    ]
+  },
+  {
+    "id": "t2-7",
+    "text": "I played two lands this turn at FNM. What's the ruling?",
+    "expect": [
+      "No penalty at Regular REL"
+    ],
+    "notExpect": [
+      "Game Rule Violation, Warning",
+      "Failure to Maintain Game State"
+    ],
+    "cite": [
+      "JAR"
+    ]
+  },
+  {
+    "id": "t2-8",
+    "text": "At FNM my opponent cast Lightning Bolt and didn't pay for my Thalia. What happens?",
+    "expect": [
+      "No penalty at Regular REL"
+    ],
+    "notExpect": [
+      "Game Rule Violation, Warning"
+    ],
+    "cite": [
+      "JAR"
+    ]
+  },
+  {
+    "id": "t2-9",
+    "text": "My opponent casts Solitude targeting my Psychic Frog. Can I exile cards to give it flying in response?",
+    "expect": [
+      "Yes, you can respond, but it won't save the Frog"
+    ],
+    "notExpect": [
+      "Yes, they can respond"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-10",
+    "text": "My opponent attacks with a creature with menace. I block with one creature. Is that block legal?",
+    "expect": [
+      "this block is legal only if enough other creatures block it too"
+    ],
+    "notExpect": [
+      "A creature with menace is now a blocked creature"
+    ],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "t2-11",
+    "text": "I cast Ponder and my opponent casts Daze returning an Island. Can I pay?",
+    "expect": [
+      "opponent returns an Island they control"
+    ],
+    "notExpect": [
+      "opponent return an Island you control"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-12",
+    "text": "My opponent activates Karn Liberated's -3 targeting my Island. What happens?",
+    "expect": [
+      "is a loyalty ability, so the rules let it be activated only as a sorcery"
+    ],
+    "notExpect": [
+      "ability says \"Activate only as a sorcery and only once each turn (loyalty ability)\""
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-13",
+    "text": "During my opponent's end step I cast Goryo's Vengeance targeting Griselbrand. When does Griselbrand get exiled?",
+    "expect": [
+      "At the beginning of the end step of the next turn"
+    ],
+    "notExpect": [
+      "At the beginning of the next end step: Goryo's Vengeance"
+    ],
+    "cite": [
+      "513.2"
+    ]
+  },
+  {
+    "id": "t2-14",
+    "text": "I attack with Parhelion II returned by Greasefang. How much damage does my opponent take?",
+    "expect": [
+      "Angel token deals 4 damage to opponent"
+    ],
+    "notExpect": [
+      "needs a target (Vehicle card in your graveyard) that the situation doesn't name"
+    ],
+    "cite": [
+      "508.4"
+    ]
+  },
+  {
+    "id": "t2-15",
+    "text": "I Sneak Attack in Emrakul, the Aeons Torn and attack. Does it have annihilator?",
+    "expect": [
+      "controls none, so nothing is sacrificed"
+    ],
+    "notExpect": [
+      "controls only 0"
+    ],
+    "cite": [
+      "702.86a"
+    ]
+  },
+  {
+    "id": "t2-16",
+    "text": "I control Thalia, Guardian of Thraben. My opponent casts Force of Will by pitching. How much does it cost?",
+    "expect": [
+      "opponent pays 1 life and exiles a blue card"
+    ],
+    "notExpect": [
+      "the answer assumes its mana cost was paid"
+    ],
+    "cite": [
+      "118.9d"
+    ]
+  },
+  {
+    "id": "t2-17",
+    "text": "The Ur-Sphinx is in my command zone. How much does Sphinx of the Final Word cost?",
+    "expect": [
+      "A generic reduction comes off the generic part of the cost only"
+    ],
+    "notExpect": [
+      "The extra is generic, so it can be paid with any colour"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-18",
+    "text": "I control Guide of Souls and I create a token. What happens?",
+    "expect": [
+      "You get a token."
+    ],
+    "notExpect": [
+      "1 a token"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-19",
+    "text": "My opponent controls Stranglehold. I have Time Vault and Voltaic Key. Do I get infinite turns?",
+    "expect": [
+      "you never reach the untap step"
+    ],
+    "notExpect": [
+      "you never reaches"
+    ],
+    "cite": [
+      "614.10"
+    ]
+  },
+  {
+    "id": "t2-20",
+    "text": "I control Grinding Station, Underworld Breach and Mox Amber. My graveyard has 9 other cards and my library has 12 cards. How many cards can I mill myself?",
+    "expect": [
+      "Milling yourself puts 3 back"
+    ],
+    "notExpect": [
+      "youself"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-21",
+    "text": "I cast Murktide Regent exiling two instants from my graveyard. My opponent controls Dress Down. How big is Murktide?",
+    "expect": [
+      "enters with no +1/+1 counters"
+    ],
+    "notExpect": [
+      "Murktide Regent's static abilities apply",
+      "Murktide Regent's static ability starts applying"
+    ],
+    "cite": [
+      "614.12"
+    ]
+  },
+  {
+    "id": "t2-22",
+    "text": "I cast Ephemerate on my Solitude while my opponent's Ragavan is targeted. What happens then?",
+    "expect": [
+      "Ragavan, Nimble Pilferer is exiled"
+    ],
+    "notExpect": [
+      "and gone to the graveyard"
+    ],
+    "cite": [
+      "702.88a"
+    ]
+  },
+  {
+    "id": "t2-23",
+    "text": "I control Oath of Druids and Llanowar Elves, and my opponent has no creatures. What happens during my upkeep?",
+    "expect": [
+      "has no legal target: it's removed from the stack as it would be put on it"
+    ],
+    "notExpect": [
+      "Oath of Druids's triggered ability (top of the stack) starts to resolve"
+    ],
+    "cite": [
+      "603.3d"
+    ]
+  },
+  {
+    "id": "t2-24",
+    "text": "I control Sigarda's Aid and no creatures. I cast Colossus Hammer. What happens?",
+    "expect": [
+      "Sigarda's Aid's trigger is removed without resolving (603.3d)"
+    ],
+    "notExpect": [
+      "You choose to attach it to target creature you control",
+      "has no creature to attach Colossus Hammer to, so nothing happens"
+    ],
+    "cite": [
+      "603.3d"
+    ]
+  },
+  {
+    "id": "t2-25",
+    "text": "With Thassa's Oracle on the stack I cast Demonic Consultation naming a card not in my library. In which order should I cast them?",
+    "expect": [
+      "Either order works by the rules"
+    ],
+    "notExpect": [
+      "With casts",
+      "With's library"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-26",
+    "text": "At a draft, a player accidentally takes two cards from the pack. What's the infraction?",
+    "expect": [
+      "The IPG sets no fix of its own for it; the usual one is"
+    ],
+    "notExpect": [
+      "two cards from the pack. The judge works out"
+    ],
+    "cite": [
+      "IPG 3.6"
+    ]
+  },
+  {
+    "id": "t2-27",
+    "text": "so basically I cast Thassa's Oracle and my devotion to blue is two and with the trigger on the stack I cast Tainted Pact and exile my entire library taking nothing, so do I win",
+    "expect": [
+      "provided no two cards exiled share a name"
+    ],
+    "notExpect": [
+      "so the process runs until the library is empty."
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-28",
+    "text": "My opponent controls Grizzly Bears. I cast Galvanic Discharge targeting Grizzly Bears. How much damage is dealt?",
+    "expect": [
+      "Galvanic Discharge deals 3 damage to Grizzly Bears"
+    ],
+    "notExpect": [
+      "names a target the engine can't model"
+    ],
+    "cite": []
+  },
+  {
+    "id": "t2-29",
+    "text": "I control Lotus Field, an Island and Hidden Strings. I cast Hidden Strings untapping Lotus Field twice. How much mana do I net?",
+    "expect": [
+      "Lotus Field is untapped: it was tapped for mana"
+    ],
+    "notExpect": [
+      "Lotus Field stays untapped"
+    ],
+    "cite": [
+      "701.26b"
+    ]
+  },
+  {
+    "id": "t2-30",
+    "text": "I cast Counterspell on my opponent's Lightning Bolt targeting my Grizzly Bears. What happens?",
+    "expect": [
+      "Lightning Bolt is countered."
+    ],
+    "notExpect": [
+      "You cast Grizzly Bears",
+      "Grizzly Bears enters the battlefield."
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "t2-31",
+    "text": "My opponent controls Sheoldred, the Apocalypse. I draw two cards in my draw step from a Howling Mine. What happens?",
+    "expect": [
+      "Opponent puts Sheoldred, the Apocalypse's triggered ability on the stack, above Howling Mine's triggered ability"
+    ],
+    "notExpect": [
+      "You put Howling Mine's triggered ability on the stack, above Sheoldred"
+    ],
+    "cite": [
+      "603.3b"
+    ]
+  },
+  {
+    "id": "t2-32",
+    "text": "I control Ocelot Pride. I gained life this turn. What happens at my end step?",
+    "expect": [
+      "triggers on the beginning of your end step"
+    ],
+    "notExpect": [
+      "triggers on the beginning of your end."
+    ],
+    "cite": [
+      "603.2b"
     ]
   }
 ]

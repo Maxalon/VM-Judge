@@ -253,7 +253,7 @@ class Engine(val state: GameState) {
         } else targets
         // The spell's own text names a target the engine couldn't model ("target creature loses all abilities …"): the target is kept, not queried.
         val unmodeledTarget = needed.isEmpty() && targets.isNotEmpty() && effect != null && effect.hasUnparsed() && !targetsAPlayer(effect) && Regex("""(?i)\btarget\b""").containsMatchIn(card.oracleText ?: "")
-        if (unmodeledTarget && !ModernMech.handles(unparsedText(effect!!))) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
+        if (unmodeledTarget && !ModernMech.handles(unparsedText(effect!!)) && !Leftovers2Mech.handles(unparsedText(effect)) && !CoverageMech.handles(unparsedText(effect)) && !RedteamMech.handles(unparsedText(effect)) && !LeftoversMech.handles(unparsedText(effect))) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
         // "I Stifle the mana ability": an activated mana ability never goes on the stack, so there is nothing to
         // target. Before this the answer was a clarification asking which ability was meant.
         if (needed.any { Regex("""(?i)\bability\b""").containsMatchIn(it.raw) } && targets.isEmpty() &&
@@ -516,7 +516,7 @@ class Engine(val state: GameState) {
             val what = Regex("""you may (.+?) rather than pay""", RegexOption.IGNORE_CASE).find(altText)?.groupValues?.get(1) ?: altText
             if (alternative) {
                 obj.castForAlternativeCost = what
-                trace.step("${card.name} is cast for its alternative cost instead of its mana cost: ${player.subject.lowercase()} ${what.replace("your hand", "${player.possessive} hand")}. An alternative cost replaces the mana cost; additional costs and cost increases still apply.", "118.9", "601.2b", "601.2f")
+                trace.step("${card.name} is cast for its alternative cost instead of its mana cost: ${player.subject.lowercase()} ${voicedCost(what, player)}. An alternative cost replaces the mana cost; additional costs and cost increases still apply.", "118.9", "601.2b", "601.2f")
                 Regex("""pay (\d+) life""", RegexOption.IGNORE_CASE).find(what)?.groupValues?.get(1)?.toInt()?.let { n -> if (!lifeCostPaid) { player.life = player.life?.minus(n); state.outcomes += "${player.subject} ${player.v("pays", "pay")} $n life${player.life?.let { l -> " ($l)" } ?: ""}." } }
                 Regex("""exile (an? \w+ card) from your hand""", RegexOption.IGNORE_CASE).find(what)?.groupValues?.get(1)?.let { c -> state.outcomes += "${player.subject} ${player.v("exiles", "exile")} $c from ${player.possessive} hand (${card.name}'s alternative cost)." }
                 PauperMech.altCostSacrifice(this, player, card, what)   // Fireblast: "sacrifice two Mountains" (PauperMechanics.kt)
@@ -526,8 +526,23 @@ class Engine(val state: GameState) {
         }
         if (card.isAura) trace.step("${card.name} is an Aura spell, so it targets what it will enchant.", "303.4a", "702.5a")
         checkTargetsAtCast(item)
+        // "They Essence Scatter my instant": its only target was never legal, so it can't be cast that way at all; the cast is
+        // reversed (734.1) and the card stays in hand, rather than being cast and then fizzling.
+        if (item.illegalAtCast) {
+            trace.step("${card.name} can't be cast targeting ${item.targets.joinToString(" and ") { state.nameOf(it) }}: a spell needs a legal target for each target it names as it's cast, so that cast is illegal and is reversed, and ${card.name} stays in ${state.player(item.controller).possessive} hand. It never resolves, so it doesn't \"fizzle\" either.", "601.2c", "734.1")
+            state.stack.remove(item); item.source.zone = Zone.HAND
+            state.outcomes += "So ${card.name} isn't cast at all: the illegal cast is reversed and ${card.name} stays in ${state.player(item.controller).possessive} hand (601.2c, 734.1); it never resolves or fizzles."
+            return null
+        }
         afterCast(item, card)
         return item
+    }
+
+    /** "pay 1 life and exile a blue card from your hand" in the caster's voice: "opponent pays 1 life and exiles a blue card from their hand". */
+    private fun voicedCost(what: String, p: Player): String {
+        var t = what.replace("your hand", "${p.possessive} hand").replace("you control", if (p.you) "you control" else "they control")
+        if (!p.you) t = Regex("""(^|\band )(pay|exile|return|sacrifice|discard|tap|remove|reveal|put)\b""").replace(t) { m -> m.groupValues[1] + m.groupValues[2] + "s" }
+        return t
     }
 
     private fun afterCast(item: StackItem, card: CardDef) {
@@ -765,10 +780,12 @@ class Engine(val state: GameState) {
      * trigger is held (PauperMech.holdsTriggers); the rest keep their usual place in the trace.
      */
     private inline fun heldUntilResolved(item: StackItem, block: () -> Unit) {
-        if (!PauperMech.holdsTriggers(item)) return block()
+        // Every ability that triggers while a spell or ability resolves waits until it has finished (603.3, 608.2n); the
+        // note is said where it matters most (a blink returning a creature whose own trigger then needs a target).
         val hold = mutableListOf<Pair<String, () -> Unit>>()
         val outer = triggerHold; triggerHold = hold
-        try { block() } finally { triggerHold = outer; if (hold.isNotEmpty()) trace.step("The abilities that triggered while ${item.source.name} was resolving are put on the stack now, after it has finished resolving and gone to the graveyard: a triggered ability waits until a player would receive priority, and its targets are chosen then.", "603.3", "608.2n"); flushTriggers(hold) }
+        if (!PauperMech.holdsTriggers(item)) { try { block() } finally { triggerHold = outer; flushTriggers(hold) }; return }
+        try { block() } finally { triggerHold = outer; if (hold.isNotEmpty()) trace.step("The abilities that triggered while ${item.source.name} was resolving are put on the stack now, after it has finished resolving: a triggered ability waits until a player would receive priority, and its targets are chosen then.", "603.3", "608.2n"); flushTriggers(hold) }
     }
 
     private fun <T> heldTriggers(block: () -> T): T {
@@ -1106,7 +1123,10 @@ class Engine(val state: GameState) {
             trace.step("${obj.name}'s ability can't target ${state.nameOf(ref)}: $why.", rule, "602.2b", "601.2c"); state.outcomes += "${obj.name}'s ability can't target ${state.nameOf(ref)}."; return null
         }
         if (CoverageMech.sorcerySpeedRefused(state, obj, playerId, ability.restriction)) return null   // equip on the opponent's turn (307.5)
-        ability.restriction?.let { trace.step("${obj.name}'s ability says \"$it\"; assuming that timing is satisfied.", "602.5", "602.2") }
+        // The card says it only when it's printed; loyalty and keyword timing (equip, unearth, level up) come from the rules (606.3, 702.6a).
+        ability.restriction?.let { r -> trace.step(if (obj.def.oracleText.contains(r, ignoreCase = true)) "${obj.name}'s ability says \"$r\"; assuming that timing is satisfied."
+            else if (r.endsWith("(loyalty ability)")) "${obj.name}'s ability is a loyalty ability, so the rules let it be activated only as a sorcery and only once each turn for that permanent; assuming that timing is satisfied."
+            else "${obj.name}'s ${ability.text.substringBefore('{').substringBefore(" (").substringBefore('—').trim().lowercase().ifEmpty { "this" }} ability can be activated only as a sorcery, by the rules for that keyword; assuming that timing is satisfied.", "602.5", "602.2") }
         val item = StackItem(state.newStackId(), StackKind.ACTIVATED, playerId, obj, ability.effect, targets, zonesOf(targets), ability.text, choice = choice, x = x, targetsUnknown = abilityTargetsUnknown)
         if (x != null) trace.step("X is $x, chosen as the ability is activated; its cost includes X.", "107.3a", "602.2b")
         state.stack += item
@@ -1331,7 +1351,7 @@ class Engine(val state: GameState) {
             onEvent(GameEvent.EntersBattlefield(t))
         } }
         if (n > 1) heldTriggers(make) else make()   // tokens made together enter together: one event (603.2c)
-        state.outcomes += "${who.subject} ${who.v("gets", "get")} $n ${def.name}${if (n == 1) "" else "s"}${if (n != count) " ($count made, doubled)" else ""}."
+        state.outcomes += "${who.subject} ${who.v("gets", "get")} ${if (n == 1 && Regex("^an? ").containsMatchIn(def.name)) def.name else "$n ${def.name.removePrefix("a ").removePrefix("an ")}${if (n == 1) "" else "s"}"}${if (n != count) " ($count made, doubled)" else ""}."
     }
 
     /** Which permanent (Stony Silence, Null Rod, Cursed Totem, Pithing Needle) stops [obj]'s activated abilities, or null. */
@@ -1632,6 +1652,10 @@ class Engine(val state: GameState) {
         if ((step == "upkeep" || step == "draw") && Turns.skipsStep(this, step, activePlayer)) return
         state.activePlayer = activePlayer
         state.step = step
+        state.phase = when (step) { "untap", "upkeep", "draw" -> "beginning"; "precombat_main" -> "precombat_main"; "postcombat_main" -> "postcombat_main"; "end", "cleanup" -> "ending"; else -> "combat" }
+        // "end" and "upkeep" are steps; "main" is a phase. Say which, so the line reads as Magic does.
+        val stepName = step.replace('_', ' ').let { n -> if (n.endsWith(" step") || n.endsWith(" phase") || n == "combat") n else if (n == "main" || n.endsWith(" main")) "$n phase" else "$n step" }
+        trace.step("${state.player(activePlayer).possessive.replaceFirstChar { it.uppercase() }} $stepName begins.", when (step) { "upkeep" -> "503.1"; "end" -> "513.1"; "draw" -> "504.1"; else -> "500.1" })
         // 715.3c: only a Saga with one or more chapter abilities gets the lore counter; under Blood Moon Urza's Saga has none.
         if (step == "precombat_main") for (saga in state.objects.values.filter { it.isOnBattlefield() && it.controller == activePlayer && "Saga" in it.def.subtypes && it.def.abilities.any { a -> a is TriggeredAbility && a.trigger is Trigger.Chapter } && underMoon(it) }) {
             trace.step("${saga.name} is a Mountain with no abilities under ${state.moonOn(saga)!!.name}, so it has no chapter abilities and gets no lore counter as the precombat main phase begins: that turn-based action applies only to Sagas with one or more chapter abilities.", "715.3c", "305.7")
@@ -1643,14 +1667,12 @@ class Engine(val state: GameState) {
             state.outcomes += "${saga.name} gets a lore counter ($n)."
             onEvent(GameEvent.LoreCounter(saga, n))
         }
-        state.phase = when (step) { "untap", "upkeep", "draw" -> "beginning"; "precombat_main" -> "precombat_main"; "postcombat_main" -> "postcombat_main"; "end", "cleanup" -> "ending"; else -> "combat" }
-        // "end" and "upkeep" are steps; "main" is a phase. Say which, so the line reads as Magic does.
-        val stepName = step.replace('_', ' ').let { n -> if (n.endsWith(" step") || n.endsWith(" phase") || n == "combat") n else if (n == "main" || n.endsWith(" main")) "$n phase" else "$n step" }
-        trace.step("${state.player(activePlayer).possessive.replaceFirstChar { it.uppercase() }} $stepName begins.", when (step) { "upkeep" -> "503.1"; "end" -> "513.1"; "draw" -> "504.1"; else -> "500.1" })
         // 504.1: the active player draws a card as a turn-based action. Triggers on the step happen after it.
         if (step == "draw") {
             trace.step("${state.player(activePlayer).subject} ${state.player(activePlayer).v("draws", "draw")} a card for the turn. It is a turn-based action, so it happens before anyone gets priority and before any \"at the beginning of the draw step\" trigger resolves.", "504.1", "117.3a")
-            draw(activePlayer, 1)
+            // The draw (Sheoldred) and "at the beginning of the draw step" (Howling Mine) both trigger before anyone gets priority,
+            // so they're put on the stack together in APNAP order (603.3b), the active player's first.
+            heldTriggers { draw(activePlayer, 1); onEvent(GameEvent.StepBegins(step, activePlayer)) }
             state.assumptions += "This isn't the first turn of the game, so the active player draws for the turn (the starting player skips that draw, 103.7a)."
         }
         if (step == "end" && state.objects.values.any { it.isOnBattlefield() && (it.pumps.isNotEmpty() || it.tempKeywords.isNotEmpty()) }) {
@@ -1672,7 +1694,7 @@ class Engine(val state: GameState) {
                 state.outcomes += "${p.subject} ${p.v("discards", "discard")} $n card${if (n == 1) "" else "s"} to hand size in the cleanup step that follows, not during the end step."
             }
         } }
-        onEvent(GameEvent.StepBegins(step, activePlayer))
+        if (step != "draw") onEvent(GameEvent.StepBegins(step, activePlayer))
         if (step == "upkeep") keywordUpkeep(activePlayer)   // rebound's delayed trigger, suspend's time counters
         if (step == "upkeep") winLossUpkeep(activePlayer)   // Pact of Negation's delayed trigger
         if (step == "end") keywordEndStep(activePlayer)   // unearth's delayed exile
@@ -1800,7 +1822,8 @@ class Engine(val state: GameState) {
                     // "Enters tapped", "enters with counters" and "enters as a copy" have already happened; they aren't
                     // abilities that go on applying, so they don't get this line.
                     val entersOnly = setOf(StaticEffect.EntersTapped::class, StaticEffect.EntersWithCounters::class, StaticEffect.EntersAsCopy::class)
-                    if (now.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it::class !in entersOnly }) trace.step("${now.name}'s static ability starts applying to the permanents it describes.", "604.2", "613.1")
+                    // Under Dress Down it has no abilities to apply; an evasion ability or an unattached Equipment's bonus describes no other permanent.
+                    if (state.abilitiesLostOn(item.source) == null && now.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it::class !in entersOnly }) trace.step("${now.name}'s static abilities apply from now on, for as long as it's on the battlefield.", "604.2", "613.1")
                     now.abilities.filterIsInstance<UnparsedAbility>().filterNot { ModernMech.handlesAbility(it.text) || PauperMech.handlesAbility(it.text) }.takeIf { it.isNotEmpty() }?.let { un -> if (state.unsupported.none { it.what == now.name }) state.unsupported += Unsupported(now.name, "Rules text not modeled: " + un.joinToString(" | ") { it.text }) }
                     state.outcomes += "${if (now !== def) "${def.name}, a copy of ${now.name}," else now.name} enters the battlefield."
                     narrateLandTypeSetters(item.source)
@@ -1816,9 +1839,11 @@ class Engine(val state: GameState) {
                     trace.step("${item.source.name} has left the battlefield, but its triggered ability is already on the stack and resolves anyway: an ability on the stack exists independently of its source, using the source's last known information where it needs it.${if (transforms) " The part that would transform ${item.source.name} does nothing: there's no permanent to transform." else ""}", "113.7a", "608.2h")
                     state.outcomes += "${item.source.name}'s trigger still resolves even though ${item.source.name} is gone (113.7a)${if (transforms) ", but with nothing left to transform" else ""}."
                 }
-                item.effect?.let { applyEffect(it, item) }
-                if (state.turns.endedBy == item.id) return   // Sundial of the Infinite: the ability ended the turn (725.1b)
-                trace.step("${item.describe} finishes resolving and ceases to exist.", "608.2c", "608.2n")
+                heldUntilResolved(item) {
+                    item.effect?.let { applyEffect(it, item) }
+                    if (state.turns.endedBy == item.id) return   // Sundial of the Infinite: the ability ended the turn (725.1b)
+                    trace.step("${item.describe} finishes resolving and ceases to exist.", "608.2c", "608.2n")
+                }
             }
         }
         afterResolution()
@@ -2043,6 +2068,8 @@ class Engine(val state: GameState) {
         emptyStackFirst("declaring attackers")
         val a = state.obj(attackerId)
         val p = state.player(playerId)
+        // The step before this declaration: if combat already began ("I move to combat … I attack"), its beginning-of-combat triggers have happened.
+        val stepBefore = state.step
         state.phase = "combat"; state.step = "declare_attackers"
         // Redteam2: an uncrewed Vehicle ("I return Parhelion II with Greasefang. Can it attack?"): it can, once crewed.
         val crew = if (a.isOnBattlefield() && "Vehicle" in a.def.typeLine) Regex("""(?i)\bcrew (\d+)""").find(a.def.oracleText)?.groupValues?.get(1) else null
@@ -2116,7 +2143,7 @@ class Engine(val state: GameState) {
         }
         // "At the beginning of combat on your turn, …": the first attack of a turn begins combat, and those abilities trigger and
         // resolve before attackers are declared (506.1, 508.1).
-        if (firstAttacker && state.step != "combat" && state.objects.values.any { o -> o.isOnBattlefield() && o.abilities.any { it is TriggeredAbility && (it.trigger as? Trigger.BeginningOfStep)?.step == "combat" } }) {
+        if (firstAttacker && stepBefore != "combat" && state.objects.values.any { o -> o.isOnBattlefield() && o.abilities.any { it is TriggeredAbility && (it.trigger as? Trigger.BeginningOfStep)?.step == "combat" } }) {
             state.step = "combat"
             trace.step("Combat begins. Abilities that trigger \"at the beginning of combat\" trigger now, in the beginning of combat step, and resolve before attackers are declared.", "506.1", "508.1")
             state.combatAttackerHint = a.id
@@ -2208,7 +2235,10 @@ class Engine(val state: GameState) {
         val firstBlocker = blockersOf(a).isEmpty()
         if (b.blocking != null && b.blocking != a.id) b.alsoBlocking += a.id else b.blocking = a.id
         a.wasBlocked = true
-        trace.step("${p.subject} ${p.v("blocks", "block")} ${a.name} with ${b.name} (${state.describePt(b)}). ${a.name} is now a blocked creature and stays blocked even if ${b.name} leaves combat.", "509.1a", "509.1g", "509.1h")
+        // Menace with one blocker so far: the block stands only if a second creature joins it, so don't call it blocked yet (702.111b).
+        val menaceAlone = (a.has("menace") || (MoreEffects4.minBlockersOf(a) ?: 0) > 1) && blockersOf(a).size == 1
+        trace.step("${p.subject} ${p.v("blocks", "block")} ${a.name} with ${b.name} (${state.describePt(b)}). " + (if (menaceAlone) "${a.name} can't be blocked except by ${(MoreEffects4.minBlockersOf(a) ?: 2).let { if (it <= 2) "two" else "$it" }} or more creatures, so this block is legal only if enough other creatures block it too."
+            else "${a.name} is now a blocked creature and stays blocked even if ${b.name} leaves combat."), "509.1a", "509.1g", "509.1h")
         val evs = listOfNotNull(if (firstBlocker) GameEvent.BecomesBlocked(a) else null, GameEvent.BecomesBlockedBy(a, b), GameEvent.Blocks(b, a))
         // Blockers are declared all at once (509.1): with several declared together, their triggers wait until every blocker is in (509.2a).
         if (declaringBlockers) pendingBlockEvents += evs else evs.forEach { onEvent(it) }
@@ -2529,11 +2559,13 @@ class Engine(val state: GameState) {
                 is GameEvent.Exploited -> "${event.obj.name} exploiting a creature"
                 is GameEvent.BecomesSaddled -> "${event.obj.name} becoming saddled"
                 is GameEvent.CountersPut -> "${event.count} ${event.kind} counter${if (event.count == 1) "" else "s"} being put on ${event.obj.name}"
-                is GameEvent.CountersGone -> "the last ${event.kind} counter leaving ${event.obj.name}"
+                // A state trigger ("when ~ has no ice counters on it") also fires for one that never had any (Solemnity, a Thespian's Stage copy).
+                is GameEvent.CountersGone -> "${event.obj.name} having no ${event.kind} counters on it"
                 is GameEvent.LoreCounter -> "lore counter ${event.count} being put on ${event.obj.name}"
                 is GameEvent.PlayerAttacks -> "${state.player(event.playerId).subject.lowercase()} attacking"
                 is GameEvent.AttacksAlone -> "${event.obj.name} attacking alone"
-                is GameEvent.StepBegins -> "the beginning of ${state.player(event.activePlayer).possessive} ${event.step.replace('_', ' ')}"
+                // "your end step", "your precombat main phase", "your combat" (that one is a phase's own name).
+                is GameEvent.StepBegins -> "the beginning of ${state.player(event.activePlayer).possessive} ${event.step.replace('_', ' ').let { n -> if (n.endsWith(" step") || n.endsWith(" phase") || n == "combat") n else if (n.endsWith("main")) "$n phase" else "$n step" }}"
                 is GameEvent.DamageDealt -> "${event.source.name} dealing ${event.amount} damage to ${state.nameOf(event.target)}"
                 is GameEvent.LifeGained -> "${state.player(event.playerId).subject.lowercase()} gaining life"
                 is GameEvent.LifeLost -> "${state.player(event.playerId).subject.lowercase()} losing life"
@@ -2818,6 +2850,8 @@ class Engine(val state: GameState) {
             return null
         }
         val needed = ability.effect.targets()
+        if (LeftoversMech.oathHasNoTarget(this, obj, ability.text, causedBy)) return null   // Oath of Druids with no opponent ahead (603.3d)
+        if (RedteamMech.attachHasNoTarget(state, obj, ability.text, causedObject)) return null   // Sigarda's Aid with no creature (603.3d)
         var targets = targets
         if (targets.isEmpty() && needed.isNotEmpty() && ability.trigger == Trigger.ThisEnters && obj.etbTargets != null) { targets = obj.etbTargets!!; obj.etbTargets = null; trace.step("${obj.name}'s trigger targets ${targets.joinToString(" and ") { state.nameOf(it) }}, as named when it was cast.", "603.3d") }
         // A loop described once and repeated: the trigger aims where the description said, each time round.
@@ -2881,7 +2915,7 @@ class Engine(val state: GameState) {
                     return null
                 }
             }
-            if (inferred == null && targets.isEmpty() && spec.filter.inGraveyard && obj.enteredFrom != Zone.GRAVEYARD && ability.trigger == Trigger.ThisEnters && state.objects.values.none { it.zone == Zone.GRAVEYARD && it.controller == obj.controller }) {
+            if (inferred == null && targets.isEmpty() && spec.filter.inGraveyard && obj.enteredFrom != Zone.GRAVEYARD && ability.trigger == Trigger.ThisEnters && state.objects.values.none { it.zone == Zone.GRAVEYARD && it.controller == obj.controller && filterMatches(spec.filter, Ref.Obj(it.id), obj.controller, obj) }) {
                 trace.step("${obj.name}'s triggered ability needs a target (${spec.raw}), and nothing was described in ${state.player(obj.controller).possessive} graveyard; with no legal target the ability is removed from the stack and does nothing.", "603.3d")
                 state.outcomes += "${obj.name}'s trigger has nothing described to target (${spec.raw}): with no such card in ${state.player(obj.controller).possessive} graveyard it does nothing (603.3d). Name one there if there is."
                 return null
@@ -3560,6 +3594,12 @@ class Engine(val state: GameState) {
                     val t = state.add(GameObject(freshObjectId(def.name), def, Zone.BATTLEFIELD, who.id, token = true)); t.timestamp = state.tick(); t.summoningSick = state.isCreature(t)
                     trace.step("${who.subject} ${who.v("creates", "create")} ${withArticle(def.name)}${if (state.isCreature(t)) " (${state.describePt(t)})" else ""}; it enters the battlefield under ${who.possessive} control.", "701.7a", "111.1")
                     CedhMech.tokenEntersTapped(this, t)   // Blind Obedience taps tokens too (CedhMechanics.kt)
+                    // Parhelion II: "create two 4/4 Angel tokens … that are attacking": they attack whom its source attacks, never declared (508.4).
+                    val atk = Regex("""(?i)\b(tapped and )?(?:that are |)attacking\b""").find(effect.token)
+                    if (atk != null && item.source.attacking != null && state.isCreature(t)) {
+                        t.attacking = item.source.attacking; t.kwf.putAttacking = true; if (atk.groupValues[1].isNotEmpty()) t.tapped = true
+                        trace.step("${t.name} enters ${if (t.tapped == true) "tapped and " else ""}attacking ${state.nameOf(t.attacking!!)}. It was never declared as an attacker, so \"whenever ~ attacks\" abilities don't trigger for it.", "508.4")
+                    }
                     state.outcomes += "${who.subject} ${who.v("gets", "get")} ${withArticle(def.name)}."
                     onEvent(GameEvent.EntersBattlefield(t))
                 } }
@@ -4034,6 +4074,13 @@ class Engine(val state: GameState) {
                     trace.step("\"$text\" is a reflexive triggered ability: it triggers now, because ${you.subject.lowercase()} did, and is put on the stack as an object of its own, with its targets chosen then. It isn't part of ${item.describe}'s resolution, so players get priority and can respond to it before it resolves.", "603.12", "603.3", "603.3d")
                     putTriggerOnStack(item.source, TriggeredAbility(Trigger.Reflexive, effect.then, text), emptyList())
                     return
+                }
+                if (effect.mandatory) {
+                    // Dark Depths: the sacrifice isn't optional; "if you do" matters only if it can't be done (its source already gone).
+                    val gone = effect.choice is Effect.SacrificeSource && !item.source.isOnBattlefield()
+                    trace.step("${you.subject} ${you.v("must", "must")} ${describe(effect.choice, item)}; it isn't a choice. " + (if (gone) "${item.source.name} has already left the battlefield, so it can't be sacrificed, and the rest (${describe(effect.then, item)}) doesn't happen." else "${you.subject} ${you.v("does", "do")}, so: ${describe(effect.then, item)}."), "608.2c", "701.21a")
+                    if (gone) return
+                    applyEffect(effect.choice, item); applyEffect(effect.then, item); return
                 }
                 trace.step("${you.subject} may ${describe(effect.choice, item)}. If ${you.v("they do", "you do")}: ${describe(effect.then, item)}.", "608.2d")
                 state.assumptions += "${you.subject} ${you.v("chooses", "choose")} to ${describe(effect.choice, item)} for ${item.describe}."
@@ -4532,6 +4579,9 @@ class Engine(val state: GameState) {
                 val mine = o.controller == item.controller
                 if (mine && o.tapped == true) { o.tapped = false; trace.step("${o.name} is untapped (${item.describe} lets its controller tap or untap it; for their own tapped permanent, untapping is the choice).", "701.26b", "608.2d"); state.outcomes += "${o.name} is untapped." }
                 else if (!mine && o.tapped != true) { o.tapped = true; trace.step("${o.name} becomes tapped (${item.describe} lets its controller tap or untap it; for an opponent's untapped permanent, tapping is the choice).", "701.26a", "608.2d"); state.outcomes += "${o.name} is tapped."; onEvent(GameEvent.BecomesTapped(o)) }
+                // "I cast Hidden Strings untapping Lotus Field": their own land, untapped in the description only because the mana it made
+                // isn't tracked; it was tapped to pay for the spell, and untapping it is the point.
+                else if (mine && state.typesOf(o).contains("Land")) trace.step("${o.name} is untapped: it was tapped for mana (the mana that paid for ${item.describe} isn't tracked here), and untapping ${state.player(o.controller).possessive} own land lets it be tapped for mana again.", "701.26b", "608.2d")
                 else trace.step("${o.name} stays ${if (o.tapped == true) "tapped" else "untapped"}: ${item.describe} lets its controller tap or untap it, and neither helps them here.", "608.2d")
             } }
             is Effect.SacrificeEnchanted -> {
@@ -5613,7 +5663,7 @@ class Engine(val state: GameState) {
         val parts = taxes.map { (o, t) -> "${o.name} makes it cost {${kotlin.math.abs(t.amount)}} ${if (t.amount < 0) "less" else "more"}" } +
             (if (self.first > 0) listOf("its own text makes it cost {${self.first}} less (${self.second})") else emptyList()) +
             (if (commanderTax > 0) listOf("the commander tax adds {$commanderTax}") else emptyList())
-        trace.step("${parts.joinToString(" and ")}. ${card.name}'s total cost is $printed ${if (tax < 0) "less" else "plus"} {${kotlin.math.abs(tax)}}: $total mana in all. The extra is generic, so it can be paid with any colour.", "601.2f", "118.7")
+        trace.step("${parts.joinToString(" and ")}. ${card.name}'s total cost is $printed ${if (tax < 0) "less" else "plus"} {${kotlin.math.abs(tax)}}: $total mana in all. ${if (tax < 0) "A generic reduction comes off the generic part of the cost only; the coloured symbols still have to be paid." else "The extra is generic, so it can be paid with any colour."}", "601.2f", "118.7")
         // The cast may have made its own object for the card; the amount recorded as it was cast is on that one.
         val atCast = obj.manaAvailableAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.manaAvailableAtCast }.lastOrNull()
         val avail = atCast ?: availableMana(p)
@@ -5978,6 +6028,7 @@ class Engine(val state: GameState) {
                 val what = if (Regex("""^(?:an?|the|target) """).containsMatchIn(spec.raw)) spec.raw else (if (spec.raw.first().lowercaseChar() in "aeiou") "an " else "a ") + spec.raw
                 trace.step("${state.nameOf(ref)} isn't $what, so it isn't a legal target for ${item.describe} (601.2c).", "601.2c", "115.1")
                 state.outcomes += "${item.describe} can't target ${state.nameOf(ref)} (it isn't $what)."
+                if (item.kind == StackKind.SPELL && item.targets.size == 1) item.illegalAtCast = true
             }
             // "They Disenchant my Recurring Nightmare in response": it went back to its owner's hand as a cost, and only permanents can be targeted (115.2).
             else if (ref is Ref.Obj && state.objects[ref.id]?.zone == Zone.HAND && !spec.filter.inGraveyard && Kind.CARD !in spec.filter.kinds) {

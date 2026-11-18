@@ -728,7 +728,9 @@ class SituationParser(private val names: NameIndex) {
         "both", "each", "everyone", "nobody", "no", "yes", "player", "someone", "another", "his", "her", "their", "its", "next", "later", "finally", "meanwhile", "who", "whose", "which", "how", "why", "there", "here", "this", "that", "these", "those",
         "one", "two", "three", "four", "first", "second", "third", "last", "turn", "upkeep", "combat", "stack", "response", "target", "counter", "damage", "life", "commander", "planeswalker", "creature", "spell", "ability", "trigger", "token", "land",
         "mine", "theirs", "yours", "ours", "attacker", "blocker", "neither", "either", "everything", "nothing", "something", "anything",
-        "let", "lets", "say", "suppose", "imagine", "assume", "tell", "explain", "question", "quick", "just", "ok", "okay", "alright", "hey", "well", "anyway")
+        "let", "lets", "say", "suppose", "imagine", "assume", "tell", "explain", "question", "quick", "just", "ok", "okay", "alright", "hey", "well", "anyway",
+        // "With Thassa's Oracle on the stack I cast …": a sentence-opening preposition, not a player called With.
+        "with", "without", "while", "from", "into", "onto", "by", "for", "since", "because", "until", "once", "and", "but", "or")
     /** Spells whose "take" is a discard: "I cast Thoughtseize and take their Counterspell". */
     private val discardSpells = setOf("thoughtseize", "duress", "inquisition of kozilek", "thought erasure", "cabal therapy", "unmask", "distress", "despise",
         "agonizing remorse", "appetite for brains", "hymn to tourach", "mind twist", "blackmail", "ostracize", "harsh scrutiny", "divest", "go blank", "wrench mind",
@@ -5542,6 +5544,10 @@ class SituationParser(private val names: NameIndex) {
                 val subj = r.groupValues[1].ifEmpty { "i" }
                 // Only a spell in the middle ("on a Mana Leak") reads this way; "Ephemerate on their Solitude targeting my Bears" is a permanent and a second target.
                 if (m.cards[r.groupValues[4]]?.isSpellOnly != true) r.value
+                // "… their Lightning Bolt targeting my Grizzly Bears": a creature card the Bolt can aim at is a permanent already on the
+                // battlefield, not a spell cast first (a Bolt can't target a creature spell).
+                else if (m.cards[r.groupValues[5]]?.isSpellOnly != true && m.cards[r.groupValues[5]]?.typeLine?.contains("Creature") == true)
+                    "${if (subj == "i") "i have" else "$subj have"} ${r.groupValues[5]}, they cast ${r.groupValues[4]} targeting ${r.groupValues[5]}, $subj ${r.groupValues[2]} ${r.groupValues[3]} targeting ${r.groupValues[4]}"
                 else "$subj cast ${r.groupValues[5]}, they cast ${r.groupValues[4]} targeting ${r.groupValues[5]}, $subj ${r.groupValues[2]} ${r.groupValues[3]} targeting ${r.groupValues[4]}"
             } }
             // "does Solitude's evoke trigger if it's countered?": the evoked creature is cast and countered, then asked about.
@@ -8940,7 +8946,7 @@ class SituationParser(private val names: NameIndex) {
         val comp = Regex("""\b(?:an? |the )?(rcq|regional championship(?: qualifier)?|ptq|pro tour qualifier|grand prix|gp|spotlight series|eternal weekend|comp rel|competitive rel|competitive (?:event|tournament)|competitive|tournament)\b""").find(s)
         val (rel, r) = when { prof != null -> "prof" to prof; reg != null -> "reg" to reg; comp != null -> "comp" to comp; else -> return }
         f["rel"] = rel
-        f["relsaid"] = r.value.trim().let { v -> if (Regex("""^(?:an?|the|my) """).containsMatchIn(v)) v else (if (rel == "reg" && v.startsWith("fnm")) "an $v" else v) }.replace("rcq", "RCQ").replace("fnm", "FNM").replace("ptq", "PTQ").replace("gp", "GP").replace(Regex("""\brel\b"""), "REL")
+        f["relsaid"] = r.value.trim().let { v -> if (Regex("""^(?:an?|the|my) """).containsMatchIn(v)) v else (if (rel == "reg" && (v.startsWith("fnm") || v == "lgs")) "an $v" else v) }.replace(Regex("""\blgs\b"""), "LGS event").replace("rcq", "RCQ").replace("fnm", "FNM").replace("ptq", "PTQ").replace("gp", "GP").replace(Regex("""\brel\b"""), "REL")
     }
 
     /** "we noticed after I drew", "two turns later", "it's now combat": when the problem came to light, and what had happened by then. */
@@ -17047,6 +17053,10 @@ class SituationParser(private val names: NameIndex) {
             if (name(r.groupValues[3]) != "Force of Will" && name(r.groupValues[3]) != "Force of Negation") return@let
             val s3 = r.groupValues[2].lowercase() in setOf("my opponent", "the opponent", "he", "she")
             return "${r.groupValues[1]}${r.groupValues[2]} cast${if (s3) "s" else ""} ${r.groupValues[3]} by pitching a blue card" }
+        // "My opponent casts Force of Will by pitching": pitching what goes unsaid; it's the same alternative cost.
+        Regex("""^(.*?\b(?:casts?|cast) (c\d+)) by (?:pitching|pitch|exiling)$""", io).find(q)?.let { r ->
+            if (name(r.groupValues[2]) != "Force of Will" && name(r.groupValues[2]) != "Force of Negation") return@let
+            return "${r.groupValues[1]} by pitching a blue card" }
         // "I control Ocelot Pride and have the city's blessing, and I gained 2 life this turn": the board, the life gain, the blessing.
         // (The sentence is split at its comma, so the blessing arrives on its own: "I control Ocelot Pride and have the city's blessing.")
         Regex("""^(i|we) control (c\d+) and have (?:the city's blessing|(?:the )?(c\d+))$""", io).find(q)?.let { r ->

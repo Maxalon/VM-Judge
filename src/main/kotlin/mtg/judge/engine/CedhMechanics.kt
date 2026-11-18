@@ -249,7 +249,7 @@ internal object CedhMech {
                 val lib = p.librarySize
                 tr.step("$src exiles the top card of ${p.possessive} library; ${p.subject.lowercase()} may put it into ${p.possessive} hand but ${p.v("doesn't", "don't")} have to, and ${p.subject.lowercase()} ${p.v("declines", "decline")} each time. With no two cards sharing a name the process repeats until there's nothing left to exile, and then it ends: an instruction that can't be carried out is simply skipped. ${p.subject} ${p.v("ends", "end")} with no cards in ${p.possessive} library${lib?.let { " (all $it exiled)" } ?: ""}.", "608.2c", "608.2d", "609.3")
                 p.librarySize = 0
-                state.outcomes += "${p.subject} ${p.v("exiles", "exile")} ${p.possessive} whole library with $src and ${p.v("takes", "take")} nothing: putting a card into ${p.possessive} hand is optional, so the process runs until the library is empty."
+                state.outcomes += "${p.subject} ${p.v("exiles", "exile")} ${p.possessive} whole library with $src and ${p.v("takes", "take")} nothing: putting a card into ${p.possessive} hand is optional, so the process runs until the library is empty, provided no two cards exiled share a name (two basic lands of the same name would stop it there)."
             }
             how?.startsWith("dup:") == true -> {
                 val n = how.removePrefix("dup:")

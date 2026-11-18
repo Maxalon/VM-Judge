@@ -20,6 +20,22 @@ internal object LeftoversMech {
     /** Unparsed text [resolve] plays out, so it isn't reported as not modeled. */
     fun handles(text: String): Boolean = text.split(" | ").all { t -> listOf(gainXRe, oathTargetRe, oathRevealRe, oathPutRe).any { it.matches(t.trim()) } }
 
+    /**
+     * "I control Oath of Druids and a creature; they control none": the trigger's "target player who controls more creatures"
+     * has no legal choice as it would be put on the stack, so it's removed then and never resolves (603.3d).
+     */
+    fun oathHasNoTarget(e: Engine, obj: GameObject, abilityText: String, causedBy: String?): Boolean {
+        if (!abilityText.contains("chooses target player who controls more creatures than they do", ignoreCase = true)) return false
+        val state = e.state
+        val who = state.player(causedBy ?: state.activePlayer ?: obj.controller)
+        fun creatures(id: String) = state.objects.values.count { it.isOnBattlefield() && it.controller == id && state.isCreature(it) }
+        val mine = creatures(who.id)
+        if (state.opponentsOf(who.id).any { creatures(it.id) > mine }) return false
+        state.trace.step("On ${who.possessive} upkeep, ${who.subject.lowercase()} ${who.v("controls", "control")} $mine creature${if (mine == 1) "" else "s"} and no opponent controls more, so ${obj.name}'s ability has no legal target: it's removed from the stack as it would be put on it, and nothing happens.", "603.3d", "115.1d")
+        state.outcomes += "${obj.name} does nothing on ${who.possessive} upkeep: no opponent controls more creatures than ${who.subject.lowercase()} ${who.v("does", "do")}."
+        return true
+    }
+
     private fun oath(e: Engine, t: String, item: StackItem): Boolean {
         val state = e.state; val tr = state.trace
         val who = state.player(item.causedBy ?: state.activePlayer ?: item.controller)

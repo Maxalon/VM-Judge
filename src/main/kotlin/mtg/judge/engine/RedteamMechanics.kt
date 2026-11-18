@@ -50,7 +50,23 @@ internal object RedteamMech {
     fun fewerUpTo(raws: List<String>, given: Int): Boolean = given in 1 until raws.size && raws.drop(given).all { it.startsWith("up to ") }
     fun upToMissing(state: GameState, spec: TargetSpec): Boolean {
         if (!spec.raw.startsWith("up to ")) return false
-        state.trace.step("No target was chosen for \"${spec.raw}\" (\"up to\" allows fewer), so that part does nothing.", "601.2c", "608.2c")
+        // "up to one other …" is the engine's name for the second slot of "up to two target …"; say it in the card's terms.
+        if (spec.raw.startsWith("up to one other ")) state.trace.step("Only one target was chosen; \"up to two\" allows fewer, so the spell or ability affects just that one.", "601.2c", "608.2c")
+        else state.trace.step("No target was chosen for \"${spec.raw}\" (\"up to\" allows fewer), so that part does nothing.", "601.2c", "608.2c")
+        return true
+    }
+
+    /**
+     * Sigarda's Aid with no creature: "attach it to target creature you control" has no legal target as the trigger would be put
+     * on the stack, so it's removed then (603.3d) rather than resolving and doing nothing.
+     */
+    fun attachHasNoTarget(state: GameState, obj: GameObject, abilityText: String, entered: String?): Boolean {
+        val part = abilityText.substringAfter(", ", "").trim()
+        if (!Regex("""(?i)\battach it to target creature you control\b""").containsMatchIn(part)) return false
+        if (state.objects.values.any { it.isOnBattlefield() && it.controller == obj.controller && state.isCreature(it) }) return false
+        val eq = entered?.let { state.objects[it] }?.name ?: "the Equipment"
+        state.trace.step("${obj.name}'s ability needs a target creature ${state.player(obj.controller).subject.lowercase()} ${state.player(obj.controller).v("controls", "control")}, and there is none, so it has no legal target: it's removed from the stack as it would be put on it, and nothing happens.", "603.3d")
+        state.outcomes += "$eq stays unattached: there is no creature to attach it to, so ${obj.name}'s trigger is removed without resolving (603.3d)."
         return true
     }
 

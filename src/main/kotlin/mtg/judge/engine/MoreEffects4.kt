@@ -299,6 +299,8 @@ internal object MoreEffects4 {
     fun staticGoaders(st: GameState, o: GameObject): List<String> = st.objects.values.filter { s -> s.isOnBattlefield() && s.attachedTo == o.id && st.abilitiesLostOn(s) == null && statics(s).any { it is AttachedGoaded } }.map { it.controller }
 
     /** Pathrazer of Ulamog blocked by fewer than three creatures: not a legal block, so it's unblocked (509.1b). Called with menace's check. */
+    /** "Can't be blocked except by N or more creatures" (Pathrazer, Troll of Khazad-dûm): N, or null. */
+    fun minBlockersOf(a: GameObject): Int? = statics(a).filterIsInstance<MinBlockers>().maxOfOrNull { it.n }
     fun minBlockers(e: Engine, attackers: List<GameObject>, blockersOf: (GameObject) -> List<GameObject>) {
         val st = e.state
         for (a in attackers) {

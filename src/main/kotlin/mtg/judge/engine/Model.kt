@@ -427,7 +427,9 @@ sealed interface Effect {
     /** "You may pay [cost]. If you do, [effect]." / "You may [do X]. If you do, [effect]." */
     data class IfYouDo(val choice: Effect, val then: Effect, val cost: String?,
         /** "You may pay {2}{R}. When you do, ..." (Sparktongue Dragon): [then] is a reflexive trigger of its own (603.12), worded [reflexiveText]. */
-        val reflexive: Boolean = false, val reflexiveText: String? = null) : Effect
+        val reflexive: Boolean = false, val reflexiveText: String? = null,
+        /** Dark Depths: "sacrifice it. If you do, …" — the first part isn't a choice; "if you do" only asks whether it could be done. */
+        val mandatory: Boolean = false) : Effect
     /** Rite of Replication: "If this spell was kicked, create five of those tokens instead" — one effect or the other (702.33). */
     data class IfKicked(val then: Effect, val otherwise: Effect) : Effect
     /** "If you control five or more Mountains, …" — the condition is checked as the effect happens. */

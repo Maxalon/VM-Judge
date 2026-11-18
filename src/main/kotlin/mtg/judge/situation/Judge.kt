@@ -894,6 +894,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "pass" -> engine.resolveTop()
             "enter" -> {
                 val objId = e.obj ?: throw JudgeException("enter needs an object")
+                // "I cast Sneak Attack and put Emrakul onto the battlefield": the creature comes in with the enchantment's ability, so
+                // the enchantment spell has resolved first (608.3); nothing enters while it's still on the stack.
+                if (state.stack.lastOrNull()?.let { it.kind == mtg.judge.engine.StackKind.SPELL && it.source.def.name in setOf("Sneak Attack", "Quicksilver Amulet", "Elvish Piper") && it.source.id != objId } == true) engine.resolveAll()
                 // Ninjutsu: the creature is put onto the battlefield tapped and attacking the player the returned creature attacked.
                 if (e.to?.startsWith("attacking:") == true) {
                     // "…, copying Grizzly Bears" (Sakashima's Student): the copy choice, if that creature is still there to copy.

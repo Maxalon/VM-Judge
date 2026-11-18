@@ -85,6 +85,8 @@ object Grammar {
             if (lower !in commonWords && t.contains(lower)) t = Regex("""(?<![\w'’-])${Regex.escape(lower)}(?![\w-])""").replace(t, n)
         }
         if (capitalize && t.isNotEmpty() && t[0].isLowerCase()) t = t.replaceFirstChar { it.uppercase() }
+        // "No: You are still in the game": the clause after a lead's colon goes on in lower case.
+        if (t.startsWith("Yes: You ") || t.startsWith("No: You ")) t = t.replaceFirst(": You ", ": you ")
         if (sentences) {
             if (t.contains(". ") || t.contains("! ") || t.contains("? ")) { val whole = t; t = sentenceStart.replace(whole) { m ->
                 val before = whole.substring(0, m.range.first).trimEnd()

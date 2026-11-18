@@ -49,7 +49,7 @@ internal object MechanicsLoops {
         }
         val (key, kIdx) = keyPair
         Turns.extraTurnSkipper(state, who)?.let { lock ->
-            tr.step("${lock.name}: if an opponent would begin an extra turn, that player skips that turn instead. Each extra turn ${vault.name} makes is skipped as it would begin, so ${p.subject.lowercase()} never reaches the untap step where ${key.name} untaps.", "614.10", "500.7")
+            tr.step("${lock.name}: if an opponent would begin an extra turn, that player skips that turn instead. Each extra turn ${vault.name} makes is skipped as it would begin, so ${p.subject.lowercase()} never ${p.v("reaches", "reach")} the untap step where ${key.name} untaps.", "614.10", "500.7")
             state.outcomes += "No: ${lock.name} makes ${p.subject.lowercase()} skip every extra turn, so ${vault.name} and ${key.name} make turns that are never taken (614.10). The pair works again once ${lock.name} is gone."
             return true
         }

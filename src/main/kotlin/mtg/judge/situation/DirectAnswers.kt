@@ -1157,7 +1157,11 @@ object DirectAnswers {
     private fun whenLead(c: Q) {
         if (!Regex("""^when (?:can|could|do|does|did|will|would|is|are|should)\b""").containsMatchIn(c.q)) return
         val first = c.outs[0]
-        if (Regex("""^(?:At|On|During|In|When|Whenever|After|Before|Until|Only|Not until|Not this turn|Never|Now|Immediately|Right away|As soon as|Any time)\b""").containsMatchIn(first)) return
+        val timingStart = Regex("""^(?:At|On|During|In|When|Whenever|After|Before|Until|Only|Not until|Not this turn|Never|Now|Immediately|Right away|As soon as|Any time)\b""")
+        if (timingStart.containsMatchIn(first)) return
+        // A line that already answers "when" ("At the beginning of the end step of the next turn …", Goryo's at an end step) leads,
+        // rather than a timing pulled from another line that may say less.
+        c.outs.firstOrNull { timingStart.containsMatchIn(it) && Regex("""^At the beginning of\b""").containsMatchIn(it) }?.let { l -> c.outs.remove(l); c.outs.add(0, l); return }
         c.outs.firstNotNullOfOrNull { l -> Regex("""\bwith (\d+) time counters?\b""").find(l) }?.let { m ->
             val n = m.groupValues[1].toInt()
             c.outs.add(0, "At the beginning of your ${if (n == 1) "next upkeep" else "upkeep $n turns from now"}: the last time counter comes off then and it is cast without paying its mana cost (702.62a).")

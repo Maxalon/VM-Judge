@@ -1258,7 +1258,7 @@ object OracleParser {
                     i += 2
                 } else if (Regex("""^sacrifice (?:~|it|this permanent|this creature)\.?$""", RegexOption.IGNORE_CASE).matches(cur) && next != null && next.startsWith("If you do, ", true)) {
                     // Dark Depths: "sacrifice it. If you do, create Marit Lage, …": the sacrifice, then what it buys.
-                    out += Effect.IfYouDo(Effect.SacrificeSource, parseSentence(next.removePrefix("If you do, ").removePrefix("if you do, ").replaceFirstChar { it.uppercase() }), null)
+                    out += Effect.IfYouDo(Effect.SacrificeSource, parseSentence(next.removePrefix("If you do, ").removePrefix("if you do, ").replaceFirstChar { it.uppercase() }), null, mandatory = true)
                     i += 2
                 } else                 if (cur.startsWith("You may ", true) && next != null && next.startsWith("If you do, ", true)) {
                     val choice = cur.removePrefix("You may ").removePrefix("you may ").trimEnd('.')

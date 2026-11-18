@@ -360,8 +360,10 @@ internal object NewSetMech {
     fun condition(state: GameState, text: String, src: GameObject): Boolean? = when (text) {
         "ns:gainedlife" -> ((flags(state)["gained:${src.controller}"] ?: 0) > 0).also { ok ->
             val p = state.player(src.controller)
-            val line = "Infusion is an ability word: \"if you gained life this turn\" asks whether ${p.subject.lowercase()} gained any life at any time this turn, before or after ${src.name} was cast, and it is checked as ${src.name} resolves. ${if (ok) "${p.subject} did" else "${p.subject} didn't"}."
-            if (state.trace.steps.none { it.text == line }) state.trace.step(line, "207.2c", "608.2c")
+            // Only a card printed with the ability word says "Infusion" (Ocelot Pride has the same condition without it).
+            val infusion = src.def.oracleText.contains("Infusion", ignoreCase = true)
+            val line = "${if (infusion) "Infusion is an ability word: " else ""}\"if you gained life this turn\" asks whether ${p.subject.lowercase()} gained any life at any time this turn, before or after ${src.name} ${if (src.def.isPermanentCard && !infusion) "came under ${p.possessive} control" else "was cast"}, and it is checked as ${if (infusion) src.name else "${src.name}'s ability"} resolves. ${if (ok) "${p.subject} did" else "${p.subject} didn't"}."
+            if (state.trace.steps.none { it.text == line }) state.trace.step(line, *(if (infusion) arrayOf("207.2c", "608.2c") else arrayOf("603.4", "608.2c")))
         }
         else -> null
     }

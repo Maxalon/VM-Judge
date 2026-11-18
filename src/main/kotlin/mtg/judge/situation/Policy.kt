@@ -354,6 +354,7 @@ internal object Policy {
         if (ownerMe != actorMe) r += "${owner.SubjC} ${owner.v("control", "controls")} the effect that changed the rules, so once play went on ${owner.subj} ${owner.v("have", "has")} committed a Game Rule Violation too, also a Warning (IPG 2.5)."
         r += "If it's caught right away, a simple backup undoes the illegal action${if (tax && spell != null) " ($spell goes back to the hand it was cast from)" else ""}; otherwise a full backup may be considered or the game left as it is (IPG 1.4, 2.5)."
         if (x.rel == null) r += relNoteGrv()
+        if (x.rel == "reg") regularGrv(r, "${src.name}'s ability is static, not a trigger (604.1), so nothing was missed; ${if (tax) "casting ${spell ?: "the spell"} without paying the extra cost" else "ignoring its effect"} was a game error.")
     }
 
     // ---- other trigger questions ----------------------------------------------------------------------------------
@@ -439,6 +440,17 @@ internal object Policy {
         if (x["ftmgs"] == "1") r.lines.removeAll { it.contains("Failure to Maintain Game State, which is never upgraded") }
         if (x["ftmgs"] == "1") r.lines.add(0, "Yes: letting your opponent's error go by is Failure to Maintain Game State, a Warning that is never upgraded, once the game has gone past the point where you could reasonably have noticed it (IPG 2.6).")
         if (x.rel == null) r += relNoteGrv()
+        // "At FNM I played two lands": the event said Regular REL, so the IPG's Warnings don't apply at all (JAR).
+        if (x.rel == "reg") regularGrv(r, null, (if (x["sub"] == "land") " Caught right away, the second land goes back to hand." else "") +
+            (if (x["sub"] == "untap" && !later) " It's still the same turn, so the permanents are untapped now." else ""))
+    }
+
+    /** A Game Rule Violation at Regular REL: no Warning for anyone, only the JAR fix ([first] keeps a line that isn't about penalties). */
+    private fun regularGrv(r: Ruling, first: String?, extra: String = "") {
+        r.lines.clear()
+        r.step("At Regular REL an in-game error isn't penalized: the judge fixes what is currently illegal, has a forgotten draw or discard made now, and may back up if the error was caught quickly and that's easy.", "JAR")
+        if (first != null) r += first
+        r += "No penalty at Regular REL: the judge fixes anything still illegal and otherwise leaves the game as it is, or, if it was caught quickly and backing up is easy, undoes the actions back to the illegal one (JAR).$extra"
     }
 
     private fun grv3(x: Facts, r: Ruling) {

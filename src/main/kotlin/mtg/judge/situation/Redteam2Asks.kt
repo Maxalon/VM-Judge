@@ -101,6 +101,8 @@ internal object Redteam2Asks {
                 val active = state.activePlayer?.let { state.player(it) }
                 if (inEnd) {
                     val next = active?.let { a -> state.opponentsOf(a.id).firstOrNull() }
+                    // A generic "At the beginning of the next end step: …" lead would read as this turn's; this answer replaces it.
+                    state.outcomes.removeAll { it.startsWith("At the beginning of the next end step:") }
                     t.step("${src.name}'s \"at the beginning of the next end step\" is a delayed triggered ability created during an end step, after that step's beginning has passed, so it doesn't trigger until the next turn's end step.", "513.2", "603.7a")
                     state.outcomes += "At the beginning of the end step of the next turn${next?.let { " (${it.possessive} turn)" } ?: ""}, not this one: the delayed trigger was created during this end step, after its beginning, so \"the next end step\" is next turn's (513.2). $n stays until then${if (next?.you == true || (next != null && o?.controller == next.id)) " — through your whole turn, so it can attack" else ""}."
                 } else {
@@ -170,8 +172,8 @@ internal object Redteam2Asks {
         val lpv = "Limited Procedure Violation, Warning (IPG 3.6)"
         val head = when (x["sub"]) {
             "look" -> "$lpv for a player who looks where they shouldn't — the IPG's own example is a player moving their head to the side at inappropriate times. If they did it on purpose to see another drafter's picks or pack and gain an advantage, it's Cheating, a Disqualification (IPG 4.8)."
-            "two" -> "$lpv: a player took two cards from the pack. The judge works out which card was the pick and puts the other back in the pack before it moves on, so every later drafter sees what they should have. Taking two on purpose is Cheating (IPG 4.8)."
-            "pass" -> "$lpv: passing the pack the wrong way is the IPG's first example. The judge stops the pod's packs and puts each one back with the player it should have gone to; picks already made from it stand."
+            "two" -> "$lpv: a player took two cards from the pack. The IPG sets no fix of its own for it; the usual one is that the judge works out which card was the pick and puts the other back in the pack before it moves on, so every later drafter sees what they should have. Taking two on purpose is Cheating (IPG 4.8)."
+            "pass" -> "$lpv: passing the pack the wrong way is the IPG's first example. The IPG sets no fix of its own; the usual one is that the judge stops the pod's packs and puts each one back with the player it should have gone to, and picks already made from it stand."
             "pullback" -> "$lpv: once a card is put on top of the drafted pile it is selected and can't be returned to the pack (MTR 7.7); the IPG's example is a player who puts a card on their pile and then pulls it back. The first card stands as the pick."
             "time" -> "$lpv: exceeding the time allotted for a pick is the IPG's own example. The draft keeps to its timing; how a late pick is made is part of the draft's announced procedure."
             "reveal" -> "Not allowed (MTR 7.7): drafters may not show the front face of their picks or the contents of their pack, or tell others what they took or want taken. A careless flash is a $lpv; doing it to steer another drafter's picks is Outside Assistance, a Match Loss — the IPG applies it to the draft portion of a Limited event too (IPG 3.2). Double-faced cards are the exception: both faces may be shown."
