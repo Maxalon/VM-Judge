@@ -478,6 +478,7 @@ sealed interface Effect {
         is WinLossEffect -> WinLoss.targets(this)
         is Populate, is Amass, is Cascade, is ExiledOwnerTokenMv, is CounterIfNoManaSpent, is NewMech -> emptyList()
         is More3 -> listOfNotNull(target)   // MoreEffects3.kt
+        is More4 -> listOfNotNull(target, target2)   // MoreEffects4.kt
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is Exploit, is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
         is Investigate, is Surveil, is SacrificeUnlessEscaped, is Hideaway, is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
@@ -725,7 +726,9 @@ sealed interface Replacement {
     /** "If you would gain life, you gain twice that much life instead." */
     data class LifeGainMultiplier(val factor: Int, val anyPlayer: Boolean = false) : Replacement
     /** "If an effect would place one or more counters on a permanent you control, it places twice that many instead." (Doubling Season) */
-    data class CounterMultiplier(val factor: Int, val anyPlayer: Boolean = false, val extra: Int = 0, val kind: String? = null) : Replacement
+    data class CounterMultiplier(val factor: Int, val anyPlayer: Boolean = false, val extra: Int = 0, val kind: String? = null,
+        /** Benevolent Hydra: "on another creature you control" — not the permanent with the ability (MoreEffects4.kt). */
+        val notSource: Boolean = false) : Replacement
     /** "If an effect would create one or more tokens under your control, it creates twice that many instead." */
     /** Doubling Season doubles its controller's tokens; Primal Vigor doubles everyone's (anyPlayer). */
     data class TokenMultiplier(val factor: Int, val anyPlayer: Boolean = false) : Replacement

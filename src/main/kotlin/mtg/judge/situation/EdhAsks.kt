@@ -182,7 +182,7 @@ internal object EdhAsks {
     private fun goad(o: GameObject, state: GameState): Boolean {
         val t = state.trace
         val ctl = state.player(o.controller)
-        val goaders = state.edh.goadedBy[o.id].orEmpty().map { state.player(it) }
+        val goaders = (state.edh.goadedBy[o.id].orEmpty() + mtg.judge.engine.MoreEffects4.staticGoaders(state, o)).distinct().map { state.player(it) }   // Shiny Impetus (MoreEffects4.kt)
         if (goaders.isEmpty()) { state.outcomes += "${o.name} isn't goaded, so it doesn't have to attack anyone."; return true }
         val opps = state.opponentsOf(ctl.id).filter { !it.lost }
         fun taxOf(p: Player): Pair<GameObject, String>? = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id }.firstNotNullOfOrNull { src ->

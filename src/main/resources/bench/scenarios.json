@@ -70619,7 +70619,7 @@
     ],
     "cite": [
       "608.2h",
-      "122.1"
+      "122.1a"
     ]
   },
   {
@@ -70996,6 +70996,677 @@
     ],
     "cite": [
       "107.1a"
+    ]
+  },
+  {
+    "id": "o2-1",
+    "text": "I control Resplendent Angel. I activate its ability. How big is Resplendent Angel and does it have lifelink?",
+    "expect": [
+      "Yes: Resplendent Angel has lifelink.",
+      "Resplendent Angel is 5/5 (3/3 base, +2/+2 until end of turn)."
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "o2-2",
+    "text": "I control Grizzly Bears and Llanowar Elves. I cast Triumph of the Hordes. How big is Grizzly Bears, and does it have infect?",
+    "expect": [
+      "Grizzly Bears is 3/3 with trample and infect until end of turn.",
+      "Llanowar Elves is 2/2 with trample and infect until end of turn."
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "o2-3",
+    "text": "I control Goreclaw, Terror of Qal Sisma and Craw Wurm. Goreclaw attacks. How big is Craw Wurm, and does Craw Wurm have trample?",
+    "expect": [
+      "Yes: Craw Wurm has trample.",
+      "Craw Wurm is 7/5 (6/4 base, +1/+1 until end of turn)."
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "o2-4",
+    "text": "I control Enduring Courage. I cast Grizzly Bears. How big is Grizzly Bears and does it have haste?",
+    "expect": [
+      "Yes: Grizzly Bears has haste.",
+      "Grizzly Bears is 4/2 (2/2 base, +2/+0 until end of turn)."
+    ],
+    "cite": [
+      "611.2a",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "o2-5",
+    "text": "I control Grizzly Bears. I cast Gaea's Gift targeting Grizzly Bears. Does Grizzly Bears have hexproof and indestructible?",
+    "expect": [
+      "Yes: Grizzly Bears has reach and trample and hexproof and indestructible until end of turn.",
+      "Grizzly Bears has 1 +1/+1 counter."
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "o2-6",
+    "text": "I control Grizzly Bears. I cast Overprotect targeting Grizzly Bears. How big is Grizzly Bears, and does it have indestructible?",
+    "expect": [
+      "Yes: Grizzly Bears has indestructible.",
+      "Grizzly Bears is 5/5 (2/2 base, +3/+3 until end of turn)."
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "o2-7",
+    "text": "My opponent controls Grizzly Bears. I cast Vengeful Ancestor targeting Grizzly Bears. Does Grizzly Bears have to attack?",
+    "expect": [
+      "Yes: Grizzly Bears is goaded until your next turn: it must attack each combat, and attack a player other than you if able."
+    ],
+    "cite": [
+      "701.15a",
+      "701.15b"
+    ]
+  },
+  {
+    "id": "o2-8",
+    "text": "I control Glóin, Dwarf Emissary and a Treasure token. My opponent controls Serra Angel. I activate Glóin's ability targeting Serra Angel. Does Serra Angel have to attack?",
+    "expect": [
+      "Yes: Serra Angel is goaded until your next turn"
+    ],
+    "cite": [
+      "701.15a"
+    ]
+  },
+  {
+    "id": "o2-9",
+    "text": "My opponent controls Grizzly Bears and Serra Angel. I cast Disrupt Decorum. Does Serra Angel have to attack?",
+    "expect": [
+      "Yes: Serra Angel is goaded until your next turn",
+      "Grizzly Bears is goaded until your next turn"
+    ],
+    "cite": [
+      "701.15a",
+      "701.15b"
+    ]
+  },
+  {
+    "id": "o2-10",
+    "text": "My opponent controls Grizzly Bears and Serra Angel. I control Geode Rager. I play a Forest. Does Serra Angel have to attack?",
+    "expect": [
+      "Yes: Serra Angel is goaded until your next turn",
+      "Grizzly Bears is goaded until your next turn"
+    ],
+    "cite": [
+      "701.15a"
+    ]
+  },
+  {
+    "id": "o2-11",
+    "text": "I control Shiny Impetus attached to my opponent's Grizzly Bears. How big is Grizzly Bears? Who does it have to attack?",
+    "expect": [
+      "Grizzly Bears is 4/4 (2/2 base, +2/+2 from Shiny Impetus).",
+      "Grizzly Bears must attack opponent: a player who didn't goad it"
+    ],
+    "cite": [
+      "701.15b"
+    ]
+  },
+  {
+    "id": "o2-12",
+    "text": "Alice, Bob and I are playing. Bob's Grizzly Bears is equipped with my Bloodthirsty Blade. Who does it have to attack?",
+    "expect": [
+      "Grizzly Bears must attack You or Alice (Bob's choice)",
+      "It can't attack Bob while such an attack is possible"
+    ],
+    "cite": [
+      "701.15b"
+    ]
+  },
+  {
+    "id": "o2-13",
+    "text": "I control Grizzly Bears equipped with Whispersilk Cloak. Grizzly Bears attacks. My opponent blocks with Wall of Omens. Can they block, and can they target Grizzly Bears with Doom Blade?",
+    "expect": [
+      "No: Wall of Omens can't block Grizzly Bears.",
+      "Doom Blade can't target Grizzly Bears."
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "o2-14",
+    "text": "I control Grizzly Bears enchanted with Protective Bubble. Grizzly Bears attacks and my opponent blocks with Wall of Omens. Can Wall of Omens block it?",
+    "expect": [
+      "No: Wall of Omens can't block Grizzly Bears."
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "o2-15",
+    "text": "I control Troll of Khazad-dûm. It attacks. My opponent blocks it with Grizzly Bears. Is that a legal block?",
+    "expect": [
+      "Grizzly Bears can't block Troll of Khazad-dûm (it can't be blocked except by 3 or more creatures).",
+      "Opponent takes 6 damage."
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "o2-16",
+    "text": "I control Guile. It attacks. My opponent blocks it with Grizzly Bears and Wall of Omens. Is that a legal block?",
+    "expect": [
+      "Grizzly Bears and Wall of Omens can't block Guile (it can't be blocked except by 3 or more creatures).",
+      "Opponent takes 6 damage."
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "o2-17",
+    "text": "I control Herald of Secret Streams and Grizzly Bears with a +1/+1 counter on it. Grizzly Bears attacks. My opponent blocks with Wall of Omens. Can Wall of Omens block it?",
+    "expect": [
+      "No: Wall of Omens can't block Grizzly Bears (Herald of Secret Streams).",
+      "Opponent takes 3 damage."
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "o2-18",
+    "text": "I control Tetsuko Umezawa, Fugitive and Llanowar Elves. Llanowar Elves attacks. My opponent blocks with Wall of Omens. Can Wall of Omens block it?",
+    "expect": [
+      "No: Wall of Omens can't block Llanowar Elves (Tetsuko Umezawa, Fugitive).",
+      "Opponent takes 1 damage."
+    ],
+    "cite": [
+      "509.1b"
+    ]
+  },
+  {
+    "id": "o2-19",
+    "text": "I control Gray Merchant of Asphodel and Phyrexian Arena. I cast another Gray Merchant of Asphodel. My opponent is at 20 life and I'm at 10. What are our life totals?",
+    "expect": [
+      "Opponent loses 6 life.",
+      "You go from 10 to 16 life.",
+      "Opponent goes from 20 to 14 life."
+    ],
+    "cite": [
+      "700.5",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-20",
+    "text": "I cast Gray Merchant of Asphodel. My opponent is at 2 life. What happens?",
+    "expect": [
+      "Opponent loses 2 life.",
+      "Opponent loses the game."
+    ],
+    "cite": [
+      "700.5"
+    ]
+  },
+  {
+    "id": "o2-21",
+    "text": "I control Throne of the God-Pharaoh and three tapped Grizzly Bears. At the beginning of my end step, how much life does my opponent lose?",
+    "expect": [
+      "Opponent loses 3 life in all."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-22",
+    "text": "I control Grist, the Hunger Tide with 6 loyalty counters. I have 4 creature cards in my graveyard. I activate Grist's -5 ability. My opponent is at 20 life. What is their life total?",
+    "expect": [
+      "Opponent loses 4 life.",
+      "Opponent goes from 20 to 16 life."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-23",
+    "text": "I control Craw Wurm and Grizzly Bears. I cast Rishkar's Expertise. How many cards do I draw?",
+    "expect": [
+      "6: you draw 6 cards."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-24",
+    "text": "I control Sol Ring and Wurmcoil Engine. I cast One with the Machine. How many cards do I draw?",
+    "expect": [
+      "6: you draw 6 cards."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-25",
+    "text": "I control Craw Wurm. I cast Life's Legacy, sacrificing Craw Wurm. How many cards do I draw?",
+    "expect": [
+      "6: you draw 6 cards."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-26",
+    "text": "I control Greater Good and Craw Wurm. I sacrifice Craw Wurm to Greater Good. How many cards do I draw?",
+    "expect": [
+      "6: you draw 6 cards.",
+      "You discard 3 cards."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-27",
+    "text": "I control Unnatural Growth and Grizzly Bears. At the beginning of combat, how big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 4/4 (2/2 base, +2/+2 until end of turn)."
+    ],
+    "cite": [
+      "701.10a",
+      "701.10b"
+    ]
+  },
+  {
+    "id": "o2-28",
+    "text": "I control Thrakkus the Butcher and Shivan Dragon. Thrakkus attacks. How big is Shivan Dragon?",
+    "expect": [
+      "Shivan Dragon is 10/5 (5/5 base, +5/+0 until end of turn).",
+      "Thrakkus the Butcher is 6/4 until end of turn."
+    ],
+    "cite": [
+      "701.10b"
+    ]
+  },
+  {
+    "id": "o2-29",
+    "text": "I control four Swamps. My opponent controls Serra Angel. I cast Defile targeting Serra Angel. What happens to Serra Angel?",
+    "expect": [
+      "Serra Angel is 0/0 and is put into its owner's graveyard (0 or less toughness)."
+    ],
+    "cite": [
+      "613.4c",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-30",
+    "text": "I control two Swamps, two Islands and Wall of Omens. My opponent controls Serra Angel and Grizzly Bears. I cast Mutilate. Which creatures die?",
+    "expect": [
+      "Grizzly Bears dies; Wall of Omens and Serra Angel don't.",
+      "Serra Angel is 2/2 until end of turn."
+    ],
+    "cite": [
+      "613.4c",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-31",
+    "text": "I control Vampire Nighthawk and Bloodghast. My opponent controls Grizzly Bears and Serra Angel. I cast Olivia's Wrath. What happens?",
+    "expect": [
+      "Grizzly Bears is 0/0 and is put into its owner's graveyard (0 or less toughness).",
+      "Serra Angel is 2/2 until end of turn."
+    ],
+    "cite": [
+      "613.4c",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-32",
+    "text": "I control Grim Hireling and three Treasure tokens. My opponent controls Serra Angel. I activate Grim Hireling's ability sacrificing three Treasures with X=3 targeting Serra Angel. How big is Serra Angel?",
+    "expect": [
+      "Serra Angel is 1/1 (4/4 base, -3/-3 until end of turn)."
+    ],
+    "cite": [
+      "613.4c",
+      "107.3a"
+    ]
+  },
+  {
+    "id": "o2-33",
+    "text": "My opponent controls two Volcanic Islands and a Mountain. I control a Tropical Island. I cast Price of Progress. What are our life totals? We're both at 20.",
+    "expect": [
+      "You go from 20 to 18 life.",
+      "Opponent goes from 20 to 16 life."
+    ],
+    "cite": [
+      "120.3a"
+    ]
+  },
+  {
+    "id": "o2-34",
+    "text": "My opponent controls Steam Vents and Breeding Pool. I control a Forest. I cast Sunspine Lynx. My opponent is at 20 life. What's their life total?",
+    "expect": [
+      "Sunspine Lynx deals no damage to you (no nonbasic lands).",
+      "Opponent goes from 20 to 18 life."
+    ],
+    "cite": [
+      "120.3a"
+    ]
+  },
+  {
+    "id": "o2-35",
+    "text": "I control Craw Wurm. My opponent controls Serra Angel. I cast Soul's Fire targeting Craw Wurm and Serra Angel. What happens?",
+    "expect": [
+      "Serra Angel has 6 damage marked.",
+      "Serra Angel: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "120.3a",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "o2-36",
+    "text": "I control Vampire Nighthawk. My opponent controls Serra Angel. I cast Soul's Fire targeting Vampire Nighthawk and Serra Angel. I'm at 10 life. What's my life total, and does Serra Angel die?",
+    "expect": [
+      "Yes: Serra Angel died (it's in the graveyard).",
+      "You go from 10 to 12 life."
+    ],
+    "cite": [
+      "120.3a"
+    ]
+  },
+  {
+    "id": "o2-37",
+    "text": "I control The Great Henge. I cast Grizzly Bears. How big is Grizzly Bears and how many cards do I draw?",
+    "expect": [
+      "Grizzly Bears is 3/3 (2/2 base, 1 +1/+1 counter).",
+      "You draw 1 card in all."
+    ],
+    "cite": [
+      "122.6"
+    ]
+  },
+  {
+    "id": "o2-38",
+    "text": "I control Grizzly Bears equipped with Blade of the Bloodchief. My opponent's Llanowar Elves dies. How big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 3/3 (2/2 base, 1 +1/+1 counter)."
+    ],
+    "cite": [
+      "122.6"
+    ]
+  },
+  {
+    "id": "o2-39",
+    "text": "I control Ouroboroid and Grizzly Bears. At the beginning of combat on my turn, how big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 3/3 (2/2 base, 1 +1/+1 counter).",
+      "Ouroboroid has 1 +1/+1 counter."
+    ],
+    "cite": [
+      "608.2h",
+      "122.1a"
+    ]
+  },
+  {
+    "id": "o2-40",
+    "text": "I control Railway Brawler. I cast Craw Wurm. How big is Craw Wurm?",
+    "expect": [
+      "Craw Wurm is 12/10 (6/4 base, 6 +1/+1 counters)."
+    ],
+    "cite": [
+      "608.2h",
+      "122.1a"
+    ]
+  },
+  {
+    "id": "o2-41",
+    "text": "I control Iron Spider, Stark Upgrade, Ornithopter and Grizzly Bears. I activate Iron Spider's tap ability. How big are Ornithopter and Grizzly Bears?",
+    "expect": [
+      "Ornithopter is 1/3 (0/2 base, 1 +1/+1 counter).",
+      "Grizzly Bears is 2/2."
+    ],
+    "notExpect": [
+      "Grizzly Bears has 1 +1/+1 counter."
+    ],
+    "cite": [
+      "122.6"
+    ]
+  },
+  {
+    "id": "o2-42",
+    "text": "My opponent controls Grizzly Bears and Serra Angel. I cast Requisition Raid choosing the third mode, targeting my opponent. How big is Serra Angel?",
+    "expect": [
+      "Serra Angel is 5/5 (4/4 base, 1 +1/+1 counter).",
+      "Grizzly Bears has 1 +1/+1 counter."
+    ],
+    "cite": [
+      "122.6"
+    ]
+  },
+  {
+    "id": "o2-43",
+    "text": "I control Benevolent Hydra with two +1/+1 counters on it and Grizzly Bears. I activate Benevolent Hydra's ability targeting Grizzly Bears. How big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 4/4 (2/2 base, 2 +1/+1 counters)."
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "o2-44",
+    "text": "I control six Forests. I cast Planar Engineering. How many lands do I control?",
+    "expect": [
+      "10: you control 10 lands.",
+      "You put 4 basic lands onto the battlefield tapped (Planar Engineering)."
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "o2-45",
+    "text": "I control Mayhem Devil. My opponent casts Village Rites, sacrificing Grizzly Bears. How many Mayhem Devil triggers are there?",
+    "expect": [
+      "Opponent takes 1 damage.",
+      "Opponent draws 2 cards."
+    ],
+    "cite": [
+      "701.21a",
+      "603.2"
+    ]
+  },
+  {
+    "id": "o2-46",
+    "text": "I control Mazirek, Kraul Death Priest and Grizzly Bears. My opponent sacrifices Llanowar Elves. How big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 3/3 (2/2 base, 1 +1/+1 counter).",
+      "Mazirek, Kraul Death Priest has 1 +1/+1 counter."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "o2-47",
+    "text": "I control Vilis, Broker of Blood. My opponent casts Lightning Bolt targeting me. How many cards do I draw?",
+    "expect": [
+      "3: you draw 3 cards."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "o2-48",
+    "text": "I control Vilis, Broker of Blood. I activate its ability targeting Grizzly Bears. How many cards do I draw?",
+    "expect": [
+      "2: you draw 2 cards.",
+      "You pay 2 life."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "o2-49",
+    "text": "I control Faerie Mastermind. My opponent draws two cards during their turn. How many cards do I draw?",
+    "expect": [
+      "1: you draw 1 card."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "o2-50",
+    "text": "I control The Council of Four. My opponent draws two cards during their turn. How many cards do I draw?",
+    "expect": [
+      "1: you draw 1 card."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "o2-51",
+    "text": "I control Waste Not. My opponent discards Forest. What happens?",
+    "expect": [
+      "You have {B}{B} in your mana pool."
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "o2-52",
+    "text": "I control Waste Not. I cast Mind Rot. My opponent discards Grizzly Bears. What happens?",
+    "expect": [
+      "You get a Zombie token."
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "o2-53",
+    "text": "I control Bone Miser. I discard Swamp to Tormenting Voice. What happens?",
+    "expect": [
+      "You have {B}{B} in your mana pool."
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "o2-54",
+    "text": "I control Burgeoning and I have a Forest in my hand. My opponent plays a Mountain. What happens?",
+    "expect": [
+      "Forest enters the battlefield."
+    ],
+    "cite": [
+      "305.1",
+      "603.2"
+    ]
+  },
+  {
+    "id": "o2-55",
+    "text": "I control Horn of Greed. My opponent plays a Mountain. How many cards does my opponent draw?",
+    "expect": [
+      "1: opponent draws 1 card."
+    ],
+    "cite": [
+      "305.1"
+    ]
+  },
+  {
+    "id": "o2-56",
+    "text": "I control Resplendent Angel. I gained 6 life this turn. At the beginning of my end step, what happens?",
+    "expect": [
+      "You get an Angel token."
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "o2-57",
+    "text": "I control Resplendent Angel. I gained 3 life this turn. At the beginning of my end step, do I get an Angel?",
+    "expect": [
+      "Resplendent Angel's ability doesn't trigger: it triggers only if you gained 5 or more life this turn (603.4)."
+    ],
+    "notExpect": [
+      "Angel token"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "o2-58",
+    "text": "I control The Gaffer. I gained 4 life this turn. At the beginning of the end step, do I draw a card?",
+    "expect": [
+      "Yes: You draw 1 card in all."
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "o2-59",
+    "text": "I control Land Tax and three Plains. My opponent controls five Islands. At the beginning of my upkeep, what happens?",
+    "expect": [
+      "You put up to 3 basic land cards from your library into your hand, revealed, then shuffle (Land Tax)"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "o2-60",
+    "text": "I control Land Tax and five Plains. My opponent controls three Islands. At the beginning of my upkeep, does Land Tax trigger?",
+    "expect": [
+      "Land Tax's ability doesn't trigger: it triggers only if an opponent controls more lands than you do (603.4)."
+    ],
+    "notExpect": [
+      "You shuffle your library"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "o2-61",
+    "text": "I control four Plains. My opponent controls two Islands. I cast Knight of the White Orchid. Does its ability trigger?",
+    "expect": [
+      "Knight of the White Orchid's ability doesn't trigger: it triggers only if an opponent controls more lands than you do (603.4)."
+    ],
+    "notExpect": [
+      "Search your library"
+    ],
+    "cite": [
+      "603.4"
     ]
   }
 ]

@@ -187,6 +187,7 @@ class Engine(val state: GameState) {
             if (PauperMech.landReplaced(this, obj)) return null   // Kjeldoran Outpost with no Plains (PauperMechanics.kt)
             enter(obj.id); stateBasedActions()
             PauperMech.landPlayed(this, playerId, nth)   // Fastbond's damage for each land after the first (PauperMechanics.kt)
+            MoreEffects4.landPlayed(this, playerId, obj)   // Burgeoning, Horn of Greed (MoreEffects4.kt)
             if ("Basic" !in card.supertypes) narrateLandTypeSetters(land = obj)
             narrateLayers(obj)
             return null
@@ -1158,6 +1159,7 @@ class Engine(val state: GameState) {
         if (PauperMech.landReplaced(this, state.obj(objectId))) return   // Kjeldoran Outpost with no Plains (PauperMechanics.kt)
         enter(objectId)
         PauperMech.landPlayed(this, playerId, already + 1)   // Fastbond's damage for each land after the first (PauperMechanics.kt)
+        MoreEffects4.landPlayed(this, playerId, state.obj(objectId))   // Burgeoning, Horn of Greed (MoreEffects4.kt)
     }
 
     fun enter(objectId: String, choice: String? = null) {
@@ -2158,6 +2160,7 @@ class Engine(val state: GameState) {
         if (a.has("horsemanship") && !b.has("horsemanship")) return Triple("${a.name} has horsemanship and can't be blocked except by creatures with horsemanship.", listOf("702.31b"), "${b.name} can't block ${a.name} (horsemanship).")
         if (a.has("shadow") != b.has("shadow")) return Triple("${a.name} ${if (a.has("shadow")) "has" else "doesn't have"} shadow and ${b.name} ${if (b.has("shadow")) "has" else "doesn't have"}; creatures with shadow can only block and be blocked by creatures with shadow.", listOf("702.28b"), "${b.name} can't block ${a.name} (shadow).")
         NewMech.cantBlockWhy(state, a, b)?.let { return it }   // the Ring-bearer (701.54c)
+        MoreEffects4.cantBlockWhy(state, a, b)?.let { return it }   // Herald of Secret Streams, Tetsuko Umezawa (MoreEffects4.kt)
         if (a.has("skulk") && (b.power ?: 0) > (a.power ?: 0)) return Triple("${a.name} has skulk and can't be blocked by creatures with greater power.", listOf("702.118b"), "${b.name} can't block ${a.name} (skulk).")
         (a.def.keywords.filter { state.abilitiesGone(a) == null }.firstOrNull { it.endsWith("walk") && it != "landwalk" } ?: a.abilities.filterIsInstance<StaticAbility>().map { it.text.trimEnd('.').lowercase() }.firstOrNull { it.endsWith("walk") && !it.contains(' ') })?.let { walk ->
             val landType = walk.removeSuffix("walk").replaceFirstChar { it.uppercase() }
@@ -2234,6 +2237,7 @@ class Engine(val state: GameState) {
             val bs = blockersOf(a)
             if (bs.size == 1) { trace.step("${a.name} has menace and can't be blocked except by two or more creatures; blocking it with only ${bs[0].name} isn't a legal block, so ${a.name} is unblocked.", "702.111b", "509.1a"); LimitedMech.dropBlock(bs[0], a); a.wasBlocked = false }
         }
+        MoreEffects4.minBlockers(this, attackers) { blockersOf(it) }   // Pathrazer of Ulamog (MoreEffects4.kt)
         trace.step("At least one creature has first strike or double strike, so there is an extra combat damage step in which only those creatures deal damage.", "510.4", "702.7b")
         dealCombatDamage(attackers) { it.has("first strike") || it.has("double strike") }
         state.firstStrikers = strikers.map { it.id }.toSet(); state.doubleStrikersAtStart = strikers.filter { it.has("double strike") }.map { it.id }.toSet()
@@ -2257,6 +2261,7 @@ class Engine(val state: GameState) {
             val bs = blockersOf(a)
             if (bs.size == 1) { trace.step("${a.name} has menace and can't be blocked except by two or more creatures; blocking it with only ${bs[0].name} isn't a legal block, so ${a.name} is unblocked.", "702.111b", "509.1a"); state.outcomes += "${bs[0].name} can't block ${a.name} on its own (menace)." + (state.objects.values.count { it.isOnBattlefield() && it.controller == bs[0].controller && state.isCreature(it) && it.tapped != true && it.id != bs[0].id }.takeIf { it > 0 }?.let { " Another creature blocking alongside it would be a legal block." } ?: ""); LimitedMech.dropBlock(bs[0], a); a.wasBlocked = false }
         }
+        MoreEffects4.minBlockers(this, attackers) { blockersOf(it) }   // Pathrazer of Ulamog (MoreEffects4.kt)
         // "Whenever ~ attacks and isn't blocked": the condition is checked once blockers are declared, so the
         // trigger goes on the stack then and resolves before any combat damage.
         val stackBefore = state.stack.size
@@ -2499,6 +2504,7 @@ class Engine(val state: GameState) {
         }
         NewSetMech.extraTriggers(state, triggered)   // Bifur's enduring story doubling a Dwarf's triggers (NewSetMechanics.kt)
         MoreEffects3.filterTriggers(state, triggered)   // "This ability triggers only once each turn" (MoreEffects3.kt)
+        MoreEffects4.filterTriggers(state, triggered)   // Land Tax's intervening "if" (MoreEffects4.kt)
         if (triggered.isEmpty()) return
         // 603.3b: APNAP order; the active player's triggers go on the stack first (so they resolve last).
         val order = state.players.map { it.id }
@@ -2658,6 +2664,7 @@ class Engine(val state: GameState) {
         is MoreTrigger -> MoreEffects.triggerMatches(state, obj, trigger, event)   // Mikaeus (MoreEffects.kt)
         is MoreTrigger2 -> MoreEffects2.triggerMatches(state, obj, trigger, event)   // Voice of Resurgence (MoreEffects2.kt)
         is MoreTrigger3 -> MoreEffects3.triggerMatches(state, obj, trigger, event)   // Aurelia (MoreEffects3.kt)
+        is MoreTrigger4 -> MoreEffects4.triggerMatches(state, obj, trigger, event)   // Mayhem Devil, Vilis (MoreEffects4.kt)
         is LdTrigger -> LifeDmgMech.triggerMatches(state, obj, trigger, event)   // Repercussion (LifeDamageMechanics.kt)
         is Exam2Mech.Exam2Trigger -> Exam2Mech.triggerMatches(state, obj, trigger, event)   // Kaya's Ghostform (Exam2Mechanics.kt)
         }
@@ -3071,6 +3078,7 @@ class Engine(val state: GameState) {
     private fun applyEffect(effect: Effect, item: StackItem) {
         if (MoreEffects2.apply(this, effect, item)) return   // "target opponent draws a card" (MoreEffects2.kt)
         if (MoreEffects3.apply(this, effect, item)) return   // once each turn, copy that spell, untap up to three lands (MoreEffects3.kt)
+        if (MoreEffects4.apply(this, effect, item)) return   // goad, devotion drains, doubling, counters on "it" (MoreEffects4.kt)
         val you = state.player(item.controller)
         when (effect) {
             is Effect.ShuffleGraveyardIntoLibrary, is Effect.ReturnExiledCard, is Effect.SacrificeEnchanted, is Effect.GainLifeThatMuch, is Effect.TapOrUntap, is Effect.CreateTokenCopy, is Effect.OpponentMayTakeDamage, is Effect.DamageCausing, is Effect.DoublePower, is Effect.PumpCount, is Effect.LoseHalfLife, is Effect.ExileUntilLeaves, is Effect.SacrificeTarget, is Effect.GainLifeEqualTo, is Effect.FreezeUntap, is Effect.RemoveCounters, is Effect.SetBasePtTarget, is Effect.LoseLifeEqual -> applyEffectMore(effect, item)
@@ -4306,6 +4314,7 @@ class Engine(val state: GameState) {
                 else if (hand == 0) { trace.step("${p.subject} ${p.v("has", "have")} no cards in hand, so nothing is discarded.", "701.9a"); state.outcomes += "${p.subject} ${p.v("discards", "discard")} nothing (no cards in hand)." }
                 else { val d = minOf(n, hand); p.handSize = hand - d; trace.step("${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"}${if (effect.random) " at random" else " of ${p.possessive} choice"}${if (d < n) " (only $hand in hand)" else ""}, leaving ${p.handSize} in hand.${if (d < n) " An effect that can't be done in full does as much as it can." else ""}", "701.9a", *(if (d < n) arrayOf("609.3") else emptyArray())); state.outcomes += "${p.subject} ${p.v("discards", "discard")} $d card${if (d == 1) "" else "s"} ($hand → ${p.handSize} in hand)." }
                 MoreEffects3.discardedUnseen(this, p.id, if (hand == null) n else minOf(n, hand))   // Megrim on cards nobody named (MoreEffects3.kt)
+                MoreEffects4.discarded(this, p.id, if (hand == null) n else minOf(n, hand), null)   // Waste Not, Bone Miser (MoreEffects4.kt)
         }
     }
 
@@ -5300,7 +5309,7 @@ class Engine(val state: GameState) {
      */
     private fun orderedCounterReplacements(o: GameObject, n: Int, kind: String): Int {
         val mods = state.objects.values.filter { it.isOnBattlefield() && it.controller == o.controller }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }
-            .filter { (it.factor > 1 || it.extra != 0) && (it.kind == null || it.kind.equals(kind, true)) }.map { src to it } } + DeepMech.counterMods(state, o)   // Vorinclex, Monstrous Raider (122.6a)
+            .filter { (it.factor > 1 || it.extra != 0) && (it.kind == null || it.kind.equals(kind, true)) && !(it.notSource && src === o) }.map { src to it } } + DeepMech.counterMods(state, o)   // Vorinclex, Monstrous Raider (122.6a)
         fun apply(x: Int, m: Replacement.CounterMultiplier) = DeepMech.applyMod(x, m) ?: if (m.factor > 1) x * m.factor else (x + m.extra).coerceAtLeast(0)   // Vizier of Remedies: one fewer, never below none
         fun perms(l: List<Pair<GameObject, Replacement.CounterMultiplier>>): List<List<Pair<GameObject, Replacement.CounterMultiplier>>> = if (l.size <= 1) listOf(l) else l.indices.flatMap { i -> perms(l.filterIndexed { j, _ -> j != i }).map { listOf(l[i]) + it } }
         // Multipliers before adders was the old fixed order; it stays the order said when the order makes no difference.
@@ -5797,6 +5806,7 @@ class Engine(val state: GameState) {
         } else if (to == Zone.GRAVEYARD) onEvent(GameEvent.PutIntoGraveyard(obj))
         if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects2.discarded(this, obj)   // Necropotence (MoreEffects2.kt)
         if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects3.discarded(this, obj)   // Megrim (MoreEffects3.kt)
+        if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects4.discarded(this, obj.owner, 1, obj)   // Waste Not (MoreEffects4.kt)
     
         // A commander put into a graveyard or exile may go to the command zone at the next state-based action check
         // (903.9a); one that would go to hand or library may go there instead (903.9b). See CommanderRules.kt.
@@ -6133,6 +6143,7 @@ class Engine(val state: GameState) {
     private fun describe(effect: Effect, item: StackItem): String = when (effect) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
         is More3 -> MoreEffects3.describe(effect, item.source.name)   // MoreEffects3.kt
+        is More4 -> MoreEffects4.describe(effect, item.source.name)   // MoreEffects4.kt
         is Effect.NewMech -> if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex2:")) Exam2Mech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"

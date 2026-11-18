@@ -388,6 +388,7 @@ object OracleParser {
         val c = cond.trim().trimEnd(',')
         mtg.judge.engine.Turns.trigger(c)?.let { return it }   // Paradox Haze: "enchanted player's first upkeep each turn"
         mtg.judge.engine.MoreEffects3.parseTrigger(c)?.let { return it }   // Megrim, Aurelia (MoreEffects3.kt)
+        mtg.judge.engine.MoreEffects4.parseTrigger(c)?.let { return it }   // Mayhem Devil, Vilis, Burgeoning (MoreEffects4.kt)
         Regex("""^the beginning of (?:(your|each player's|each|an opponent's|each opponent's|the) )?(upkeep|draw step|precombat main phase|first main phase|combat on your turn|combat on each of your turns|combat on each opponent's turn|combat|end step|next end step|postcombat main phase|second main phase|untap step|end of combat step|turn)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             val whose = when (m.groupValues[1].lowercase()) { "your" -> Who.YOU; "an opponent's", "each opponent's" -> Who.OPPONENT; else -> Who.ANY_PLAYER }
             val stepKey = m.groupValues[2].lowercase().substringBefore(" on ")
@@ -711,6 +712,7 @@ object OracleParser {
 
     /** "Creatures you control get +1/+1", "Other Elf creatures you control get +1/+1 and have trample", "Creatures you control have haste". */
     fun parseStatic(line: String): List<StaticEffect> {
+        mtg.judge.engine.MoreEffects4.parseStatic(line)?.let { return it }   // Shiny Impetus, Whispersilk Cloak, Pathrazer of Ulamog (MoreEffects4.kt)
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
         mtg.judge.engine.MechanicsMech.staticNote(line)?.let { return listOf(it) }   // Time Vault's "skip that turn instead" (MechanicsMechanics.kt)
@@ -1070,6 +1072,7 @@ object OracleParser {
     fun parseCondition(text: String): Condition? {
         val t = text.trim().trimEnd('.')
         mtg.judge.engine.MoreEffects3.parseCondition(t)?.let { return it }   // "you have two or more opponents" (MoreEffects3.kt)
+        mtg.judge.engine.MoreEffects4.parseCondition(t)?.let { return it }   // "you gained 5 or more life this turn", "an opponent controls more lands than you" (MoreEffects4.kt)
         if (Regex("""^(?:~|it|this spell) was kicked$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.WasKicked
         if (Regex("""^~ is untapped$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.SourceTapped(false)
         if (Regex("""^~ is tapped$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.SourceTapped(true)
@@ -1129,11 +1132,12 @@ object OracleParser {
         return CountExpr.Unknown(t)
     }
 
-    private fun keywordsIn(text: String): Set<String>? {
+    internal fun keywordsIn(text: String): Set<String>? {
         // "protection from colorless or from the color of your choice": one grant with a choice in it.
         if (Regex("""^protection from (?:colou?rless|artifacts) or from the colou?r of your choice$""", RegexOption.IGNORE_CASE).matches(text.trim().trimEnd('.')))
             return setOf("protection from the color of your choice")
-        val parts = text.lowercase().trimEnd('.').replace(" and from ", " and protection from ").split(Regex(""",\s*|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() }
+        // "reach, trample, hexproof, and indestructible" (Gaea's Gift): the serial comma leaves "and indestructible" after the split.
+        val parts = text.lowercase().trimEnd('.').replace(" and from ", " and protection from ").split(Regex(""",\s*|\s+and\s+""")).map { it.trim().removePrefix("and ").trim() }.filter { it.isNotEmpty() }
         val ok = parts.isNotEmpty() && parts.all { it in keywordList || Regex("""^ward (?:\{[^}]+\})+$""").matches(it) ||
             Regex("""^protection from (?:white|blue|black|red|green|colorless|everything|colored spells|spells|artifacts|creatures|instants|sorceries|planeswalkers|the color of your choice|[a-z]+)$""").matches(it) }
         return if (ok) parts.toSet() else null
@@ -1443,6 +1447,7 @@ object OracleParser {
         mtg.judge.engine.LifeDmgMech.parseSentence(s)?.let { return it }   // life totals set, exchanged, redistributed (LifeDamageMechanics.kt)
         mtg.judge.engine.MoreEffects2.parseSentence(s)?.let { return it }   // Stomp, Banefire, "target opponent draws", Show and Tell (MoreEffects2.kt)
         mtg.judge.engine.MoreEffects3.parseSentence(s)?.let { return it }   // once each turn, copy that spell, Frantic Search's untap (MoreEffects3.kt)
+        mtg.judge.engine.MoreEffects4.parseEarly(s)?.let { return it }   // counters on "each creature target player controls", "another target" (MoreEffects4.kt)
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
         mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
@@ -2147,6 +2152,7 @@ object OracleParser {
             val then = parseEffect(m.groupValues[2].replaceFirstChar { c -> c.uppercase() })
             if (!then.hasUnparsed()) return Effect.IfCondition(cond, then, m.groupValues[1].lowercase())
         }
+        mtg.judge.engine.MoreEffects4.parseSentence(s)?.let { return it }   // goad, devotion drains, doubling, counters on "it" (MoreEffects4.kt)
         return Effect.Unparsed(s)
     }
 
