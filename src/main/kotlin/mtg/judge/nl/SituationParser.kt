@@ -142,7 +142,7 @@ class SituationParser(private val names: NameIndex) {
 
     /** A sentence with card names replaced by placeholders C1, C2… */
     /** Permanents that choose a creature type as they enter ("Plague Engineer naming Faerie"). */
-    private val typeChoosers = setOf("Plague Engineer", "Engineered Plague", "Metallic Mimic", "Vanquisher's Banner", "Herald's Horn", "Urza's Incubator", "Door of Destinies", "Patchwork Banner", "Brass Herald", "Kindred Discovery", "Morophon, the Boundless", "Radiant Destiny", "Coat of Arms")
+    private val typeChoosers = setOf("Icon of Ancestry", "Chronicle of Victory", "Adaptive Automaton", "Banner of Kinship", "Roaming Throne", "Bloodline Pretender", "Renewed Solidarity", "Molten Echoes", "Plague Engineer", "Engineered Plague", "Metallic Mimic", "Vanquisher's Banner", "Herald's Horn", "Urza's Incubator", "Door of Destinies", "Patchwork Banner", "Brass Herald", "Kindred Discovery", "Morophon, the Boundless", "Radiant Destiny", "Coat of Arms")
     private class Marked(val text: String, val cards: Map<String, NameIndex.Entry>, val players: Map<String, String> = emptyMap())
 
     /** For debugging: the sentences with card names replaced by placeholders. */

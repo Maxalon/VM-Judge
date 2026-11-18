@@ -4184,13 +4184,14 @@
     "id": "turn-to-frog-keeps-target",
     "text": "I have Grizzly Bears attacking and my opponent casts Turn to Frog on it.",
     "expect": [
-      "Turn to Frog's text names a target the engine can't model"
+      "Grizzly Bears is a blue Frog with base power and toughness 1/1 and no abilities until end of turn."
     ],
     "notExpect": [
       "needs 0 targets"
     ],
     "cite": [
-      "601.2c"
+      "613.4b",
+      "613.1f"
     ]
   },
   {
@@ -30532,11 +30533,12 @@
     "id": "glistener-elf-pump-poison-count",
     "text": "I have Glistener Elf with 3 poison counters on my opponent. I cast Might of Old Krosa on it and attack. Do they die?",
     "expect": [
-      "opponent has 6 poison counters.",
+      "opponent has 8 poison counters.",
       "No: opponent is still in the game."
     ],
     "notExpect": [
-      "opponent has 3 poison counters."
+      "opponent has 3 poison counters.",
+      "opponent has 6 poison counters."
     ],
     "cite": []
   },
@@ -87659,5 +87661,622 @@
       "(twice)"
     ],
     "cite": []
+  },
+  {
+    "id": "o3-1",
+    "text": "I cast Goryo's Vengeance targeting Griselbrand in my graveyard during my first main phase. Can Griselbrand attack this turn?",
+    "expect": [
+      "Yes: Griselbrand can attack.",
+      "Griselbrand has haste."
+    ],
+    "cite": [
+      "611.2a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "o3-2",
+    "text": "I activate Whip of Erebos targeting Craw Wurm in my graveyard. What happens to Craw Wurm?",
+    "expect": [
+      "Craw Wurm has haste.",
+      "it's exiled instead of going anywhere else"
+    ],
+    "cite": [
+      "611.2a",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "o3-3",
+    "text": "I control Goreclaw, Terror of Qal Sisma. How much does Craw Wurm cost me?",
+    "expect": [
+      "4: Craw Wurm costs {4}{G}{G} minus {2} (Goreclaw, Terror of Qal Sisma makes it cost {2} less)"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "o3-4",
+    "text": "I control Goreclaw, Terror of Qal Sisma. How much does Grizzly Bears cost me?",
+    "expect": [
+      "2: Grizzly Bears costs {1}{G}",
+      "taxes only creature spells with power 4 or greater, and Grizzly Bears isn't one."
+    ],
+    "cite": [
+      "601.2f"
+    ],
+    "notExpect": [
+      "4: Grizzly Bears"
+    ]
+  },
+  {
+    "id": "o3-5",
+    "text": "My opponent controls Grizzly Bears and Serra Angel. I cast Frost Breath targeting Grizzly Bears and Serra Angel. What happens?",
+    "expect": [
+      "Grizzly Bears and Serra Angel don't untap during their controller's next untap step.",
+      "Serra Angel is tapped."
+    ],
+    "cite": [
+      "502.3",
+      "701.26a"
+    ],
+    "notExpect": [
+      "Not modelled"
+    ]
+  },
+  {
+    "id": "o3-6",
+    "text": "I control Persistent Petitioners. I activate its first ability targeting my opponent. What happens?",
+    "expect": [
+      "Opponent mills 1 card."
+    ],
+    "cite": [
+      "701.17a"
+    ]
+  },
+  {
+    "id": "o3-7",
+    "text": "I control Ichor Wellspring and sacrifice it to Krark-Clan Ironworks. Do I draw a card?",
+    "expect": [
+      "Yes: you draw 1 card in all.",
+      "Ichor Wellspring: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "o3-8",
+    "text": "I cast Mycosynth Wellspring. What happens when it enters?",
+    "expect": [
+      "Mycosynth Wellspring enters the battlefield.",
+      "You put a basic land card from your library into your hand, revealed, then shuffle (Mycosynth Wellspring)"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "o3-9",
+    "text": "My Sol Ring and Mind Stone are tapped. I activate Tezzeret the Seeker's +1 targeting Sol Ring and Mind Stone.",
+    "expect": [
+      "Sol Ring is untapped.",
+      "Mind Stone is untapped."
+    ],
+    "cite": [
+      "701.26b"
+    ]
+  },
+  {
+    "id": "o3-10",
+    "text": "My opponent controls Grizzly Bears and Serra Angel. I activate Tamiyo, Field Researcher's -2 targeting Grizzly Bears and Serra Angel. What happens?",
+    "expect": [
+      "Grizzly Bears is tapped.",
+      "Serra Angel is tapped.",
+      "Grizzly Bears and Serra Angel don't untap during their controller's next untap step."
+    ],
+    "cite": [
+      "502.3",
+      "701.26a"
+    ],
+    "notExpect": [
+      "Not modelled"
+    ]
+  },
+  {
+    "id": "o3-11",
+    "text": "I control Brightfield Mustang. I saddle it and attack with it. What happens?",
+    "expect": [
+      "Brightfield Mustang is untapped.",
+      "Brightfield Mustang has 1 +1/+1 counter.",
+      "Opponent takes 4 damage."
+    ],
+    "cite": [
+      "701.26b"
+    ]
+  },
+  {
+    "id": "o3-12",
+    "text": "My Gwenna, Eyes of Gaea is tapped. I cast Craw Wurm. What happens to Gwenna?",
+    "expect": [
+      "Gwenna, Eyes of Gaea has 1 +1/+1 counter.",
+      "Gwenna, Eyes of Gaea is untapped."
+    ],
+    "cite": [
+      "701.26b"
+    ]
+  },
+  {
+    "id": "o3-13",
+    "text": "I control Craw Wurm. I cast Rishkar's Expertise. What happens?",
+    "expect": [
+      "You draw 6 cards.",
+      "You may cast a spell with mana value 5 or less from your hand for free as Rishkar's Expertise resolves"
+    ],
+    "cite": [
+      "608.2g",
+      "107.3b"
+    ]
+  },
+  {
+    "id": "o3-14",
+    "text": "I cast Electrodominance with X=3 targeting my opponent. What happens?",
+    "expect": [
+      "Opponent takes 3 damage.",
+      "You may cast a spell with mana value 3 or less from your hand for free as Electrodominance resolves"
+    ],
+    "cite": [
+      "608.2g",
+      "118.9"
+    ]
+  },
+  {
+    "id": "o3-15",
+    "text": "I control Vanquisher's Banner naming Elf and Llanowar Elves. How big is Llanowar Elves?",
+    "expect": [
+      "Llanowar Elves is 2/2 (1/1 base, +1/+1 from Vanquisher's Banner)."
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "o3-16",
+    "text": "I control Icon of Ancestry naming Bear and Grizzly Bears and Llanowar Elves. How big are they?",
+    "expect": [
+      "Grizzly Bears is 3/3 (2/2 base, +1/+1 from Icon of Ancestry).",
+      "Llanowar Elves is 1/1."
+    ],
+    "cite": [
+      "613.4c"
+    ],
+    "notExpect": [
+      "Llanowar Elves is 2/2"
+    ]
+  },
+  {
+    "id": "o3-17",
+    "text": "I cast Kogla, the Titan Ape targeting my opponent's Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears: the battlefield → opponent's graveyard.",
+      "Kogla, the Titan Ape has 2 damage marked."
+    ],
+    "cite": [
+      "701.14a"
+    ]
+  },
+  {
+    "id": "o3-18",
+    "text": "I control Brash Taunter. I activate Brash Taunter targeting my opponent's Serra Angel. What happens?",
+    "expect": [
+      "Serra Angel has 1 damage marked.",
+      "Brash Taunter has 4 damage marked.",
+      "Opponent takes 4 damage."
+    ],
+    "cite": [
+      "701.14a"
+    ]
+  },
+  {
+    "id": "o3-19",
+    "text": "I control Kalonian Hydra with 4 +1/+1 counters. It attacks. How big is it?",
+    "expect": [
+      "Kalonian Hydra is 8/8 (0/0 base, 8 +1/+1 counters).",
+      "Opponent takes 8 damage."
+    ],
+    "cite": [
+      "701.10e"
+    ]
+  },
+  {
+    "id": "o3-20",
+    "text": "I control Primordial Hydra with 3 +1/+1 counters. At the beginning of my upkeep, how many counters does it have?",
+    "expect": [
+      "Primordial Hydra has 6 +1/+1 counters"
+    ],
+    "cite": [
+      "701.10e"
+    ]
+  },
+  {
+    "id": "o3-21",
+    "text": "I cast Splendid Reclamation with three lands in my graveyard. What happens?",
+    "expect": [
+      "3 lands return to the battlefield tapped (Splendid Reclamation)."
+    ],
+    "cite": [
+      "305.4",
+      "400.7"
+    ]
+  },
+  {
+    "id": "o3-22",
+    "text": "World Shaper dies with 4 lands in my graveyard. What happens?",
+    "expect": [
+      "4 lands return to the battlefield tapped (World Shaper).",
+      "World Shaper: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "305.4"
+    ]
+  },
+  {
+    "id": "o3-23",
+    "text": "I control Primordial Hydra with 10 +1/+1 counters. Does it have trample?",
+    "expect": [
+      "Yes: Primordial Hydra has trample."
+    ],
+    "cite": [
+      "613.1f"
+    ]
+  },
+  {
+    "id": "o3-24",
+    "text": "I control Taborax, Hope's Demise with 5 +1/+1 counters. It attacks and isn't blocked. How much life do I gain?",
+    "expect": [
+      "7: you gain 7 life in all."
+    ],
+    "cite": [
+      "702.15b"
+    ]
+  },
+  {
+    "id": "o3-25",
+    "text": "My opponent controls a Swamp and an Island. I tap Exotic Orchard for mana. What colors can I get?",
+    "expect": [
+      "You have {U} in your mana pool.",
+      "could produce blue, black"
+    ],
+    "cite": [
+      "106.7"
+    ]
+  },
+  {
+    "id": "o3-26",
+    "text": "My opponent controls only Wastes. I tap Fellwar Stone for mana. What do I get?",
+    "expect": [
+      "Fellwar Stone adds no mana"
+    ],
+    "cite": [
+      "106.7"
+    ],
+    "notExpect": [
+      "You have {"
+    ]
+  },
+  {
+    "id": "o3-27",
+    "text": "I control Reflecting Pool and a Forest. I tap Reflecting Pool for mana. What can it make?",
+    "expect": [
+      "You have {G} in your mana pool."
+    ],
+    "cite": [
+      "106.7"
+    ]
+  },
+  {
+    "id": "o3-28",
+    "text": "I control Sanctum Weaver and two other enchantments. I tap Sanctum Weaver for mana. How much mana do I get?",
+    "expect": [
+      "You have {G}{G}{G} in your mana pool."
+    ],
+    "cite": [
+      "608.2h",
+      "106.1a"
+    ]
+  },
+  {
+    "id": "o3-29",
+    "text": "I control Kami of Whispered Hopes with two +1/+1 counters on it. I tap it for mana. How much mana do I get?",
+    "expect": [
+      "You have {G}{G}{G} in your mana pool."
+    ],
+    "cite": [
+      "608.2h",
+      "106.1a"
+    ]
+  },
+  {
+    "id": "o3-30",
+    "text": "I control Everflowing Chalice with 2 charge counters. I tap it for mana. How much mana do I have?",
+    "expect": [
+      "You have {C}{C} in your mana pool."
+    ],
+    "cite": [
+      "608.2h",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "o3-31",
+    "text": "I control Mox Amber and Grizzly Bears. I tap Mox Amber for mana. What do I get?",
+    "expect": [
+      "Mox Amber adds no mana (you control no legendary creatures and planeswalkers)."
+    ],
+    "cite": [
+      "106.1a"
+    ],
+    "notExpect": [
+      "You have {"
+    ]
+  },
+  {
+    "id": "o3-32",
+    "text": "I control Mox Amber and Thalia, Guardian of Thraben. I tap Mox Amber for mana. What do I get?",
+    "expect": [
+      "You have {W} in your mana pool."
+    ],
+    "cite": [
+      "105.1"
+    ]
+  },
+  {
+    "id": "o3-33",
+    "text": "I control Grizzly Bears. My opponent casts Turn to Frog targeting it. How big is it?",
+    "expect": [
+      "Grizzly Bears is a blue Frog with base power and toughness 1/1 and no abilities until end of turn.",
+      "Grizzly Bears is 1/1."
+    ],
+    "cite": [
+      "613.4b",
+      "613.1f"
+    ]
+  },
+  {
+    "id": "o3-34",
+    "text": "I control Craw Wurm with a +1/+1 counter on it. My opponent casts Snakeform targeting it. How big is it?",
+    "expect": [
+      "Craw Wurm is a green Snake with base power and toughness 1/1 and no abilities until end of turn.",
+      "Craw Wurm is 2/2 (1/1 base, 1 +1/+1 counter).",
+      "Opponent draws 1 card."
+    ],
+    "cite": [
+      "613.4b"
+    ]
+  },
+  {
+    "id": "o3-35",
+    "text": "I cast Might of Old Krosa on my Grizzly Bears during my first main phase. How big is it?",
+    "expect": [
+      "Grizzly Bears is 6/6 (2/2 base, +4/+4 until end of turn)."
+    ],
+    "cite": [
+      "611.2a"
+    ]
+  },
+  {
+    "id": "o3-36",
+    "text": "I cast Precognitive Perception during my opponent's turn. How many cards do I draw?",
+    "expect": [
+      "3: you draw 3 cards."
+    ],
+    "cite": [
+      "121.1"
+    ],
+    "notExpect": [
+      "scry"
+    ]
+  },
+  {
+    "id": "o3-37",
+    "text": "I cast Rolling Thunder with X=3 targeting my opponent and their Grizzly Bears. What happens?",
+    "expect": [
+      "Opponent takes 2 damage.",
+      "Grizzly Bears has 1 damage marked."
+    ],
+    "cite": [
+      "601.2d"
+    ]
+  },
+  {
+    "id": "o3-38",
+    "text": "I control The Council of Four. My opponent casts two spells during their turn. What happens?",
+    "expect": [
+      "You get a Knight token."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "o3-39",
+    "text": "I control Murktide Regent. My opponent activates Scavenging Ooze targeting Lightning Bolt in my graveyard. What happens?",
+    "expect": [
+      "Lightning Bolt: your graveyard → exile.",
+      "Murktide Regent has 1 +1/+1 counter."
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "o3-40",
+    "text": "I control Desecrated Tomb and have Grizzly Bears in my graveyard. I cast Living Death. What happens?",
+    "expect": [
+      "You get a Bat token.",
+      "You get Grizzly Bears back from exile onto the battlefield (Living Death)."
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "o3-41",
+    "text": "I control Grizzly Bears equipped with Grafted Exoskeleton. My opponent destroys Grafted Exoskeleton. What happens?",
+    "expect": [
+      "Grafted Exoskeleton: the battlefield → your graveyard.",
+      "Grizzly Bears: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "701.3d",
+      "701.21a"
+    ]
+  },
+  {
+    "id": "o3-42",
+    "text": "I control Grizzly Bears equipped with Grafted Wargear and Llanowar Elves. I equip Grafted Wargear to Llanowar Elves. What happens?",
+    "expect": [
+      "Grafted Wargear is attached to Llanowar Elves.",
+      "Grizzly Bears: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "701.3d",
+      "701.21a"
+    ]
+  },
+  {
+    "id": "o3-43",
+    "text": "I control Hardened Scales and Kami of Whispered Hopes. I put a +1/+1 counter on Grizzly Bears. How many counters does it have?",
+    "expect": [
+      "3: Grizzly Bears has 3 +1/+1 counters."
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "o3-44",
+    "text": "It's my turn. I control Lurrus of the Dream-Den and Grizzly Bears is in my graveyard. Can I cast Grizzly Bears from my graveyard?",
+    "expect": [
+      "Yes: Lurrus of the Dream-Den lets you cast Grizzly Bears from your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "o3-45",
+    "text": "It's my turn. I control Karador, Ghost Chieftain. Craw Wurm and Grizzly Bears are in my graveyard. I cast Craw Wurm from my graveyard, then I cast Grizzly Bears from my graveyard. What happens?",
+    "expect": [
+      "Craw Wurm enters the battlefield.",
+      "Grizzly Bears can't be cast from your graveyard: Karador, Ghost Chieftain's permission applies only once each turn"
+    ],
+    "cite": [
+      "601.3"
+    ],
+    "notExpect": [
+      "Grizzly Bears enters the battlefield."
+    ]
+  },
+  {
+    "id": "o3-46",
+    "text": "I control Academy Rector and it dies. What happens?",
+    "expect": [
+      "Academy Rector: your graveyard → exile."
+    ],
+    "cite": [
+      "701.13a",
+      "603.10a"
+    ]
+  },
+  {
+    "id": "o3-47",
+    "text": "I control Arena Rector and it dies. What happens?",
+    "expect": [
+      "Arena Rector: your graveyard → exile."
+    ],
+    "cite": [
+      "701.13a"
+    ]
+  },
+  {
+    "id": "o3-48",
+    "text": "My opponent casts Orim's Chant with kicker targeting me. Can I attack with Grizzly Bears this turn?",
+    "expect": [
+      "No: Grizzly Bears can't attack.",
+      "Creatures can't attack this turn (Orim's Chant)."
+    ],
+    "cite": [
+      "611.2c"
+    ],
+    "notExpect": [
+      "Opponent takes 2 damage"
+    ]
+  },
+  {
+    "id": "o3-49",
+    "text": "My opponent casts Orim's Chant targeting me without kicker. Can I attack with Grizzly Bears?",
+    "expect": [
+      "Yes: Grizzly Bears can attack.",
+      "Nothing happens from Orim's Chant: it needs the spell to have been kicked."
+    ],
+    "cite": [
+      "608.2"
+    ]
+  },
+  {
+    "id": "o3-50",
+    "text": "It's my opponent's turn. I control Lurrus of the Dream-Den and Grizzly Bears is in my graveyard. Can I cast Grizzly Bears from my graveyard?",
+    "expect": [
+      "No: Lurrus of the Dream-Den lets you cast Grizzly Bears from your graveyard only during your own turn"
+    ],
+    "cite": []
+  },
+  {
+    "id": "o3-51",
+    "text": "My opponent controls Grizzly Bears, Serra Angel and a Forest. I control Liliana of the Veil with 6 loyalty and activate its -6 targeting my opponent. What happens?",
+    "expect": [
+      "Opponent sacrifices the pile of their choice"
+    ],
+    "cite": [
+      "700.3",
+      "700.3d"
+    ]
+  },
+  {
+    "id": "o3-52",
+    "text": "Lightning Bolt is in my graveyard. I attack with Dreadhorde Arcanist. What happens?",
+    "expect": [
+      "You may cast Lightning Bolt from your graveyard for free (Dreadhorde Arcanist).",
+      "That spell is exiled instead of going back to your graveyard."
+    ],
+    "cite": [
+      "608.2g",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "o3-53",
+    "text": "I cast Torrential Gearhulk targeting Counterspell in my graveyard. What happens?",
+    "expect": [
+      "You may cast Counterspell from your graveyard for free (Torrential Gearhulk).",
+      "That spell is exiled instead of going back to your graveyard."
+    ],
+    "cite": [
+      "608.2g",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "o3-54",
+    "text": "Fact or Fiction is in my graveyard. I attack with Dreadhorde Arcanist. What happens?",
+    "expect": [
+      "Fact or Fiction can't be cast with Dreadhorde Arcanist: mana value 4 is more than its power, 1."
+    ],
+    "cite": [
+      "608.2h"
+    ],
+    "notExpect": [
+      "That spell is exiled instead"
+    ]
   }
 ]

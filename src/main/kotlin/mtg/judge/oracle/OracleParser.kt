@@ -390,6 +390,7 @@ object OracleParser {
         mtg.judge.engine.Turns.trigger(c)?.let { return it }   // Paradox Haze: "enchanted player's first upkeep each turn"
         mtg.judge.engine.MoreEffects3.parseTrigger(c)?.let { return it }   // Megrim, Aurelia (MoreEffects3.kt)
         mtg.judge.engine.MoreEffects4.parseTrigger(c)?.let { return it }   // Mayhem Devil, Vilis, Burgeoning (MoreEffects4.kt)
+        mtg.judge.engine.MoreEffects5.parseTrigger(c)?.let { return it }   // Ichor Wellspring (MoreEffects5.kt)
         Regex("""^the beginning of (?:(your|each player's|each|an opponent's|each opponent's|the) )?(upkeep|draw step|precombat main phase|first main phase|combat on your turn|combat on each of your turns|combat on each opponent's turn|combat|end step|next end step|postcombat main phase|second main phase|untap step|end of combat step|turn)$""", RegexOption.IGNORE_CASE).matchEntire(c)?.let { m ->
             val whose = when (m.groupValues[1].lowercase()) { "your" -> Who.YOU; "an opponent's", "each opponent's" -> Who.OPPONENT; else -> Who.ANY_PLAYER }
             val stepKey = m.groupValues[2].lowercase().substringBefore(" on ")
@@ -715,6 +716,7 @@ object OracleParser {
     fun parseStatic(line: String): List<StaticEffect> {
         mtg.judge.engine.Leftovers4Mech.parseStatic(line)?.let { return it }   // Emet-Selch's graveyard discount, Marina Vendrell's Grimoire (Leftovers4Mechanics.kt)
         mtg.judge.engine.MoreEffects4.parseStatic(line)?.let { return it }   // Shiny Impetus, Whispersilk Cloak, Pathrazer of Ulamog (MoreEffects4.kt)
+        mtg.judge.engine.MoreEffects5.parseStatic(line)?.let { return it }   // Goreclaw, Relentless Rats, the Banners (MoreEffects5.kt)
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
         mtg.judge.engine.MechanicsMech.staticNote(line)?.let { return listOf(it) }   // Time Vault's "skip that turn instead" (MechanicsMechanics.kt)
@@ -1160,6 +1162,7 @@ object OracleParser {
 
     fun parseEffect(text: String): Effect {
         mtg.judge.engine.MoreEffects3.parseSpell(text)?.let { return it }   // spree's "+ {1} — mode" lines (MoreEffects3.kt)
+        mtg.judge.engine.MoreEffects5.parseSpell(text)?.let { return it }   // Might of Old Krosa's main-phase "instead" (MoreEffects5.kt)
         WinLoss.parseSpell(text) { parseEffect(it) }?.let { return it }
         mtg.judge.engine.CedhMech.parseSpell(text)?.let { return it }   // Tainted Pact, Peer into the Abyss, Bonus Round (CedhMechanics.kt)
         mtg.judge.engine.EdhMech.parseSpell(text) { parseEffect(it) }?.let { return it }   // Demonic Consultation, Expropriate (EdhMechanics.kt)
@@ -1464,6 +1467,7 @@ object OracleParser {
         mtg.judge.engine.MoreEffects2.parseSentence(s)?.let { return it }   // Stomp, Banefire, "target opponent draws", Show and Tell (MoreEffects2.kt)
         mtg.judge.engine.MoreEffects3.parseSentence(s)?.let { return it }   // once each turn, copy that spell, Frantic Search's untap (MoreEffects3.kt)
         mtg.judge.engine.MoreEffects4.parseEarly(s)?.let { return it }   // counters on "each creature target player controls", "another target" (MoreEffects4.kt)
+        mtg.judge.engine.MoreEffects5.parseEarly(s)?.let { return it }   // "~ fights another target creature" (MoreEffects5.kt)
         mtg.judge.engine.Turns.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // turn structure (Turns.kt)
         mtg.judge.engine.Zones.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // Flickerwisp's delayed return (Zones.kt)
         mtg.judge.engine.CounterRules.narratedRules(s)?.let { return Effect.Narrated(s.trim().trimEnd('.'), it) }   // The Chain Veil (CounterRules.kt)
@@ -2188,6 +2192,7 @@ object OracleParser {
             if (!then.hasUnparsed()) return Effect.IfCondition(cond, then, m.groupValues[1].lowercase())
         }
         mtg.judge.engine.MoreEffects4.parseSentence(s)?.let { return it }   // goad, devotion drains, doubling, counters on "it" (MoreEffects4.kt)
+        mtg.judge.engine.MoreEffects5.parseSentence(s)?.let { return it }   // Goryo's haste, tap up to four, untap it, free casts, fights (MoreEffects5.kt)
         return Effect.Unparsed(s)
     }
 

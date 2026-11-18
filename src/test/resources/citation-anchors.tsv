@@ -1,6 +1,7 @@
 100	general
 100.1	these magic rules apply to any
 100.1a	a two player game is a
+100.2a	in constructed play a way of
 100.6	most magic tournaments organized play activities
 101.1	whenever a card s text directly
 101.2	when a rule or effect allows
@@ -23,11 +24,13 @@
 104.4a	if all the players remaining in
 104.4b	if a game that s not
 104.5	if a player loses the game
+105.1	there are five colors in the
 105.2a	a monocolored object is exactly one
 105.2b	a multicolored object is two or
 105.2c	a colorless object has no color
 105.3	effects may change an object s
 106.1	mana is the primary resource in
+106.1a	there are five colors of mana
 106.4	when an effect instructs a player
 106.5	if an ability would produce one
 106.6	some spells or abilities that produce
@@ -436,6 +439,7 @@
 700.5	a player s devotion to color
 700.17	some abilities trigger when a player
 701.3a	to attach an aura equipment or
+701.3d	to unattach an equipment from a
 701.4a	behold a quality means reveal a
 701.6a	to counter a spell or ability
 701.6b	the player who cast a countered
@@ -447,6 +451,7 @@
 701.10b	to double a creature s power
 701.10c	if a creature s power is
 701.10d	to double a player s life
+701.10e	to double the number of a
 701.12a	a spell or ability may instruct
 701.12b	when control of two permanents is
 701.12c	when life totals are exchanged each

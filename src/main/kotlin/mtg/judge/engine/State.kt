@@ -487,7 +487,7 @@ class GameState(
         }
         Condition.WasKicked -> src.wasKicked
         is Condition.SourceTapped -> (src.tapped == true) == c.tapped
-        is Condition.Unknown -> Leftovers4Mech.condition(this, c.text, src) ?: NewSetMech.condition(this, c.text, src) ?: MoreEffects3.condition(this, c.text, src) ?: MoreEffects4.condition(this, c.text, src) ?: false
+        is Condition.Unknown -> Leftovers4Mech.condition(this, c.text, src) ?: NewSetMech.condition(this, c.text, src) ?: MoreEffects3.condition(this, c.text, src) ?: MoreEffects4.condition(this, c.text, src) ?: MoreEffects5.condition(this, c.text, src) ?: false
     }
 
     /** What a static ability's condition asks for, for traces and for saying why one doesn't apply. */
@@ -502,7 +502,7 @@ class GameState(
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"
         is Condition.SourceTapped -> "it to be ${if (c.tapped) "tapped" else "untapped"}"
-        is Condition.Unknown -> Leftovers4Mech.describeCondition(c.text) ?: NewSetMech.describeCondition(c.text) ?: MoreEffects3.describeCondition(c.text) ?: MoreEffects4.describeCondition(c.text) ?: c.text
+        is Condition.Unknown -> Leftovers4Mech.describeCondition(c.text) ?: NewSetMech.describeCondition(c.text) ?: MoreEffects3.describeCondition(c.text) ?: MoreEffects4.describeCondition(c.text) ?: MoreEffects5.describeCondition(c.text) ?: c.text
     }
 
     /** Layer 7a: a characteristic-defining ability's value, or null when it depends on something the situation doesn't say. */
@@ -577,6 +577,7 @@ class GameState(
         val stripped = abilitiesLostOn(obj) != null
         // Blood Moon takes only the abilities from the rules text (305.7): "They have Blood Moon; they Shatter my Darksteel Citadel" — no indestructible.
         if (!stripped && ((obj.def.has(k) && moonOn(obj) == null) || k in obj.tempKeywords)) return true
+        if (!stripped && MoreEffects5.keyword(this, obj, k)) return true   // Goryo's Vengeance's haste, which has no duration (MoreEffects5.kt)
         if (!stripped && MoreEffects3.gatedKeyword(obj, k)) return true   // "12+ | Flying" with 12 charge counters (MoreEffects3.kt)
         if (!stripped && Redteam3Mech.selfConditionKeyword(this, obj, k)) return true   // Romulan Bird-of-Prey: hexproof while it isn't a creature (Redteam3Mechanics.kt)
         if (!stripped && levelBand(obj)?.keywords?.contains(k) == true) return true   // 702.87b: the band's abilities while it has that many level counters

@@ -21,8 +21,9 @@ class Engine(val state: GameState) {
         obj.kwf.escaped = obj.kwf.escapeIntent && obj.kwf.castFrom == Zone.GRAVEYARD; val escapeCast = obj.kwf.escapeIntent || obj.kwf.jumpIntent; obj.kwf.escapeIntent = false; obj.kwf.jumpStarted = obj.kwf.jumpIntent; obj.kwf.jumpIntent = false   // escape (702.138b)
         // "I cast Lightning Bolt from my graveyard": only with permission (Yawgmoth's Will) or the card's own flashback.
         val legacyPermit = obj.zone == Zone.GRAVEYARD && LegacyMech.castFromGraveyardBy(state, playerId, obj, card)   // Dreadhorde Arcanist
+        if (obj.zone == Zone.GRAVEYARD && !legacyPermit && !card.has("flashback") && MoreEffects5.permitRefuses(state, playerId, obj, card)) return null   // Karador's once-per-turn used up (MoreEffects5.kt)
         val breachPermit = obj.zone == Zone.GRAVEYARD && !escapeCast && !legacyPermit && playerId !in state.castFromGraveyard && !card.has("flashback") && CedhMech.breachPermits(state, playerId, obj, card)   // Underworld Breach (CedhMechanics.kt)
-        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback") && !escapeCast && !legacyPermit && !breachPermit && !Redteam3Mech.lurrusAllows(state, playerId, card)) {
+        if (obj.zone == Zone.GRAVEYARD && !flashback && playerId !in state.castFromGraveyard && !card.has("flashback") && !escapeCast && !legacyPermit && !breachPermit && !Redteam3Mech.lurrusAllows(state, playerId, card) && !MoreEffects5.graveyardPermit(state, playerId, card)) {
             trace.step("${card.name} is in ${player.possessive} graveyard, and nothing lets ${player.subject.lowercase()} cast it from there: a spell can be cast only from where a rule or effect allows, normally the hand (601.3, 601.2a). Yawgmoth's Will or a flashback cost would let it be cast from the graveyard.", "601.3", "601.2a")
             state.outcomes += "${card.name} can't be cast from ${player.possessive} graveyard (nothing allows it)."; return null
         }
@@ -474,7 +475,7 @@ class Engine(val state: GameState) {
             trace.step("$mage's enters-the-battlefield trigger was countered, so it never gave ${card.name} flashback; ${card.name} has no flashback of its own and can't be cast from the graveyard.", "702.34a", "601.3")
             state.outcomes += "No: ${card.name} can't be cast from ${player.possessive} graveyard. $mage's trigger was countered, so it never gained flashback, and it has none itself (702.34a, 601.3)."; return null
         }
-        if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn && !legacyPermit && !CedhMech.breachEscaped(state, obj.id) && !Redteam3Mech.wasBeamed(obj) && !Redteam3Mech.lurrusCast(obj)) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
+        if (flashback && !obj.has("flashback") && playerId !in state.exileInsteadThisTurn && !legacyPermit && !CedhMech.breachEscaped(state, obj.id) && !Redteam3Mech.wasBeamed(obj) && !Redteam3Mech.lurrusCast(obj) && !MoreEffects5.permitted(state, obj)) state.assumptions += "${card.name} doesn't have flashback, so something else must be allowing it to be cast from a graveyard (escape, for instance); it is shown going to the graveyard afterwards as usual."
         if (item.flashback) { obj.zone = Zone.STACK; trace.step("${card.name} is cast from ${player.possessive} graveyard for its flashback cost, an alternative cost paid instead of its mana cost.", "702.34a", "601.2b") }
         if (evoked && !card.has("evoke")) { state.clarifications += Clarification("${card.name}'s evoke", "${card.name} doesn't have evoke, so it can't be cast for an evoke cost; treating it as cast normally.") }
         if (item.evoked) trace.step("${card.name} is cast for its evoke cost, an alternative cost paid instead of its mana cost. It's still a creature spell and resolves normally; its evoke trigger will sacrifice it once it has entered.", "702.74a", "601.2b")
@@ -766,7 +767,7 @@ class Engine(val state: GameState) {
     }
 
     /** Whether an ability's effect adds mana, so it's a mana ability that doesn't use the stack (605.1a). */
-    fun isManaEffect(e: Effect?): Boolean = e is Effect.AddMana || e is Effect.AddManaPer || e is Effect.AddManaDevotion ||
+    fun isManaEffect(e: Effect?): Boolean = e is Effect.AddMana || e is Effect.AddManaPer || e is Effect.AddManaDevotion || MoreEffects5.isMana(e) ||
         ((e as? Effect.Seq)?.effects?.firstOrNull()?.let { it is Effect.AddMana || it is Effect.AddManaPer || it is Effect.AddManaDevotion } == true)
 
     /** A player's devotion to a colour: the colour's symbols in the mana costs of the permanents they control (700.5). */
@@ -986,6 +987,7 @@ class Engine(val state: GameState) {
             trace.step("${ss.source.name} has split second and is on the stack, so abilities that aren't mana abilities can't be activated. ${obj.name}'s ability can't be activated now.", "702.61a")
             state.outcomes += "${obj.name}'s ability can't be activated while ${ss.source.name} is on the stack (split second)."; return null
         }
+        if (MoreEffects5.isMana(ability.effect)) { MoreEffects5.activateMana(this, playerId, obj, ability, choice); return null }   // Exotic Orchard, Mox Amber, Everflowing Chalice (MoreEffects5.kt)
         if (isManaEffect(ability.effect)) {
             val p = state.player(playerId)
             val made0 = manaMade(ability.effect, playerId, choice)
@@ -1539,6 +1541,7 @@ class Engine(val state: GameState) {
         val o = state.obj(objectId)
         if (what == "attack" || what == "block") state.notACreatureBecause(o)?.let { why -> return "${o.name} isn't a creature right now — ${state.player(o.controller).possessive} $why" }
         if (what == "attack") attackConditionUnmet(o, null)?.let { cond -> return "its own \"can't attack unless $cond\"" }
+        if (what == "attack") MoreEffects5.noAttacks(state)?.let { return it }   // Orim's Chant kicked (MoreEffects5.kt)
         if (what == "block") Leftovers3Mech.cantBlock(state, o.id)?.let { src -> return "$src's \"until your next turn, those creatures can't block\"" }   // Taunt from the Rampart (Leftovers3Mechanics.kt)
         if (!cant(o, what)) return null
         return cantSource(o, what) ?: o.name
@@ -1572,7 +1575,7 @@ class Engine(val state: GameState) {
         // "instant or sorcery spell" (Double Vision) is read as the subtypes "instant"/"sorcery" with any one sufficing: a card type counts.
         fun hasSub(s: String) = card.subtypes.any { it.equals(s, true) } || card.types.any { it.equals(s, true) } || card.changeling
         val subOk = if (f.subtypesAny) f.subtypes.isEmpty() || f.subtypes.any { hasSub(it) } else f.subtypes.all { hasSub(it) }
-        return typeOk && notOk && colourOk && mvOk && subOk
+        return typeOk && notOk && colourOk && mvOk && subOk && MoreEffects5.spellFits(f, card)   // Goreclaw's "with power 4 or greater" (MoreEffects5.kt)
     }
     private fun usesX(e: Effect): Boolean = when (e) { is Effect.Damage -> e.x; is Effect.Draw -> e.x; is Effect.LoseLife -> e.x; is Effect.Discard -> e.x; is Effect.PumpAll -> e.x; is Effect.SetBasePtAll -> e.x; is Effect.PutCounters -> e.x; is Effect.CreateToken -> e.x; is Effect.Repeat -> e.x || usesX(e.body); is Effect.Seq -> e.effects.any { usesX(it) }; is Effect.May -> usesX(e.effect); is Effect.Modal -> e.modes.any { usesX(it) }; else -> false }
 
@@ -2722,6 +2725,7 @@ class Engine(val state: GameState) {
         is MoreTrigger2 -> MoreEffects2.triggerMatches(state, obj, trigger, event)   // Voice of Resurgence (MoreEffects2.kt)
         is MoreTrigger3 -> MoreEffects3.triggerMatches(state, obj, trigger, event)   // Aurelia (MoreEffects3.kt)
         is MoreTrigger4 -> MoreEffects4.triggerMatches(state, obj, trigger, event)   // Mayhem Devil, Vilis (MoreEffects4.kt)
+        is MoreTrigger5 -> MoreEffects5.triggerMatches(state, obj, trigger, event)   // Ichor Wellspring (MoreEffects5.kt)
         is LdTrigger -> LifeDmgMech.triggerMatches(state, obj, trigger, event)   // Repercussion (LifeDamageMechanics.kt)
         is Exam2Mech.Exam2Trigger -> Exam2Mech.triggerMatches(state, obj, trigger, event)   // Kaya's Ghostform (Exam2Mechanics.kt)
         }
@@ -3144,6 +3148,7 @@ class Engine(val state: GameState) {
         if (MoreEffects2.apply(this, effect, item)) return   // "target opponent draws a card" (MoreEffects2.kt)
         if (MoreEffects3.apply(this, effect, item)) return   // once each turn, copy that spell, untap up to three lands (MoreEffects3.kt)
         if (MoreEffects4.apply(this, effect, item)) return   // goad, devotion drains, doubling, counters on "it" (MoreEffects4.kt)
+        if (MoreEffects5.apply(this, effect, item)) return   // Goryo's haste, untap it, fights, doubled counters (MoreEffects5.kt)
         val you = state.player(item.controller)
         when (effect) {
             is Effect.ShuffleGraveyardIntoLibrary, is Effect.ReturnExiledCard, is Effect.SacrificeEnchanted, is Effect.GainLifeThatMuch, is Effect.TapOrUntap, is Effect.CreateTokenCopy, is Effect.OpponentMayTakeDamage, is Effect.DamageCausing, is Effect.DoublePower, is Effect.PumpCount, is Effect.LoseHalfLife, is Effect.ExileUntilLeaves, is Effect.SacrificeTarget, is Effect.GainLifeEqualTo, is Effect.FreezeUntap, is Effect.RemoveCounters, is Effect.SetBasePtTarget, is Effect.LoseLifeEqual -> applyEffectMore(effect, item)
@@ -4098,6 +4103,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${t.name}: ${state.player(t.owner).possessive} graveyard → the battlefield (under ${state.player(item.controller).possessive} control, ${item.source.name})."
                     onEvent(GameEvent.EntersBattlefield(t))
                 }
+                MoreEffects5.unattaching(this, item.source, t)   // Grafted Exoskeleton moved to another creature (MoreEffects5.kt)
                 item.source.attachedTo = t.id; applyControlEnchanted(item.source)
                 trace.step("${item.source.name} becomes attached to ${t.name}${if (item.source.def.isEquipment) " (equipped creature)" else ""}.", *(if (item.source.def.isEquipment) arrayOf("702.6a", "301.5a") else arrayOf("701.3a")))
                 state.outcomes += "${item.source.name} is attached to ${t.name}."
@@ -5049,6 +5055,8 @@ class Engine(val state: GameState) {
     }
 
     private fun moveRaw(obj: GameObject, to: Zone) {
+        val leftGy = obj.zone == Zone.GRAVEYARD && to != Zone.GRAVEYARD
+        val wasOn = if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD) obj.attachedTo else null
         if (to == Zone.BATTLEFIELD && obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
         // A merged permanent that leaves: each card that made it up goes to the new zone as its own object (731.3).
         if (obj.kwf.mergedDefs.isNotEmpty() && obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD) {
@@ -5095,6 +5103,8 @@ class Engine(val state: GameState) {
         }
         if (obj.isOnBattlefield()) obj.lkiPower = obj.power
         obj.zone = to; obj.damage = 0; obj.pumps.clear(); obj.tempKeywords.clear(); obj.lostKeywords.clear(); obj.basePt = null; obj.animatedAs = null; obj.saddled = false; obj.saddledThisTurn = 0; obj.tapped = false; obj.attacking = null; obj.blocking = null; obj.alsoBlocking.clear(); obj.dealtDeathtouchDamage = false
+        if (leftGy) MoreEffects5.leftGraveyard(this, obj)   // Murktide Regent, Desecrated Tomb (MoreEffects5.kt)
+        if (wasOn != null) state.objects[wasOn]?.let { MoreEffects5.unattaching(this, obj, null, it) }   // Grafted Exoskeleton leaving the battlefield (MoreEffects5.kt)
     }
 
     /** Destruction with regeneration (701.19a, 614.8): returns true if the destruction was replaced. */
@@ -5140,6 +5150,7 @@ class Engine(val state: GameState) {
         // "Target creature can't block this turn" / "can't attack this turn" are carried the same way.
         if (what == "block" && (o.has("cant-block") || o.tempKeywords.any { it.startsWith("cant-block@") })) return true
         if (what == "attack" && (o.has("cant-attack") || o.tempKeywords.any { it.startsWith("cant-attack@") })) return true
+        if (what == "attack" && MoreEffects5.noAttacks(state) != null) return true   // Orim's Chant kicked (MoreEffects5.kt)
         val own = o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.Cant && it.by == null && it.applies == null && !it.powerAboveHand && it.unlessDefenderControls == null && it.unlessYouControl == null && (it.what == what || it.what == "attack or block" && (what == "attack" || what == "block")) }
         if (own) return true
         // "Enchanted creature can't attack or block" and the like, from other permanents.
@@ -5459,6 +5470,7 @@ class Engine(val state: GameState) {
 
     private fun graveyardReplacement(obj: GameObject, from: Zone): GyRepl? {
         if (from == Zone.BATTLEFIELD && obj.exileOnDeath != null) return GyRepl(Zone.EXILE, "${obj.exileOnDeath}'s \"exile it instead\"", null, null)
+        if (from == Zone.BATTLEFIELD) MoreEffects5.leaveReplacement(state, obj)?.let { return GyRepl(Zone.EXILE, it, null, null) }   // Whip of Erebos (MoreEffects5.kt)
         if (obj.owner in state.exileInsteadThisTurn && !obj.token) return GyRepl(Zone.EXILE, "Yawgmoth's Will's \"if a card would be put into your graveyard from anywhere this turn, exile that card instead\"", null, null)
         for (o in state.objects.values) {
             // A permanent leaving alongside the one that would die still applies its replacement: replacement
@@ -5706,7 +5718,7 @@ class Engine(val state: GameState) {
         if (xPart > 0) trace.step("X is $xPart, so ${card.name}'s {X} is paid as $xPart.", "107.3a")
         // "Thalia is out. How much does my Grizzly Bears cost?": a tax on the battlefield that doesn't reach this spell is named.
         val idle = if (taxes.isEmpty()) state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().map { o to it } } else emptyList()
-        if (taxes.isEmpty() && commanderTax == 0 && idle.isNotEmpty()) { trace.step("${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes ${t.filter.raw.ifEmpty { "spell" }}s" }}, and ${card.name} isn't one, so its cost is unchanged.", "601.2f"); state.outcomes += "${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes only ${t.filter.raw.ifEmpty { "spell" }}s" }}, and ${card.name} isn't one." }
+        if (taxes.isEmpty() && commanderTax == 0 && idle.isNotEmpty()) { trace.step("${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes ${MoreEffects5.plural(t.filter.raw.ifEmpty { "spell" })}" }}, and ${card.name} isn't one, so its cost is unchanged.", "601.2f"); state.outcomes += "${idle.joinToString(" and ") { (o, t) -> "${o.name} taxes only ${MoreEffects5.plural(t.filter.raw.ifEmpty { "spell" })}" }}, and ${card.name} isn't one." }
         // "I cast Force of Will pitching a blue card. What does it cost me?": the alternative cost it was cast for, plus any tax.
         obj.castForAlternativeCost?.let { alt -> val what = alt.replace("your hand", "${p.possessive} hand").trimEnd('.')
             trace.step("${card.name} was cast for its alternative cost ($what), which replaces its mana cost; ${if (tax > 0) "cost increases still apply to it, so the tax of {$tax} is paid on top" else "no mana was paid for it"}.", "118.9", "118.9d", "601.2f")
@@ -5827,6 +5839,7 @@ class Engine(val state: GameState) {
         // "I have 3 lands and cast a 2 drop, then a 1 drop, do I have mana left?": what the casts already paid comes off.
         if (sources.isEmpty() && stated != null && p.manaSpent > 0) return "${p.subject} ${p.v("has", "have")} ${maxOf(0, stated - p.manaSpent)} mana left${poolNote(p)}: the situation gave ${p.subject.lowercase()} $stated, and ${p.manaSpent} of it paid for what ${p.subject.lowercase()} cast."
         if (sources.isEmpty()) return (if (stated != null) "${p.subject} ${p.v("has", "have")} $stated mana available (the situation says so; no permanent it named makes mana)."
+                                       else if (p.manaPool > 0) "${p.subject} ${p.v("has", "have")} ${p.poolText()} in ${p.possessive} mana pool, and no other untapped permanent that makes mana."   // what a mana ability just made (MoreEffects5.kt)
                                        else "${p.subject} ${p.v("has", "have")} no untapped permanent with a mana ability the engine recognises.")
         val usable = sources.filter { it.third != null }
         // Ashnod's Altar with two tokens: "Sacrifice a creature: Add {C}{C}" can be used once per creature.
@@ -6259,6 +6272,7 @@ class Engine(val state: GameState) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
         is More3 -> MoreEffects3.describe(effect, item.source.name)   // MoreEffects3.kt
         is More4 -> MoreEffects4.describe(effect, item.source.name)   // MoreEffects4.kt
+        is More5 -> MoreEffects5.describe(effect, item.source.name)   // MoreEffects5.kt
         is Effect.NewMech -> if (effect.kind.startsWith("l4:")) Leftovers4Mech.describe(effect) else if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex2:")) Exam2Mech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
@@ -6352,3 +6366,4 @@ class Engine(val state: GameState) {
     internal fun me3CopySpell(effect: Effect.CopySpell, item: StackItem, ref: Ref) = copySpell(effect, item, ref)
     internal fun me3PutTrigger(obj: GameObject, ability: TriggeredAbility, causedBy: String?, causedObject: String?) = putTriggerOnStack(obj, ability, emptyList(), causedBy, null, causedObject)
 }
+
