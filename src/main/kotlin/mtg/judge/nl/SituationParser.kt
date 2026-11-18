@@ -154,7 +154,28 @@ class SituationParser(private val names: NameIndex) {
         "manland" to "Celestial Colonnade, Raging Ravine, …", "creature land" to "Celestial Colonnade, Raging Ravine, …")
 
     /** Table talk first ("dont", "my guy", "swords"), then the ordinary reading. */
-    fun parse(text: String): Parsed = parseCore(perturbRewrites(PolicyCanon.canon(Slang.normalize(text))))
+    fun parse(text: String): Parsed {
+        val base = TableTalk.plainOnly(PolicyCanon.canon(Slang.normalize(text)))
+        if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("plain: [$base]")
+        val p0 = parseCore(perturbRewrites(base))
+        // A question told the way people talk (question first, one breathless sentence) that was not fully read: try it told in order.
+        fun score(p: Parsed) = p.unread.size * 2 + (if (p.situation.events.any { it.verb == "ask" } || p.situation.question.kind != "whatHappens" || p.situation.question.text != null) 0 else 1)
+        var best = p0
+        // Only a better reading counts: fewer unread clauses, or the question now understood with nothing the first reading found lost.
+        fun keeps(p: Parsed, q: Parsed): Boolean = q.situation.events.count { it.verb == "block" } <= p.situation.events.count { it.verb == "block" }
+        val vs = TableTalk.variants(base)
+        if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("p0 score=${score(p0)} unread=${p0.unread} events=${p0.situation.events.map { it.verb }} q=${p0.situation.question.kind}/${p0.situation.question.text}")
+        if (vs.isEmpty() || score(p0) == 0) return p0
+        for (v in vs) {
+            if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("variant: [$v]")
+            val p = parseCore(perturbRewrites(v))
+            // Told in order and fully read: that reading wins over one that got through by running things together.
+            if (score(p) == 0 && keeps(p, p0)) return p
+            val better = p.unread.size < best.unread.size || (p.unread.size == best.unread.size && score(p) < score(best) && keeps(p, best))
+            if (better) best = p
+        }
+        return best
+    }
 
     /**
      * "I cast the lightning bolt", "they have the sphere of resistance": the article in front of a card named in full is
