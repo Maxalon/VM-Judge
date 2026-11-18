@@ -2042,6 +2042,9 @@ class Engine(val state: GameState) {
         val a = state.obj(attackerId)
         val p = state.player(playerId)
         state.phase = "combat"; state.step = "declare_attackers"
+        // Redteam2: an uncrewed Vehicle ("I return Parhelion II with Greasefang. Can it attack?"): it can, once crewed.
+        val crew = if (a.isOnBattlefield() && "Vehicle" in a.def.typeLine) Regex("""(?i)\bcrew (\d+)""").find(a.def.oracleText)?.groupValues?.get(1) else null
+        if (crew != null && !state.hasCreatureType(a) && a.animatedAs == null) { trace.step("${a.name} is a Vehicle, and a Vehicle isn't a creature until it's crewed: only a creature can be declared as an attacker. Crewing it (tapping untapped creatures with total power $crew or more, any time its controller has priority, before attackers are declared) makes it an artifact creature until end of turn, and then it can attack if it has haste or has been under its controller's control since the turn began.", "506.3", "702.122a", "302.6"); state.outcomes += "${a.name} can't attack uncrewed: it's not a creature until crewed (crew $crew, 702.122a). Crew it before attackers are declared and it can attack${if (a.has("haste") || a.summoningSick != true) "" else " if it has haste"}."; return }
         if ((!state.hasCreatureType(a) && a.animatedAs == null) || !a.isOnBattlefield()) { trace.step("${a.name} isn't a creature on the battlefield, so it can't attack.", "506.3"); state.outcomes += "${a.name} can't attack."; return }
         state.notACreatureBecause(a)?.let { why -> trace.step("${a.name} isn't a creature right now — ${p.possessive} $why — so it can't be declared as an attacker. It's still an enchantment on the battlefield.", "506.3", "508.1a"); state.outcomes += "${a.name} can't attack (${p.possessive} $why)."; return }
         if (a.controller != playerId) { trace.step("${a.name} isn't controlled by ${p.subject.lowercase()}, so ${p.subject.lowercase()} can't attack with it.", "508.1a"); state.outcomes += "${p.subject} can't attack with ${a.name} (${p.subject.lowercase()} ${p.v("doesn't", "don't")} control it)."; return }
@@ -3905,7 +3908,8 @@ class Engine(val state: GameState) {
             }
             is Effect.Discard -> applyDiscard(effect, item)
             is Effect.ExileIfDamagedDies -> {
-                val hit = item.damaged.mapNotNull { state.objects[it] }.filter { it.isOnBattlefield() }
+                // (Redteam2: a single-target spell, Elspeth's Smite or Torch the Tower, records no "damaged" list: its target is the one.)
+                val hit = (item.damaged.ifEmpty { item.targets.filterIsInstance<Ref.Obj>().map { it.id } }).mapNotNull { state.objects[it] }.filter { it.isOnBattlefield() }
                 hit.forEach { it.exileOnDeath = item.source.name }
                 trace.step(if (hit.isEmpty()) "Nothing was dealt damage this way, so there's nothing to exile instead." else "${hit.joinToString(", ") { it.name }}: if ${if (hit.size == 1) "it" else "any of them"} would die this turn, ${if (hit.size == 1) "it's" else "it is"} exiled instead (a replacement effect: no death, so no dies-triggers, persist or undying).", "614.1a", "700.4")
             }

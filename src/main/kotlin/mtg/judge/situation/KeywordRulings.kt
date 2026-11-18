@@ -200,6 +200,10 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 prior?.let { state.objects.remove(it.id) }
                 val o = state.add(GameObject(id, front, Zone.HAND, player)); o.timestamp = state.tick()
                 o.def = adv; o.kwf.castAsAdventure = true
+                // Redteam2: an omen card cast as its Omen (721.3): only the Omen's characteristics while on the stack.
+                if (adv.typeLine.contains("Omen")) { o.kwf.castAsOmen = true
+                    state.trace.step("${p.subject} ${p.v("casts", "cast")} ${front.name} as an Omen, ${adv.name}: only the Omen's characteristics (${adv.typeLine}, ${adv.manaCost}) are looked at to see whether it can be cast, and while it is on the stack it has only those, so it's ${if (adv.typeLine.startsWith("Instant")) "an instant" else "a sorcery"} spell, not a creature spell.", "721.3", "721.3a", "721.3b")
+                    return plain.copy(obj = id) }
                 state.trace.step("${p.subject} ${p.v("casts", "cast")} ${front.name} as an Adventure, ${adv.name}: only its Adventure characteristics (${adv.typeLine}, ${adv.manaCost}) are looked at to see whether it can be cast, and while it is on the stack it has only those characteristics.", "716.3", "716.3a", "716.3b")
                 return plain.copy(obj = id)
             }

@@ -162,12 +162,14 @@ internal object LimitedAsks {
             // "Does Goblin Raider have to block the creature enchanted with Lure?"
             "mustblock" -> {
                 o ?: return false
+                // Redteam2: "Does my creature have to block?" where the attacker is also "a creature": the defending player's creature is meant.
+                val o = if (o.attacking != null) state.objects.values.lastOrNull { it.isOnBattlefield() && it.attacking == null && state.isCreature(it) && it.controller != o.controller } ?: o else o
                 val attackers = state.objects.values.filter { it.isOnBattlefield() && it.attacking != null && it.controller != o.controller }
                 val lureRe = Regex("""(?i)all creatures able to block (?:enchanted creature|equipped creature|~|this creature) do so|must be blocked""")
                 val lured = attackers.firstOrNull { a -> lureRe.containsMatchIn(a.rulesText.replace(a.name, "~")) || state.objects.values.any { g -> g.isOnBattlefield() && g.attachedTo == a.id && lureRe.containsMatchIn(g.rulesText) } }
                 val lureSrc = lured?.let { a -> state.objects.values.firstOrNull { g -> g.isOnBattlefield() && g.attachedTo == a.id && lureRe.containsMatchIn(g.rulesText) }?.name ?: a.name }
                 val restriction = when {
-                    Regex("""(?i)(?:~|this creature) can't block\b(?! unless)""").containsMatchIn(o.rulesText.replace(o.name, "~")) || "cantblock" in o.tempKeywords -> "it can't block"
+                    Regex("""(?i)(?:(?:~|this creature) |^)can't block\b(?! unless)""").containsMatchIn(o.rulesText.replace(o.name, "~")) || "cantblock" in o.tempKeywords -> "it can't block"
                     o.tapped == true -> "it's tapped, and a tapped creature can't block (509.1a)"
                     lured != null -> engine.cantBlockWhy(lured, o)?.first?.trimEnd('.')
                     else -> engine.cantWhy(o.id, "block")?.let { "it can't block ($it)" }

@@ -144,7 +144,7 @@ object Layers {
         if (f.legendary != null && f.legendary != ("Legendary" in c.supertypes)) return false
         if (f.colors.any { it !in c.colors } || f.notColors.any { it in c.colors }) return false
         // Anything else the filter asks (a keyword, a power) is read off the object as the rest of the engine sees it.
-        if (f.keywords.isNotEmpty() || f.notKeywords.isNotEmpty() || f.minPower != null || f.maxPower != null || f.tapped != null || f.attacking != null || f.blocking != null)
+        if (f.keywords.isNotEmpty() || f.notKeywords.isNotEmpty() || f.minPower != null || f.maxPower != null || f.maxTotalPT != null || f.tapped != null || f.attacking != null || f.blocking != null)
             return state.matches(f, o, src.controller, src)
         return true
     }

@@ -63,12 +63,16 @@ internal object MechanicsAsks {
         val annihText = annih?.let { a -> "When ${n} attacks, annihilator $a triggers (702.86a): it goes on the stack in the declare attackers step and ${if (opp.you) "you sacrifice" else "the defending player sacrifices"} ${word(a)} permanents as it resolves, before blockers are declared (508.1m, 508.2, 509.1)" }
         if (annih != null) tr.step("Annihilator triggers when the creature is declared as an attacker; the trigger resolves in the declare attackers step, after which blockers are declared.", "702.86a", "508.1m", "509.1")
         tr.step("The delayed sacrifice trigger is a triggered ability like any other: it triggers once, as the next end step begins, and players get priority while it's on the stack.", "603.7a", "603.7b", "117.3a")
+        // Redteam2: "Through the Breach on Atraxa: does its enter trigger happen?" — entering is entering, however it got there.
+        val etbTrig = lines(d).firstOrNull { Regex("""^when (?:~|this creature|${Regex.escape(n)}) enters""", I).containsMatchIn(it.replace(d.name, "~")) }
+        if (etbTrig != null) tr.step("${d.name} enters the battlefield, so its \"when ~ enters\" ability triggers: it doesn't matter that it was put there rather than cast.", "603.6a", "603.2")
+        val etbText = etbTrig?.let { "Yes: ${n}'s enters ability triggers — it entered the battlefield, and an enters trigger doesn't care how (603.6a). " } ?: ""
         val castText = castTrig?.let { " ${n}'s \"${it.replace("~", n).substringBefore(',').trimEnd('.')}\" ability doesn't trigger: it was put onto the battlefield, not cast (601.2, 603.2)." } ?: ""
         state.outcomes.add(0, when (key) {
             "sneakend" -> "Yes: ${enabler.name}'s sacrifice is a delayed triggered ability that goes on the stack as the end step begins (603.7a), and ${p.subject.lowercase()} ${p.v("gets", "get")} priority with it on the stack. In response ${lifeText ?: "${p.subject.lowercase()} can activate ${n}'s abilities"}; ${n} is sacrificed only when the trigger resolves."
             // "Does it get annihilator?": yes, when it attacks; "When does annihilator trigger?" is answered by the timing itself.
             "sneakemrakul" -> (if (annih != null) "Yes, when it attacks: ${enabler.name} gives ${n} haste, so it can attack this turn. " else "No: ${n} has no annihilator. ") + (annihText?.let { "$it. " } ?: "") + "$sacText.$castText"
-            else -> (annihText?.let { "$it. " } ?: "${n} has no annihilator. ") + "$sacText.$castText"
+            else -> etbText + (annihText?.let { "$it. " } ?: if (etbTrig != null) "" else "${n} has no annihilator. ") + "$sacText.$castText"
         })
         return true
     }

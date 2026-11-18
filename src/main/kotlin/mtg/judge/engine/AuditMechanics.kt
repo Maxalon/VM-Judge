@@ -106,7 +106,9 @@ internal object AuditMech {
     fun spellManaValue(item: StackItem): Int {
         val d = item.source.def
         val halves = d.manaCost?.split(" // ")
-        if (halves == null || halves.size != 2 || !Regex("""^(?:Instant|Sorcery) // (?:Instant|Sorcery)$""").matches(d.typeLine) || item.modes.size != 1) return d.manaValue.toInt()
+        // Redteam2: "Wrath of the Skies with X=2" has mana value 4 on the stack: X counts as the number chosen there (202.3e).
+        val xPart = (item.source.x ?: 0) * Regex("""\{X\}""").findAll(d.manaCost ?: "").count()
+        if (halves == null || halves.size != 2 || !Regex("""^(?:Instant|Sorcery) // (?:Instant|Sorcery)$""").matches(d.typeLine) || item.modes.size != 1) return d.manaValue.toInt() + xPart
         val cost = halves.getOrNull(item.modes[0] - 1) ?: return d.manaValue.toInt()
         return Regex("""\{([^}]+)\}""").findAll(cost).sumOf { s -> s.groupValues[1].toIntOrNull() ?: if (s.groupValues[1] == "X") 0 else 1 }
     }

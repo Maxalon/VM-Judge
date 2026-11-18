@@ -2121,7 +2121,8 @@ object OracleParser {
         }
         loseLifeRe.matchEntire(s)?.let { return Effect.LoseLife(who(it.groupValues[1]), it.groupValues[2].toIntOrNull() ?: 0, x = it.groupValues[2].equals("X", true)) }
         if (Regex("""^you gain life equal to the life lost this way\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.GainLifeLostThisWay
-        if (Regex("""^if a (?:creature|permanent) dealt damage this way would die this turn, exile it instead\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ExileIfDamagedDies
+        // (Redteam2: Elspeth's Smite's "if that creature would die this turn", Torch the Tower's "a permanent dealt damage by ~".)
+        if (Regex("""^if (?:a (?:creature|permanent) dealt damage (?:this way|by ~)|that (?:creature|permanent)) would die this turn, exile it instead\.?$""", RegexOption.IGNORE_CASE).matches(s)) return Effect.ExileIfDamagedDies
         Regex("""^change a target of (target spell or ability|target spell|target ability) to ~\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> return Effect.RedirectToSelf(target(m.groupValues[1])) }
         // Misdirection, Deflecting Swat: the spell keeps everything but its target.
         Regex("""^change the target of (target spell or ability|target spell|target instant or sorcery spell)(?: with a single target)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
@@ -2206,6 +2207,8 @@ object OracleParser {
         Regex("""\s+(?:if it has|with) mana value (\d+) or less$""").find(core)?.let { m -> maxManaValue = m.groupValues[1].toInt(); core = core.removeRange(m.range) }
         Regex("""\s+(?:if it has|with) mana value (\d+) or (?:greater|more)$""").find(core)?.let { m -> minManaValue = m.groupValues[1].toInt(); core = core.removeRange(m.range) }
         val colors = mutableSetOf<Char>(); val notColors = mutableSetOf<Char>()
+        var maxTotalPT: Int? = null
+        Regex("""\s+with total power and toughness (\d+) or less$""").find(core)?.let { m -> maxTotalPT = m.groupValues[1].toInt(); core = core.removeRange(m.range) }
         Regex("""\s+with power (\d+) or (greater|less)$""").find(core)?.let { m ->
             if (m.groupValues[2] == "greater") minPower = m.groupValues[1].toInt() else maxPower = m.groupValues[1].toInt()
             core = core.removeRange(m.range)
@@ -2276,6 +2279,6 @@ object OracleParser {
         if (kinds.isEmpty() && defaultKind != null) kinds += defaultKind
         if (kinds.isEmpty() && notSubtypes.isNotEmpty()) kinds += defaultKind ?: Kind.CREATURE
         if (chosenType) subtypes += "chosen-type"
-        return ObjFilter(kinds, notKinds, notSubtypes, controller, attacking, blocking, tapped, unknown, desc, subtypes, keywords, notKeywords, token, legendary, attachedToSource = attachedToSource, minPower = minPower, maxPower = maxPower, subtypesAny = subtypesAny && subtypes.size > 1, colors = colors, notColors = notColors, maxManaValue = maxManaValue, minManaValue = minManaValue, inGraveyard = inGraveyard)
+        return ObjFilter(kinds, notKinds, notSubtypes, controller, attacking, blocking, tapped, unknown, desc, subtypes, keywords, notKeywords, token, legendary, attachedToSource = attachedToSource, minPower = minPower, maxPower = maxPower, subtypesAny = subtypesAny && subtypes.size > 1, colors = colors, notColors = notColors, maxManaValue = maxManaValue, minManaValue = minManaValue, inGraveyard = inGraveyard, maxTotalPT = maxTotalPT)
     }
 }

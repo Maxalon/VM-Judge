@@ -52,6 +52,8 @@ data class ObjFilter(
     val maxManaValueX: Boolean = false,
     /** "that's one or more colors" (true) / "colorless" as a requirement (false). */
     val colored: Boolean? = null,
+    /** Redteam2: Cut Down's "creature with total power and toughness 5 or less". */
+    val maxTotalPT: Int? = null,
 ) {
     val verifiable get() = unknownWords.isEmpty()
 }

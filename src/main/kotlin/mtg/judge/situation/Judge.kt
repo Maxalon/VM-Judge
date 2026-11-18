@@ -169,6 +169,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             if (!fromGraveyard.containsMatchIn(def.oracleText) && def.enchant?.inGraveyard != true) continue
             for (t in e.targets) state.objects[t]?.takeIf { it.zone == mtg.judge.engine.Zone.BATTLEFIELD }?.let { o ->
                 o.zone = mtg.judge.engine.Zone.GRAVEYARD
+                // Redteam2: "I cast Goryo's Vengeance on Griselbrand": "from your graveyard" — it's the caster's own card.
+                val caster = e.player ?: "me"
+                if (Regex("""(?i)from your graveyard""").containsMatchIn(def.oracleText) && o.owner != caster && !mtg.judge.engine.Generic.isGeneric(o.def)) { o.owner = caster; o.controller = caster }
                 state.assumptions += "${o.name} is read as being in the graveyard: ${def.name} puts a card from a graveyard onto the battlefield, so a creature already there is not what it means."
             }
         }
@@ -933,6 +936,12 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "block" -> { val objId = e.obj ?: throw JudgeException("block needs an object"); val att = (targets.firstOrNull() as? Ref.Obj)?.id ?: state.objects.values.lastOrNull { it.attacking != null }?.id ?: throw JudgeException("block needs the attacker")
                 // "Can they block with Mishra's Factory?": a land that can become a creature is animated first, then blocks.
                 val blk = state.obj(objId)
+                // Redteam2: "I flash in a 2/2 blocker during the first strike damage step": blockers are declared once, in the declare blockers step (509.1).
+                if (state.firstStrikers != null || state.combatDamageDealt) {
+                    state.trace.step("Blockers are declared only once each combat, as the declare blockers step begins (a turn-based action); by the combat damage step that has happened, so a creature that arrives later — even one with flash — never becomes a blocking creature and deals no combat damage.", "509.1", "509.1g")
+                    state.outcomes += "${blk.name} can't block: blockers were already declared in the declare blockers step, before first-strike damage (509.1), so it isn't blocking and deals and takes no combat damage."
+                    return
+                }
                 fun animates(ef: Effect): Boolean = ef is Effect.AnimateSelf || (ef is Effect.Seq && ef.effects.any { animates(it) })
                 if (!state.isCreature(blk) && blk.animatedAs == null) blk.abilities.filterIsInstance<ActivatedAbility>().indexOfFirst { a -> animates(a.effect) && !a.cost.startsWith("Crew", true) }.takeIf { it >= 0 }?.let { idx ->
                     state.trace.step("${blk.name} isn't a creature as it stands; to block it must first become one, so its \"${blk.abilities.filterIsInstance<ActivatedAbility>()[idx].cost}\" ability is activated in the declare blockers step, before blockers are chosen.", "509.1a", "602.1")
@@ -1025,6 +1034,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         EdhAsks.describe(e, state, who)?.let { return it }
         CedhAsks.describe(e, state)?.let { return it }
         RedteamAsks.describe(e, state)?.let { return it }
+        Redteam2Asks.describe(e, state)?.let { return it }
         LeftoversAsks.describe(e, state)?.let { return it }
         LifeDamageAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
@@ -1394,6 +1404,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to == "countered" || e.to == "countered:resolve") {
                     val name = e.card?.name ?: throw JudgeException("ask needs a card")
                     val before = state.outcomes.size
+                    // Redteam2: "Wrath of the Skies with X=2 into Chalice on 4": on the stack X is the number chosen (202.3e).
+                    state.objects.values.lastOrNull { it.def.name == name && it.x != null && it.def.manaCost?.contains("{X}") == true }?.let { xo ->
+                        if ("Chalice of the Void" in state.objects.values.filter { it.isOnBattlefield() }.map { it.def.name }) state.trace.step("While ${name} is on the stack, X is the number chosen for it, ${xo.x}, so its mana value there is ${xo.def.manaValue.toInt() + (xo.x ?: 0) * Regex("""\{X\}""").findAll(xo.def.manaCost ?: "").count()}; everywhere else X counts as 0.", "202.3e") }
                     // The step that names what countered it is the one where that source's ability resolves or triggers,
                     // not the "X is countered" line itself.
                     val bySrc = Regex("""^(?:All players pass priority; )?(.+?)'s (?:triggered |activated )?ability(?: \(top of the stack\))? (?:resolves|triggers|starts to resolve)""")
@@ -1412,7 +1425,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             val def = state.objects.values.lastOrNull { it.def.name == name }?.def
                             // Fire // Ice cast as Fire: on the stack only that half exists, mana value 2, not 4 (709.3b).
                             val half = state.trace.steps.firstNotNullOfOrNull { st -> Regex("""^Only (.+?) is cast, so on the stack ${Regex.escape(name)} has just that half's characteristics: mana value (\d+)""").find(st.text) }
-                            val mv = half?.groupValues?.get(2)?.toInt() ?: def?.manaValue?.toInt()
+                            val xo = state.objects.values.lastOrNull { it.def.name == name && it.x != null }
+                            val mv = half?.groupValues?.get(2)?.toInt() ?: def?.manaValue?.toInt()?.plus((xo?.x ?: 0) * Regex("""\{X\}""").findAll(def.manaCost ?: "").count())
                             if (mv != null && ns.none { it == mv }) " Chalice of the Void on ${ns.joinToString(" or ")} only counters a spell whose mana value is ${ns.joinToString(" or ")}; ${if (half != null) "only ${half.groupValues[1]} is cast, and on the stack its" else "$name's"} mana value is $mv${if (def?.manaCost?.contains("/P}") == true) " (a Phyrexian symbol counts 1 whether it's paid with mana or 2 life, 202.3g)" else ""}, so Chalice's trigger doesn't even trigger (202.3)." else "" } ?: "")
                     }
                     // "Does it resolve?": the countered answer turned round.
@@ -2347,6 +2361,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("ip:") == true) return PolicyAsks.answer(e, state) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("rt:") == true) return RedteamAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("x2:") == true) return Exam2Asks.answer(e, state, engine)
+                if (e.to?.startsWith("r2:") == true) return Redteam2Asks.answer(e, state, engine) { oid, n -> oid?.let { cards.byOracleId(it) } ?: n?.let { cards.resolve(it).best?.card } }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

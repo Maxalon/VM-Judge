@@ -2935,6 +2935,216 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    // ---- floor-judge calls, second hundred: Standard, Pioneer, Limited, Modern, multiplayer (see Redteam2Asks.kt) ----
+
+    /**
+     * Table talk from a Regional Championship, a Pro Tour draft table and a four-player pod that other readers left unread: format
+     * legality, draft-table and decklist infractions, a player leaving a multiplayer game, the stack's order. Becomes "r2ask"
+     * markers ([readRedteam2Questions]) or "ippol draft|decklist" policy markers (Redteam2Asks.policy).
+     */
+    private fun redteam2Rewrites(t: String, m: Marked, ctx: Ctx): String {
+        val t2 = t.trim()
+        val io = RegexOption.IGNORE_CASE
+        val q = t2.trimEnd('?', '.', '!').trim()
+        val lq = restore(q, m).lowercase().replace('’', '\'')
+        val fmt = """(standard|pioneer|modern|legacy|vintage|pauper|commander|edh|historic|timeless|brawl|explorer|alchemy|premodern|oathbreaker|penny|predh)"""
+        // "Is Monstrous Rage legal in Standard today?", "Is Sheoldred banned in Pioneer?", "Can I play Up the Beanstalk in Modern?"
+        Regex("""^(?:is|are) (c\d+) (?:still |currently )?(legal|banned|restricted|allowed|playable|not legal)(?: to play)? in $fmt(?: (?:today|now|right now|currently|at the moment|anymore|any more|at (?:the|an?|this) [\w' ]+))?$""", io).find(q)?.let { r ->
+            return "r2ask legal ${r.groupValues[1]} ${r.groupValues[3].lowercase().replace("edh", "commander")}" }
+        Regex("""^can (?:i|we|you|he|she|they|my opponent) (?:still )?(?:play|use|run|register|include) (c\d+) in (?:a |my |our |their )?$fmt(?: deck| tournament| event)?(?: (?:today|now|right now|currently|anymore))?$""", io).find(q)?.let { r ->
+            return "r2ask legal ${r.groupValues[1]} ${r.groupValues[2].lowercase().replace("edh", "commander")}" }
+        // Draft-table errors (MTR 7.7, IPG 3.6): "At the Pro Tour draft, my neighbor looked at my picks", "a player passes the pack the wrong way".
+        val drafting = Regex("""\bdraft(?:ing|ed)?\b|\bdraft table\b|\bbooster\b|\bpack\b|\bpicks?\b""").containsMatchIn(lq)
+        if (drafting && !Regex("""\bdeck ?list\b""").containsMatchIn(lq)) {
+            val sub = when {
+                Regex("""\b(?:takes?|took|picks?|picked|grabs?|grabbed|removes?|removed|pulls?|pulled) (?:two|2|both) cards?\b|\btwo picks\b|\bdouble.?pick""").containsMatchIn(lq) -> "two"
+                Regex("""\b(?:wrong (?:side|direction|way|player|neighbou?r)|to the (?:left|right) when|in the wrong direction)\b""").containsMatchIn(lq) -> "pass"
+                Regex("""\b(?:put|puts|putting) (?:it|the card|a card) back\b|\b(?:pulls?|pulled|takes?|took) (?:it|the card|a card|their pick|his pick|her pick) back\b|\bchang(?:e|es|ed) (?:their|his|her|my) pick\b""").containsMatchIn(lq) -> "pullback"
+                Regex("""\b(?:after (?:the )?time (?:expired|ran out|was up|is up)|time (?:expired|ran out)|(?:took|takes) too long|out of time|over time|exceed(?:s|ed)? the (?:pick )?time)\b""").containsMatchIn(lq) -> "time"
+                Regex("""\b(?:reveals?|revealed|shows?|showed|shown|flashes|flashed|tells?|told)\b""").containsMatchIn(lq) -> "reveal"
+                Regex("""\b(?:looks?|looked|peek(?:s|ed)?|glance[sd]?|saw|sees|watch(?:es|ed)?|leans?|leaned)\b.*\b(?:at|over|into)?\b.*\b(?:picks?|picked|pile|pack|drafted cards|cards)\b""").containsMatchIn(lq) &&
+                    Regex("""\b(?:my|their|his|her|other|another|neighbou?r's|next to them|next to him|next to her|the player next to)\b""").containsMatchIn(lq) &&
+                    !Regex("""\b(?:at|through) (?:their|his|her) own\b""").containsMatchIn(lq) -> "look"
+                Regex("""\b(?:reviews?|reviewed|looks? (?:at|through) (?:their|his|her|my) own)\b""").containsMatchIn(lq) -> "review"
+                Regex("""\b(?:\d+|thirteen|fifteen|wrong number of|too (?:many|few)|an extra|missing a|fewer|more) cards?\b.*\b(?:pack|booster)\b|\b(?:pack|booster)\b.*\b(?:\d+|thirteen|fifteen|wrong number of|too (?:many|few)|an extra|missing a|fewer|more) cards?\b""").containsMatchIn(lq) -> "count"
+                else -> null
+            }
+            if (sub != null) return "ippol draft sub=$sub" + (if (Regex("""\bpro tour|\bworlds?\b|world championship""").containsMatchIn(lq)) " rel=prof" else if (Regex("""\bregional championship|\brcq\b|\bcompetitive""").containsMatchIn(lq)) " rel=comp" else if (Regex("""\bfnm\b|friday night|prerelease|regular rel""").containsMatchIn(lq)) " rel=reg" else "")
+        }
+        // Decklists at a Limited event (IPG 3.4, 3.5): "the registered list has 39 cards but the deck has 40", "missing a basic land count".
+        if (Regex("""\bdeck ?list\b|\bregistered (?:deck|list)|\bregistration\b""").containsMatchIn(lq)) {
+            val sub = when {
+                Regex("""\bbasic land counts?\b|\bbasic lands?\b.*\b(?:missing|blank|not (?:written|listed|filled)|forgot|wrong)|\b(?:missing|blank|forgot|wrong)\b.*\bbasic land""").containsMatchIn(lq) -> "basics"
+                Regex("""\b(?:wasn't|was not|isn't|is not|not) (?:on|in|listed on|registered on) (?:the |their |his |her |my )?(?:deck ?list|list|registration)\b|\bunregistered\b|\bnot registered\b""").containsMatchIn(lq) -> "unlisted"
+                // Only a deck with more cards than the list: a list that shows what was meant and a short deck is a Deck Problem (Policy.deck).
+                run { val ln = Regex("""\b(?:deck ?list|list)\b[^0-9.]{0,30}?(\d+)""").find(lq)?.groupValues?.get(1)?.toInt(); val dn = Regex("""\bdeck\b(?! ?list)[^0-9.]{0,20}?(\d+)""").find(lq)?.groupValues?.get(1)?.toInt()
+                    ln != null && dn != null && ln < dn } -> "count"
+                else -> null
+            }
+            if (sub != null) {
+                val ns = Regex("""\b(\d{2})\b""").findAll(lq).map { it.groupValues[1].toInt() }.toList()
+                val limited = Regex("""\blimited\b|\bdraft|\bsealed\b|\bpro tour draft|\bprerelease""").containsMatchIn(lq) || ns.any { it in 38..45 }
+                return "ippol decklist sub=$sub" + (if (ns.size >= 2) " list=${ns[0]} deck=${ns[1]}" else "") + (if (limited) " fmt=limited" else "") +
+                    (if (Regex("""\bpro tour""").containsMatchIn(lq)) " rel=prof" else if (Regex("""\bfnm\b|prerelease|regular rel""").containsMatchIn(lq)) " rel=reg" else "")
+            }
+        }
+        // Combat table talk: "I control a creature that can't block", "I block with one creature" (menace), "do I have to attack?",
+        // "must my creature block?" (Lure), "I cast a spell giving my creature +2/+2" — put in the words the combat readers know.
+        Regex("""^((?:i|we|my opponent|they) (?:control|controls|have|has) an? (?:\d+/\d+ )?(?:creature)?) (?:that|which) can't block$""", io).find(q)?.let { r ->
+            return "${r.groupValues[1].let { if (it.endsWith(" ")) it.trimEnd() + " creature" else it }} that says \"can't block\"" }
+        Regex("""^((?:i|we) block)(?: it| that| the attacker)? with (?:only )?(?:one|a single|just one|1) creature$""", io).find(q)?.let { r -> return "${r.groupValues[1]} it with a creature" }
+        if (Regex("""^(?:do|must) (?:i|we) (?:have to |need to )?attack(?: with it)?$""", io).matches(q) && ctx.objects.values.any { it.zone == "battlefield" && it.controller == "me" }) return "do i have to attack with it"
+        if (Regex("""^(?:must|does|do|will) (?:my|our) creatures? (?:have to |need to )?block(?: it)?$""", io).matches(q)) return "does it have to block"
+        Regex("""^((?:i|we|my opponent|they) casts?) an? (?:spell|instant|trick|pump spell|combat trick) (?:giving|that gives|to give) (my|their|his|her|the) (creature|c\d+|\d+/\d+) (\+\d+/\+\d+|first strike|double strike|trample|deathtouch|lifelink|indestructible)$""", io).find(q)?.let { r ->
+            val what = r.groupValues[4].lowercase()
+            val text = if (what.startsWith("+")) "target creature gets $what until end of turn" else "target creature gains $what until end of turn"
+            return "${r.groupValues[1]} a spell that says \"$text\" on ${r.groupValues[2]} ${r.groupValues[3]}" }
+        // "My opponent's creature has Lure" with the question about blocking it: the Lure creature is attacking.
+        Regex("""^(?:my opponent's|their|the opponent's) creature (?:has|is enchanted with|wears) (c\d+)$""", io).find(q)?.let { r ->
+            if (m.cards[r.groupValues[1]]?.display == "Lure") return "my opponent attacks with a creature enchanted with ${r.groupValues[1]}" }
+        // "My opponent counters it with Three Steps Ahead": the counterspell cast targeting it (a modal one takes the mode the target fits).
+        Regex("""^(i|we|my opponent|the opponent|they|he|she) counters? (it|that spell|that|c\d+) with (?:an? |their |my )?(c\d+)$""", io).find(q)?.let { r ->
+            val me = r.groupValues[1].lowercase() in setOf("i", "we")
+            return "${r.groupValues[1]} ${if (me) "cast" else "casts"} ${r.groupValues[3]} targeting ${r.groupValues[2]}" }
+        // "I cast Absorb Essence. Can my opponent counter it with Essence Scatter?": after an Adventure or Omen half was cast, "it" is
+        // that half on the stack, so the counterspell is tried at it.
+        Regex("""^can (my opponent|the opponent|they|he|she|i|we) counter (it|that) with (?:an? )?(c\d+)$""", io).find(q)?.let { r ->
+            if (ctx.events.lastOrNull { it.verb == "cast" }?.to != "kw:adventure") return@let
+            return "can ${r.groupValues[1]} cast ${r.groupValues[3]} targeting ${r.groupValues[2]}" }
+        // "My opponent targets it with Torch the Tower with no mana open" (ward): the spell is cast, and the ward cost goes unpaid.
+        Regex("""^(my opponent|the opponent|they|he|she|i|we) targets? (it|c\d+|(?:my|their) c\d+) with (?:an? )?(c\d+|spell) (?:with no|without any|but has no|and has no|but doesn't have any|with no untapped) (?:untapped )?(?:mana|lands|cards in (?:their|his|her|my) hand|cards in hand|cards)(?: open| left| up| available)?$|^(my opponent|the opponent|they|he|she|i|we) targets? (it|c\d+|(?:my|their) c\d+) with (?:an? )?(c\d+|spell),? but (?:has|have) no (?:untapped )?(?:mana|lands|cards in (?:their|his|her|my) hand|cards in hand|cards)(?: open| left| up| available)?$""", io).find(q)?.let { r ->
+            val g = r.groupValues; val who = g[1].ifEmpty { g[4] }; val tgt = g[2].ifEmpty { g[5] }; val sp = g[3].ifEmpty { g[6] }
+            val me = who.lowercase() in setOf("i", "we")
+            val spell = if (sp == "spell") "a spell that says \"destroy target creature\"" else sp
+            return "$who ${if (me) "cast" else "casts"} $spell targeting $tgt and ${if (me) "don't" else "doesn't"} pay for ward" }
+        // "I draw two cards in my draw step from a Howling Mine": the Mine, and the draw step.
+        Regex("""^(?:i|we) draw (?:two|2|three|3) cards\s+(?:(?:in|during) (?:my|our) draw step\s+)?(?:from|with|because of|thanks to) (?:a |my |their |an opponent's )?(c\d+)$""", io).find(q)?.let { r ->
+            return "i control ${r.groupValues[1]}, it's my draw step" }
+        // "My opponent casts Cut Down targeting my crewed Rocketeer Boostbuggy": crewed first (a Vehicle is a creature only then).
+        Regex("""^(.+? (?:targeting|on|at) )(my|their|the) crewed (c\d+)(.*)$""", io).find(q)?.let { r ->
+            return "${if (r.groupValues[2].lowercase() == "my") "i crew" else "my opponent crews"} ${r.groupValues[3]}, then ${r.groupValues[1]}${r.groupValues[2]} ${r.groupValues[3]}${r.groupValues[4]}" }
+        // "Karn Liberated −3 targeting my Blood Moon'd Urza's Tower": Blood Moon is on the battlefield (the opponent's, unless said).
+        Regex("""\b(my|their|his|her|the) (c\d+) moon'?(?:e)?d (c\d+)""", io).find(q)?.let { r ->
+            if (m.cards[r.groupValues[2]]?.display?.startsWith("Blood", true) != true) return@let
+            names.lookup(Names.normalize("Blood Moon"))?.let { bm -> if (ctx.objects.values.none { it.card.name == "Blood Moon" }) addObject(bm, if (r.groupValues[1].lowercase() == "my") "opp" else "me", false, ctx) }
+            ctx.notes += "\"Blood Moon'd\" is read as: Blood Moon is on the battlefield${if (r.groupValues[1].lowercase() == "my") " under your opponent's control" else ""}."
+            return q.replaceRange(r.range, "${r.groupValues[1]} ${r.groupValues[3]}") }
+        // "I cast Goryo's Vengeance on Griselbrand at my opponent's end step": the step begins, then the cast.
+        Regex("""^((?:i|we|my opponent|they) casts? .+?) (?:at|during|in|targeting) (my|our|my opponent's|their|the opponent's) end step$""", io).find(q)?.let { r ->
+            return "it's ${r.groupValues[2].lowercase().replace("our", "my")} end step, ${r.groupValues[1]}" }
+        // "What happens when I lose life at 0 life?" (Phyrexian Unlife): the loss, said.
+        if (Regex("""^what happens (?:when|if) (?:i|we) (?:lose (?:more )?life|go below (?:0|zero)(?: life)?)(?: at (?:0|zero) life| while at (?:0|zero) life)?$""", io).matches(q)) return "i'm at 0 life and i lose 2 life, what happens"
+        // "I return Parhelion II with Greasefang" / "I attack with Parhelion II returned by Greasefang": Greasefang's beginning-of-combat return.
+        Regex("""^(?:i|we) (?:return|reanimate|bring back|get back) (?:my )?(c\d+) with (?:my )?(c\d+)$|^(?:i|we) attack with (?:my )?(c\d+),? (?:returned|reanimated|brought back) (?:by|with) (?:my )?(c\d+)$""", io).find(q)?.let { r ->
+            val v = r.groupValues[1].ifEmpty { r.groupValues[3] }; val g = r.groupValues[2].ifEmpty { r.groupValues[4] }
+            if (m.cards[g]?.display?.startsWith("Greasefang") != true) return@let
+            return "it's my turn, i control $g and $v is in my graveyard, i move to combat" + if (r.groupValues[3].isNotEmpty()) ", r2resolve, i crew $v using $g, i attack with $v" else "" }
+        // "Can it attack this turn?" after a Vehicle came back: "it" is the Vehicle.
+        if (Regex("""^can it (?:still )?attack(?: this turn| now)?$""", io).matches(q) && ctx.fullText.contains("greasefang", true))
+            ctx.objects.values.lastOrNull { o -> o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Vehicle") } == true }?.let { ctx.lastMentioned = it.id }
+        // "When is Griselbrand exiled?" after Goryo's Vengeance at the end step: which end step "the next end step" is (513.2).
+        Regex("""^when (?:is|does|will|do|are) (it|they|c\d+) (?:get |be )?(exiled|sacrificed|returned|exile|sacrifice|bounced)(?: to (?:my|our|its owner's|their|his|her) hand)?$""", io).find(q)?.let { r ->
+            if (ctx.events.none { it.verb == "cast" || it.verb == "activate" }) return@let
+            return "r2ask nextend ${if (r.groupValues[1].startsWith("c")) r.groupValues[1] else "-"} ${r.groupValues[2].lowercase().removeSuffix("d").removeSuffix("e")}" }
+        // "I cast Ad Nauseam with Phyrexian Unlife (out)": a permanent named with "with" is one the caster controls.
+        Regex("""^(i|we) cast (c\d+) with (?:my )?(c\d+)(?: out| on the battlefield| in play| on board)?$""", io).find(q)?.let { r ->
+            val perm = m.cards[r.groupValues[3]] ?: return@let
+            // "I cast Snapcaster Mage with Vial" is Aether Vial putting the creature in (handled in earlyRewrites), not a cast beside a permanent.
+            if (perm.typeLine.isEmpty() || perm.isSpellOnly || perm.typeLine.contains("Land") || perm.display == "Aether Vial" || ctx.objects.values.any { it.card.name == perm.display }) return@let
+            return "${r.groupValues[1]} control ${r.groupValues[3]}, ${r.groupValues[1]} cast ${r.groupValues[2]}" }
+        // "Can my opponent respond after I look at the top five cards?" (Stock Up): not in the middle of a resolution (608.2).
+        if (Regex("""^can (?:my opponent|the opponent|they|he|she|anyone|my opponents) (?:respond|cast (?:a |an )?\w+|counter it) (?:after|once|when|while|before) (?:i|we) (?:look|see|reveal|choose|pick|put|search|scry|surveil|draw)\b.*$""", io).matches(q) && ctx.events.any { it.verb == "cast" })
+            return "r2ask midresolve - ${ctx.events.last { it.verb == "cast" }.card?.oracleId?.let { "oid:$it" } ?: ""}".trimEnd()
+        // "Can Spell Queller exile it?" right after a spell was cast: the Queller flashed in at it.
+        Regex("""^can (?:their |my opponent's |my )?(c\d+) exile it$""", io).find(q)?.let { r ->
+            if (ctx.events.none { it.verb == "cast" } || ctx.objects.values.any { it.zone == "battlefield" && it.card.name == m.cards[r.groupValues[1]]?.display }) return@let
+            val mine = ctx.objects.values.any { it.card.name == m.cards[r.groupValues[1]]?.display && it.controller == "me" }
+            return "can ${if (mine) "i" else "my opponent"} cast ${r.groupValues[1]} targeting it" }
+        // "Can I choose the same mode twice?" (Kozilek's Command): only if the card says so (700.2d).
+        if (Regex("""^can (?:i|we|you|they|my opponent) (?:choose|pick|select) the same mode (?:twice|more than once|two times)$""", io).matches(q))
+            return "r2ask samemode - ${ctx.events.lastOrNull { it.verb == "cast" }?.card?.oracleId?.let { "oid:$it" } ?: ""}".trimEnd()
+        // "I cast Fireball with X=4. What is its mana value on the stack?" (202.3e)
+        if (Regex("""^what(?: is|'s) (?:its|the spell's|that spell's|(?:my |the )?c\d+'s) (?:mana value|mv|converted mana cost|cmc)(?: (?:on|while (?:it's )?on|while it is on) the stack| now)?$""", io).matches(q) && ctx.events.any { it.verb == "cast" })
+            return "r2ask mvstack - ${ctx.events.last { it.verb == "cast" }.card?.oracleId?.let { "oid:$it" } ?: ""}".trimEnd()
+        // A Saga (or any source) removed with its chapter ability on the stack: the ability still resolves (113.7a).
+        Regex("""^(?:my opponent's|their|my|the) @?saga (c\d+) has its chapter (\w+) (?:ability|trigger) on the stack$""", io).find(q)?.let { r ->
+            return "${if (lq.startsWith("my opponent") || lq.startsWith("their")) "my opponent controls" else "i control"} ${r.groupValues[1]}" }
+        if (Regex("""^(?:i|we|my opponent|they|he|she) (?:destroys?|exiles?|bounces?|returns?) (?:the|their|my opponent's|my) @?saga$""", io).matches(q)) return "r2noted"
+        Regex("""^(.+?) (?:bounces?|destroys?|exiles?|returns?) (it|the saga|c\d+)(?: to (?:its owner's|my|their) hand)? in response to (?:the|its) chapter (\w+) (?:trigger|ability)$""", io).find(q)?.let { return "r2ask indep" }
+        if (Regex("""^(?:does|will) (?:the )?chapter (\w+)(?: ability| trigger)? (?:still )?resolve$|^(?:does|will) (?:the|its) chapter (?:ability|trigger) (?:still )?resolve$""", io).matches(q)) return if (ctx.asks.any { it.to == "r2:indep" }) "r2noted" else "r2ask indep"
+        // Disguise (702.168): a face-down disguise creature has ward {2}; turning it face up doesn't remove it from combat; its mana value is 0.
+        if (Regex("""\bdisguise\b|\bface.?down\b""").containsMatchIn(ctx.fullText.lowercase())) {
+            if (Regex("""^(?:my |their |a |the )?face.?down (?:disguise )?creature is targeted by .+$|^(?:my opponent|they|i) turns? (?:a |the |their |my )?face.?down (?:disguise )?creature face up(?: after blockers(?: are declared)?| during combat| while it's blocking)?$""", io).matches(q)) return "r2noted"
+            if (Regex("""^(?:does|is) (?:the )?ward(?: \{?2\}?)? (?:still )?(?:apply|work|trigger|count)$|^does it have ward(?: \{?2\}?)?$""", io).matches(q)) return "r2ask disguiseward"
+            if (Regex("""^(?:does|is) it still (?:block|blocking)$|^does it (?:stay|remain) (?:blocking|in combat)$""", io).matches(q)) return "r2ask faceupblock"
+            if (Regex("""^what(?: is|'s) its (?:mana value|mv|converted mana cost)$""", io).matches(q)) return "r2ask facedownmv"
+            if (Regex("""^(?:i|we|my opponent|they) casts? an? (?:creature|card) with disguise face.?down$""", io).matches(q)) return "r2noted"
+        }
+        // "I control a creature that must attack each combat. My opponent controls Propaganda. Do I have to pay?" (508.1d)
+        if (Regex("""^(?:i|we) control an? (?:\d+/\d+ )?creature (?:that|which) (?:must attack|attacks) each (?:combat|turn)(?: if able)?$""", io).matches(q)) return "r2noted"
+        if (Regex("""^do (?:i|we) have to pay(?: for it| the tax| to attack)?$""", io).matches(q) && Regex("""propaganda|ghostly prison|sphere of safety|norn's annex|baird""").containsMatchIn(ctx.fullText.lowercase())) return "r2ask mustpaytax"
+        // A player leaving a multiplayer game (800.4a) and the stack's order (405.5, 117.3d), asked with no board.
+        val mp = Regex("""\b(?:four|4|five|5|three|3|multi)[- ]?player\b|\bmultiplayer\b|\bcommander\b|\bpod\b""").containsMatchIn(ctx.fullText.lowercase())
+        // "I attack my opponent's Chandra with a 5/5 trampler": their planeswalker, on the battlefield, attacked.
+        Regex("""^((?:i|we) attack) (?:my opponent's|their|the opponent's) (c\d+) with ((?!\d+ loyalty)[^,]+)$""", io).find(q)?.let { r ->
+            if (Regex("""\bwith\b""").containsMatchIn(r.groupValues[3])) return@let
+            return "my opponent controls ${r.groupValues[2]}, ${r.groupValues[1]} ${r.groupValues[2]} with ${r.groupValues[3]}" }
+        // "An opponent draws three cards" (Smothering Tithe) in a two-player description: the opponent.
+        Regex("""^an opponent (draws?|casts?|loses?|gains?|plays?) (.+)$""", io).find(q)?.let { r -> if (!mp) return "my opponent ${r.groupValues[1]} ${r.groupValues[2]}" }
+        // "A token creature enters" (Guide of Souls): a creature token enters under the speaker's control.
+        if (Regex("""^an? (?:token creature|creature token|token) (?:enters|comes into play|enters the battlefield)(?: under my control)?$""", io).matches(q)) return "a token enters the battlefield under my control"
+        // "I control Valakut and play my sixth Mountain": five Mountains already, then one more.
+        Regex("""^((?:i|we) (?:control|have) (?:c\d+)),? and (?:i |we )?play (?:my|our) (second|third|fourth|fifth|sixth|seventh|2nd|3rd|4th|5th|6th|7th) (c\d+)$""", io).find(q)?.let { r ->
+            val n = mapOf("second" to 1, "third" to 2, "fourth" to 3, "fifth" to 4, "sixth" to 5, "seventh" to 6, "2nd" to 1, "3rd" to 2, "4th" to 3, "5th" to 4, "6th" to 5, "7th" to 6)[r.groupValues[2].lowercase()] ?: return@let
+            return "${r.groupValues[1]} and $n ${r.groupValues[3]}, i play a ${r.groupValues[3]}" }
+        // "A token creature enters. How much energy do I get?" (Guide of Souls): what the trigger gives.
+        if (Regex("""^how much energy do (?:i|we) get$""", io).matches(q) && ctx.fullText.contains("guide of souls", true)) return "what happens"
+        // "Can I tap Urza's Tower for three mana?": what it taps for.
+        Regex("""^can (?:i|we) tap (?:my )?(c\d+) for (?:\w+) mana$""", io).find(q)?.let { r -> return "what mana can ${r.groupValues[1]} make" }
+        val someone = """(?:a player|one player|an opponent|one of my opponents|someone|my opponent|another player|the player)"""
+        if (Regex("""^(?:in an? [\w -]+ game,? )?$someone (?:concedes|conceded|scoops|scooped|leaves the game|left the game)(?: the game)? (?:with|while) (?:a|their|his|her|an?) (?:spell|ability|trigger|counterspell)s? (?:is |are )?(?:still )?on the stack$""", io).matches(lq) ||
+            Regex("""^what happens to (?:the|their|his|her|that) (?:spells?|abilit(?:y|ies)|triggers?)$""", io).matches(lq) && ctx.asks.any { it.to == "r2:concedestack" })
+            return if (ctx.asks.any { it.to == "r2:concedestack" }) "r2noted" else "r2ask concedestack"
+        if (Regex("""^(?:in an? [\w -]+ game,? )?$someone (?:concedes|conceded|scoops|scooped|leaves the game|left the game|is eliminated|loses|lost)(?: the game)? (?:while|when) (?:controlling|they control|he controls|she controls|in control of) (?:my|one of my|a|another player's) (?:creature|permanent|c\d+)s?$""", io).matches(lq))
+            return "r2ask concedecontrol"
+        if (Regex("""^(?:in an? [\w -]+ game,? )?$someone (?:is eliminated?|loses the game|lost the game|gets eliminated?|was eliminated?|concedes|conceded|scoops|scooped|leaves the game|left the game)$""", io).matches(lq) && mp)
+            return "r2ask leaves"
+        if (Regex("""^what happens to (?:their|his|her|the eliminated player's|that player's) (?:permanents|cards|stuff|board|creatures|spells)$""", io).matches(lq) && ctx.asks.any { it.to == "r2:leaves" || it.to == "r2:concedestack" || it.to == "r2:concedecontrol" }) return "r2noted"
+        if (Regex("""^(?:in an? [\w -]+ game,? )?the active player passes(?: priority)?$""", io).matches(lq)) return "r2ask prioritynext"
+        if (Regex("""^who (?:gets|receives|has) priority (?:next|now|after that)$""", io).matches(lq) && ctx.asks.any { it.to == "r2:prioritynext" }) return "r2noted"
+        if (Regex("""^(?:in an? [\w -]+ game,? )?(?:two|2|three|3|several|multiple) players cast (?:spells|instants) in response to each other$""", io).matches(lq)) return "r2ask stackorder"
+        if (Regex("""^in (?:which|what) order do (?:they|the spells|those spells) resolve$""", io).matches(lq) && ctx.asks.any { it.to == "r2:stackorder" }) return "r2noted"
+        // "Can I get a card from my sideboard (at a Regional Championship)?" after a Wish or Karn, the Great Creator's −2; in Commander there's none (903.5f).
+        Regex("""^can (?:i|we) (?:get|fetch|grab|wish for|take|find|choose|bring in|search for) (?:an? (?:artifact )?card|anything|something|cards?) (?:from|out of|in) (?:my|our|the) sideboard(?: (?:at|in|during) .+)?$""", io).find(q)?.let { return "r2ask sideboard" + if (Regex("""\bcommander\b|\bedh\b""").containsMatchIn(ctx.fullText.lowercase())) " - edh" else "" }
+        if (Regex("""^what can (?:i|we) (?:get|fetch|wish for|find|choose)(?: with (?:it|that|c\d+))?$""", io).matches(q) && Regex("""\bcommander\b""").containsMatchIn(ctx.fullText.lowercase()) &&
+            Regex("""karn, the great creator|\bwish\b|death wish|burning wish|living wish|golden wish|cunning wish|glittering wish|mastermind's acquisition|spawnsire""").containsMatchIn(ctx.fullText.lowercase())) return "r2ask sideboard - edh"
+        // "… at a Regional Championship", split off the question above: the event, already taken into account.
+        if (Regex("""^it's (?:a|an|the) [\w' -]+$""", io).matches(lq) && (ctx.asks.any { it.to == "r2:sideboard" || it.to == "r2:legal" } ||
+                Regex("""\b(?:from|in|out of) (?:my|our|the) sideboard\b""").containsMatchIn(ctx.fullText.lowercase()) && Regex("""regional championship|\brcq\b|pro tour|tournament|competitive""").containsMatchIn(lq))) return "r2noted"
+        return t2
+    }
+
+    /** Markers [redteam2Rewrites] leaves: "r2ask <key> [card] [arg]" becomes an "r2:" ask (Redteam2Asks). */
+    private fun readRedteam2Questions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?')
+        if (!q.startsWith("r2")) return null
+        if (q == "r2noted") return true
+        // A trigger that went on the stack with a step (Greasefang's at the beginning of combat) resolves before what's said next.
+        if (q == "r2resolve") { ctx.events += EventSpec("resolveAll"); ctx.explicitResolve = true; return true }
+        Regex("""^r2ask (\w+)(?: (\S+))?(?: (\S+))?$""").find(q)?.let { r ->
+            val key = r.groupValues[1]
+            if (ctx.asks.any { it.to == "r2:$key" }) return true
+            val c = r.groupValues[2].takeIf { it.isNotEmpty() && it != "-" }?.let { m.cards[it] }
+            // "oid:<id>": a card named in an earlier sentence, passed by its oracle id.
+            val byId = r.groupValues[3].takeIf { it.startsWith("oid:") }?.removePrefix("oid:")?.let { id -> CardRef(name = ctx.events.lastOrNull { it.card?.oracleId == id }?.card?.name ?: names.fullNameOf(id), oracleId = id) }
+            if (byId != null) { ctx.asks += EventSpec("ask", player = "me", to = "r2:$key", card = byId); ctx.notes += "The question is answered by the outcome below."; return true }
+            ctx.asks += EventSpec("ask", player = "me", to = "r2:$key", card = c?.let { CardRef(name = it.display, oracleId = it.oracleId) }, source = r.groupValues[3].takeIf { it.isNotEmpty() } ?: if (c == null) r.groupValues[2].takeIf { it.isNotEmpty() && it != "-" } else null)
+            ctx.notes += "The question is answered by the outcome below."
+            return true
+        }
+        return null
+    }
+
     // ---- competitive hard cases (see RedteamMechanics.kt and RedteamAsks.kt) ----
 
     /**
@@ -3068,7 +3278,7 @@ class SituationParser(private val names: NameIndex) {
         RtRule("clonecmd", listOf("commander"), Regex("""^(?:does|do|will|would) (?:it|that|the clone's damage|its damage|that damage) count (?:as|for|towards?) commander damage$"""), Regex("""^(?:an? (?:clone|copy) of (?:the|their|my opponent's|my) commander deals (?:combat )?damage(?: to me)?(?: too| as well)?|(?:my opponent's|their|the) commander deals (?:combat )?damage(?: to me)?(?: and an? (?:clone|copy) of (?:the|their|my opponent's|my) commander deals (?:combat )?damage(?: to me)?(?: too| as well)?)?)$""")),
         RtRule("dazepay", listOf("daze"), Regex("""^can (?:i|we) pay(?: for it| the| for)? ?(?:\{?1\}?|one|it|the 1)?$""")),
         RtRule("sneakemrakul", listOf("sneak attack"), Regex("""\bannihilator\b""")),
-        RtRule("breach", listOf("through the breach"), Regex("""\bannihilator\b|\bwhen do (?:i|we) sacrifice\b"""), Regex("""^(?:i|we|my opponent|the opponent|they|he|she) casts? through the breach (?:on|putting in|for|targeting) .+$""")),
+        RtRule("breach", listOf("through the breach"), Regex("""\bannihilator\b|\bwhen do (?:i|we) sacrifice\b|^what happens$|\b(?:enters?|etb|enter the battlefield)\b.*\btrigger|\btrigger\b.*\b(?:happen|resolve|work)"""), Regex("""^(?:i|we|my opponent|the opponent|they|he|she) casts? through the breach (?:on|putting in|for|targeting) .+$""")),
         RtRule("murktideexile", listOf("murktide regent", "exile"), Regex("""^(?:does|will) (?:it|murktide(?: regent)?) (?:get|have|enter with) (?:any )?(?:\+1/\+1 )?counters$"""), Regex("""^ragavan(?:, nimble pilferer)? exiled (?:my opponent's |their )?murktide regent(?:,? and (?:i|we) cast it from exile)?$""")),
         RtRule("frogsolitude", listOf("psychic frog", "solitude"), Regex("""\bin response\b.*\b(?:bigger|flying|grow|save)\b|\b(?:bigger|flying|grow|save)\b.*\bin response\b""")),
         RtRule("ajaniguide", listOf("ajani, nacatl pariah"), Regex("""^what happens$"""), Regex("""^ajani(?:, nacatl pariah)?'s (?:cat|cat warrior|token)(?: token)? dies$""")),
@@ -4641,6 +4851,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = redteam2Rewrites(t2, m, ctx)
         t2 = mechanicsRewrites(t2, m, ctx)
         t2 = leftoversRewrites(t2, m, ctx)
         t2 = redteamRewrites(t2, m, ctx)
@@ -9305,9 +9516,9 @@ class SituationParser(private val names: NameIndex) {
             if (pending != null && e.to == null) {
                 ctx.events[i] = e.copy(to = "kw:" + pending + (if (pending != "splice" && (ctx.kwArg != null || pending == "multikicker")) ":" + (ctx.kwArg ?: "1") else ""), source = if (pending == "splice") ctx.kwArg else e.source)
                 ctx.kwPending = null; ctx.kwArg = null; ctx.kwActive = pending !in setOf("delve", "convoke", "jumpstart"); if (pending in setOf("delve", "convoke")) ctx.kwCost = true
-            } else if (pending == null && e.to == null && entry != null && e.card?.name != null && names.fullNameOf(entry.oracleId)?.let { full -> Regex("""(?i)adventure""").containsMatchIn(entry.typeLine) && full.contains(" // ") && (e.card.name.equals(full.substringAfter(" // "), true) || e.card.name.equals(full, true)) } == true) {
-                // "I cast Stomp": the Adventure half of Bonecrusher Giant.
-                ctx.events[i] = e.copy(to = "kw:adventure"); ctx.kwActive = true; ctx.kwAdventure = true
+            } else if (pending == null && e.to == null && entry != null && e.card?.name != null && names.fullNameOf(entry.oracleId)?.let { full -> Regex("""(?i)adventure|\bomen\b""").containsMatchIn(entry.typeLine) && full.contains(" // ") && (e.card.name.equals(full.substringAfter(" // "), true) || e.card.name.equals(full, true)) } == true) {
+                // "I cast Stomp": the Adventure half of Bonecrusher Giant. (An Omen half asks no keyword questions afterwards.)
+                ctx.events[i] = e.copy(to = "kw:adventure"); if (!Regex("""(?i)\bomen\b""").containsMatchIn(entry.typeLine)) { ctx.kwActive = true; ctx.kwAdventure = true }
             } else if (entry != null && Regex("""(?i)\brebound\b""").containsMatchIn(entry.keywords)) ctx.kwRebound = true
         }
     }
@@ -9426,6 +9637,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readRedteam2Questions(clause0, m, ctx)?.let { return it }
         readMechanicsQuestions(clause0, m, ctx)?.let { return it }
         readLeftoversQuestions(clause0, m, ctx)?.let { return it }
         readRedteamQuestions(clause0, m, ctx)?.let { return it }

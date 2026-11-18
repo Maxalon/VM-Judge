@@ -170,6 +170,9 @@ fun Engine.playerStateBasedActions(): Boolean {
             }
             continue
         }
+        // Redteam2: "at 0 life with Platinum Angel; the Angel is destroyed": the earlier "stays in the game" held only while the Angel did.
+        for (i in st.outcomes.indices) Regex("""^${Regex.escape(p.subject)} (?:stays|stay) in the game: (.+?) keeps ${Regex.escape(p.subject.lowercase())} from losing\.$""").find(st.outcomes[i])?.let { r ->
+            st.outcomes[i] = "${p.subject} ${p.v("stays", "stay")} in the game only while ${r.groupValues[1]} ${if (r.groupValues[1].endsWith("emblem")) "is in effect" else "is on the battlefield"}." }
         reasons.first().let { (text, rules, outcome) -> tr.step(text, *rules); st.outcomes += outcome }
         losers += p
     }

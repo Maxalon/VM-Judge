@@ -14123,7 +14123,7 @@
     "id": "at-two-with-platinum-angel",
     "text": "I'm at 2 with Platinum Angel and they Bolt me twice, then Shatter the Angel",
     "expect": [
-      "You stay in the game: Platinum Angel keeps you from losing.",
+      "You stay in the game only while Platinum Angel is on the battlefield.",
       "You lose the game."
     ],
     "notExpect": [],
@@ -67740,5 +67740,594 @@
     ],
     "notExpect": [],
     "cite": []
+  },
+  {
+    "id": "r2-1",
+    "text": "My opponent attacks with three Hare Apparent tokens. I cast Elspeth's Smite targeting one. Can I hit another attacker?",
+    "expect": [
+      "the battlefield → exile (replaced by Elspeth's Smite's \"exile it instead\")"
+    ],
+    "notExpect": [
+      "the battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "614.1a"
+    ]
+  },
+  {
+    "id": "r2-2",
+    "text": "I cast Overlord of the Hauntwoods for its impending cost. My opponent counters it with Three Steps Ahead. Do I get the Everywhere token?",
+    "expect": [
+      "Overlord of the Hauntwoods is countered."
+    ],
+    "cite": [
+      "700.2a"
+    ]
+  },
+  {
+    "id": "r2-3",
+    "text": "My opponent attacks with a 3/3 first striker. I flash in a 2/2 blocker during the first strike damage step. Does my creature deal damage?",
+    "expect": [
+      "can't block: blockers were already declared in the declare blockers step"
+    ],
+    "notExpect": [
+      "Yes: a 2/2 creature with flash deals"
+    ],
+    "cite": [
+      "509.1"
+    ]
+  },
+  {
+    "id": "r2-4",
+    "text": "My opponent casts Go for the Throat targeting my crewed Skybox Ferry. What happens?",
+    "expect": [
+      "Go for the Throat can't target Skybox Ferry (not a nonartifact creature)."
+    ],
+    "cite": [
+      "601.2c"
+    ]
+  },
+  {
+    "id": "r2-5",
+    "text": "My opponent casts Cut Down targeting my crewed Rocketeer Boostbuggy. Does Cut Down resolve?",
+    "expect": [
+      "Yes: Cut Down isn't countered; it resolves.",
+      "Rocketeer Boostbuggy: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "602.2a"
+    ]
+  },
+  {
+    "id": "r2-6",
+    "text": "I control Tragedy Feaster. My opponent targets it with Torch the Tower but has no cards in hand. What happens?",
+    "expect": [
+      "ward counters Torch the Tower"
+    ],
+    "cite": [
+      "702.21a"
+    ]
+  },
+  {
+    "id": "r2-7",
+    "text": "Kitesail Larcenist has ward 1. My opponent targets it with Torch the Tower with no mana open. What happens?",
+    "expect": [
+      "ward counters Torch the Tower"
+    ],
+    "cite": [
+      "702.21a"
+    ]
+  },
+  {
+    "id": "r2-8",
+    "text": "I cast Fireball with X=4. What is its mana value on the stack?",
+    "expect": [
+      "5 on the stack: Fireball costs {X}{R} and X is 4 there"
+    ],
+    "cite": [
+      "202.3e"
+    ]
+  },
+  {
+    "id": "r2-9",
+    "text": "My opponent controls Chalice of the Void with 3 counters. I cast Wrath of the Skies with X equal to 2. Is it countered?",
+    "expect": [
+      "Wrath of the Skies's mana value is 4"
+    ],
+    "notExpect": [
+      "mana value is 2"
+    ],
+    "cite": [
+      "202.3e"
+    ]
+  },
+  {
+    "id": "r2-10",
+    "text": "I cast Absorb Essence from Purging Stormbrood. Can my opponent counter it with Essence Scatter?",
+    "expect": [
+      "No: Essence Scatter can't target Absorb Essence (it isn't a creature spell)."
+    ],
+    "notExpect": [
+      "ward ability"
+    ],
+    "cite": [
+      "721.3b",
+      "721.3d"
+    ]
+  },
+  {
+    "id": "r2-11",
+    "text": "Is Monstrous Rage legal in Standard today?",
+    "expect": [
+      "No: Monstrous Rage is banned in Standard"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-12",
+    "text": "Is Sheoldred, the Apocalypse legal in Standard?",
+    "expect": [
+      "No: Sheoldred, the Apocalypse isn't legal in Standard"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-13",
+    "text": "Is Llanowar Elves legal in Standard?",
+    "expect": [
+      "Yes: Llanowar Elves is legal in Standard."
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-14",
+    "text": "I cast Stock Up. Can my opponent respond after I look at the top five cards?",
+    "expect": [
+      "No: you look at the cards as Stock Up resolves"
+    ],
+    "cite": [
+      "608.2"
+    ]
+  },
+  {
+    "id": "r2-15",
+    "text": "I attack with Parhelion II returned by Greasefang. When is Parhelion II returned to my hand?",
+    "expect": [
+      "Parhelion II is a 5/5 creature until end of turn.",
+      "At the beginning of this turn's end step: Greasefang, Okiba Boss's delayed trigger"
+    ],
+    "cite": [
+      "603.7a"
+    ]
+  },
+  {
+    "id": "r2-16",
+    "text": "I return Parhelion II with Greasefang. Can it attack this turn?",
+    "expect": [
+      "Parhelion II can't attack uncrewed: it's not a creature until crewed (crew 4, 702.122a)"
+    ],
+    "cite": [
+      "702.122a"
+    ]
+  },
+  {
+    "id": "r2-17",
+    "text": "My opponent controls Sheoldred, the Apocalypse. I draw two cards in my draw step from a Howling Mine. How much life do I lose?",
+    "expect": [
+      "4: you lose 4 life in all."
+    ],
+    "cite": [
+      "504.1"
+    ]
+  },
+  {
+    "id": "r2-18",
+    "text": "I activate Karn, the Great Creator's -2. Can I get a card from my sideboard at a Regional Championship?",
+    "expect": [
+      "Yes: at a tournament your sideboard is outside the game"
+    ],
+    "cite": [
+      "400.11a"
+    ]
+  },
+  {
+    "id": "r2-19",
+    "text": "I activate Karn, the Great Creator's -2 during a Commander game. What can I get?",
+    "expect": [
+      "In a Commander game, no sideboard"
+    ],
+    "notExpect": [
+      "Yes: at a tournament"
+    ],
+    "cite": [
+      "903.5f"
+    ]
+  },
+  {
+    "id": "r2-20",
+    "text": "My opponent attacks with a creature with menace. I block with one creature. Is that legal?",
+    "expect": [
+      "No: a creature can't block a creature with menace on its own"
+    ],
+    "cite": [
+      "702.111b"
+    ]
+  },
+  {
+    "id": "r2-21",
+    "text": "I control a creature with \"attacks each combat if able\". It is tapped. Do I have to attack?",
+    "expect": [
+      "No: a creature that says \"attacks each combat if able\" attacks each combat only if able"
+    ],
+    "cite": [
+      "508.1d"
+    ]
+  },
+  {
+    "id": "r2-22",
+    "text": "I control a creature that can't block. My opponent's creature has Lure. Must my creature block?",
+    "expect": [
+      "isn't able to block — it can't block — and a requirement like Lure's never makes a creature break a restriction"
+    ],
+    "cite": [
+      "509.1c"
+    ]
+  },
+  {
+    "id": "r2-23",
+    "text": "I attack with a 2/2. My opponent blocks with a 3/3 first striker. I cast a spell giving my creature +2/+2. Does my creature survive?",
+    "expect": [
+      "Yes: a 2/2 creature is still on the battlefield.",
+      "A 2/2 creature is 4/4 until end of turn."
+    ],
+    "cite": [
+      "510.4"
+    ]
+  },
+  {
+    "id": "r2-24",
+    "text": "At the Pro Tour draft, my neighbor looked at my picks. What is the penalty?",
+    "expect": [
+      "Limited Procedure Violation, Warning (IPG 3.6) for a player who looks where they shouldn't"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-25",
+    "text": "At a draft, a player takes two cards from a pack by accident. What is the infraction?",
+    "expect": [
+      "Limited Procedure Violation, Warning (IPG 3.6): a player took two cards from the pack."
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-26",
+    "text": "At a draft, a player passes the pack to the wrong side. What happens?",
+    "expect": [
+      "passing the pack the wrong way is the IPG's first example"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-27",
+    "text": "At a draft, a player reveals the cards in their pack to the player next to them. What is the penalty?",
+    "expect": [
+      "Not allowed (MTR 7.7): drafters may not show the front face of their picks"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-28",
+    "text": "At a draft, a player's registered deck list has 39 cards but their deck has 40. What is the penalty?",
+    "expect": [
+      "Decklist Problem, Game Loss: the deck is what the player meant to play"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-29",
+    "text": "A player's decklist at a Limited event is missing a basic land count. What is the penalty?",
+    "expect": [
+      "in Limited the Head Judge may decide not to issue it if the correct basic land count is obvious"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-30",
+    "text": "During a draft, a player looks at the card picked by the player next to them. What is the infraction?",
+    "expect": [
+      "Limited Procedure Violation, Warning (IPG 3.6) for a player who looks where they shouldn't"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-31",
+    "text": "At a Limited event, a player plays with a card in their deck that wasn't on the decklist. What is the penalty?",
+    "expect": [
+      "is a Deck Problem, Warning, if the list shows what the player meant to play"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-32",
+    "text": "At the draft table, a player picks a card after time expired. What happens?",
+    "expect": [
+      "exceeding the time allotted for a pick is the IPG's own example"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-33",
+    "text": "At a draft, a player's pack has 13 cards instead of 14. What should they do?",
+    "expect": [
+      "Call a judge right away"
+    ],
+    "notExpect": [
+      "Missed trigger"
+    ],
+    "cite": [
+      "100.6"
+    ]
+  },
+  {
+    "id": "r2-34",
+    "text": "I cast Kozilek's Command choosing two modes. Can I choose the same mode twice?",
+    "expect": [
+      "No: Kozilek's Command doesn't say \"you may choose the same mode more than once\""
+    ],
+    "cite": [
+      "700.2d"
+    ]
+  },
+  {
+    "id": "r2-35",
+    "text": "I cast Through the Breach on Atraxa, Grand Unifier. Does Atraxa's enter trigger happen?",
+    "expect": [
+      "Yes: Atraxa's enters ability triggers"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "r2-36",
+    "text": "My opponent activates Karn Liberated -3 targeting my Blood Moon'd Urza's Tower. What happens?",
+    "expect": [
+      "Urza's Tower: the battlefield → exile."
+    ],
+    "notExpect": [
+      "Flesh // Blood"
+    ],
+    "cite": [
+      "305.7"
+    ]
+  },
+  {
+    "id": "r2-37",
+    "text": "I cast Goryo's Vengeance on Griselbrand at my opponent's end step. When is Griselbrand exiled?",
+    "expect": [
+      "At the beginning of the end step of the next turn (your turn), not this one"
+    ],
+    "notExpect": [
+      "At the beginning of this turn's end step"
+    ],
+    "cite": [
+      "513.2"
+    ]
+  },
+  {
+    "id": "r2-38",
+    "text": "I cast Ad Nauseam with Phyrexian Unlife. What happens when I lose life at 0 life?",
+    "expect": [
+      "You stay in the game at 0 life: Phyrexian Unlife keeps you from losing"
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "r2-39",
+    "text": "In a four-player game, a player concedes with a spell on the stack. What happens to the spell?",
+    "expect": [
+      "Their spells and abilities leave the stack with them"
+    ],
+    "cite": [
+      "800.4a"
+    ]
+  },
+  {
+    "id": "r2-40",
+    "text": "In a four-player game, a player concedes while controlling my creature. What happens?",
+    "expect": [
+      "Your creature comes back to you"
+    ],
+    "cite": [
+      "800.4c"
+    ]
+  },
+  {
+    "id": "r2-41",
+    "text": "I control Platinum Angel at 0 life. My opponent destroys the Angel. What happens?",
+    "expect": [
+      "You stay in the game only while Platinum Angel is on the battlefield.",
+      "You lose the game."
+    ],
+    "notExpect": [
+      "You stay in the game: Platinum Angel keeps you from losing."
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "r2-42",
+    "text": "In a four-player game, two players cast spells in response to each other. In which order do they resolve?",
+    "expect": [
+      "Last in, first out: the spell cast last resolves first"
+    ],
+    "cite": [
+      "405.5"
+    ]
+  },
+  {
+    "id": "r2-43",
+    "text": "In a four-player game, the active player passes priority. Who gets priority next?",
+    "expect": [
+      "The next player in turn order (normally the player to the active player's left) gets priority"
+    ],
+    "cite": [
+      "117.3d"
+    ]
+  },
+  {
+    "id": "r2-44",
+    "text": "In a four-player game, a player is eliminated. What happens to their permanents?",
+    "expect": [
+      "Everything they own leaves the game with them"
+    ],
+    "cite": [
+      "800.4a"
+    ]
+  },
+  {
+    "id": "r2-45",
+    "text": "I control Summon: Shiva with 2 lore counters. My opponent bounces it in response to the chapter 3 trigger. What happens?",
+    "expect": [
+      "Yes: the chapter ability is already on the stack, and it resolves even though Summon: Shiva is gone"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "r2-46",
+    "text": "My opponent's Saga Gadwick's First Duel has its chapter 2 ability on the stack. I destroy the Saga. Does chapter 2 still resolve?",
+    "expect": [
+      "Yes: the chapter ability is already on the stack, and it resolves even though Gadwick's First Duel is gone"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "r2-47",
+    "text": "I attack my opponent's Chandra, Torch of Defiance with a 5/5 trampler. My opponent blocks with a 2/2. How much damage does Chandra take?",
+    "expect": [
+      "Chandra, Torch of Defiance has 1 loyalty."
+    ],
+    "notExpect": [
+      "isn't attacking"
+    ],
+    "cite": [
+      "702.19b"
+    ]
+  },
+  {
+    "id": "r2-48",
+    "text": "My opponent turns a face-down disguise creature face up after blockers. Does it still block?",
+    "expect": [
+      "Yes: turning it face up doesn't remove it from combat (506.4)"
+    ],
+    "cite": [
+      "702.168d"
+    ]
+  },
+  {
+    "id": "r2-49",
+    "text": "My face-down disguise creature is targeted by a removal spell. Does ward 2 apply?",
+    "expect": [
+      "Yes: a creature cast face down with disguise has ward {2} while it's face down"
+    ],
+    "cite": [
+      "702.168a"
+    ]
+  },
+  {
+    "id": "r2-50",
+    "text": "I cast a creature with disguise face down. What is its mana value?",
+    "expect": [
+      "0: face down it has no mana cost (702.168b), so its mana value is 0 (202.3a)"
+    ],
+    "cite": [
+      "202.3a"
+    ]
+  },
+  {
+    "id": "r2-51",
+    "text": "I control a creature that must attack each combat. My opponent controls Propaganda. Do I have to pay?",
+    "expect": [
+      "No: you never have to pay a cost to obey an attack requirement (508.1d)."
+    ],
+    "cite": [
+      "508.1d"
+    ]
+  },
+  {
+    "id": "r2-52",
+    "text": "I control Guide of Souls. A token creature enters. How much energy do I get?",
+    "expect": [
+      "If the token is a creature, Guide of Souls triggers: you gain 1 life and get {E}"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "r2-53",
+    "text": "I control Valakut, the Molten Pinnacle and play my sixth Mountain. Does Valakut trigger?",
+    "expect": [
+      "Yes: Valakut, the Molten Pinnacle's ability triggered.",
+      "Opponent takes 3 damage."
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "r2-54",
+    "text": "My opponent controls Blood Moon. Can I tap Urza's Tower for three mana?",
+    "expect": [
+      "Urza's Tower is a Mountain under Blood Moon, so it taps for {R} and nothing else."
+    ],
+    "notExpect": [
+      "no untapped permanent"
+    ],
+    "cite": [
+      "305.7"
+    ]
+  },
+  {
+    "id": "r2-55",
+    "text": "I control Smothering Tithe. An opponent draws three cards. How many triggers?",
+    "expect": [
+      "You get a Treasure token. (×3)"
+    ],
+    "cite": [
+      "603.2"
+    ]
   }
 ]

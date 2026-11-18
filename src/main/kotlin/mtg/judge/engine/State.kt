@@ -685,7 +685,7 @@ class GameState(
             else -> (f.attacking == null || (o.attacking != null) == f.attacking) && (f.blocking == null || (o.blocking != null || o.alsoBlocking.isNotEmpty()) == f.blocking)
         }
         val stateOk = (f.tapped == null || o.tapped == f.tapped) && roleOk
-        val powerOk = (f.minPower == null || (o.power ?: 0) >= f.minPower) && (f.maxPower == null || (o.power ?: 0) <= f.maxPower) && (f.maxManaValue == null || o.def.manaValue.toInt() <= f.maxManaValue) && (f.minManaValue == null || o.def.manaValue.toInt() >= f.minManaValue)
+        val powerOk = (f.minPower == null || (o.power ?: 0) >= f.minPower) && (f.maxPower == null || (o.power ?: 0) <= f.maxPower) && (f.maxManaValue == null || o.def.manaValue.toInt() <= f.maxManaValue) && (f.minManaValue == null || o.def.manaValue.toInt() >= f.minManaValue) && (f.maxTotalPT == null || (o.power ?: 0) + (o.toughness ?: 0) <= f.maxTotalPT)
         val cols = colorsOf(o)
         val colorOk = f.colors.all { it in cols } && f.notColors.none { it in cols } && (f.colored == null || f.colored == cols.isNotEmpty())
         return typeOk && notOk && notSubOk && ctrlOk && subOk && kwOk && tokenOk && legOk && stateOk && powerOk && colorOk

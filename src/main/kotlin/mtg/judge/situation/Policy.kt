@@ -64,6 +64,8 @@ internal object Policy {
             "slow" -> slow(x, r)
             "shuffle" -> shuffle(x, r)
             "deck" -> deck(x, r)
+            "draft" -> Redteam2Asks.draft(x, r)
+            "decklist" -> Redteam2Asks.decklist(x, r)
             "info" -> info(x, r)
             "shortcut" -> shortcut(x, r)
             "ooo" -> outOfOrder(x, r)

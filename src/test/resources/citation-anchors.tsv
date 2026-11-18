@@ -274,6 +274,7 @@
 510.4	if at least one attacking or
 511.2	abilities that trigger at end of
 513.1	the end step has no turn
+513.2	if a permanent with an ability
 514.1	first if the active player s
 514.2	second the following actions happen simultaneously
 514.3	normally no player receives priority during
@@ -781,6 +782,10 @@
 719.3b	both a prototyped spell and the
 719.4	in every zone except the stack
 719.5	a prototype card s characteristics other
+721.3	as a player casts an omen
+721.3a	when casting an omen card as
+721.3b	while on the stack as an
+721.3d	as an omen spell resolves its
 722.2a	n abilities means as long as
 722.2b	n abilities p t means as
 723.3	preparation cards can t be cast
@@ -819,6 +824,8 @@
 734.1	if a player takes an illegal
 800.4	unlike two player games multiplayer games
 800.4a	when a player leaves the game
+800.4c	if an effect that gives a
+800.4j	if a player leaves the game
 800.4k	if a player who has left
 903.3	each deck has a legendary card
 903.3c	if a player s commander is
