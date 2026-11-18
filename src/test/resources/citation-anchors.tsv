@@ -59,6 +59,7 @@
 111.7	a token that s in a
 111.8	a token that has left the
 111.10	some effects instruct a player to
+111.10a	a treasure token is a colorless
 111.10k	a monster role token is a
 113.3	there are four general categories of
 113.3b	activated abilities have a cost and
@@ -70,6 +71,7 @@
 113.7a	once activated or triggered an ability
 114.1	some effects put emblems into the
 114.4	abilities of emblems function in the
+114.5	an emblem is neither a card
 115.1	some spells and abilities require their
 115.1a	an instant or sorcery spell is
 115.1c	an activated ability is targeted if
@@ -237,6 +239,7 @@
 406.3	exiled cards are by default kept
 406.3a	a card exiled face down has
 406.6	an object may have one ability
+408.1	the command zone is a game
 500.1	a turn consists of five phases
 500.2	a phase or step in which
 500.5	as a step or phase ends
@@ -511,6 +514,7 @@
 701.47a	to amass subtype n means if
 701.47b	a player amassed after the process
 701.48a	learn means you may discard a
+701.49a	if a player is instructed to
 701.49b	if a player is instructed to
 701.49c	if a player is instructed to
 701.49d	venture into quality is a variant
@@ -682,6 +686,7 @@
 702.124d	except for determining the color identity
 702.124k	choose a background means you may
 702.126a	improvise is a static ability that
+702.126b	the improvise ability isn t an
 702.130a	afflict is a triggered ability afflict
 702.131a	ascend on an instant or sorcery
 702.131b	ascend on a permanent represents a
@@ -702,6 +707,7 @@
 702.142a	boast is a keyword that adds
 702.143a	foretell is a keyword that functions
 702.143b	exiling a card using its foretell
+702.143f	if a player leaves the game
 702.145b	daybound is found on the front
 702.145c	any time a player controls a
 702.145e	nightbound is found on the back

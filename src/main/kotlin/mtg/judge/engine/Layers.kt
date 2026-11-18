@@ -186,6 +186,7 @@ object Layers {
                     else -> DeepMech.layerEffect(state, src, eff) ?: Exam2Mech.layerEffect(state, src, eff) ?: continue   // Song of the Dryads (DeepMechanics.kt), Spreading Seas (Exam2Mechanics.kt)
                 }
             }
+            out += Exam5Mech.layerEffects(state, src)   // Conspiracy, Enchanted Evening (Exam5Mechanics.kt)
             // A leveler's band sets its base size (702.87b), its own static ability with its own timestamp.
             state.levelBand(src)?.let { band -> out += LayerEffect(src, src.timestamp, src.name, listOf(7), true, band, { c -> c.obj === src }, { _, c -> c.basePt = band.power to band.toughness; c.basePtBy = "its level" }) }
             // Resolved effects: "becomes a 2/2 creature until end of turn" (layers 4, 5 and 7b) and "has base power and toughness N/N".

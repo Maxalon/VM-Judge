@@ -564,10 +564,10 @@ class GameState(
     fun powerOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) toughness7c(obj) else power7c(obj)
     fun toughnessOf(obj: GameObject): Int? = if (DeepMech.switched(obj)) power7c(obj) else toughness7c(obj)
     private fun power7c(obj: GameObject): Int? = basePower(obj)?.let { base ->
-        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.power ?: 0 } + selfCountPt(obj) + MoreEffects3.attachedPt(this, obj, false) + obj.pumps.sumOf { it.first } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
+        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.power ?: 0 } + selfCountPt(obj) + Exam5Mech.ptMod(this, obj) + MoreEffects3.attachedPt(this, obj, false) + obj.pumps.sumOf { it.first } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
     private fun toughness7c(obj: GameObject): Int? = baseToughness(obj)?.let { base ->
-        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.toughness ?: 0 } + selfCountPt(obj, toughness = true) + MoreEffects3.attachedPt(this, obj, true) + obj.pumps.sumOf { it.second } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
+        base + staticEffectsOn(obj).sumOf { (_, e) -> (e as? StaticEffect.PtModify)?.toughness ?: 0 } + selfCountPt(obj, toughness = true) + Exam5Mech.ptMod(this, obj) + MoreEffects3.attachedPt(this, obj, true) + obj.pumps.sumOf { it.second } + (obj.counters["+1/+1"] ?: 0) - (obj.counters["-1/-1"] ?: 0)
     }
     /** Keywords a keyword counter can be (122.1b). */
     val keywordCounters = setOf("flying", "first strike", "double strike", "deathtouch", "decayed", "exalted", "haste", "hexproof", "indestructible", "lifelink", "menace", "reach", "shadow", "trample", "vigilance")
@@ -684,7 +684,7 @@ class GameState(
         // "of the chosen type" (Plague Engineer): the creature type its source chose as it entered; none chosen matches nothing.
         if ("chosen-type" in f.subtypes) { val t = source?.chosenName ?: return false; return matches(f.copy(subtypes = f.subtypes - "chosen-type" + t), o, controller, source, anyZone) }
         fun hasSub(st: String) = ch.subtypes.any { it.equals(st, true) } || ch.types.any { it.equals(st, true) } || (anim?.subtypes?.any { it.equals(st, true) } == true) ||
-            (o.def.changeling && "Creature" in ch.types) || anim?.allCreatureTypes == true
+            (Exam5Mech.everyType(o.def) && "Creature" in ch.types) || anim?.allCreatureTypes == true   // changeling, Mistform Ultimus (Exam5Mechanics.kt)
         val subOk = if (f.subtypesAny && f.subtypes.isNotEmpty()) f.subtypes.any { st -> hasSub(st) }
                     else f.subtypes.all { st -> hasSub(st) || (st.equals("basic", true) && ch.supertypes.any { it.equals("Basic", true) }) || (st.equals("snow", true) && ch.supertypes.any { it.equals("Snow", true) }) }
         val kwOk = f.keywords.all { hasKeyword(o, it) } && f.notKeywords.none { hasKeyword(o, it) }

@@ -88986,5 +88986,556 @@
     "cite": [
       "603.10a"
     ]
+  },
+  {
+    "id": "x5-1",
+    "text": "My opponent controls Engineered Plague naming Elf. I control Conspiracy naming Elf and Grizzly Bears. How big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 1/1 (2/2 base, -1/-1 from Engineered Plague)."
+    ],
+    "cite": [
+      "613.1d",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "x5-2",
+    "text": "I control Painter's Servant choosing red. My opponent controls Kor Firewalker. Can I cast Swords to Plowshares targeting Kor Firewalker?",
+    "expect": [
+      "No: Swords to Plowshares can't target Kor Firewalker.",
+      "Kor Firewalker has protection from red"
+    ],
+    "cite": [
+      "613.1e",
+      "702.16b"
+    ]
+  },
+  {
+    "id": "x5-3",
+    "text": "My opponent activated Mutavault and it's a 2/2 creature. I cast Clone copying Mutavault. What is my Clone?",
+    "expect": [
+      "Clone isn't a creature: it copied Mutavault's printed card, and the effect that made Mutavault a creature isn't copied (707.2)."
+    ],
+    "notExpect": [
+      "Clone enters as itself"
+    ],
+    "cite": [
+      "707.2"
+    ]
+  },
+  {
+    "id": "x5-4",
+    "text": "My opponent's Forest is enchanted with Spreading Seas. I play Vesuva copying that Forest. What mana can Vesuva tap for?",
+    "expect": [
+      "Vesuva (a copy of Forest) taps for {G}",
+      "Vesuva is Forest as printed"
+    ],
+    "notExpect": [
+      "no mana ability the engine recognises"
+    ],
+    "cite": [
+      "305.6",
+      "707.2"
+    ]
+  },
+  {
+    "id": "x5-5",
+    "text": "I control Opalescence, two Forests and Craw Wurm. My opponent casts Enchanted Evening. What happens?",
+    "expect": [
+      "Two Forests: the battlefield → your graveyard.",
+      "Craw Wurm is a 6/6 Wurm enchantment creature.",
+      "Opalescence isn't a creature"
+    ],
+    "cite": [
+      "613.8a",
+      "613.8b",
+      "704.5f"
+    ]
+  },
+  {
+    "id": "x5-6",
+    "text": "Humility came first, then Opalescence. How big is Humility?",
+    "expect": [
+      "Humility is 4/4"
+    ],
+    "notExpect": [
+      "Humility is 1/1"
+    ],
+    "cite": [
+      "613.7",
+      "613.6"
+    ]
+  },
+  {
+    "id": "x5-7",
+    "text": "My opponent controls Paladin en-Vec. I cast Mind Bend on Paladin en-Vec changing black to white. Can I now cast Doom Blade on it?",
+    "expect": [
+      "Yes: nothing stops you from targeting Paladin en-Vec with Doom Blade.",
+      "protection from white and from red"
+    ],
+    "cite": [
+      "612.2",
+      "613.1c"
+    ]
+  },
+  {
+    "id": "x5-8",
+    "text": "Tarmogoyf is the top card of my graveyard and my opponent's graveyard has Lightning Bolt. I control Volrath's Shapeshifter. How big is Volrath's Shapeshifter?",
+    "expect": [
+      "Volrath's Shapeshifter is a 2/3 Tarmogoyf right now"
+    ],
+    "cite": [
+      "613.1c",
+      "604.3"
+    ]
+  },
+  {
+    "id": "x5-9",
+    "text": "I control Volrath's Shapeshifter and the top card of my graveyard is Craw Wurm. I activate its ability and discard Lightning Bolt. How big is Volrath's Shapeshifter now?",
+    "expect": [
+      "Volrath's Shapeshifter is a 0/1 (the top card of the graveyard is Lightning Bolt, not a creature card)"
+    ],
+    "cite": [
+      "613.1c"
+    ]
+  },
+  {
+    "id": "x5-10",
+    "text": "I control Metallic Mimic naming Wizard. I cast Changeling Outcast. Does it get a +1/+1 counter?",
+    "expect": [
+      "Yes: Changeling Outcast has 1 +1/+1 counter.",
+      "changeling makes it every creature type, Wizard included"
+    ],
+    "cite": [
+      "614.1c",
+      "702.73a"
+    ]
+  },
+  {
+    "id": "x5-11",
+    "text": "I control Coat of Arms, Mistform Ultimus, Grizzly Bears and Llanowar Elves. How big is Mistform Ultimus?",
+    "expect": [
+      "Mistform Ultimus is 5/5."
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "x5-12",
+    "text": "My opponent controls Crystalline Sliver. Can my Sakashima the Impostor copy it?",
+    "expect": [
+      "Yes: Sakashima the Impostor chooses what to copy as it enters; that isn't targeting (115.10a)"
+    ],
+    "cite": [
+      "115.10a",
+      "707.5",
+      "702.18a"
+    ]
+  },
+  {
+    "id": "x5-13",
+    "text": "I control Vedalken Orrery and my opponent controls Teferi, Time Raveler. Can I cast Grizzly Bears during my opponent's turn?",
+    "expect": [
+      "No: Grizzly Bears can't be cast (Teferi, Time Raveler: sorcery speed only)."
+    ],
+    "cite": [
+      "307.1"
+    ]
+  },
+  {
+    "id": "x5-14",
+    "text": "I control Crucible of Worlds and I already played a land this turn. Can I play Wasteland from my graveyard?",
+    "expect": [
+      "No: you can't play Wasteland: you already played 1 land this turn"
+    ],
+    "cite": [
+      "305.2a"
+    ]
+  },
+  {
+    "id": "x5-15",
+    "text": "I control Omniscience. I cast Fireball without paying its mana cost. What can X be?",
+    "expect": [
+      "X is 0: when a spell with {X} in its mana cost is cast without paying its mana cost"
+    ],
+    "cite": [
+      "107.3b"
+    ]
+  },
+  {
+    "id": "x5-16",
+    "text": "I control Fires of Invention. On my opponent's turn can I cast Brazen Borrower's Petty Theft?",
+    "expect": [
+      "Petty Theft can't be cast: Fires of Invention lets you cast spells only during your own turn"
+    ],
+    "notExpect": [
+      "Yes: nothing stops"
+    ],
+    "cite": [
+      "101.2"
+    ]
+  },
+  {
+    "id": "x5-17",
+    "text": "I control Garruk's Horde and the top card of my library is a Forest. Can I play it?",
+    "expect": [
+      "No: Garruk's Horde only lets you cast creature spells from the top of your library."
+    ],
+    "cite": [
+      "116.2a"
+    ]
+  },
+  {
+    "id": "x5-18",
+    "text": "I control Mystic Forge and the top card of my library is Ornithopter. My opponent controls Chalice of the Void with zero counters. I cast Ornithopter from the top of my library. What happens?",
+    "expect": [
+      "Ornithopter is countered."
+    ],
+    "cite": [
+      "701.6a"
+    ]
+  },
+  {
+    "id": "x5-19",
+    "text": "My opponent attacks me with Craw Wurm. I cast Ray of Command on Craw Wurm. Does it still deal damage to me?",
+    "expect": [
+      "No: Craw Wurm dealt no damage to you.",
+      "Craw Wurm is removed from combat (its controller changed, 506.4)"
+    ],
+    "notExpect": [
+      "You take 6 damage"
+    ],
+    "cite": [
+      "506.4"
+    ]
+  },
+  {
+    "id": "x5-20",
+    "text": "My opponent controls Fervor and Grizzly Bears. On my turn I cast Control Magic on Grizzly Bears. Can it attack this turn?",
+    "expect": [
+      "No: Grizzly Bears can't attack (summoning sick)."
+    ],
+    "cite": [
+      "302.6"
+    ]
+  },
+  {
+    "id": "x5-21",
+    "text": "My opponent crewed Smuggler's Copter during my upkeep. I cast Act of Treason on Smuggler's Copter. Can I attack with it?",
+    "expect": [
+      "Yes: Smuggler's Copter can attack.",
+      "Smuggler's Copter has haste until end of turn."
+    ],
+    "cite": [
+      "613.1d",
+      "702.10b"
+    ]
+  },
+  {
+    "id": "x5-22",
+    "text": "My opponent's Craw Wurm is enchanted with my Pacifism. I cast Switcheroo exchanging my Grizzly Bears and Craw Wurm. Can I attack with Craw Wurm next turn?",
+    "expect": [
+      "No: Craw Wurm can't attack (Pacifism says so).",
+      "Pacifism stays attached to Craw Wurm and stays under your control"
+    ],
+    "cite": [
+      "701.12b"
+    ]
+  },
+  {
+    "id": "x5-23",
+    "text": "I cast Threaten on my opponent's Grizzly Bears and attack with it. Then I cast Time Stop. Who controls Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is under opponent's control."
+    ],
+    "cite": [
+      "725.1d",
+      "514.2"
+    ]
+  },
+  {
+    "id": "x5-24",
+    "text": "I control Omniscience and my opponent controls Sphere of Resistance. I cast Rite of Replication with kicker targeting my Grizzly Bears. How much mana do I pay?",
+    "expect": [
+      "6: Rite of Replication costs {6} in all"
+    ],
+    "notExpect": [
+      "still costs {1} more"
+    ],
+    "cite": [
+      "118.9d",
+      "702.33a"
+    ]
+  },
+  {
+    "id": "x5-25",
+    "text": "Can I tap a Treasure for improvise and also sacrifice it for mana?",
+    "expect": [
+      "No, one or the other: a Treasure may be tapped for improvise"
+    ],
+    "cite": [
+      "702.126a",
+      "601.2g",
+      "111.10a"
+    ]
+  },
+  {
+    "id": "x5-26",
+    "text": "My opponent controls Trinisphere. I cast Treasure Cruise with delve, exiling seven cards from my graveyard. How much mana do I pay?",
+    "expect": [
+      "so you pay {U} (1 mana)",
+      "Trinisphere doesn't make it cost more"
+    ],
+    "cite": [
+      "702.66b",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "x5-27",
+    "text": "I control Goblin Electromancer. I cast Gelatinous Genesis with X=3. How much mana do I pay?",
+    "expect": [
+      "6: Gelatinous Genesis costs {5}{G} in all"
+    ],
+    "cite": [
+      "118.7a"
+    ]
+  },
+  {
+    "id": "x5-28",
+    "text": "I cast Elder Deep-Fiend for its emerge cost sacrificing Kitchen Finks. How much do I pay and what happens to Kitchen Finks?",
+    "expect": [
+      "4: Elder Deep-Fiend costs {2}{U}{U} with emerge",
+      "Kitchen Finks comes back with a -1/-1 counter (persist)"
+    ],
+    "cite": [
+      "702.119a",
+      "702.79a"
+    ]
+  },
+  {
+    "id": "x5-29",
+    "text": "My opponent controls Chalice of the Void with one counter. I discard Fiery Temper and cast it for its madness cost. Is it countered?",
+    "expect": [
+      "No: Fiery Temper's mana value is 3"
+    ],
+    "notExpect": [
+      "cast without paying its mana cost"
+    ],
+    "cite": [
+      "202.3",
+      "118.9c"
+    ]
+  },
+  {
+    "id": "x5-30",
+    "text": "I activate Mirror Entity with X=4 and I control Glorious Anthem and Grizzly Bears. Then my opponent destroys Glorious Anthem and kills Mirror Entity. How big is Grizzly Bears?",
+    "expect": [
+      "Grizzly Bears is 4/4."
+    ],
+    "cite": [
+      "611.2c"
+    ]
+  },
+  {
+    "id": "x5-31",
+    "text": "My opponent's Banisher Priest exiled my Grizzly Bears. My opponent casts Teferi's Protection. Do I get Grizzly Bears back?",
+    "expect": [
+      "No: Grizzly Bears stays in exile. Banisher Priest phased out"
+    ],
+    "cite": [
+      "702.26d",
+      "610.3"
+    ]
+  },
+  {
+    "id": "x5-32",
+    "text": "I control Kiki-Jiki, Mirror Breaker and Grizzly Bears. During my end step I activate Kiki-Jiki, Mirror Breaker targeting Grizzly Bears. When is the token sacrificed?",
+    "expect": [
+      "At the beginning of the next turn's end step"
+    ],
+    "cite": [
+      "513.2"
+    ]
+  },
+  {
+    "id": "x5-33",
+    "text": "I Sneak Attack Emrakul, the Aeons Torn. At the end step the sacrifice trigger goes on the stack and I activate Sundial of the Infinite. What happens to Emrakul?",
+    "expect": [
+      "Emrakul, the Aeons Torn stays on the battlefield for good"
+    ],
+    "cite": [
+      "725.1b",
+      "603.7b"
+    ]
+  },
+  {
+    "id": "x5-34",
+    "text": "I cast Giant Growth on Grizzly Bears and then cast Time Stop. Is Grizzly Bears still 5/5 on my opponent's turn?",
+    "expect": [
+      "No: Grizzly Bears is 2/2 now."
+    ],
+    "cite": [
+      "514.2"
+    ]
+  },
+  {
+    "id": "x5-35",
+    "text": "I activate Teferi, Time Raveler's +1. Then I skip my next turn with Time Vault. Can I still cast sorceries as though they had flash on my opponent's next turn?",
+    "expect": [
+      "Yes: the skipped turn never began, so \"until your next turn\" hasn't ended (614.10a)."
+    ],
+    "cite": [
+      "614.10a"
+    ]
+  },
+  {
+    "id": "x5-36",
+    "text": "My opponent is at 5 life and controls Wall of Wood. I control Craw Wurm. I cast Rancor on Craw Wurm, attack, and my opponent blocks with Wall of Wood. Does my opponent die?",
+    "expect": [
+      "Yes: opponent has lost the game.",
+      "Opponent takes 5 damage."
+    ],
+    "cite": [
+      "702.19b"
+    ]
+  },
+  {
+    "id": "x5-37",
+    "text": "My opponent is at 3 life and controls Grizzly Bears. I control Goblin Bombardment, Hill Giant and Llanowar Elves. I attack with Hill Giant and Llanowar Elves and my opponent blocks Hill Giant with Grizzly Bears. After combat damage I sacrifice Hill Giant and Llanowar Elves to Goblin Bombardment. Does my opponent die?",
+    "expect": [
+      "Yes: opponent has lost the game.",
+      "Opponent goes from 3 to 0 life."
+    ],
+    "cite": [
+      "510.2"
+    ]
+  },
+  {
+    "id": "x5-38",
+    "text": "My opponent is at 7 life. I cast Fling sacrificing Craw Wurm and in response I cast Giant Growth on Craw Wurm. Does my opponent die?",
+    "expect": [
+      "No: opponent is still in the game at 1 life.",
+      "Giant Growth can't be cast: Craw Wurm is already in the graveyard."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "x5-39",
+    "text": "My opponent is at 7 life and I control Craw Wurm. I cast Giant Growth on Craw Wurm and then cast Fling sacrificing Craw Wurm targeting my opponent. Does my opponent die?",
+    "expect": [
+      "Yes: opponent has lost the game.",
+      "Opponent takes 9 damage."
+    ],
+    "cite": [
+      "701.21a"
+    ]
+  },
+  {
+    "id": "x5-40",
+    "text": "My opponent has 6 poison counters. I attack with Glistener Elf and it isn't blocked. I cast Giant Growth on Glistener Elf. Does my opponent lose?",
+    "expect": [
+      "Yes: opponent has lost the game.",
+      "Opponent has 10 poison counters."
+    ],
+    "cite": [
+      "702.90b",
+      "704.5c"
+    ]
+  },
+  {
+    "id": "x5-41",
+    "text": "My opponent is at 14 life. My Craw Wurm is enchanted with Rancor and equipped with Fireshrieker. I attack and my opponent blocks with Grizzly Bears. Does my opponent die?",
+    "expect": [
+      "Yes: opponent has lost the game.",
+      "Opponent takes 8 damage.",
+      "Opponent goes from 14 to 0 life."
+    ],
+    "cite": [
+      "702.4b",
+      "702.19d"
+    ]
+  },
+  {
+    "id": "x5-42",
+    "text": "My opponent is at 6 life. I attack with Craw Wurm and my opponent blocks with Grizzly Bears. I cast Lightning Bolt on Grizzly Bears. Does my opponent die?",
+    "expect": [
+      "No: opponent is still in the game at 6 life.",
+      "Craw Wurm deals no combat damage: its blocker left combat and it stays blocked."
+    ],
+    "cite": [
+      "509.1h"
+    ]
+  },
+  {
+    "id": "x5-43",
+    "text": "My opponent is at 6 life and controls Grizzly Bears. My Craw Wurm is enchanted with Rancor. I cast Ram Through with Craw Wurm targeting Grizzly Bears. Does my opponent die?",
+    "expect": [
+      "Yes: opponent has lost the game.",
+      "6 excess damage goes to opponent (Craw Wurm has trample)."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "120.4a"
+    ]
+  },
+  {
+    "id": "x5-44",
+    "text": "I manifest Lightning Bolt with Whisperwood Elemental. Can I turn it face up?",
+    "expect": [
+      "No: Lightning Bolt isn't a creature card"
+    ],
+    "cite": [
+      "701.40g"
+    ]
+  },
+  {
+    "id": "x5-45",
+    "text": "My opponent has a face-down morph creature. I cast Clone copying it. What is my Clone?",
+    "expect": [
+      "a 2/2 creature with no text, no name, no subtypes and no mana cost"
+    ],
+    "cite": [
+      "708.2"
+    ]
+  },
+  {
+    "id": "x5-46",
+    "text": "My opponent has an emblem from Elspeth, Knight-Errant. Can I destroy it with Disenchant?",
+    "expect": [
+      "No: an emblem isn't a permanent (114.5)"
+    ],
+    "cite": [
+      "114.5",
+      "408.1"
+    ]
+  },
+  {
+    "id": "x5-47",
+    "text": "I already completed Lost Mine of Phandelver. I venture into the dungeon. What happens?",
+    "expect": [
+      "Lost Mine of Phandelver again included"
+    ],
+    "cite": [
+      "309.7",
+      "701.49a"
+    ]
+  },
+  {
+    "id": "x5-48",
+    "text": "In a four-player game my opponent foretold a card and then concedes. What happens to the foretold card?",
+    "expect": [
+      "It leaves the game with opponent",
+      "it must be revealed to everyone as it goes (702.143f)"
+    ],
+    "cite": [
+      "800.4a",
+      "702.143f"
+    ]
   }
 ]

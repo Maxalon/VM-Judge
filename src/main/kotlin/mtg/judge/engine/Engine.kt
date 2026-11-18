@@ -173,7 +173,7 @@ class Engine(val state: GameState) {
             }
             // Delve and convoke pay part of the locked-in total; they aren't reductions (702.66b, 702.51b).
             val due = maxOf(0, cost - obj.castCost.delved - obj.castCost.convoked)
-            if (tax > 0 && (alternative || tc.free) && taxes.isNotEmpty()) state.outcomes += "${card.name} still costs {$tax} more (${taxes.joinToString(", ") { it.first.name }}): a cost increase applies to an alternative cost too (601.2f)."
+            if (tax > 0 && (alternative || tc.free) && taxes.isNotEmpty() && tc.changes.none { it.kind == "additional" }) state.outcomes += "${card.name} still costs {$tax} more (${taxes.joinToString(", ") { it.first.name }}): a cost increase applies to an alternative cost too (601.2f)."
             // Mana stated as a count, or the untapped lands named ("I have 2 Islands"), less what earlier casts used.
             // A stated count plus any described mana sources (availableMana adds them up); described sources alone only when nothing else could pay.
             (if (player.mana != null) availableMana(player) else availableMana(player)?.takeIf { landsOnly(player) })?.let { avail -> obj.manaAvailableAtCast = avail
@@ -254,7 +254,7 @@ class Engine(val state: GameState) {
         }
         if (noLegalTarget) { trace.step("${card.name} needs a target (${needed[0].raw}) and nothing can legally be chosen, so it can't be cast.", "601.2c", "115.1"); state.outcomes += "${card.name} can't be cast: no legal target."; return null }
         if (!card.isInstantOrSorcery && card.abilities.none { it is TriggeredAbility || it is ActivatedAbility || it is StaticAbility } && card.abilities.isNotEmpty()) {
-            state.unsupported += Unsupported(card.name, "Rules text not modeled: " + card.abilities.filterIsInstance<UnparsedAbility>().joinToString(" | ") { it.text })
+            if (!card.abilities.filterIsInstance<UnparsedAbility>().all { Exam5Mech.handlesAbility(it.text) }) state.unsupported += Unsupported(card.name, "Rules text not modeled: " + card.abilities.filterIsInstance<UnparsedAbility>().joinToString(" | ") { it.text })
         }
         // "Ravenous Chupacabra targeting their Bears": the creature spell targets nothing; its enters-the-battlefield trigger will.
         // "They cast Clone copying Fiend Hunter, exiling my Elves": the target is for the enters ability it will have as a copy.
@@ -566,7 +566,7 @@ class Engine(val state: GameState) {
         AuditMech.splitCastNote(state, item)
         wardTriggers(item)
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
-        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect)) && !Leftovers3Mech.handles(unparsedText(item.effect)) && !Leftovers4Mech.handles(unparsedText(item.effect)) && !Redteam4Mech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
+        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect)) && !Leftovers3Mech.handles(unparsedText(item.effect)) && !Leftovers4Mech.handles(unparsedText(item.effect)) && !Redteam4Mech.handles(unparsedText(item.effect)) && !Exam5Mech.handlesAbility(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         // A spell at a player ("any target") can be sent to Spellskite too, it being a creature.
         val skiteCouldTake = item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" } || (item.targets.any { it is Ref.Player } && Regex("""(?i)\bany target\b""").containsMatchIn(card.oracleText))
         if (skiteCouldTake) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
@@ -1154,7 +1154,7 @@ class Engine(val state: GameState) {
         targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, playerId, item.id)) } }
         if (wasOnBattlefield) onEvent(GameEvent.AbilityActivated(obj, playerId))
         state.player(playerId).let { p -> trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s ability (${ability.cost})${describeTargets(targets)}. It goes on top of the stack.", "602.2a", "405.2") }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect)) && !Redteam4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect)) && !Redteam4Mech.handles(unparsedText(ability.effect)) && !Exam5Mech.handlesAbility(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -1233,6 +1233,7 @@ class Engine(val state: GameState) {
         if (o.controller == playerId) { trace.step("${o.name} is already under ${p.possessive} control.", "613.1b"); return }
         if (untilEndOfTurn && o.controlRevertsTo == null) o.controlRevertsTo = o.controller
         o.controller = playerId
+        Exam5Mech.controlChanged(state, o)   // removed from combat (506.4)
         if (state.isCreature(o)) o.summoningSick = true
         trace.step("${p.subject} ${p.v("gains", "gain")} control of ${o.name}${if (untilEndOfTurn) " until end of turn" else ""} (it was ${if (was.you) "yours" else was.possessive}). A control-changing effect applies in layer 2; the permanent doesn't change zones, so it isn't summoning sick only if it has haste or has been under its new controller's control since the turn began.", "613.1b", "611.2a", "302.6")
         state.outcomes += "${p.subject} ${p.v("controls", "control")} ${o.name}${if (untilEndOfTurn) " until end of turn" else ""}."
@@ -1851,7 +1852,7 @@ class Engine(val state: GameState) {
                     val entersOnly = setOf(StaticEffect.EntersTapped::class, StaticEffect.EntersWithCounters::class, StaticEffect.EntersAsCopy::class)
                     // Under Dress Down it has no abilities to apply; an evasion ability or an unattached Equipment's bonus describes no other permanent.
                     if (state.abilitiesLostOn(item.source) == null && now.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it::class !in entersOnly }) trace.step("${now.name}'s static abilities apply from now on, for as long as it's on the battlefield.", "604.2", "613.1")
-                    now.abilities.filterIsInstance<UnparsedAbility>().filterNot { ModernMech.handlesAbility(it.text) || PauperMech.handlesAbility(it.text) }.takeIf { it.isNotEmpty() }?.let { un -> if (state.unsupported.none { it.what == now.name }) state.unsupported += Unsupported(now.name, "Rules text not modeled: " + un.joinToString(" | ") { it.text }) }
+                    now.abilities.filterIsInstance<UnparsedAbility>().filterNot { ModernMech.handlesAbility(it.text) || PauperMech.handlesAbility(it.text) || Exam5Mech.handlesAbility(it.text) }.takeIf { it.isNotEmpty() }?.let { un -> if (state.unsupported.none { it.what == now.name }) state.unsupported += Unsupported(now.name, "Rules text not modeled: " + un.joinToString(" | ") { it.text }) }
                     state.outcomes += "${if (now !== def) "${def.name}, a copy of ${now.name}," else now.name} enters the battlefield."
                     narrateLandTypeSetters(item.source)
                     narrateLayers(item.source)
@@ -1869,6 +1870,9 @@ class Engine(val state: GameState) {
                 heldUntilResolved(item) {
                     item.effect?.let { applyEffect(it, item) }
                     if (state.turns.endedBy == item.id) return   // Sundial of the Infinite: the ability ended the turn (725.1b)
+                    // "I activate its ability and discard Lightning Bolt" on an ability whose discard wasn't parsed (Volrath's Shapeshifter's
+                    // granted "{2}: Discard a card."): the named card still goes as the ability resolves (608.2c), not never.
+                    if (state.r4PendingDiscards.isNotEmpty()) Redteam4Mech.discardNamed(this, state.player(item.controller), item)
                     trace.step("${item.describe} finishes resolving and ceases to exist.", "608.2c", "608.2n")
                 }
             }
@@ -3021,7 +3025,7 @@ class Engine(val state: GameState) {
         splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect)) && !Redteam4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect)) && !Redteam4Mech.handles(unparsedText(ability.effect)) && !Exam5Mech.handlesAbility(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -3532,7 +3536,7 @@ class Engine(val state: GameState) {
             is Effect.DealsPowerTo -> {
                 val a = item.targets.getOrNull(0)?.let { objOf(it) }; val b = item.targets.getOrNull(1)?.let { objOf(it) }
                 if (a == null || b == null || !a.isOnBattlefield() || !b.isOnBattlefield()) trace.step("One of the creatures is no longer on the battlefield, so no damage is dealt.", "608.2b")
-                else { val pw = a.power ?: 0; trace.step("${a.name}'s power is $pw as ${item.source.name} resolves (its power is checked now, not when it was cast), so it deals $pw damage to ${b.name}. This isn't a fight: ${b.name} deals none back.", "608.2h", "701.14a"); applyDamage(a.name, Ref.Obj(b.id), pw, a); stateBasedActions() }
+                else { val pw = a.power ?: 0; trace.step("${a.name}'s power is $pw as ${item.source.name} resolves (its power is checked now, not when it was cast), so it deals $pw damage to ${b.name}. This isn't a fight: ${b.name} deals none back.", "608.2h", "701.14a"); val ex = Exam5Mech.trampleExcess(state, item, a, b, pw); applyDamage(a.name, Ref.Obj(b.id), pw - ex, a); if (ex > 0) applyDamage(a.name, Ref.Player(b.controller), ex, a); stateBasedActions() }   // Ram Through's trample excess (Exam5Mechanics.kt)
             }
             is Effect.RedirectToSelf -> forEachLegalTarget(item, effect.target) { ref ->
                 val target = (ref as? Ref.Stack)?.let { state.stackItem(it.id) } ?: (ref as? Ref.Obj)?.let { r -> state.stack.firstOrNull { it.source.id == r.id } }
@@ -4145,6 +4149,7 @@ class Engine(val state: GameState) {
             is WinLossEffect -> applyWinLoss(effect, item)
             is Effect.GainControl -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 val was = state.player(o.controller); if (effect.untilEndOfTurn && o.controlRevertsTo == null) o.controlRevertsTo = o.controller; o.controller = item.controller
+                if (was.id != item.controller) Exam5Mech.controlChanged(state, o)   // an attacker or blocker changing control leaves combat (506.4)
                 trace.step("${state.player(item.controller).subject} ${state.player(item.controller).v("gains", "gain")} control of ${o.name}${if (effect.untilEndOfTurn) " until end of turn" else ""} (it was ${if (was.you) "yours" else was.possessive}). A control-changing effect applies in layer 2; the permanent doesn't change zones, so it isn't summoning sick only if it has haste or has been under its new controller's control since the turn began.", "613.1b", "611.2a", "302.6")
                 if (state.isCreature(o)) o.summoningSick = true
                 state.outcomes += "${state.player(item.controller).subject} ${state.player(item.controller).v("controls", "control")} ${o.name}${if (effect.untilEndOfTurn) " until end of turn" else ""}."
@@ -4371,6 +4376,7 @@ class Engine(val state: GameState) {
             } }
             is Effect.Unparsed -> {
                 if (Redteam4Mech.unparsed(this, effect.text, item)) return   // Arclight Phoenix's "if you've cast three or more instant and sorcery spells this turn" (Redteam4Mechanics.kt)
+                if (Exam5Mech.resolve(this, effect.text, item)) return   // Switcheroo's exchange of control, Ram Through's excess (Exam5Mechanics.kt)
                 if (Leftovers4Mech.resolveText(this, effect.text, item)) return   // "you take the initiative" (Leftovers4Mechanics.kt)
                 if (Leftovers3Mech.resolve(this, effect.text, item)) return   // activation instructions, Grimoire, Taunt (Leftovers3Mechanics.kt)
                 if (Leftovers2Mech.resolve(this, effect.text, item)) return   // Ouroboroid, energy, Pox, Oblivion Stone (Leftovers2Mechanics.kt)
@@ -4958,6 +4964,7 @@ class Engine(val state: GameState) {
         ModernMech.entersWithExiled(state, o)   // Murktide Regent's counters for the cards delve exiled (ModernMechanics.kt)
         LimitedMech.asEnters(state, o)   // Ixidron turns the other creatures face down (LimitedMechanics.kt)
         MoreEffects2.asEnters(this, o)   // riot (MoreEffects2.kt)
+        Exam5Mech.asEnters(this, o)   // Metallic Mimic's extra counter (Exam5Mechanics.kt)
         val startingLoyalty = o.def.loyalty?.let { NewMech.compleatedLoyalty(state, o, it) }
         if ("Saga" in o.def.subtypes && o.def.abilities.any { it is TriggeredAbility && it.trigger is Trigger.Chapter } && (o.counters["lore"] ?: 0) == 0) {
             // Blood Moon on Urza's Saga: the lore counter comes from a rule-given ability (715.3a), not its rules text (305.7), but the chapter abilities are gone.
@@ -5064,6 +5071,7 @@ class Engine(val state: GameState) {
     }
 
     private fun moveRaw(obj: GameObject, to: Zone) {
+        Exam5Mech.moved(state, obj, to)   // graveyard order, for Volrath's Shapeshifter (Exam5Mechanics.kt)
         val leftGy = obj.zone == Zone.GRAVEYARD && to != Zone.GRAVEYARD
         val wasOn = if (obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD) obj.attachedTo else null
         if (to == Zone.BATTLEFIELD && obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
@@ -5589,7 +5597,8 @@ class Engine(val state: GameState) {
             }
         }
         DeepMech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })   // Song of the Dryads (DeepMechanics.kt)
-        Exam2Mech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })   // Spreading Seas against Magus of the Moon (Exam2Mechanics.kt)
+        Exam2Mech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) }, { out(it) })
+        Exam5Mech.narrateLayers(state, view, { relevant(it) }, { t, r -> step(t, *r) })   // Conspiracy, Enchanted Evening (Exam5Mechanics.kt)   // Spreading Seas against Magus of the Moon (Exam2Mechanics.kt)
         // Type changes that make something a creature, or something else.
         for (e in view.applied[4].orEmpty()) {
             val eff = e.effect as? StaticEffect.BecomesType ?: continue
@@ -5883,6 +5892,7 @@ class Engine(val state: GameState) {
         if (moon != null) { val t = basicMana.firstOrNull() ?: (DeepMech.moonType(moon) to DeepMech.manaOf(DeepMech.moonType(moon)))
             return "${o.name} is ${if (t.first == "Island") "an" else "a"} ${t.first} under ${moon.name}, so it taps for ${t.second} and nothing else." }
         val mana = activatedAbilitiesOf(o).filter { a -> isManaEffect(a.effect) }
+        Exam5Mech.intrinsicMana(state, o, mana.isEmpty(), basicMana)?.let { return it }   // a copied basic land type's own mana ability (305.6)
         if (mana.isEmpty()) return "${o.name} has no mana ability the engine recognises."
         // "Add {B} for each Swamp you control" is more useful with the count worked out for the board described.
         return "${o.name} can make: " + mana.joinToString("; ") { a ->
