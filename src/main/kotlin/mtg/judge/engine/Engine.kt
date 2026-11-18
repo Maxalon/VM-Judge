@@ -1390,7 +1390,7 @@ class Engine(val state: GameState) {
             state.stack.remove(target)
             if (target.kind == StackKind.SPELL) {
                 target.source.zone = Zone.EXILE; target.source.exiledBy = item.source.id; state.quelled[item.source.id] = target.source.id
-                trace.step("${target.describe} is exiled: it's removed from the stack without resolving, so none of its effects happen. This isn't countering, so even a spell that can't be countered is exiled${if (item.kind == StackKind.SPELL) "; it stays in exile" else "; ${item.source.name} remembers the card for its leaves-the-battlefield ability"}.", "701.13a", "608.2b")
+                trace.step("${target.describe} is exiled: it's removed from the stack without resolving, so none of its effects happen. This isn't countering, so even a spell that can't be countered is exiled${if (item.kind == StackKind.SPELL) "; it stays in exile" else "; ${item.source.name} remembers the card for its leaves-the-battlefield ability"}.", "701.13a", "701.6a")
                 state.outcomes += "${target.describe}: the stack → exile (${item.source.name}); it doesn't resolve."
             } else trace.step("${target.describe} is removed from the stack and ceases to exist.", "701.13a")
         }
@@ -1673,7 +1673,7 @@ class Engine(val state: GameState) {
             // The draw (Sheoldred) and "at the beginning of the draw step" (Howling Mine) both trigger before anyone gets priority,
             // so they're put on the stack together in APNAP order (603.3b), the active player's first.
             heldTriggers { draw(activePlayer, 1); onEvent(GameEvent.StepBegins(step, activePlayer)) }
-            state.assumptions += "This isn't the first turn of the game, so the active player draws for the turn (the starting player skips that draw, 103.7a)."
+            state.assumptions += "This isn't the first turn of the game, so the active player draws for the turn (the starting player skips that draw, 103.8a)."
         }
         if (step == "end" && state.objects.values.any { it.isOnBattlefield() && (it.pumps.isNotEmpty() || it.tempKeywords.isNotEmpty()) }) {
             trace.step("\"Until end of turn\" effects don't end in the end step: \"at the beginning of the end step\" abilities trigger now, and the effects last until the cleanup step that follows.", "513.1", "514.2")
@@ -4154,7 +4154,7 @@ class Engine(val state: GameState) {
                     state.outcomes += "${spell.source.name} isn't countered (it can't be)."
                 }
                 else {
-                    trace.step("${spell.describe} is countered: it never resolves and goes to its owner's graveyard. Nothing says it can't be countered, and countering isn't damage or destruction, so protection, indestructible and the like don't help it.", "701.6a", "701.6b")
+                    trace.step("${spell.describe} is countered: it never resolves and goes to its owner's graveyard. Nothing says it can't be countered, and countering isn't damage or destruction, so protection, indestructible and the like don't help it.", "701.6a")
                     state.stack.remove(spell); state.lastCountered = spell.source
                     moveRaw(spell.source, Zone.GRAVEYARD)
                     state.outcomes += "${spell.source.name} is countered."
@@ -5359,7 +5359,7 @@ class Engine(val state: GameState) {
      */
     private fun orderedCounterReplacements(o: GameObject, n: Int, kind: String): Int {
         val mods = state.objects.values.filter { it.isOnBattlefield() && it.controller == o.controller }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }
-            .filter { (it.factor > 1 || it.extra != 0) && (it.kind == null || it.kind.equals(kind, true)) && !(it.notSource && src === o) }.map { src to it } } + DeepMech.counterMods(state, o)   // Vorinclex, Monstrous Raider (122.6a)
+            .filter { (it.factor > 1 || it.extra != 0) && (it.kind == null || it.kind.equals(kind, true)) && !(it.notSource && src === o) }.map { src to it } } + DeepMech.counterMods(state, o)   // Vorinclex, Monstrous Raider (614.1a)
         fun apply(x: Int, m: Replacement.CounterMultiplier) = DeepMech.applyMod(x, m) ?: if (m.factor > 1) x * m.factor else (x + m.extra).coerceAtLeast(0)   // Vizier of Remedies: one fewer, never below none
         fun perms(l: List<Pair<GameObject, Replacement.CounterMultiplier>>): List<List<Pair<GameObject, Replacement.CounterMultiplier>>> = if (l.size <= 1) listOf(l) else l.indices.flatMap { i -> perms(l.filterIndexed { j, _ -> j != i }).map { listOf(l[i]) + it } }
         // Multipliers before adders was the old fixed order; it stays the order said when the order makes no difference.

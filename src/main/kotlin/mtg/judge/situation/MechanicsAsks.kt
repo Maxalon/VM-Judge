@@ -166,7 +166,7 @@ internal object MechanicsAsks {
         tr.step("${perm.name}: \"${m.value.replaceFirstChar { it.uppercase() }}\". It's a permission to cast from another zone; it doesn't change when: a sorcery-speed spell still needs ${p.possessive} main phase and an empty stack.", "601.3", "117.1a")
         if (!all) tr.step("It says \"cast\", and lands aren't cast but played, so a land on top can't be played from there, an artifact land included.", "601.1a", "305.1")
         val exile = lines(perm).firstOrNull { Regex("""^\{T\}, pay 1 life: exile the top card of your library\.?$""", I).matches(it) }
-        if (exile != null) tr.step("\"$exile\" only exiles the card, to get past one it can't cast; it gives no permission to cast it from exile.", "602.2")
+        if (exile != null) tr.step("\"$exile\" only exiles the card, to get past one it can't cast; it gives no permission to cast it from exile.", "601.3")
         // The card asked about, if one was: whether the permission covers it.
         val card = named.lastOrNull { it.name != perm.name }
         val verdict = card?.let { c ->

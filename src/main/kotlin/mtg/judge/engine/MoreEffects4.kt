@@ -69,7 +69,7 @@ internal object MoreEffects4 {
         // Vengeful Ancestor: "goad target creature" — read here, before the narrated reading of it.
         goadTargetRe.matchEntire(s)?.let { return parseSentence(s) }
         if (!Regex("""^put |^(?:you )?draw cards equal""", I).containsMatchIn(s)) return null
-        // Benevolent Hydra: "Put a +1/+1 counter on another target creature you control." — "another" keeps it off the source (115.10a).
+        // Benevolent Hydra: "Put a +1/+1 counter on another target creature you control." — "another" keeps it off the source.
         anotherTargetCountersRe.matchEntire(s)?.let { m ->
             val raw = m.groupValues[2].lowercase() + (if (s.contains("you control", true)) " you control" else "")
             return Effect.PutCounters(TargetSpec(OracleParser.parseFilter(raw, Kind.CREATURE).copy(other = true), "other $raw"), "+1/+1", num(m.groupValues[1]) ?: 1)

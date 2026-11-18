@@ -10,7 +10,7 @@ import mtg.judge.oracle.OracleParser
 internal object RedteamMech {
     private val I = RegexOption.IGNORE_CASE
 
-    /** The Roles (Aura tokens, 111.10t) and what each does to the creature it enchants. */
+    /** The Roles (Aura tokens, 111.10j–111.10r) and what each does to the creature it enchants. */
     private val roles = mapOf(
         "Monster" to "Enchanted creature gets +1/+1 and has trample.",
         "Wicked" to "Enchanted creature gets +1/+1.\nWhen this Aura is put into a graveyard from the battlefield, each opponent loses 1 life.",
@@ -127,7 +127,7 @@ internal object RedteamMech {
                 else -> item.targets.firstNotNullOfOrNull { (it as? Ref.Obj)?.let { ref -> state.objects[ref.id] } } ?: item.source.takeIf { it.isOnBattlefield() && state.isCreature(it) }
             }
             if (host == null || !host.isOnBattlefield()) { tr.step("There is no creature on the battlefield for the $kind Role to be attached to, so it isn't created.", "303.4f", "608.2b"); return true }
-            // 303.7: a player can control only one Role from each player; the older one goes when a new Role is attached (704.5y).
+            // 303.7: a player can control only one Role from each player; the older one goes when a new Role is attached (303.7a, 704.5z).
             val old = state.objects.values.filter { it.isOnBattlefield() && it.attachedTo == host.id && it.token && "Role" in it.def.subtypes && it.controller == item.controller }
             val tok = e.rtCreateAttached(def, item.controller, host)
             tr.step("${state.player(item.controller).subject} ${state.player(item.controller).v("creates", "create")} a ${def.name} Role token attached to ${host.name}. A Role is a predefined Aura token with enchant creature: \"${roles.getValue(def.name).replace("\n", " ")}\"", "111.10", "303.7")

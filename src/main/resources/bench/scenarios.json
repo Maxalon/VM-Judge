@@ -19167,7 +19167,7 @@
     "id": "delver-flips-summoning-sick",
     "text": "my delver flips, is it still summoning sick",
     "expect": [
-      "Delver of Secrets transforming doesn't make it a new object: it keeps everything that applied to it, including how long it has been under its controller's control, so it is exactly as summoning sick as it was before it transformed (712.18). If it has been under your control since your turn began, it can attack and use {T} abilities now (302.6)."
+      "Delver of Secrets transforming doesn't make it a new object: it keeps everything that applied to it, including how long it has been under its controller's control, so it is exactly as summoning sick as it was before it transformed (712.15). If it has been under your control since your turn began, it can attack and use {T} abilities now (302.6)."
     ]
   },
   {

@@ -7547,7 +7547,7 @@ class SituationParser(private val names: NameIndex) {
             val id = objectIdFor(card, ctx) ?: addObject(card, who, false, ctx)
             // The transform itself is played out (the back face from here on); the note below is the rules point people ask about.
             ctx.events += EventSpec("transform", obj = id); ctx.lastMentioned = id
-            ctx.asks += EventSpec("ask", to = "text:${card.display} transforming doesn't make it a new object: it keeps everything that applied to it, including how long it has been under its controller's control, so it is exactly as summoning sick as it was before it transformed (712.18). If it has been under your control since your turn began, it can attack and use {T} abilities now (302.6).")
+            ctx.asks += EventSpec("ask", to = "text:${card.display} transforming doesn't make it a new object: it keeps everything that applied to it, including how long it has been under its controller's control, so it is exactly as summoning sick as it was before it transformed (712.15). If it has been under your control since your turn began, it can attack and use {T} abilities now (302.6).")
             return true
         }
         // "I have 2 lands and they Wasteland one": one land fewer to count mana with.

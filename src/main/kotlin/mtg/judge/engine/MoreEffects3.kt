@@ -229,7 +229,7 @@ internal object MoreEffects3 {
     fun gatedKeyword(o: GameObject, k: String): Boolean = o.def.abilities.any { a -> a is StaticAbility && a.keyword == k && gatedText(a.text) && gateRe.containsMatchIn(a.text) && gateOpen(o, a.text) }
 
     private val classLevels = java.util.WeakHashMap<GameObject, Int>()
-    /** A permanent's class level: 1 unless a level bar raised it (716.2d). */
+    /** A permanent's class level: 1 unless a level bar raised it (717.2d). */
     fun classLevel(o: GameObject): Int = synchronized(classLevels) { classLevels[o] } ?: 1
 
     /** Types after layer 4, then: an Enduring card returned as an enchantment only; a Spacecraft with enough charge counters is a creature (722.2b). */

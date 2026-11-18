@@ -106,7 +106,7 @@ internal object RedteamAsks {
                 st("Ocelot Pride's instructions are followed in order: the Cat is created first, so it's one of the tokens that entered this turn when the copies are made.", "608.2c", "702.131c")))
             // "Opposition Agent: my opponent cracks a fetchland."
             "oppagent" -> R("You control your opponent while they search: you choose which land they find (or fail to find), it's exiled instead of entering, and you may play it from exile for as long as it stays there, using your own land drop on your turn. Their fetchland is still sacrificed and the life still paid.", listOf(
-                st("Opposition Agent: \"You control your opponents while they're searching their libraries. While an opponent is searching their library, they exile each card they find. You may play those cards for as long as they remain exiled.\"", "701.23a", "608.2c"),
+                st("Opposition Agent: \"You control your opponents while they're searching their libraries. While an opponent is searching their library, they exile each card they find. You may play those cards for as long as they remain exiled.\"", "701.23a", "724.2"),
                 st("Playing a land from exile is still playing a land: it uses a land drop.", "305.2", "116.2a")))
             // "Yawgmoth: I pay 1 life and sacrifice a creature with undying."
             "yawgonce" -> R("Yawgmoth's ability resolves: put a -1/-1 counter on up to one target creature and draw a card. The undying creature had no +1/+1 counter, so it returns with one. To sacrifice it again and have it return, it must lose that counter first: put the next -1/-1 counter on it and the pair is removed (704.5q).", listOf(

@@ -318,7 +318,7 @@ internal object NewSetMech {
         return true
     }
 
-    /** [o] stops being prepared (722.3b, 723.3c); its prepare spell's copy in exile ceases to exist unless [cast] (it is on the stack being cast). */
+    /** [o] stops being prepared (723.3b, 723.3c); its prepare spell's copy in exile ceases to exist unless [cast] (it is on the stack being cast). */
     fun unprepare(state: GameState, o: GameObject, why: String, rules: Array<String>, cast: Boolean = false) {
         if (!isPrepared(o)) return
         flags(o).remove("prepared")
