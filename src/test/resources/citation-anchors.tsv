@@ -6,6 +6,7 @@
 101.2	when a rule or effect allows
 101.4	if multiple players would make choices
 101.4b	a player knows the choices made
+103.2b	if any players wish to reveal
 103.5	each player draws a number of
 103.5c	in a multiplayer game and in
 103.6	some cards allow a player to
@@ -84,6 +85,7 @@
 117.3a	the active player receives priority at
 117.3b	the active player receives priority after
 117.3c	if a player has priority when
+117.3d	if a player has priority and
 117.4	if all players pass in succession
 117.5	each time a player would get
 118.1	a cost is an action or

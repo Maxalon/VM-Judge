@@ -1569,7 +1569,7 @@ class Engine(val state: GameState) {
             // Meekstone and its cousins: some permanents don't untap at all (302.6 doesn't apply to them).
             val held = mine.filter { o -> state.objects.values.any { src -> src.isOnBattlefield() &&
                 src.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.filterIsInstance<StaticEffect.DontUntap>()
-                    .any { e -> state.matches(e.filter, o, src.controller, src) } } } + NewSetMech.heldInUntap(state, mine)
+                    .any { e -> state.matches(e.filter, o, src.controller, src) } } } + NewSetMech.heldInUntap(state, mine) + MechanicsMech.selfHeld(state, mine)
             for (o in held) state.objects.values.firstOrNull { src -> src.isOnBattlefield() &&
                 src.abilities.filterIsInstance<StaticAbility>().flatMap { a -> a.effects }.filterIsInstance<StaticEffect.DontUntap>()
                     .any { e -> state.matches(e.filter, o, src.controller, src) } }?.let { src ->

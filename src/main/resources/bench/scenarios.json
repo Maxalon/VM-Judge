@@ -59610,7 +59610,7 @@
     "id": "rt5",
     "text": "I cast Demonic Consultation naming a card not in my deck with Thassa's Oracle on the stack. In what order should I cast them?",
     "expect": [
-      "Either order works by the rules"
+      "Either order works by the rules, but they aren't the same"
     ],
     "cite": [
       "608.2h"
@@ -59620,10 +59620,12 @@
     "id": "rt6",
     "text": "I attack with Griselbrand from Sneak Attack. At the end step, can I activate Griselbrand's draw ability in response to the sacrifice trigger?",
     "expect": [
-      "Yes: Sneak Attack's \"sacrifice it at the beginning of the next end step\" is a delayed triggered ability"
+      "Yes: Sneak Attack's sacrifice is a delayed triggered ability that goes on the stack as the end step begins",
+      "as many times as you can pay 7 life: at 20 life, 2 times"
     ],
     "cite": [
-      "603.7a"
+      "603.7a",
+      "119.4"
     ]
   },
   {
@@ -59766,11 +59768,14 @@
     "id": "rt20",
     "text": "I cast Through the Breach on Emrakul, the Aeons Torn. When does the annihilator trigger happen and when do I sacrifice Emrakul?",
     "expect": [
-      "annihilator 6 triggers as Emrakul is declared as an attacker"
+      "When Emrakul attacks, annihilator 6 triggers",
+      "before blockers are declared",
+      "Emrakul is sacrificed when it resolves"
     ],
     "cite": [
       "603.7a",
-      "702.86a"
+      "702.86a",
+      "509.1"
     ]
   },
   {
@@ -59850,10 +59855,11 @@
     "id": "rt28",
     "text": "I control Time Vault and Manifold Key. Can I take infinite turns?",
     "expect": [
-      "Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault"
+      "Yes: Time Vault and Manifold Key are a loop that spans turns"
     ],
     "cite": [
-      "500.7"
+      "500.7",
+      "733.2a"
     ]
   },
   {
@@ -59880,20 +59886,24 @@
     "id": "rt31",
     "text": "I activate Mystic Forge. What can I cast off the top of my library?",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library"
+      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)",
+      "Lands can't be played from there"
     ],
     "cite": [
-      "601.3"
+      "601.3",
+      "601.1a"
     ]
   },
   {
     "id": "rt32",
     "text": "My companion is Lurrus of the Dream-Den. How do I put it in my hand?",
     "expect": [
-      "Pay {3} as a special action to put Lurrus from outside the game into your hand"
+      "Pay {3} as a special action to put Lurrus of the Dream-Den from outside the game into your hand"
     ],
     "cite": [
-      "116.2g"
+      "116.2g",
+      "702.139a",
+      "103.2b"
     ]
   },
   {
@@ -59944,10 +59954,12 @@
     "id": "rt37",
     "text": "I have partner commanders Rograkh and Silas Renn. Rograkh died twice. What does Silas cost?",
     "expect": [
-      "Each partner commander has its own commander tax"
+      "Each partner commander has its own commander tax",
+      "Silas has been cast from the command zone no times"
     ],
     "cite": [
-      "702.124d"
+      "702.124d",
+      "903.8"
     ]
   },
   {
@@ -59964,20 +59976,27 @@
     "id": "rt39",
     "text": "In a 4-player game I cast Thassa's Oracle with an empty library. Can each opponent respond?",
     "expect": [
-      "Yes: every player gets priority, in turn order"
+      "Yes: every player gets priority, in turn order (you, opponent, opponent 2, opponent 3)",
+      "each of your three opponents can respond"
     ],
     "cite": [
-      "117.4"
+      "117.4",
+      "117.3d",
+      "800.4a"
     ]
   },
   {
     "id": "rt40",
     "text": "I control Kinnan, Bonder Prodigy and Basalt Monolith. Can I generate infinite mana?",
     "expect": [
-      "Yes: tap Basalt Monolith for {C}{C}{C}"
+      "Yes: tap Basalt Monolith and get {C}{C}{C}{C}, pay {3} to untap it",
+      "each round nets 1 mana (colorless)",
+      "it pays the {5} of Kinnan, Bonder Prodigy's {5}{G}{U} ability"
     ],
     "cite": [
-      "733.2a"
+      "733.2a",
+      "605.3b",
+      "106.4"
     ]
   },
   {
@@ -60014,10 +60033,13 @@
     "id": "rt44",
     "text": "I cast Sneak Attack and put Emrakul, the Aeons Torn onto the battlefield. Does it get annihilator?",
     "expect": [
-      "Yes when it attacks: Sneak Attack gives Emrakul haste"
+      "Yes, when it attacks: Sneak Attack gives Emrakul haste",
+      "annihilator 6 triggers",
+      "\"When you cast this spell\" ability doesn't trigger"
     ],
     "cite": [
-      "702.86a"
+      "702.86a",
+      "601.2"
     ]
   },
   {
@@ -60158,10 +60180,12 @@
     "id": "rt57",
     "text": "I control Necropotence. I pay 5 life. What happens?",
     "expect": [
-      "Necropotence exiles the top card of your library face down"
+      "You pay 5 life: that's 5 activations of Necropotence",
+      "5 cards in all"
     ],
     "cite": [
-      "603.7a"
+      "603.7a",
+      "406.3"
     ]
   },
   {
@@ -60926,7 +60950,8 @@
     "id": "lo18",
     "text": "We're playing four-player Commander. My library is empty and I cast Thassa's Oracle. Can my opponents respond to it?",
     "expect": [
-      "Yes: every player gets priority, in turn order"
+      "Yes: every player gets priority, in turn order",
+      "each of your three opponents"
     ],
     "notExpect": [],
     "cite": []
@@ -60944,7 +60969,7 @@
     "id": "lo20",
     "text": "I Sneak Attack in Griselbrand and attack. At end of turn, in response to the sac trigger, can I draw seven?",
     "expect": [
-      "Yes: Sneak Attack's \"sacrifice it at the beginning of the next end step\" is a delayed triggered ability"
+      "Yes: Sneak Attack's sacrifice is a delayed triggered ability"
     ],
     "notExpect": [],
     "cite": []
@@ -60953,7 +60978,7 @@
     "id": "lo21",
     "text": "Griselbrand came in off Sneak Attack. When the delayed sacrifice trigger goes on the stack, can I still activate Grisel to draw 7?",
     "expect": [
-      "Yes: Sneak Attack's \"sacrifice it at the beginning of the next end step\" is a delayed triggered ability"
+      "Yes: Sneak Attack's sacrifice is a delayed triggered ability"
     ],
     "notExpect": [],
     "cite": []
@@ -60962,7 +60987,7 @@
     "id": "lo22",
     "text": "I Through the Breach my Emrakul, the Aeons Torn. When does annihilator trigger?",
     "expect": [
-      "When Emrakul attacks, annihilator triggers"
+      "When Emrakul attacks, annihilator 6 triggers"
     ],
     "notExpect": [],
     "cite": []
@@ -60971,7 +60996,8 @@
     "id": "lo23",
     "text": "My opponent casts Through the Breach on Emrakul. When do they sacrifice it, and when does annihilator trigger?",
     "expect": [
-      "When Emrakul attacks, annihilator triggers"
+      "When Emrakul attacks, annihilator 6 triggers",
+      "you sacrifice six permanents"
     ],
     "notExpect": [],
     "cite": []
@@ -60998,7 +61024,7 @@
     "id": "lo26",
     "text": "I have Manifold Key and Time Vault. Do I get infinite turns?",
     "expect": [
-      "Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault"
+      "Yes: Time Vault and Manifold Key are a loop that spans turns"
     ],
     "notExpect": [],
     "cite": []
@@ -61007,7 +61033,7 @@
     "id": "lo27",
     "text": "With Time Vault and Manifold Key on the battlefield, can I take extra turns forever?",
     "expect": [
-      "Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault"
+      "Yes: Time Vault and Manifold Key are a loop that spans turns"
     ],
     "notExpect": [],
     "cite": []
@@ -61016,7 +61042,7 @@
     "id": "lo28",
     "text": "I have Basalt Monolith and Kinnan on the battlefield. Is that infinite mana?",
     "expect": [
-      "Yes: tap Basalt Monolith for {C}{C}{C}"
+      "Yes: tap Basalt Monolith and get {C}{C}{C}{C}, pay {3} to untap it"
     ],
     "notExpect": [],
     "cite": []
@@ -61025,7 +61051,7 @@
     "id": "lo29",
     "text": "With Kinnan, Bonder Prodigy out, can I loop Basalt Monolith for infinite colorless mana?",
     "expect": [
-      "Yes: tap Basalt Monolith for {C}{C}{C}"
+      "Yes: tap Basalt Monolith and get {C}{C}{C}{C}, pay {3} to untap it"
     ],
     "notExpect": [],
     "cite": []
@@ -61052,7 +61078,8 @@
     "id": "lo32",
     "text": "My partner commanders are Tymna the Weaver and Kraum, Ludevic's Opus. Tymna has died twice. How much does Kraum cost?",
     "expect": [
-      "Each partner commander has its own commander tax"
+      "Each partner commander has its own commander tax",
+      "Kraum, Ludevic's Opus has been cast from the command zone no times, so it costs 5 mana in all"
     ],
     "notExpect": [],
     "cite": []
@@ -61061,7 +61088,8 @@
     "id": "lo33",
     "text": "I have Thrasios and Tymna as partner commanders. Thrasios died once. What is the commander tax on Tymna?",
     "expect": [
-      "Each partner commander has its own commander tax"
+      "Each partner commander has its own commander tax",
+      "Tymna the Weaver has been cast from the command zone no times"
     ],
     "notExpect": [],
     "cite": []
@@ -61097,7 +61125,7 @@
     "id": "lo37",
     "text": "I have Necro out. I pay 3 life. What happens?",
     "expect": [
-      "For each 1 life you pay, Necropotence exiles the top card of your library face down"
+      "You pay 3 life: that's 3 activations of Necropotence"
     ],
     "notExpect": [],
     "cite": []
@@ -61129,7 +61157,7 @@
     "id": "lo40",
     "text": "With Thassa's Oracle on the stack I cast Demonic Consultation naming a card not in my deck. Which one should I cast first?",
     "expect": [
-      "Either order works by the rules."
+      "Either order works by the rules"
     ],
     "notExpect": [],
     "cite": []
@@ -61138,7 +61166,7 @@
     "id": "lo41",
     "text": "I'm combining Demonic Consultation and Thassa's Oracle. What order do I cast them in?",
     "expect": [
-      "Either order works by the rules."
+      "Either order works by the rules"
     ],
     "notExpect": [],
     "cite": []
@@ -61147,16 +61175,18 @@
     "id": "lo42",
     "text": "I have Mystic Forge. What can I cast off the top?",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library"
+      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
     ],
-    "notExpect": [],
+    "notExpect": [
+      "Cast Off"
+    ],
     "cite": []
   },
   {
     "id": "lo43",
     "text": "I control Mystic Forge. What may I cast from the top of my library?",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library"
+      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
     ],
     "notExpect": [],
     "cite": []
@@ -61165,7 +61195,7 @@
     "id": "lo44",
     "text": "Lurrus of the Dream-Den is my companion. How do I get it into my hand?",
     "expect": [
-      "Pay {3} as a special action to put Lurrus from outside the game into"
+      "Pay {3} as a special action to put Lurrus of the Dream-Den from outside the game into"
     ],
     "notExpect": [],
     "cite": []
@@ -61174,7 +61204,7 @@
     "id": "lo45",
     "text": "My companion is Lurrus. How can I put Lurrus into my hand?",
     "expect": [
-      "Pay {3} as a special action to put Lurrus from outside the game into"
+      "Pay {3} as a special action to put Lurrus of the Dream-Den from outside the game into"
     ],
     "notExpect": [],
     "cite": []
@@ -61219,7 +61249,7 @@
     "id": "lo50",
     "text": "I Sneak Attack in Emrakul, the Aeons Torn. Does it have annihilator?",
     "expect": [
-      "Yes when it attacks: Sneak Attack gives Emrakul haste"
+      "Yes, when it attacks: Sneak Attack gives Emrakul haste"
     ],
     "notExpect": [],
     "cite": []
@@ -61228,7 +61258,7 @@
     "id": "lo51",
     "text": "I cast Sneak Attack and put Emrakul onto the battlefield. Does annihilator trigger?",
     "expect": [
-      "Yes when it attacks: Sneak Attack gives Emrakul haste"
+      "Yes, when it attacks: Sneak Attack gives Emrakul haste"
     ],
     "notExpect": [],
     "cite": []
@@ -64895,6 +64925,249 @@
     ],
     "cite": [
       "611.2e"
+    ]
+  },
+  {
+    "id": "mk1",
+    "text": "With Time Vault and Voltaic Key on the battlefield, can I take extra turns forever?",
+    "expect": [
+      "Yes: Time Vault and Voltaic Key are a loop that spans turns",
+      "In that turn's untap step Voltaic Key untaps but Time Vault doesn't"
+    ],
+    "notExpect": [],
+    "cite": [
+      "500.7",
+      "502.3",
+      "733.2a"
+    ]
+  },
+  {
+    "id": "mk2",
+    "text": "I control Time Vault. Can I take infinite turns?",
+    "expect": [
+      "No: Time Vault gives one extra turn each time it's tapped, and nothing you control untaps it again"
+    ],
+    "notExpect": [],
+    "cite": [
+      "733.1b",
+      "614.10"
+    ]
+  },
+  {
+    "id": "mk3",
+    "text": "My opponent controls Stranglehold. I control Time Vault and Voltaic Key. Can I take infinite turns?",
+    "expect": [
+      "No: Stranglehold makes you skip every extra turn"
+    ],
+    "notExpect": [],
+    "cite": [
+      "614.10"
+    ]
+  },
+  {
+    "id": "mk4",
+    "text": "I control Kinnan, Bonder Prodigy and Grim Monolith. Can I generate infinite mana?",
+    "expect": [
+      "No: each round makes {C}{C}{C}{C} and the untap costs {4}, so it nets nothing"
+    ],
+    "notExpect": [],
+    "cite": [
+      "733.1b"
+    ]
+  },
+  {
+    "id": "mk5",
+    "text": "I control Basalt Monolith and Mana Reflection. Can I generate infinite mana?",
+    "expect": [
+      "each round nets 3 mana (colorless)"
+    ],
+    "notExpect": [],
+    "cite": [
+      "733.2a",
+      "106.4"
+    ]
+  },
+  {
+    "id": "mk6",
+    "text": "I control Basalt Monolith. Can I generate infinite mana?",
+    "expect": [
+      "No: each round makes {C}{C}{C} and the untap costs {3}, so it nets nothing"
+    ],
+    "notExpect": [],
+    "cite": [
+      "733.1b"
+    ]
+  },
+  {
+    "id": "mk7",
+    "text": "I have 14 life. I attack with Griselbrand from Sneak Attack. At the end step, can I activate Griselbrand's draw ability in response to the sacrifice trigger?",
+    "expect": [
+      "at 14 life, 1 time (2 if you go to exactly 0, which loses the game)"
+    ],
+    "notExpect": [],
+    "cite": [
+      "119.4",
+      "603.7a"
+    ]
+  },
+  {
+    "id": "mk8",
+    "text": "I cast Through the Breach on Kozilek, Butcher of Truth. When does the annihilator trigger happen and when do I sacrifice Kozilek?",
+    "expect": [
+      "When Kozilek attacks, annihilator 4 triggers",
+      "sacrifices four permanents",
+      "Kozilek is sacrificed when it resolves"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.86a",
+      "603.7a",
+      "601.2"
+    ]
+  },
+  {
+    "id": "mk9",
+    "text": "My opponent casts Sneak Attack and puts Kozilek, Butcher of Truth onto the battlefield. Does it have annihilator?",
+    "expect": [
+      "Yes, when it attacks: Sneak Attack gives Kozilek haste",
+      "you sacrifice four permanents"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.86a"
+    ]
+  },
+  {
+    "id": "mk10",
+    "text": "I cast Sneak Attack and put Griselbrand onto the battlefield. Does it get annihilator?",
+    "expect": [
+      "No: Griselbrand has no annihilator"
+    ],
+    "notExpect": [
+      "life total wasn't said"
+    ],
+    "cite": [
+      "603.7a"
+    ]
+  },
+  {
+    "id": "mk11",
+    "text": "We're playing three-player Commander. I have 5 cards in my library and I cast Thassa's Oracle. Can each opponent respond?",
+    "expect": [
+      "in turn order (you, opponent, opponent 2)",
+      "each of your two opponents can respond",
+      "With 2 devotion and 5 cards in your library it doesn't win"
+    ],
+    "notExpect": [],
+    "cite": [
+      "117.3d",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "mk12",
+    "text": "I control Necropotence. I have 2 cards in my library. I pay 4 life. What happens?",
+    "expect": [
+      "4 activations of Necropotence",
+      "2 cards in all"
+    ],
+    "notExpect": [],
+    "cite": [
+      "603.7a"
+    ]
+  },
+  {
+    "id": "mk13",
+    "text": "I control Necropotence. I have 3 life. I pay 5 life. What happens?",
+    "expect": [
+      "You can't pay 5 life with 3"
+    ],
+    "notExpect": [],
+    "cite": [
+      "119.4"
+    ]
+  },
+  {
+    "id": "mk14",
+    "text": "My partner commanders are Tymna the Weaver and Kraum, Ludevic's Opus. I cast Kraum twice. How much does Kraum cost now?",
+    "expect": [
+      "9: each partner commander has its own commander tax",
+      "it costs 9 mana in all: {3}{U}{R} plus {4}"
+    ],
+    "notExpect": [],
+    "cite": [
+      "702.124d",
+      "903.8"
+    ]
+  },
+  {
+    "id": "mk15",
+    "text": "I control Mystic Forge. Can I play Darksteel Citadel from the top of my library?",
+    "expect": [
+      "No: Darksteel Citadel can't be played from the top of your library with Mystic Forge: it's a land"
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.1a",
+      "305.1"
+    ]
+  },
+  {
+    "id": "mk16",
+    "text": "I control Future Sight. Can I play Forest from the top of my library?",
+    "expect": [
+      "Yes: Forest can be played from the top of your library with Future Sight"
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.3"
+    ]
+  },
+  {
+    "id": "mk17",
+    "text": "I control Mystic Forge. Can I cast Lightning Bolt off the top?",
+    "expect": [
+      "No: Lightning Bolt can't be cast from the top of your library with Mystic Forge: it's neither an artifact nor colorless"
+    ],
+    "notExpect": [],
+    "cite": [
+      "601.3"
+    ]
+  },
+  {
+    "id": "mk18",
+    "text": "My companion is Jegantha, the Wellspring. How do I get it into my hand?",
+    "expect": [
+      "Pay {3} as a special action to put Jegantha, the Wellspring from outside the game into your hand",
+      "No card in your starting deck has more than one of the same mana symbol in its mana cost"
+    ],
+    "notExpect": [],
+    "cite": [
+      "116.2g",
+      "103.2b"
+    ]
+  },
+  {
+    "id": "mk19",
+    "text": "My opponent has the initiative. I deal combat damage to my opponent. Who has the initiative now?",
+    "expect": [
+      "You: when your creatures deal combat damage to your opponent while your opponent has the initiative, you take it"
+    ],
+    "notExpect": [],
+    "cite": [
+      "727.2",
+      "727.3"
+    ]
+  },
+  {
+    "id": "mk20",
+    "text": "I have the initiative. I deal combat damage to my opponent. Who has the initiative?",
+    "expect": [
+      "You still have the initiative: combat damage to your opponent, who doesn't have it, doesn't move it"
+    ],
+    "notExpect": [],
+    "cite": [
+      "727.2"
     ]
   }
 ]

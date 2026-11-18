@@ -55,7 +55,7 @@ internal class LoopFinder(private val judge: Judge, private val state: GameState
         .filterIsInstance<StaticEffect.EntersWithCounters>().firstOrNull { it.count != null && it.per == null }?.kind
 
     /** The position a game state is in, written as a situation to play the next round from. */
-    private fun boardOf(st: GameState): Situation {
+    internal fun boardOf(st: GameState): Situation {
         // Life totals are left unsaid: a round is measured by what it gains or costs (the ledger), and a total that ran
         // out partway would end the measuring rather than the loop.
         val players = st.players.map { p -> PlayerSpec(p.id, p.name, poison = p.poison.takeIf { it > 0 }, handSize = p.handSize, librarySize = p.librarySize) }

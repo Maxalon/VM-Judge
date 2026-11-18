@@ -713,6 +713,7 @@ object OracleParser {
     fun parseStatic(line: String): List<StaticEffect> {
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
+        mtg.judge.engine.MechanicsMech.staticNote(line)?.let { return listOf(it) }   // Time Vault's "skip that turn instead" (MechanicsMechanics.kt)
         mtg.judge.engine.RedteamMech.parseStatic(line)?.let { return it }   // Colossus Hammer's "gets +10/+10 and loses flying" (RedteamMechanics.kt)
         mtg.judge.engine.CedhMech.parseStatic(line)?.let { return it }   // Underworld Breach, Ashiok (CedhMechanics.kt)
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)

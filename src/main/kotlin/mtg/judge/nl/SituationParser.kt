@@ -3058,16 +3058,17 @@ class SituationParser(private val names: NameIndex) {
         RtRule("sneakend", listOf("sneak attack", "griselbrand"), Regex("""\b(?:in response to|respond to|with) (?:the |its |that )?(?:sacrifice|sac|end step|delayed) trigger|\bwhen (?:the |its |that )?(?:delayed )?(?:sacrifice |sac )?trigger (?:goes on|is on|hits) the stack"""), Regex("""^(?:i|we) attack with griselbrand (?:from|off|via|through|after) sneak attack$""")),
         RtRule("oracle4p", listOf("thassa's oracle"), Regex("""^can (?:each|every|all|the other|my|any) (?:opponents?|players?|other players?) respond(?: to it)?$""")),
         RtRule("oracleconsult", listOf("thassa's oracle", "demonic consultation"), Regex("""\b(?:what|which) order\b|\bwhich (?:one )?(?:(?:do|should|must) (?:i|we) cast )?first\b"""), Regex("""^(?:i|we) cast demonic consultation naming .+ with thassa's oracle on the stack$|^with thassa's oracle on the stack,? (?:i|we) cast demonic consultation naming .+$|^(?:i'm|i am|we're|we are) (?:combining|comboing|using|playing|going for) .+$""")),
-        RtRule("kinnanbasalt", listOf("kinnan", "basalt monolith"), Regex("""\b(?:infinite|unlimited|loop|forever)\b""")),
-        RtRule("timevault", listOf("time vault", "manifold key"), Regex("""\b(?:infinite|unlimited|loop|forever|extra turns?)\b""")),
         RtRule("necrodiscard", listOf("necropotence"), Regex("""^(?:i|we) discard (?:a card|cards|\w+ cards?)(?: (?:to|for|at|down to) (?:my )?(?:maximum )?hand size| at (?:the )?cleanup| at end of turn)?$|^where (?:does|do) (?:it|the card|that card|the discarded cards?|they|those cards) go$""")),
         RtRule("necropay", listOf("necropotence"), Regex("""^(?:i|we) (?:pay|activate (?:it|necropotence)(?: and pay)?) (?:\d+|a|one|some) life$""")),
-        RtRule("mysticforge", listOf("mystic forge"), Regex("""^what (?:can|may) (?:i|we) cast (?:off|from) the top(?: of (?:my|our) library)?$""")),
-        RtRule("companion", listOf("companion"), Regex("""^how (?:do|can) (?:i|we) (?:put|get|bring) (?:it|my companion|lurrus(?: of the dream-den)?|the companion) (?:in|into|to) (?:my |our )?hand$""")),
+        // Permanents that let their controller cast (or play) from the top of the library; MechanicsAsks reads what each allows.
+        RtRule("mysticforge", listOf("mystic forge"), Regex("""^what (?:can|may) (?:i|we) (?:cast|play) (?:off|from) the top(?: of (?:my|our) library)?(?: with .+)?$|^can (?:i|we) (?:cast|play) .+ (?:off|from) the top(?: of (?:my|our) library)?(?: with .+)?$""")),
+        RtRule("mysticforge", listOf("future sight"), Regex("""^what (?:can|may) (?:i|we) (?:cast|play) (?:off|from) the top(?: of (?:my|our) library)?(?: with .+)?$|^can (?:i|we) (?:cast|play) .+ (?:off|from) the top(?: of (?:my|our) library)?(?: with .+)?$""")),
+        RtRule("mysticforge", listOf("bolas's citadel"), Regex("""^what (?:can|may) (?:i|we) (?:cast|play) (?:off|from) the top(?: of (?:my|our) library)?(?: with .+)?$|^can (?:i|we) (?:cast|play) .+ (?:off|from) the top(?: of (?:my|our) library)?(?: with .+)?$""")),
+        RtRule("companion", listOf("companion"), Regex("""^how (?:do|can) (?:i|we) (?:put|get|bring) (?:it|my companion|the companion|[a-z][\w' ,-]*?) (?:in|into|to) (?:my |our )?hand$""")),
         RtRule("clonecmd", listOf("commander"), Regex("""^(?:does|do|will|would) (?:it|that|the clone's damage|its damage|that damage) count (?:as|for|towards?) commander damage$"""), Regex("""^(?:an? (?:clone|copy) of (?:the|their|my opponent's|my) commander deals (?:combat )?damage(?: to me)?(?: too| as well)?|(?:my opponent's|their|the) commander deals (?:combat )?damage(?: to me)?(?: and an? (?:clone|copy) of (?:the|their|my opponent's|my) commander deals (?:combat )?damage(?: to me)?(?: too| as well)?)?)$""")),
         RtRule("dazepay", listOf("daze"), Regex("""^can (?:i|we) pay(?: for it| the| for)? ?(?:\{?1\}?|one|it|the 1)?$""")),
-        RtRule("sneakemrakul", listOf("sneak attack", "emrakul"), Regex("""\bannihilator\b""")),
-        RtRule("breach", listOf("through the breach", "emrakul"), Regex("""\bannihilator\b|\bwhen do (?:i|we) sacrifice\b"""), Regex("""^(?:i|we|my opponent|the opponent|they|he|she) casts? through the breach (?:on|putting in|for|targeting) emrakul, the aeons torn$""")),
+        RtRule("sneakemrakul", listOf("sneak attack"), Regex("""\bannihilator\b""")),
+        RtRule("breach", listOf("through the breach"), Regex("""\bannihilator\b|\bwhen do (?:i|we) sacrifice\b"""), Regex("""^(?:i|we|my opponent|the opponent|they|he|she) casts? through the breach (?:on|putting in|for|targeting) .+$""")),
         RtRule("murktideexile", listOf("murktide regent", "exile"), Regex("""^(?:does|will) (?:it|murktide(?: regent)?) (?:get|have|enter with) (?:any )?(?:\+1/\+1 )?counters$"""), Regex("""^ragavan(?:, nimble pilferer)? exiled (?:my opponent's |their )?murktide regent(?:,? and (?:i|we) cast it from exile)?$""")),
         RtRule("frogsolitude", listOf("psychic frog", "solitude"), Regex("""\bin response\b.*\b(?:bigger|flying|grow|save)\b|\b(?:bigger|flying|grow|save)\b.*\bin response\b""")),
         RtRule("ajaniguide", listOf("ajani, nacatl pariah"), Regex("""^what happens$"""), Regex("""^ajani(?:, nacatl pariah)?'s (?:cat|cat warrior|token)(?: token)? dies$""")),
@@ -3085,7 +3086,7 @@ class SituationParser(private val names: NameIndex) {
         RtRule("needle", listOf("pithing needle"), Regex("""\bchapter\b|\btrigger""")),
         RtRule("partnertax", listOf("partner"), Regex("""^(?:what|how much) does .+ cost(?: now)?$|\bcommander tax\b"""), Regex("""^(?:i|we) (?:have|play|run) partner commanders .+$|^my partner commanders are .+$|^.+ (?:died|has died) (?:once|twice|\d+ times|three times)$""")),
         RtRule("stormcount", listOf("brain freeze"), Regex("""^(?:what|how)\b.*\bstorm count\b|^how many copies(?: are made| do (?:i|we) get)?(?: if (?:i|we) (?:cast|have cast) (\d+) (?:other )?spells(?: before it)?(?: this turn)?)?$""")),
-        RtRule("initiativehit", listOf("initiative"), Regex("""^who (?:has|gets|takes) the initiative(?: now)?$|^what happens$"""), Regex("""^(?:i|we) (?:have|had|took|take) the initiative(?: and venture into (?:undercity|the undercity))?$|^(?:my opponent|they|he|she) (?:deals?|dealt) combat damage to (?:me|us)$""")),
+        RtRule("initiativehit", listOf("initiative"), Regex("""^who (?:has|gets|takes) the initiative(?: now)?$|^what happens$"""), Regex("""^(?:i|we|my opponent|they|he|she) (?:have|has|had|took|take|takes) the initiative(?: and ventures? into (?:undercity|the undercity))?$|^(?:i|we|my opponent|they|he|she) (?:deals?|dealt) combat damage to (?:me|us|my opponent|them|him|her)$|^(?:i|we|my opponent|they|he|she) (?:hits?|hit) (?:me|us|my opponent|them|him|her) with (?:a|my|their|an?) (?:creature|attacker)$""")),
     )
 
     /** The table above, for one sentence: "rtask r_<key>", "rtnoted", or null. */
@@ -3743,6 +3744,98 @@ class SituationParser(private val names: NameIndex) {
         // "What happens to the Warrior tokens?" after a mobilize attack: the outcome says.
         if (Regex("""^(?:and )?what happens to (?:the |those |my )?(?:warrior )?tokens?(?: (?:later|at end of turn))?$""").matches(q) && ctx.events.any { it.verb == "attack" }) { answered(); return true }
         return null
+    }
+
+    /**
+     * The mechanics track's loop questions, as said at the table: "Can I take infinite turns?" (a loop across turns) and "Can I
+     * generate infinite mana?" / "Can I loop Basalt Monolith for infinite mana?" (a mana-ability loop). MechanicsLoops plays them.
+     */
+    private fun mechanicsRewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('?', '.')
+        val io = RegexOption.IGNORE_CASE
+        if (ctx.events.isNotEmpty()) return t
+        // "With Kinnan out, can I loop Basalt Monolith for infinite mana?": the permanent named in the question is on the board too.
+        Regex("""^(.*?)can (?:i|we) loop (c\d+) for (?:infinite|unlimited|endless) (?:colorless )?mana$""", io).find(q)?.let { r -> return "${r.groupValues[1]}i control ${r.groupValues[2]}, loop-question mana" }
+        return t
+    }
+
+    /**
+     * The redteam table's questions this track answers by working them out (MechanicsAsks): the ask carries what the description
+     * said that the board doesn't hold — the creature a Sneak Attack put in, the life paid to Necropotence, each partner's deaths
+     * and casts — read from the whole text, every card in it named.
+     */
+    private fun mechanicsRtAsk(key: String, m: Marked, ctx: Ctx): Boolean? {
+        if (key !in setOf("sneakend", "sneakemrakul", "breach", "oracle4p", "oracleconsult", "necropay", "necrodiscard", "partnertax", "mysticforge", "companion", "initiativehit")) return null
+        if (ctx.asks.any { it.to == "rt:r_$key" }) return true
+        val ss = splitSentences(ctx.fullText); val short = shortNames(ss)
+        val all = ss.flatMap { s -> mark(s, short).cards.values } .distinctBy { it.oracleId }
+        val low = ctx.fullText.lowercase()
+        fun ref(en: NameIndex.Entry) = CardRef(name = en.display, oracleId = en.oracleId)
+        fun creature(en: NameIndex.Entry) = en.typeLine.ifEmpty { names.lookup(Names.normalize(en.display))?.typeLine ?: "" }.contains("Creature")
+        val n = """(\d+|one|two|three|four|five|six|seven|eight|nine|ten|once|twice)"""
+        fun num(s: String) = when (s.lowercase()) { "once", "one" -> 1; "twice" -> 2; else -> numberWords[s.lowercase()] ?: s.toIntOrNull() ?: 0 }
+        var ask = EventSpec("ask", player = "me", to = "rt:r_$key")
+        when (key) {
+            "sneakend", "sneakemrakul", "breach" -> {
+                val enabler = all.firstOrNull { !creature(it) } ?: return null
+                val creature = all.firstOrNull { creature(it) } ?: return null
+                val opp = Regex("""\b(?:my|the) opponent (?:casts?|puts?|sneaks?|breach(?:es)?|attacks?)\b|\bthey (?:cast|put|attack)\b""").containsMatchIn(low)
+                ask = ask.copy(player = if (opp) "opp" else "me", card = ref(creature), source = enabler.display)
+            }
+            "oracle4p", "oracleconsult" -> {
+                val oracle = all.firstOrNull { creature(it) } ?: return null
+                ask = ask.copy(card = ref(oracle), source = all.firstOrNull { it !== oracle }?.display)
+            }
+            "necropay" -> ask = ask.copy(amount = Regex("""\bpay $n life\b""").find(low)?.groupValues?.get(1)?.let { num(it) } ?: 1)
+            "necrodiscard" -> ask = ask.copy(source = if (Regex("""hand size|cleanup|down to|end of turn""").containsMatchIn(low)) "cleanup" else null)
+            // Every card named, for MechanicsAsks to find the one with the permission (or the companion) and the card asked about.
+            // ("Cast off the top" names no card: a card counts for Mystic Forge only when its own name was said.)
+            "mysticforge", "companion" -> ask = ask.copy(source = all.filter { en -> val n = en.display.substringBefore(" // ").lowercase(); key == "companion" || (low.contains(n) && !Regex("""\b(?:can|may|do) (?:i|we) ${Regex.escape(n)}\b""").containsMatchIn(low)) }.joinToString("|") { it.display })
+            // Who has the initiative and whose creatures dealt the combat damage, as said.
+            "initiativehit" -> {
+                val who = """(i|we|my opponent|the opponent|they|he|she)"""
+                fun pl(w: String) = if (w in setOf("i", "we", "me", "us")) "me" else "opp"
+                val holder = Regex("""\b$who (?:have|has|had|took|take|takes) the initiative\b""").findAll(low).lastOrNull()?.groupValues?.get(1)?.let { pl(it) } ?: "me"
+                val hit = Regex("""\b$who (?:deals?|dealt|hits?) (?:combat damage to )?(me|us|my opponent|them|him|her)\b""").find(low)
+                val hitter = hit?.groupValues?.get(1)?.let { pl(it) } ?: if (holder == "me") "opp" else "me"
+                val victim = hit?.groupValues?.get(2)?.let { pl(it) } ?: if (hitter == "me") "opp" else "me"
+                ask = ask.copy(player = hitter, source = "$holder>$victim")
+            }
+            "partnertax" -> {
+                val cmds = all.filter { creature(it) }
+                if (cmds.isEmpty()) return null
+                val info = cmds.joinToString(";") { c -> val fw = Regex.escape(c.display.substringBefore(',').substringBefore(' ').lowercase())
+                    val deaths = Regex("""\b$fw\b[^.?!]*?\b(?:has )?died $n(?: times)?\b""").find(low)?.groupValues?.get(1)?.let { num(it) } ?: 0
+                    val casts = Regex("""\bcast $fw\b[^.?!]*? $n(?: times)?\b""").find(low)?.groupValues?.get(1)?.let { num(it) } ?: 0
+                    "${c.display}=$deaths:$casts" }
+                // The commander asked about: the one named in the question sentence, else the one not said to have died.
+                val qs = ss.lastOrNull()?.lowercase() ?: ""
+                val asked = cmds.lastOrNull { c -> qs.contains(c.display.substringBefore(',').substringBefore(' ').lowercase()) }
+                // A partner the card index didn't recognise ("Silas Renn"): its name as the question says it.
+                val askedName = if (asked == null) Regex("""(?:what|how much) (?:does|will) ([a-z][\w' -]*?) cost|commander tax (?:on|for) ([a-z][\w' -]*)""").find(qs.trimEnd('?'))?.groupValues?.drop(1)?.firstOrNull { it.isNotEmpty() } else null
+                if (asked == null && askedName == null) return null
+                ask = ask.copy(card = asked?.let { ref(it) }, source = info + (askedName?.let { ";?asked=" + it.split(' ').joinToString(" ") { w -> w.replaceFirstChar { c -> c.uppercase() } } } ?: ""))
+            }
+        }
+        ctx.asks += ask
+        ctx.notes += "The question is answered by the outcome below."
+        return true
+    }
+
+    /** "Can I take infinite turns?" / "Can I generate infinite mana?" as a clause, once the board is read: the loop question. */
+    private fun readMechanicsQuestions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val q = clause0.trim().trimEnd('?', '.')
+        Regex("""^rtask r_(\w+)\b""").find(q)?.let { r -> mechanicsRtAsk(r.groupValues[1], m, ctx)?.let { return it } }
+        if (ctx.events.isNotEmpty() || ctx.objects.values.none { it.controller == "me" && it.zone == "battlefield" }) return null
+        val io = RegexOption.IGNORE_CASE
+        val kind = when {
+            Regex("""^(?:can|do|could|would|will) (?:i|we) (?:take|get|have) (?:infinite|unlimited|endless|extra) turns(?: forever| infinitely| every turn)?$|^(?:is|isn't) (?:that|this|it) infinite turns$""", io).matches(q) -> "turns"
+            Regex("""^(?:can|do|could) (?:i|we) (?:generate|make|get|produce|have) (?:infinite|unlimited|endless) (?:colorless )?mana$""", io).matches(q) -> "mana"
+            else -> return null
+        }
+        if (ctx.asks.any { it.to == "loop:$kind" }) return true
+        ctx.asks += EventSpec("ask", player = "me", to = "loop:$kind")
+        return true
     }
 
     private fun loopRewrite(t: String, m: Marked, ctx: Ctx): String {
@@ -4543,6 +4636,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = mechanicsRewrites(t2, m, ctx)
         t2 = leftoversRewrites(t2, m, ctx)
         t2 = redteamRewrites(t2, m, ctx)
         t2 = exam2Rewrites(t2, m, ctx)
@@ -9327,6 +9421,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readMechanicsQuestions(clause0, m, ctx)?.let { return it }
         readLeftoversQuestions(clause0, m, ctx)?.let { return it }
         readRedteamQuestions(clause0, m, ctx)?.let { return it }
         readExam2Questions(clause0, m, ctx)?.let { return it }

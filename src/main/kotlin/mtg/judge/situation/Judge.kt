@@ -1302,6 +1302,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
     private fun answerLoop(kind: String, e: EventSpec, state: GameState, engine: Engine): Boolean {
         if (simulating > 0) return true
         if (kind != "what" && CedhAsks.scepterLoop(state, engine, e.player ?: "me")) return true   // Isochron Scepter and Dramatic Reversal
+        if (kind in setOf("infinite", "mana", "turns") && (MechanicsLoops.turnLoop(this, state, engine, e.player ?: "me") || MechanicsLoops.manaLoop(this, state, engine, e.player ?: "me"))) return true   // MechanicsLoops.kt
         val found = LoopFinder(this, state, engine, e.player ?: "me").find()
         if (found == null) {
             when (kind) {

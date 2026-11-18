@@ -62,56 +62,12 @@ internal object RedteamAsks {
     private fun ruling(key: String, e: EventSpec, state: GameState, def: (CardRef) -> CardDef?): R? {
         val p = state.player(e.player ?: "me")
         return when (key) {
-            // "I attack with Griselbrand from Sneak Attack. At the end step, can I draw seven in response to the sacrifice trigger?"
-            "sneakend" -> R("Yes: Sneak Attack's \"sacrifice it at the beginning of the next end step\" is a delayed triggered ability that goes on the stack as the end step begins (603.7a). You get priority with it on the stack, so you can activate Griselbrand's \"Pay 7 life: Draw seven cards\" in response, as many times as you can pay 7 life; Griselbrand is sacrificed only when the trigger resolves.", listOf(
-                st("Sneak Attack's ability creates a delayed triggered ability as it resolves: \"Sacrifice the creature at the beginning of the next end step.\" It triggers once, as the next end step begins, and goes on the stack like any other triggered ability.", "603.7a", "603.7b"),
-                st("Players get priority while it waits on the stack, so its controller can activate Griselbrand's ability (pay 7 life, draw seven) in response, once per 7 life paid; the creature is sacrificed only when the trigger resolves.", "117.3a", "602.2b")))
-            // "In a 4-player game I cast Thassa's Oracle with an empty library. Can each opponent respond?"
-            "oracle4p" -> R("Yes: every player gets priority, in turn order, before Thassa's Oracle resolves and again before its enters trigger resolves (117.4); any opponent can respond to either. The devotion count and library size are checked only when the trigger resolves (608.2h), so removing a blue permanent or putting cards into your library in response can stop the win.", listOf(
-                st("A spell or ability resolves only after all players pass priority in succession, starting with the active player and going in turn order, so each opponent has a chance to respond to the Oracle spell and, once it enters, to its trigger.", "117.3c", "117.4"),
-                st("Thassa's Oracle's trigger compares devotion to blue with the number of cards in the library as it resolves; responses change what it sees.", "608.2h", "104.2a")))
-            // "I cast Thassa's Oracle and Demonic Consultation: in what order?"
-            "oracleconsult" -> R("Either order works by the rules. The usual line: cast Thassa's Oracle, and with its enters trigger on the stack cast Demonic Consultation naming a card not in your library, exiling your whole library; the trigger then sees 0 cards and you win (608.2h). Casting Consultation first works too, but then an opponent can answer the Oracle while you have no library and lose to drawing.", listOf(
-                st("Thassa's Oracle's enters trigger counts the cards in its controller's library only as it resolves, so a response that empties the library (Demonic Consultation naming a card that isn't there) still wins.", "608.2h", "603.3"),
-                st("Demonic Consultation exiles cards until it reveals the named card; naming a card that isn't in the library exiles all of it.", "608.2c")))
-            // "I control Kinnan, Bonder Prodigy and Basalt Monolith. Can I generate infinite mana?"
-            "kinnanbasalt" -> R("Yes: tap Basalt Monolith for {C}{C}{C}; Kinnan adds one more mana of a type Basalt Monolith produced ({C}), so you have 4; pay {3} to untap the Monolith and repeat, netting {C} each time. It's a loop you can shortcut by saying how many times you do it (MTR 4.4); the mana is colorless.", listOf(
-                st("Kinnan, Bonder Prodigy: \"Whenever you tap a nonland permanent for mana, add one additional mana of any type that permanent produced.\" Basalt Monolith taps for {C}{C}{C} and untaps for {3}, so each tap gives four and each untap costs three.", "106.4", "605.1a"),
-                st("A repeatable sequence of actions is a loop; a player proposes a shortcut naming the number of repetitions.", "733.1b", "733.2a")))
-            // "Time Vault and Manifold Key: infinite turns?"
-            "timevault" -> R("Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault, then tap Time Vault to take an extra turn after this one. Manifold Key untaps during each untap step, so you can repeat it every turn; that's one extra turn per turn, not a loop inside one turn.", listOf(
-                st("Time Vault doesn't untap during its controller's untap step, and \"{T}: Take an extra turn after this one\" is an activated ability that adds a turn directly after the current one.", "500.7", "602.2"),
-                st("Manifold Key's \"{1}, {T}: Untap another target artifact\" untaps Time Vault; the Key itself untaps in each untap step, so the pair gives an extra turn every turn.", "502.3")))
-            // "Necropotence: what happens to a card I discard?"
-            "necrodiscard" -> R("It's exiled: Necropotence says \"Whenever you discard a card, exile that card from your graveyard.\" The card goes to your graveyard first, so anything that triggers on it going there sees it, and then the trigger exiles it.", listOf(
-                st("Discarding moves the card from hand to its owner's graveyard; Necropotence's triggered ability then exiles it from the graveyard as it resolves.", "701.9a", "603.2")))
-            // "Necropotence: I pay life."
-            "necropay" -> R("For each 1 life you pay, Necropotence exiles the top card of your library face down, and at the beginning of your next end step you put that card into your hand. You don't get the card now: it waits in exile until the delayed trigger resolves at the end step (and Necropotence leaving the battlefield doesn't stop that).", listOf(
-                st("\"Pay 1 life: Exile the top card of your library face down. Put that card into your hand at the beginning of your next end step.\" The second sentence creates a delayed triggered ability.", "406.3", "603.7a"),
-                st("Necropotence also makes its controller skip their draw step.", "614.1b")))
-            // "Mystic Forge: what can I cast off the top?"
-            "mysticforge" -> R("Artifact spells and colorless spells, from the top of your library, at the time you could normally cast them (it doesn't give flash). You may look at the top card any time. Its \"{T}, Pay 1 life: Exile the top card of your library\" just exiles that card: it doesn't let you cast or play it from exile.", listOf(
-                st("Mystic Forge lets its controller cast artifact spells and colorless spells from the top of their library; normal timing permissions still apply.", "601.2", "601.3"),
-                st("Its activated ability exiles the top card to get past a card it can't cast.", "701.13a")))
-            // "My companion is Lurrus: how do I get it?"
-            "companion" -> R("Pay {3} as a special action to put Lurrus from outside the game into your hand: only when you have priority, during your main phase with an empty stack (any time you could cast a sorcery), and only once per game. Then cast it from your hand as normal.", listOf(
-                st("A player who has chosen a companion may pay {3} to put that card from outside the game into their hand. It's a special action, taken any time they have priority and could cast a sorcery, and only once each game.", "116.2g", "702.139a"),
-                st("Once the companion is in hand it stays in the game until it ends.", "702.139c")))
             // "A clone of my opponent's commander hits me: commander damage?"
             "clonecmd" -> R("No: a copy of a commander isn't a commander, so its combat damage doesn't count toward the 21 (903.10a). Only the commander card itself is a commander; copying doesn't copy that status.", listOf(
                 st("Commander damage is combat damage dealt by a specific commander; the copy has the copiable values of the commander but not its status as a commander.", "903.10a", "707.2", "903.3")))
             // "My opponent Dazes my spell: can I pay 1?"
             "dazepay" -> R("Yes: Daze says \"Counter target spell unless its controller pays {1}\", so as Daze resolves you, the spell's controller, choose whether to pay {1}; you may activate mana abilities to do it. If you pay, your spell isn't countered.", listOf(
                 st("\"Unless its controller pays\" is a choice made as Daze resolves; the player may activate mana abilities then.", "608.2d", "608.2g", "118.12")))
-            // "Sneak Attack Emrakul: annihilator?"
-            "sneakemrakul" -> R("Yes when it attacks: Sneak Attack gives Emrakul haste, and annihilator 6 triggers when Emrakul is declared as an attacker, so the defending player sacrifices six permanents. Emrakul's \"when you cast\" extra turn doesn't trigger: it was put onto the battlefield, not cast. It's sacrificed at the beginning of the next end step and its graveyard trigger then shuffles your graveyard into your library.", listOf(
-                st("Annihilator triggers whenever the creature attacks; haste lets a creature that just came under its controller's control attack.", "702.86a", "702.10b"),
-                st("Put onto the battlefield isn't cast, so cast triggers don't happen.", "601.2", "603.2")))
-            // "Through the Breach on Emrakul"
-            "breach" -> R("When Emrakul attacks, annihilator triggers; at the beginning of the next end step, it's sacrificed. Through the Breach puts Emrakul from your hand onto the battlefield (it targets nothing), gives it haste, and makes a delayed trigger to sacrifice it at the beginning of the next end step. Attack: annihilator 6 triggers as Emrakul is declared as an attacker, before blockers. At the end step the sacrifice trigger resolves; Emrakul goes to the graveyard and its own trigger shuffles your graveyard into your library. Emrakul's cast trigger (extra turn) doesn't happen: it wasn't cast.", listOf(
-                st("Annihilator triggers whenever the creature attacks, in the declare attackers step.", "702.86a", "508.1m"),
-                st("\"Sacrifice that creature at the beginning of the next end step\" is a delayed triggered ability.", "603.7a"),
-                st("Emrakul wasn't cast, so its \"when you cast\" ability doesn't trigger.", "601.2", "603.2")))
             // "Murktide from exile (Ragavan)"
             "murktideexile" -> R("It depends on delve, not on where it's cast from: Murktide Regent enters with a +1/+1 counter for each instant and sorcery card exiled with its delve. Cast from exile with Ragavan's permission you can still delve; with no cards delved it enters as a 3/3 with no counters. Mana value and delve aren't changed by casting it from exile.", listOf(
                 st("Delve applies to the spell wherever it's cast from; the counters count the instant and sorcery cards exiled to pay with delve.", "702.66a", "702.66b", "614.1c")))
@@ -162,10 +118,6 @@ internal object RedteamAsks {
             // "Guide of Souls and a token entering"
             "guidetoken" -> R("If the token is a creature, Guide of Souls triggers: you gain 1 life and get {E} (an energy counter). A noncreature token (Treasure, Clue, a Role) doesn't trigger it.", listOf(
                 st("Guide of Souls: \"Whenever another creature you control enters, you gain 1 life and get {E}.\" A token creature entering is a creature entering.", "603.6a", "111.1", "122.1")))
-            // "I have the initiative and my opponent hits me"
-            "initiativehit" -> R("Your opponent: when their creatures deal combat damage to you while you have the initiative, they take it (727.2), you stop having it (727.3), and they venture into Undercity right away. They venture again at the beginning of their upkeep while they keep it. Deal combat damage to them to take it back.", listOf(
-                st("The initiative's inherent trigger: whenever one or more creatures a player controls deal combat damage to the player who has the initiative, that player takes the initiative; taking it makes them venture into Undercity.", "727.2", "701.49d"),
-                st("Only one player has the initiative at a time.", "727.3")))
             // "I Show and Tell in Omniscience and my opponent puts in Archon of Emeria": one spell a turn, and Show and Tell was one.
             "spelllimit" -> {
                 val lock = state.objects.values.firstOrNull { it.isOnBattlefield() && Regex("""(?i)can't cast more than one spell each turn""").containsMatchIn(it.def.oracleText) } ?: return null
@@ -195,9 +147,6 @@ internal object RedteamAsks {
                     st("Pithing Needle: \"Activated abilities of sources with the chosen name can't be activated unless they're mana abilities.\" A player can't begin to activate a prohibited ability; abilities a source gains are its activated abilities too.", "602.5", "605.1a"),
                     st(if (chapters.isNotEmpty()) "A chapter symbol is a triggered ability (chapter ability), so a lock on activated abilities doesn't touch it." else "Triggered and static abilities aren't activated abilities.", *(if (chapters.isNotEmpty()) arrayOf("715.2", "603.2") else arrayOf("113.3", "603.2")))))
             }
-            // "I have partner commanders Rograkh and Silas Renn. Rograkh died twice. What does Silas cost?"
-            "partnertax" -> R("Each partner commander has its own commander tax, counting only the times that commander was cast from the command zone (702.124d, 903.8). Dying adds nothing: the tax counts casts, not deaths or trips to the command zone. So the other commander costs its mana cost plus {2} for each time it was itself cast from the command zone (none yet: just its mana cost), however often its partner died.", listOf(
-                st("Apart from color identity, partner commanders function independently; each one's tax counts only its own casts from the command zone.", "702.124d", "903.8")))
             // "Brain Freeze off Underworld Breach: storm count in multiplayer?"
             "stormcount" -> {
                 val said = e.source?.toIntOrNull()
@@ -215,6 +164,7 @@ internal object RedteamAsks {
         val p = state.player(e.player ?: "me")
         val o = e.obj?.let { state.objects[it] } ?: e.card?.name?.let { lastOf(state, it) }
         e.to?.removePrefix("rt:r_")?.takeIf { e.to.startsWith("rt:r_") }?.let { key ->
+            MechanicsAsks.answer(key, e, state, engine, def)?.let { return it }   // worked out from the cards and the table (MechanicsAsks.kt)
             val r = ruling(key, e, state, def) ?: return false
             for ((text, rules) in r.steps) t.step(text, *rules.toTypedArray())
             state.outcomes.add(0, r.outcome)   // the ruling is the answer; the narration of the events stays below it
