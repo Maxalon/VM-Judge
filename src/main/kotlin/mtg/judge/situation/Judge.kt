@@ -149,7 +149,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             // A trigger the parser couldn't read is as invisible as text it couldn't read at all: it can never fire,
             // so the answer would say "nothing changes" while the card sat there doing its thing.
             for (a in o.def.abilities) if (a is mtg.judge.engine.TriggeredAbility && a.trigger is mtg.judge.engine.Trigger.Unknown) unparsed += a.text
-            unparsed.removeAll { mtg.judge.engine.ModernMech.handlesAbility(it) || mtg.judge.engine.PauperMech.handlesAbility(it) }   // Amulet of Vigor, Murktide Regent (ModernMechanics.kt)
+            unparsed.removeAll { mtg.judge.engine.ModernMech.handlesAbility(it) || mtg.judge.engine.PauperMech.handlesAbility(it) || mtg.judge.engine.Leftovers2Mech.handlesAbility(it) }   // Amulet of Vigor, Murktide Regent (ModernMechanics.kt)
             if (unparsed.isNotEmpty()) state.unsupported += mtg.judge.engine.Unsupported(o.name, "Rules text not modeled: " + unparsed.distinct().joinToString(" | "))
         }
         engine.narrateLandTypeSetters()
@@ -436,7 +436,8 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 // still a spell on the stack is cast once that spell has resolved. A creature spell is left as it is, since
                 // "a creature spell isn't a creature" is the lesson those questions are usually after.
                 val stackPerms = castTargets.mapNotNull { t -> (t as? Ref.Stack)?.let { r -> state.stack.firstOrNull { it.id == r.id } } }.filter { it.kind == StackKind.SPELL && !it.source.def.isInstantOrSorcery && !it.source.def.isCreature && it.controller != player }
-                val castTargets1 = if (stackPerms.isNotEmpty() && needed.none { it.raw.contains("spell", true) }) {
+                // Spell Queller: its enters trigger targets a spell, so a permanent spell on the stack is what it is cast to answer.
+                val castTargets1 = if (stackPerms.isNotEmpty() && needed.none { it.raw.contains("spell", true) } && !Regex("""(?i)\bwhen [^.]*enters, [^.]*target spell""").containsMatchIn(def.oracleText)) {
                     state.assumptions += "${def.name} is cast once ${stackPerms.joinToString(" and ") { it.source.name }} has resolved: it targets a permanent, and a spell on the stack isn't one yet."
                     engine.resolveAll()
                     castTargets.map { t -> (t as? Ref.Stack)?.let { r -> stackPerms.firstOrNull { it.id == r.id }?.let { Ref.Obj(it.source.id) } } ?: t }
@@ -982,6 +983,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "lifedmg" -> LifeDamageAsks.applyEvent(e, state)
             "rt" -> RedteamAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             "lo" -> LeftoversAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
+            "l2" -> Leftovers2Asks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1037,6 +1039,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         Redteam2Asks.describe(e, state)?.let { return it }
         LeftoversAsks.describe(e, state)?.let { return it }
         LifeDamageAsks.describe(e, state)?.let { return it }
+        Leftovers2Asks.describe(e, state)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") PolicyAsks.describe(e, state)?.let { return it }
@@ -1421,7 +1424,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         state.outcomes.any { it.startsWith("$name can't target") } -> "No: $name isn't countered; it is never cast at that target, so it doesn't go on the stack or resolve."
                         // "Leyline of Sanctity in response to my Bolt at them. Is my Bolt countered?": not countered, but it doesn't resolve either.
                         state.outcomes.any { it.startsWith("$name doesn't resolve") } -> "No, $name isn't countered, but it doesn't resolve either: ${if (state.outcomes.any { it.startsWith("$name doesn't resolve (all targets illegal)") }) "every target it had became illegal, so it's removed from the stack as it would resolve and does nothing (608.2b)" else "see above"}. The result is the same as a counter (it goes to the graveyard without effect), but it isn't \"countered\", so \"can't be countered\" wouldn't have saved it and nothing that triggers on a spell being countered triggers."
-                        else -> "No: $name isn't countered; it resolves." + (state.objects.values.filter { it.isOnBattlefield() && it.def.name == "Chalice of the Void" }.map { it.counters["charge"] ?: 0 }.takeIf { it.isNotEmpty() }?.let { ns ->
+                        else -> "No: $name isn't countered; it resolves." + (state.objects.values.filter { (it.isOnBattlefield() || mtg.judge.engine.Leftovers2Mech.countersWhenDestroyed(state, it.id) != null) && it.def.name == "Chalice of the Void" }.map { (if (it.isOnBattlefield()) it.counters["charge"] else mtg.judge.engine.Leftovers2Mech.countersWhenDestroyed(state, it.id)?.get("charge")) ?: 0 }.takeIf { it.isNotEmpty() }?.let { ns ->
                             val def = state.objects.values.lastOrNull { it.def.name == name }?.def
                             // Fire // Ice cast as Fire: on the stack only that half exists, mana value 2, not 4 (709.3b).
                             val half = state.trace.steps.firstNotNullOfOrNull { st -> Regex("""^Only (.+?) is cast, so on the stack ${Regex.escape(name)} has just that half's characteristics: mana value (\d+)""").find(st.text) }
@@ -2362,6 +2365,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("rt:") == true) return RedteamAsks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("x2:") == true) return Exam2Asks.answer(e, state, engine)
                 if (e.to?.startsWith("r2:") == true) return Redteam2Asks.answer(e, state, engine) { oid, n -> oid?.let { cards.byOracleId(it) } ?: n?.let { cards.resolve(it).best?.card } }
+                if (e.to?.startsWith("l2:") == true) return Leftovers2Asks.answer(e, state, engine) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

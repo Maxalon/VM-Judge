@@ -2105,8 +2105,10 @@ object OracleParser {
             val who = when (m.groupValues[1].lowercase()) { "each player" -> Who.EACH_PLAYER; "you" -> Who.YOU; "target player" -> Who.TARGET_PLAYER; else -> Who.EACH_OPPONENT }
             return Effect.LoseHalfLife(who, m.groupValues[2].equals("up", true))
         }
-        Regex("""^double (?:the power of (target creature)|(target creature)['’]s power) until end of turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.DoublePower(target(it.groupValues[1].ifEmpty { it.groupValues[2] })) }
+        Regex("""^double (?:the power of (target creature(?: you control)?)|(target creature(?: you control)?)['’]s power) until end of turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { return Effect.DoublePower(target(it.groupValues[1].ifEmpty { it.groupValues[2] })) }
         pumpSameNameRe.matchEntire(s)?.let { return Effect.PumpSameName(target(it.groupValues[1]), it.groupValues[2].toInt(), it.groupValues[3].toInt()) }
+        // Swift Justice: "Until end of turn, target creature gets +1/+0 and gains first strike and lifelink." (the duration said first)
+        Regex("""^until end of turn, target (.+?) gets ([+-]\d+)/([+-]\d+) and gains (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m -> keywordsIn(m.groupValues[4])?.let { kws -> return Effect.Seq(listOf(Effect.Pump(target(m.groupValues[1]), m.groupValues[2].toInt(), m.groupValues[3].toInt()), Effect.GainKeywords(target(m.groupValues[1]), kws))) } }
         pumpGainRe.matchEntire(s)?.let { m -> keywordsIn(m.groupValues[4])?.let { kws -> return Effect.Seq(listOf(Effect.Pump(target(m.groupValues[1]), m.groupValues[2].toInt(), m.groupValues[3].toInt()), Effect.GainKeywords(target(m.groupValues[1]), kws))) } }
         gainRe.matchEntire(s)?.let { m -> keywordsIn(m.groupValues[3])?.let { kws ->
             val t = target(m.groupValues[2])

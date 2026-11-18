@@ -70434,5 +70434,568 @@
       "MTR 5.2"
     ],
     "note": "track policy2: paraphrase of cmdr"
+  },
+  {
+    "id": "l2-1",
+    "text": "I control Enduring Curiosity. My opponent casts Torch the Tower targeting it and bargains. What happens to Enduring Curiosity?",
+    "expect": [
+      "Torch the Tower is bargained",
+      "Enduring Curiosity has 3 damage marked",
+      "Enduring Curiosity: the battlefield → exile"
+    ],
+    "notExpect": [
+      "gains 7 life",
+      "casts Bargain"
+    ],
+    "cite": [
+      "702.166b",
+      "702.166c"
+    ]
+  },
+  {
+    "id": "l2-2",
+    "text": "I control Enduring Curiosity. My opponent controls a Clue token. My opponent casts Torch the Tower targeting Enduring Curiosity, bargaining the Clue. What happens to Enduring Curiosity?",
+    "expect": [
+      "Torch the Tower is bargained (Clue token sacrificed",
+      "Enduring Curiosity has 3 damage marked",
+      "Opponent scries 1"
+    ],
+    "cite": [
+      "702.166a",
+      "702.166c"
+    ]
+  },
+  {
+    "id": "l2-3",
+    "text": "I control Enduring Curiosity. My opponent casts Torch the Tower targeting it. What happens to Enduring Curiosity?",
+    "expect": [
+      "Enduring Curiosity has 2 damage marked"
+    ],
+    "cite": [
+      "702.166b"
+    ],
+    "notExpect": [
+      "Enduring Curiosity: the battlefield → exile"
+    ]
+  },
+  {
+    "id": "l2-4",
+    "text": "I cast a cascade spell. My opponent flashes in Spell Queller targeting it with the cascade trigger on the stack. What happens?",
+    "expect": [
+      "I need the card: \"a cascade spell\" names no card",
+      "its cascade trigger exists on its own once triggered"
+    ],
+    "notExpect": [
+      "has no spell to target and does nothing"
+    ],
+    "cite": [
+      "113.7a",
+      "702.85a"
+    ]
+  },
+  {
+    "id": "l2-5",
+    "text": "I control Ugin's Labyrinth exiling Devourer of Destiny. How much mana does it make?",
+    "expect": [
+      "Ugin's Labyrinth taps for {C}{C}: Devourer of Destiny is exiled with it"
+    ],
+    "cite": [
+      "607.2a",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "l2-6",
+    "text": "I control Ugin's Labyrinth exiling Primeval Titan. How much mana does it make?",
+    "expect": [
+      "Primeval Titan can't be exiled with Ugin's Labyrinth",
+      "Ugin's Labyrinth taps for {C}: no card is exiled with it"
+    ],
+    "cite": [
+      "607.2a"
+    ]
+  },
+  {
+    "id": "l2-7",
+    "text": "I control Mox Amber and Grinding Station. Can I untap Grinding Station with Mox Amber?",
+    "expect": [
+      "Yes, by having Mox Amber enter",
+      "Mox Amber already on the battlefield doesn't do it"
+    ],
+    "notExpect": [
+      "Mox Amber enters the battlefield."
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "l2-8",
+    "text": "I control Grinding Station, Underworld Breach and Mox Amber. Can I untap Grinding Station with Mox Amber?",
+    "expect": [
+      "from the graveyard with Underworld Breach's escape",
+      "Each round costs three graveyard cards"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "l2-9",
+    "text": "I control Grinding Station, Underworld Breach and Mox Amber. My graveyard has 12 other cards. My opponent has 20 cards in their library. Can I mill my opponent's whole library?",
+    "expect": [
+      "No: the loop runs 5 times and mills 15 cards from opponent's library, leaving 5"
+    ],
+    "cite": [
+      "702.138a",
+      "733.1b",
+      "701.17a"
+    ]
+  },
+  {
+    "id": "l2-10",
+    "text": "I control Grinding Station, Underworld Breach and Mox Amber. My graveyard has 30 other cards. My opponent has 20 cards in their library. Can I mill my opponent's whole library?",
+    "expect": [
+      "Yes: the loop runs 7 times and mills 20 cards from opponent's library, all of it"
+    ],
+    "cite": [
+      "702.138a",
+      "701.17b"
+    ]
+  },
+  {
+    "id": "l2-11",
+    "text": "I control Grinding Station, Underworld Breach and Mox Amber. Can I mill my opponent's whole library?",
+    "expect": [
+      "Not without limit",
+      "1 + ⌊G/3⌋ activations of Grinding Station"
+    ],
+    "cite": [
+      "702.138a",
+      "733.1b"
+    ]
+  },
+  {
+    "id": "l2-12",
+    "text": "I control Grinding Station, Underworld Breach and Mox Amber. My graveyard has 6 other cards and my library has 10 cards. How many cards can I mill myself?",
+    "expect": [
+      "The loop runs 4 times and mills 10 cards from your library, all of it"
+    ],
+    "cite": [
+      "701.17b"
+    ]
+  },
+  {
+    "id": "l2-13",
+    "text": "I cast Thassa's Oracle. Three players respond with Force of Will, Stifle and Mindbreak Trap. What happens?",
+    "expect": [
+      "I need to know who cast each of Force of Will, Stifle, Mindbreak Trap",
+      "Stifle can't be cast at Thassa's Oracle now"
+    ],
+    "notExpect": [
+      "Thassa's Oracle enters the battlefield"
+    ],
+    "cite": [
+      "117.7",
+      "603.2"
+    ]
+  },
+  {
+    "id": "l2-14",
+    "text": "I control Mightform Harmonizer and play a land. What happens?",
+    "expect": [
+      "Mightform Harmonizer is 8/4 until end of turn"
+    ],
+    "cite": [
+      "701.10b"
+    ]
+  },
+  {
+    "id": "l2-15",
+    "text": "I control Ouroboroid and Grizzly Bears. It's my turn. At the beginning of combat, how many +1/+1 counters does each creature get?",
+    "expect": [
+      "Ouroboroid has 1 +1/+1 counter",
+      "Grizzly Bears has 1 +1/+1 counter"
+    ],
+    "cite": [
+      "608.2h",
+      "122.1"
+    ]
+  },
+  {
+    "id": "l2-16",
+    "text": "I control Ouroboroid with two +1/+1 counters and Grizzly Bears. It's my turn. At the beginning of combat, how many +1/+1 counters does each creature get?",
+    "expect": [
+      "Ouroboroid has 5 +1/+1 counters",
+      "Grizzly Bears has 3 +1/+1 counters"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "l2-17",
+    "text": "I control Amalia Benavides Aguirre and Wildgrowth Walker. I gain 3 life. Does the loop ever end?",
+    "expect": [
+      "Amalia Benavides Aguirre explores 19 times",
+      "to power 21",
+      "It isn't a draw (104.4b)",
+      "Wildgrowth Walker: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "701.44a",
+      "733.1b",
+      "104.4b"
+    ]
+  },
+  {
+    "id": "l2-18",
+    "text": "I control Amalia Benavides Aguirre with 19 power and Wildgrowth Walker. I gain 1 life. What happens?",
+    "expect": [
+      "Amalia Benavides Aguirre explores 2 times",
+      "Wildgrowth Walker: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "701.44a",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "l2-19",
+    "text": "I control Amalia Benavides Aguirre with 19 power and Wildgrowth Walker. I explore. What happens?",
+    "expect": [
+      "The game is a draw",
+      "can never end (104.4b)"
+    ],
+    "cite": [
+      "104.4b",
+      "701.44a"
+    ]
+  },
+  {
+    "id": "l2-20",
+    "text": "I cast Galvanic Discharge on a creature with 3 energy. How much damage does it deal?",
+    "expect": [
+      "Galvanic Discharge deals 6 damage to a creature",
+      "You get 3 energy and pay 6"
+    ],
+    "cite": [
+      "107.14",
+      "122.1"
+    ]
+  },
+  {
+    "id": "l2-21",
+    "text": "I have 2 energy. My opponent controls Tarmogoyf. I cast Galvanic Discharge targeting Tarmogoyf, paying 1 energy. How much damage does it deal?",
+    "expect": [
+      "Galvanic Discharge deals 1 damage to Tarmogoyf",
+      "pay 1 (Galvanic Discharge); 4 energy left"
+    ],
+    "cite": [
+      "107.14"
+    ]
+  },
+  {
+    "id": "l2-22",
+    "text": "My opponent controls Grizzly Bears. I cast Galvanic Discharge targeting Grizzly Bears. What happens?",
+    "expect": [
+      "Grizzly Bears has 3 damage marked",
+      "Grizzly Bears: the battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "107.14"
+    ]
+  },
+  {
+    "id": "l2-23",
+    "text": "I control Grizzly Bears. My opponent controls Ragavan, Nimble Pilferer, Tarmogoyf and Thought-Knot Seer. I cast Wrath of the Skies with X equal to 3 using energy. What gets destroyed?",
+    "expect": [
+      "You get 3 energy and pay 3 (Wrath of the Skies)",
+      "Thought-Knot Seer (mana value 4) survives",
+      "Ragavan, Nimble Pilferer: the battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "107.14",
+      "202.3"
+    ]
+  },
+  {
+    "id": "l2-24",
+    "text": "I control Grizzly Bears and Sol Ring. My opponent controls Tarmogoyf, Ornithopter and Oblivion Ring. I cast Wrath of the Skies with X equal to 1. What gets destroyed?",
+    "expect": [
+      "Sol Ring: the battlefield → your graveyard",
+      "Ornithopter: the battlefield → opponent's graveyard",
+      "Oblivion Ring (mana value 3)"
+    ],
+    "cite": [
+      "701.8a"
+    ]
+  },
+  {
+    "id": "l2-25",
+    "text": "I control Oblivion Stone and Grizzly Bears with a fate counter on it. My opponent controls Tarmogoyf and Sol Ring. I activate Oblivion Stone's second ability. What gets destroyed?",
+    "expect": [
+      "Grizzly Bears survives (it had a fate counter)",
+      "Tarmogoyf: the battlefield → opponent's graveyard",
+      "Sol Ring: the battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "701.8a"
+    ]
+  },
+  {
+    "id": "l2-26",
+    "text": "My opponent controls Fear of Missing Out. Does it give an extra combat the first time they attack with delirium?",
+    "expect": [
+      "Yes, once a turn",
+      "additional combat phase right after this one",
+      "Attacking with it again in that extra combat doesn't trigger it"
+    ],
+    "cite": [
+      "603.4",
+      "500.8"
+    ]
+  },
+  {
+    "id": "l2-27",
+    "text": "My opponent attacks with Fear of Missing Out. Their graveyard has a land, a creature, an instant and a sorcery. What happens?",
+    "expect": [
+      "After this phase there is an additional combat phase (Fear of Missing Out, 500.8)"
+    ],
+    "cite": [
+      "500.8",
+      "603.4"
+    ]
+  },
+  {
+    "id": "l2-28",
+    "text": "My opponent took 2 damage this turn. I cast Gorehorn Minotaurs. How many counters does it get?",
+    "expect": [
+      "Gorehorn Minotaurs enters with 2 +1/+1 counters (bloodthirst); it's 5/5"
+    ],
+    "cite": [
+      "702.54a"
+    ]
+  },
+  {
+    "id": "l2-29",
+    "text": "I cast Bloodlord of Vaasgoth after my opponent took damage this turn. How big is it?",
+    "expect": [
+      "Bloodlord of Vaasgoth is 6/6"
+    ],
+    "cite": [
+      "702.54a"
+    ]
+  },
+  {
+    "id": "l2-30",
+    "text": "My opponent's creature has menace and Lure. I have two creatures that can block. Must both block?",
+    "expect": [
+      "Yes: both must block it"
+    ],
+    "cite": [
+      "509.1c",
+      "702.111b"
+    ]
+  },
+  {
+    "id": "l2-31",
+    "text": "My opponent's creature has menace and Lure. I have one creature that can block. Must it block?",
+    "expect": [
+      "No: your one creature can't block it alone"
+    ],
+    "cite": [
+      "509.1c",
+      "702.111b"
+    ]
+  },
+  {
+    "id": "l2-32",
+    "text": "I cast Scapeshift sacrificing seven lands and get six Mountains with two Valakut. How many triggers?",
+    "expect": [
+      "12 triggers: each of the 2 Valakuts triggers once for each of the 6 Mountains",
+      "up to 36 damage"
+    ],
+    "cite": [
+      "603.2c",
+      "603.6a"
+    ]
+  },
+  {
+    "id": "l2-33",
+    "text": "I control two Valakut, the Molten Pinnacle. I cast Scapeshift sacrificing six lands and get five Mountains and a Valakut. How many triggers?",
+    "expect": [
+      "each Mountain sees only 4 other Mountains"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "l2-34",
+    "text": "I cast Mindslaver on my opponent in a four-player game. Who takes the extra turn?",
+    "expect": [
+      "No one takes an extra turn: you control the targeted opponent during that player's next turn",
+      "you can't make them concede (724.6)"
+    ],
+    "cite": [
+      "724.1",
+      "724.3",
+      "724.5"
+    ]
+  },
+  {
+    "id": "l2-35",
+    "text": "I cast Amped Raptor and get energy. Can I cast an X spell from the top for free?",
+    "expect": [
+      "Yes, for 0 energy, but X is 0",
+      "You get 2 energy (Amped Raptor)"
+    ],
+    "cite": [
+      "107.3b",
+      "202.3e"
+    ]
+  },
+  {
+    "id": "l2-36",
+    "text": "I control Lotus Field and Hidden Strings. I cast Hidden Strings untapping Lotus Field twice. How much mana do I net?",
+    "expect": [
+      "No: Hidden Strings can untap Lotus Field only once",
+      "You net 1 mana"
+    ],
+    "cite": [
+      "115.3"
+    ]
+  },
+  {
+    "id": "l2-37",
+    "text": "I control Lotus Field, Island and Hidden Strings. I cast Hidden Strings untapping Lotus Field twice. How much mana do I net?",
+    "expect": [
+      "You net 2 mana: untapping Lotus Field and Island gives back 4"
+    ],
+    "cite": [
+      "115.3",
+      "605.1a"
+    ]
+  },
+  {
+    "id": "l2-38",
+    "text": "My opponent attacks with Youthful Knight. I block with Watchwolf. After first-strike damage, I cast Swift Justice on Watchwolf. Does Watchwolf deal combat damage?",
+    "expect": [
+      "Yes: Watchwolf deals 4 damage to Youthful Knight",
+      "first strike gained after the first-strike damage step doesn't take that away"
+    ],
+    "notExpect": [
+      "No: Watchwolf dealt no damage"
+    ],
+    "cite": [
+      "510.4",
+      "702.7c"
+    ]
+  },
+  {
+    "id": "l2-39",
+    "text": "I cast Fable of the Mirror-Breaker. In response, my opponent casts Spell Queller targeting it. What happens?",
+    "expect": [
+      "Fable of the Mirror-Breaker: the stack → exile (Spell Queller)"
+    ],
+    "notExpect": [
+      "You get a Goblin Shaman token"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "l2-40",
+    "text": "My opponent controls Spell Queller. I cast Fable of the Mirror-Breaker. Can Spell Queller exile it?",
+    "expect": [
+      "No: Spell Queller is already on the battlefield, and its exile is an enters trigger"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "l2-41",
+    "text": "I have 5 life. I cast Angel's Grace and it resolves. Then I cast Ad Nauseam and lose 12 life. Do I lose the game?",
+    "expect": [
+      "No: You are still in the game at -7 life",
+      "You can't lose the game this turn"
+    ],
+    "notExpect": [
+      "can't be cast while Angel's Grace is on the stack"
+    ],
+    "cite": [
+      "119.3"
+    ]
+  },
+  {
+    "id": "l2-42",
+    "text": "I control Thalia, Guardian of Thraben. My opponent casts Lightning Bolt. How much does it cost?",
+    "expect": [
+      "Lightning Bolt costs {R} plus {1} (Thalia, Guardian of Thraben makes it cost {1} more)"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "l2-43",
+    "text": "I control Avenger of Zendikar and ten Plant tokens. I cast Craterhoof Behemoth. How big are the Plant tokens?",
+    "expect": [
+      "Plant token is 12/13 with trample until end of turn"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "l2-44",
+    "text": "In a four-player game I cast Expropriate. I vote time and the other three players vote money. What happens?",
+    "expect": [
+      "You take 1 extra turn after this one (time votes)",
+      "Opponent's money vote",
+      "Opponent 3's money vote"
+    ],
+    "cite": [
+      "701.38a"
+    ]
+  },
+  {
+    "id": "l2-45",
+    "text": "I cast Lightning Bolt targeting Grizzly Bears. How much damage does it deal?",
+    "expect": [
+      "Lightning Bolt deals 3 damage to Grizzly Bears"
+    ],
+    "notExpect": [
+      "opponent takes no damage"
+    ],
+    "cite": [
+      "120.3e"
+    ]
+  },
+  {
+    "id": "l2-46",
+    "text": "I control Tergrid, God of Fright, Grizzly Bears and Savannah Lions. My opponent controls Tarmogoyf, Ornithopter and Llanowar Elves. I have 20 life and my opponent has 10 life. I cast Pox. What happens?",
+    "expect": [
+      "You lose 7 life",
+      "Opponent loses 4 life",
+      "comes from opponent's graveyard onto the battlefield under your control (Tergrid, God of Fright)"
+    ],
+    "cite": [
+      "107.1a"
+    ]
+  },
+  {
+    "id": "l2-47",
+    "text": "I control Tergrid, God of Fright. I cast Pox in a four-player game. What happens?",
+    "expect": [
+      "You sacrifice 1 of your 1 creature (a third, rounded up)",
+      "Tergrid, God of Fright: the battlefield → your graveyard"
+    ],
+    "cite": [
+      "107.1a"
+    ]
   }
 ]

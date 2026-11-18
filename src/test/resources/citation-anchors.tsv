@@ -88,6 +88,7 @@
 117.3d	if a player has priority and
 117.4	if all players pass in succession
 117.5	each time a player would get
+117.7	if a player with priority casts
 118.1	a cost is an action or
 118.3	a player can t pay a
 118.6	some objects have no mana cost
@@ -215,6 +216,8 @@
 404.2	each graveyard is kept in a
 405.2	the stack keeps track of the
 405.5	when all players pass in succession
+405.6c	mana abilities resolve immediately if a
+406.1	the exile zone is essentially a
 406.2	to exile an object is to
 406.3	exiled cards are by default kept
 406.3a	a card exiled face down has
@@ -677,6 +680,7 @@
 702.165a	backup is a triggered ability backup
 702.166a	bargain is a static ability that
 702.166b	if a spell s controller declares
+702.166c	objects with bargain have additional abilities
 702.167a	craft represents an activated ability it
 702.168a	disguise is a static ability that
 702.168b	to cast a card using its
@@ -794,6 +798,8 @@
 723.3	preparation cards can t be cast
 723.3a	some spells and abilities cause a
 723.3c	as a permanent with a prepare
+724.1	some cards allow a player to
+724.1a	multiple player controlling effects that affect
 724.2	two cards word of command and
 724.3	only control of the player changes
 724.4	if information about an object in
@@ -801,6 +807,7 @@
 724.5a	the controller of another player can
 724.5b	the controller of another player can
 724.6	the controller of another player can
+724.8	a player who controls another player
 725.1	some cards end the turn when
 725.1a	if there are any triggered abilities
 725.1b	exile every object on the stack

@@ -90,7 +90,17 @@ internal object NewMechanicAsks {
             }
             // Bargain (702.166a): sacrifice an artifact, enchantment or token as an additional cost; the spell is then "bargained" (702.166b).
             "bargain" -> {
-                val sac = state.objects[arg]
+                fun bargainable(o: GameObject) = o.isOnBattlefield() && o.controller == player && (o.token || "Artifact" in state.typesOf(o) || "Enchantment" in state.typesOf(o))
+                // "… and bargains" with nothing named: one of the caster's artifacts, enchantments or tokens (a token first), or an unnamed one.
+                val unnamed = arg.isEmpty() || arg == "any"
+                val sac = if (unnamed) state.objects.values.filter { bargainable(it) }.sortedByDescending { it.token }.firstOrNull() else state.objects[arg]
+                if (unnamed && sac == null) {
+                    NewMech.flags(obj)["bargained"] = 1
+                    t.step("${p.subject} ${p.v("bargains", "bargain")} ${def.name}: an artifact, an enchantment or a token ${p.subject.lowercase()} ${p.v("controls", "control")} (which one wasn't said) is sacrificed as an additional cost, so the spell has been bargained.", "702.166a", "702.166b")
+                    state.outcomes += "${def.name} is bargained (702.166b)."
+                    Leftovers2Asks.applyBargained(def, obj, t)
+                    return plain
+                }
                 val ok = sac != null && sac.isOnBattlefield() && sac.controller == player && (sac.token || "Artifact" in state.typesOf(sac) || "Enchantment" in state.typesOf(sac))
                 if (!ok) {
                     t.step("Bargain lets ${p.subject.lowercase()} sacrifice an artifact, an enchantment or a token as an additional cost. ${sac?.let { "${it.name} is ${if (it.token) "a token" else "a nontoken ${state.typesOf(it).joinToString(" ").lowercase()}"}" } ?: "Nothing named"}${if (sac != null) ", none of those" else ""}, so it can't be sacrificed for bargain; the spell can be cast, but not bargained.", "702.166a", "702.166b")
@@ -101,6 +111,7 @@ internal object NewMechanicAsks {
                 t.step("${p.subject} ${p.v("bargains", "bargain")} ${def.name}, sacrificing ${sac!!.name} (${if (sac.token) "a token" else "an ${state.typesOf(sac).first { it == "Artifact" || it == "Enchantment" }.lowercase()}"}) as an additional cost; the spell has been bargained.", "702.166a", "702.166b")
                 engine?.sacrifice(player, sac.id)
                 state.outcomes += "${def.name} is bargained (${sac.name} sacrificed, 702.166b)."
+                Leftovers2Asks.applyBargained(def, obj, t)
             }
             // Emerge (702.119a): an alternative cost of sacrificing a creature, reduced by that creature's mana value (generic mana only).
             "emerge" -> {
