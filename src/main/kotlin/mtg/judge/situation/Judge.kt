@@ -150,7 +150,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             // A trigger the parser couldn't read is as invisible as text it couldn't read at all: it can never fire,
             // so the answer would say "nothing changes" while the card sat there doing its thing.
             for (a in o.def.abilities) if (a is mtg.judge.engine.TriggeredAbility && a.trigger is mtg.judge.engine.Trigger.Unknown) unparsed += a.text
-            unparsed.removeAll { mtg.judge.engine.ModernMech.handlesAbility(it) || mtg.judge.engine.PauperMech.handlesAbility(it) || mtg.judge.engine.Leftovers2Mech.handlesAbility(it) || mtg.judge.engine.Redteam3Mech.handlesAbility(it) || mtg.judge.engine.Leftovers4Mech.handlesAbility(it) || Leftovers3Asks.quiet(it, sit) }   // Amulet of Vigor, Murktide Regent (ModernMechanics.kt)
+            unparsed.removeAll { mtg.judge.engine.ModernMech.handlesAbility(it) || mtg.judge.engine.PauperMech.handlesAbility(it) || mtg.judge.engine.Leftovers2Mech.handlesAbility(it) || mtg.judge.engine.Redteam3Mech.handlesAbility(it) || mtg.judge.engine.Leftovers4Mech.handlesAbility(it) || mtg.judge.engine.Redteam4Mech.handlesAbility(it) || Leftovers3Asks.quiet(it, sit) }   // Amulet of Vigor, Murktide Regent (ModernMechanics.kt)
             if (unparsed.isNotEmpty()) state.unsupported += mtg.judge.engine.Unsupported(o.name, "Rules text not modeled: " + unparsed.distinct().joinToString(" | "))
         }
         engine.narrateLandTypeSetters()
@@ -187,7 +187,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         var lastStep: EventSpec? = null
         mtg.judge.engine.Leftovers3Mech.markSetup(state)   // what enters from here on entered "this turn" (Ocelot Pride's copies)
         curEvents = sit.events; curObjects = sit.objects
+        val r4Folded = Redteam4Asks.foldResolvingDiscards(sit.events, state) { ev -> if (ev.verb == "activate") ev.obj?.let { state.objects[it]?.def?.oracleText } else ev.card?.let { cardDef(it, state)?.oracleText } }   // Bazaar of Baghdad's discard happens as it resolves (Redteam4Asks.kt)
+        Redteam4Asks.markEnergyCasts(sit.events, state) { ev -> ev.card?.let { cardDef(it, state)?.oracleText } }   // Amped Raptor's energy cast (Redteam4Asks.kt)
         for ((i, e) in sit.events.withIndex()) {
+            if (i in r4Folded) continue
             if (e.verb == "ask") { YesNoAsks.open(e, state); deferredAsks += i to e; continue }   // answered once combat damage has been dealt
             if (e.verb == "step") { if (lastStep?.let { it.to == e.to && it.player == e.player } == true) continue; lastStep = e } else if (e.verb != "resolveAll") lastStep = null
             // Consecutive attack events are one declaration: "attacks alone", exalted and "whenever you attack" need the whole set.
@@ -218,6 +221,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             if (state.stack.isNotEmpty()) engine.resolveAll()   // abilities that triggered on combat damage or deaths
         }
         if (simulating == 0) askRange = state.outcomes.size to -1
+        Redteam4Asks.untilSourceGone(state)   // Static Prison destroyed with its trigger waiting: nothing is exiled (610.3b)
         for ((i, e) in deferredAsks) { try { understood += "Event ${i + 1}: " + describeEvent(e, state); apply(e, state, engine) } catch (ex: JudgeException) { state.unsupported += mtg.judge.engine.Unsupported("event ${i + 1} (ask)", ex.message ?: "failed") } }
         YesNoAsks.finishAsked(state, engine)
         if (simulating == 0 && askRange.first >= 0) askRange = askRange.first to state.outcomes.size
@@ -1061,6 +1065,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         LeftoversAsks.describe(e, state)?.let { return it }
         LifeDamageAsks.describe(e, state)?.let { return it }
         Leftovers2Asks.describe(e, state)?.let { return it }
+        Redteam4Asks.describe(e)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") PolicyAsks.describe(e, state)?.let { return it }
@@ -2079,7 +2084,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         ?: state.outcomes.firstOrNull { it.endsWith(" is countered.") }?.removeSuffix(" is countered.")
                     val counteredSearches = countered?.let { n -> state.objects.values.firstOrNull { it.def.name == n }?.def?.oracleText?.contains("search", true) == true }
                     val searched = state.trace.steps.any { Regex("""(?i)\bsearch(?:es)? (?:your|their|his|her) library""").containsMatchIn(it.text) && !it.text.contains("countered") }
+                    // Sowing Mycospawn: the search is a "when you cast this spell" trigger, which resolves on its own whether or not the spell is countered (113.7a).
+                    val castTriggerSearch = countered?.let { n -> state.objects.values.firstOrNull { it.def.name == n }?.def?.oracleText?.let { t -> Regex("""(?i)when you cast (?:this spell|this card|~|${Regex.escape(n)}), [^.]*\bsearch""").containsMatchIn(t) } } == true
                     state.outcomes += when {
+                        castTriggerSearch -> "Yes. The search is $countered's \"when you cast\" triggered ability, which went on the stack above the spell and resolves on its own: countering $countered doesn't touch it (113.7a), so ${p.subject.lowercase()} still ${p.v("searches", "search")}."
                         counteredSearches == true -> "No. The search was part of $countered's ${if (state.outcomes.any { it.startsWith("$countered's triggered ability is countered") }) "triggered ability" else "effect"}, and countering it removes it from the stack with none of its effects happening (701.6a); ${p.subject.lowercase()} ${p.v("doesn't", "don't")} search. ${if (state.outcomes.any { it.startsWith("$countered's triggered ability is countered") }) "$countered itself stays on the battlefield, since only the ability was countered, and it would trigger again if it entered again." else ""}".trim()
                         searched -> "Yes: the search happens as described above (701.23a)."
                         else -> "Nothing described here searches a library, so there is no search to ${p.v("get", "get")}."
@@ -2398,6 +2406,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("r3:") == true) return Redteam3Asks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("x4:") == true) return Exam4Asks.answer(e, state, engine)
                 if (e.to?.startsWith("l4:") == true) return Leftovers4Asks.answer(e, state, engine)
+                if (e.to?.startsWith("r4:") == true) return Redteam4Asks.answer(e, state, engine) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {

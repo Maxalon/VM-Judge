@@ -321,6 +321,10 @@ class GameState(
     val commanderPending = mutableMapOf<String, Zone>()
     /** Players whose discard to a spell was said outright ("they take my Thalia"), so an unknown hand needn't be asked for. */
     val explicitDiscards = mutableSetOf<String>()
+    /** Cards named as discarded to a cast or activated ability that discards as it resolves (Bazaar of Baghdad), by player: discarded then (608.2c). */
+    val r4PendingDiscards = mutableMapOf<String, MutableList<String>>()
+    /** Cards to be cast for energy equal to their mana value (Amped Raptor), by name. */
+    val r4EnergyCasts = mutableSetOf<String>()
     /** Spell Queller: the card a permanent exiled from the stack, by the permanent's id, for "the exiled card's owner may cast it" when it leaves. */
     val quelled = mutableMapOf<String, String>()
     /** The game's turn number, when the situation said so. */

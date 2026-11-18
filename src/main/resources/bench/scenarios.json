@@ -88278,5 +88278,713 @@
     "notExpect": [
       "That spell is exiled instead"
     ]
+  },
+  {
+    "id": "r4-1",
+    "text": "I activate Walking Ballista removing a +1/+1 counter targeting my opponent's creature with hexproof. What happens?",
+    "expect": [
+      "Walking Ballista's ability can't target a creature with hexproof.",
+      "no cost is paid",
+      "never goes on the stack"
+    ],
+    "notExpect": [
+      "counter removed as the cost"
+    ],
+    "cite": [
+      "602.2b",
+      "601.2c"
+    ]
+  },
+  {
+    "id": "r4-2",
+    "text": "My Walking Ballista has two +1/+1 counters. I activate it targeting my opponent's Slippery Bogle. What happens?",
+    "expect": [
+      "Walking Ballista's ability can't target Slippery Bogle.",
+      "no cost is paid"
+    ],
+    "notExpect": [
+      "counter removed as the cost",
+      "Slippery Bogle has 1 damage"
+    ],
+    "cite": [
+      "602.2b",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "r4-3",
+    "text": "I control Bazaar of Baghdad and Narcomoeba is in my hand. I activate Bazaar of Baghdad and discard Narcomoeba. Does Narcomoeba return to the battlefield?",
+    "expect": [
+      "You draw 2 cards.",
+      "Narcomoeba is discarded as part of Bazaar of Baghdad's resolution",
+      "Narcomoeba's ability doesn't trigger"
+    ],
+    "cite": [
+      "608.2c",
+      "603.3",
+      "603.2"
+    ]
+  },
+  {
+    "id": "r4-4",
+    "text": "I cast Faithless Looting and discard Fiery Temper. What happens?",
+    "expect": [
+      "You draw 2 cards.",
+      "Fiery Temper is discarded as part of Faithless Looting's resolution",
+      "exiled instead of going to the graveyard (madness)",
+      "You discard 1 card."
+    ],
+    "cite": [
+      "608.2c",
+      "603.3",
+      "702.35a"
+    ]
+  },
+  {
+    "id": "r4-5",
+    "text": "I crew Heart of Kiran with a 2/2 that has a +1/+1 counter on it. Does it become a creature?",
+    "expect": [
+      "it crewed Heart of Kiran",
+      "Heart of Kiran is a 4/4 creature until end of turn."
+    ],
+    "cite": [
+      "702.122a"
+    ]
+  },
+  {
+    "id": "r4-6",
+    "text": "I crew Heart of Kiran with two 2/2 creatures. Does it become a creature?",
+    "expect": [
+      "total power 4, crew 3",
+      "Heart of Kiran is a 4/4 creature until end of turn."
+    ],
+    "cite": [
+      "702.122a"
+    ]
+  },
+  {
+    "id": "r4-7",
+    "text": "I control two 2/2 creatures. I crew Esika's Chariot by tapping both. Does it become a creature?",
+    "expect": [
+      "total power 4, crew 4",
+      "Esika's Chariot is a 4/4 creature until end of turn."
+    ],
+    "cite": [
+      "702.122a"
+    ]
+  },
+  {
+    "id": "r4-8",
+    "text": "I crew Heart of Kiran with a 2/2. Does it become a creature?",
+    "expect": [
+      "Heart of Kiran can't be crewed by a 2/2 creature alone (power 2 < crew 3)."
+    ],
+    "notExpect": [
+      "Heart of Kiran is a 4/4 creature"
+    ],
+    "cite": [
+      "702.122a"
+    ]
+  },
+  {
+    "id": "r4-9",
+    "text": "My Slippery Bogle is enchanted with Rancor and two Ethereal Armors. What are its power and toughness?",
+    "expect": [
+      "Slippery Bogle is 9/7"
+    ],
+    "notExpect": [
+      "the battlefield → your graveyard"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-10",
+    "text": "My Heartfire Hero has two +1/+1 counters. I cast Monstrous Rage targeting it. Then my opponent casts Fatal Push targeting Heartfire Hero. How much damage does Heartfire Hero deal to each opponent?",
+    "expect": [
+      "7: opponent takes 7 damage in all."
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "r4-11",
+    "text": "I cast three instants in my first main phase and have two Arclight Phoenixes in my graveyard. What happens at the beginning of combat?",
+    "expect": [
+      "Two Arclight Phoenixes: your graveyard → the battlefield."
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "r4-12",
+    "text": "Two Arclight Phoenixes are in my graveyard. I cast two instants this turn. My combat phase begins. What happens?",
+    "expect": [
+      "Arclight Phoenix stays in your graveyard: its ability triggers only if 3 or more instant and sorcery spells were cast this turn, and 2 were (603.4)"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "r4-13",
+    "text": "My opponent's Mausoleum Wanderer is a 3/3. They sacrifice it to counter my sorcery. How much do I have to pay?",
+    "expect": [
+      "X is its last known power, 3, so paying {3} keeps the spell from being countered"
+    ],
+    "notExpect": [
+      "stops the draw"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "r4-14",
+    "text": "I control Fires of Invention. Can I cast a creature with flash during my opponent's turn?",
+    "expect": [
+      "No: a creature with flash can't be cast: Fires of Invention lets you cast spells only during your own turn"
+    ],
+    "cite": [
+      "101.2"
+    ]
+  },
+  {
+    "id": "r4-15",
+    "text": "I control Fires of Invention and three lands. Can I cast a four mana spell without paying its mana cost?",
+    "expect": [
+      "Fires of Invention doesn't let you cast a 4 mana spell free: its mana value, 4, is more than your 3 lands"
+    ],
+    "cite": [
+      "118.9"
+    ]
+  },
+  {
+    "id": "r4-16",
+    "text": "I control Fires of Invention and five lands. I have cast two spells this turn. Can I cast Cavalier of Flame?",
+    "expect": [
+      "No: Cavalier of Flame can't be cast: Fires of Invention allows only 2 spells a turn"
+    ],
+    "notExpect": [
+      "Yes: Cavalier of Flame can be cast"
+    ],
+    "cite": [
+      "101.2"
+    ]
+  },
+  {
+    "id": "r4-17",
+    "text": "I cast Sowing Mycospawn and my opponent counters it with Counterspell. Do I still get to search for a land?",
+    "expect": [
+      "Yes. The search is Sowing Mycospawn's \"when you cast\" triggered ability"
+    ],
+    "notExpect": [
+      "No. The search was part of"
+    ],
+    "cite": [
+      "113.7a"
+    ]
+  },
+  {
+    "id": "r4-18",
+    "text": "My opponent controls Rest in Peace. Can I cast Phlage with escape?",
+    "expect": [
+      "No: Phlage, Titan of Fire's Fury can't be cast with escape while Rest in Peace is on the battlefield"
+    ],
+    "notExpect": [
+      "Yes: you can cast"
+    ],
+    "cite": [
+      "702.138a",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "r4-19",
+    "text": "I cast Amped Raptor from my hand with no energy. Its trigger exiles Lightning Bolt. Can I cast Lightning Bolt, and how much energy do I have left?",
+    "expect": [
+      "You cast Lightning Bolt by paying 1 energy instead of its mana cost; 1 energy left."
+    ],
+    "cite": [
+      "118.9"
+    ]
+  },
+  {
+    "id": "r4-20",
+    "text": "I cast Amped Raptor from my hand with no energy and its trigger exiles Primeval Titan. Can I cast Primeval Titan?",
+    "expect": [
+      "No: Primeval Titan can't be cast: paying for it takes 6 energy (its mana value) and you have only 2"
+    ],
+    "notExpect": [
+      "Primeval Titan enters the battlefield."
+    ],
+    "cite": [
+      "118.9",
+      "118.3"
+    ]
+  },
+  {
+    "id": "r4-21",
+    "text": "My Amped Raptor is flickered with Ephemerate. Does it exile cards from my library?",
+    "expect": [
+      "Amped Raptor exiles nothing: it wasn't cast from your hand"
+    ],
+    "cite": [
+      "608.2c"
+    ]
+  },
+  {
+    "id": "r4-22",
+    "text": "My opponent casts Static Prison. With its enters trigger on the stack I destroy Static Prison. What happens to my creature?",
+    "expect": [
+      "Nothing is exiled: Static Prison left the battlefield before its trigger resolved"
+    ],
+    "cite": [
+      "610.3b"
+    ]
+  },
+  {
+    "id": "r4-23",
+    "text": "Can I choose the same mode twice for Kozilek's Command?",
+    "expect": [
+      "No: Kozilek's Command doesn't say \"you may choose the same mode more than once\""
+    ],
+    "cite": [
+      "700.2d"
+    ]
+  },
+  {
+    "id": "r4-24",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I have cast four spells this turn and I cast Grapeshot. How many copies do I get, and do I pay extra for the copies?",
+    "expect": [
+      "No: the copies aren't cast (707.10)",
+      "Storm puts 4 copies of Grapeshot on the stack"
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "r4-25",
+    "text": "I activate Goblin Charbelcher. The first card revealed is Sink into Stupor, a modal double-faced card with a land on its back face. Does the reveal stop there?",
+    "expect": [
+      "No: in the library Sink into Stupor has only its front face's characteristics (712.6a)"
+    ],
+    "cite": [
+      "712.6a"
+    ]
+  },
+  {
+    "id": "r4-26",
+    "text": "Urza's Saga gets its third lore counter and I have no artifact cards with mana cost 0 or 1 in my library. What happens to Urza's Saga?",
+    "expect": [
+      "The search finds nothing",
+      "Urza's Saga: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "701.23b",
+      "715.4"
+    ]
+  },
+  {
+    "id": "r4-27",
+    "text": "I cast Through the Breach putting Emrakul, the Aeons Torn onto the battlefield. My opponent exiles it with Solitude before combat. Do I get an extra turn or annihilator?",
+    "expect": [
+      "No: Emrakul was exiled before combat, so it never attacks — no annihilator (702.86a)",
+      "\"When you cast this spell\" ability doesn't trigger"
+    ],
+    "notExpect": [
+      "When Emrakul attacks, annihilator 6 triggers"
+    ],
+    "cite": [
+      "702.86a",
+      "400.7"
+    ]
+  },
+  {
+    "id": "r4-28",
+    "text": "I activate Wrenn and Six's +1 and return Wasteland to my hand. I already played a land this turn. Can I play Wasteland?",
+    "expect": [
+      "No: you can't play Wasteland: you already played 1 land this turn",
+      "Wasteland: your graveyard → your hand."
+    ],
+    "notExpect": [
+      "Wasteland: the battlefield → your hand."
+    ],
+    "cite": [
+      "305.2a"
+    ]
+  },
+  {
+    "id": "r4-29",
+    "text": "Can I cast Flare of Denial by sacrificing a blue creature token?",
+    "expect": [
+      "No: Flare of Denial's alternative cost is sacrificing a nontoken blue creature"
+    ],
+    "notExpect": [
+      "the spell isn't countered"
+    ],
+    "cite": [
+      "118.9"
+    ]
+  },
+  {
+    "id": "r4-30",
+    "text": "Can I cast Flare of Denial by sacrificing my Psychic Frog?",
+    "expect": [
+      "Yes: sacrificing Psychic Frog pays Flare of Denial's alternative cost"
+    ],
+    "cite": [
+      "118.9"
+    ]
+  },
+  {
+    "id": "r4-31",
+    "text": "Can I cast Hidden Strings untapping the same Lotus Field twice?",
+    "expect": [
+      "No: Hidden Strings's second target is \"another target\""
+    ],
+    "notExpect": [
+      "Yes: you can cast Hidden Strings twice"
+    ],
+    "cite": [
+      "115.3"
+    ]
+  },
+  {
+    "id": "r4-32",
+    "text": "Can I activate ninjutsu returning a blocked creature?",
+    "expect": [
+      "No: ninjutsu returns an unblocked attacking creature as part of its cost (702.49a)."
+    ],
+    "cite": [
+      "702.49a"
+    ]
+  },
+  {
+    "id": "r4-33",
+    "text": "At a PTQ sealed deck, I registered 40 cards but I'm playing 41 because I forgot to list a Forest. What is the penalty?",
+    "expect": [
+      "Decklist Problem, Game Loss, with the list corrected to match the deck (IPG 3.4)",
+      "Head Judge may decide not to issue it"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-34",
+    "text": "Between games at an RCQ sealed event I find that one card from my registered sideboard is missing. What happens?",
+    "expect": [
+      "No penalty: a card missing from your registered sideboard is noted by the judge and nothing more (IPG 3.5)."
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-35",
+    "text": "My Limited deck has 38 cards at a Competitive REL event. What happens?",
+    "expect": [
+      "Limited decks need at least 40 cards (MTR 7.1)",
+      "Decklist Problem, Game Loss"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-36",
+    "text": "At an RCQ, my opponent and I disagree about my life total because the die I used to track it was bumped. What happens?",
+    "expect": [
+      "At Competitive REL a die isn't an allowed way to track a life total (MTR 4.1)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-37",
+    "text": "At a PTQ a judge shuffled my opponent's deck and a card was flipped face up. What happens?",
+    "expect": [
+      "must be randomized again (MTR 3.10)",
+      "the player isn't penalized"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-38",
+    "text": "At Competitive REL my opponent takes a very long time each turn with a complex board. What is the penalty?",
+    "expect": [
+      "Slow Play, Warning"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-39",
+    "text": "At an RCQ draft, can I look through my drafted cards between picks?",
+    "expect": [
+      "Not at Competitive or Professional REL: players may not look at their drafted cards between or during picks"
+    ],
+    "notExpect": [
+      "moving their head"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-40",
+    "text": "At a Competitive REL sealed event, can I add Snow-Covered Forests to my deck?",
+    "expect": [
+      "snow-covered basic lands and Wastes may not be added (MTR 7.2)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-41",
+    "text": "At a Competitive REL sealed event, can I change my deck between matches without registering the change?",
+    "expect": [
+      "No: at Competitive REL each match starts with the deck you registered (MTR 7.3)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-42",
+    "text": "Can I return a creature token to pay the beam me up cost of Boarding Action?",
+    "expect": [
+      "Yes: a creature token is a creature you control, so returning it to your hand pays the beam me up cost (702.196a)."
+    ],
+    "cite": [
+      "702.196a",
+      "704.5d"
+    ]
+  },
+  {
+    "id": "r4-43",
+    "text": "My opponent casts Memory Trap. With its enters trigger on the stack I destroy Memory Trap. What happens to my creature?",
+    "expect": [
+      "Nothing is exiled: Memory Trap left the battlefield before its trigger resolved"
+    ],
+    "cite": [
+      "610.3b"
+    ]
+  },
+  {
+    "id": "r4-44",
+    "text": "Gray and Adira, Forever Joined creates a token copy of my legendary creature. Does the legend rule apply?",
+    "expect": [
+      "No: Gray and Adira, Forever Joined's copy \"isn't legendary\" (707.9b)"
+    ],
+    "cite": [
+      "707.9b",
+      "704.5j"
+    ]
+  },
+  {
+    "id": "r4-45",
+    "text": "My Emergency Phytomedic enters prepared. Can I cast Seed Suture twice?",
+    "expect": [
+      "No, only once each time it becomes prepared"
+    ],
+    "cite": [
+      "723.3c"
+    ]
+  },
+  {
+    "id": "r4-46",
+    "text": "My prepared creature leaves the battlefield. Can I still cast its prepare spell?",
+    "expect": [
+      "No: the copy of the prepare spell stays in exile only while the prepared permanent remains on the battlefield (723.3c)"
+    ],
+    "cite": [
+      "723.3c"
+    ]
+  },
+  {
+    "id": "r4-47",
+    "text": "Can I tap a creature that came under my control this turn to activate a station ability?",
+    "expect": [
+      "Yes: station taps another untapped creature you control as its cost (702.184a)."
+    ],
+    "cite": [
+      "702.184a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "r4-48",
+    "text": "I control a 2/2. I cast Rally the Peasants and then cast it again with flashback the same turn. How much power do my creatures get?",
+    "expect": [
+      "A 2/2 creature is 6/2 until end of turn.",
+      "Rally the Peasants is exiled (flashback)."
+    ],
+    "cite": [
+      "702.34a"
+    ]
+  },
+  {
+    "id": "r4-49",
+    "text": "I cast Fireblast by sacrificing two Mountains. Can my opponent's Spellstutter Sprite counter it with two Faeries?",
+    "expect": [
+      "No: Fireblast's mana value is 6 (from its mana cost {4}{R}{R}, even though it was cast without paying it, 118.9c)"
+    ],
+    "cite": [
+      "118.9c"
+    ]
+  },
+  {
+    "id": "r4-50",
+    "text": "I cast Energize from my graveyard with beam me up by returning my creature to my hand. My opponent counters it. Where does Energize go?",
+    "expect": [
+      "Energize: the stack → exile (beam me up).",
+      "Energize is in exile."
+    ],
+    "notExpect": [
+      "you control none"
+    ],
+    "cite": [
+      "702.196a"
+    ]
+  },
+  {
+    "id": "r4-51",
+    "text": "I control Static Prison exiling my opponent's creature and I have no energy. What happens at the beginning of my first main phase?",
+    "expect": [
+      "Static Prison is sacrificed.",
+      "The card Static Prison exiled returns to the battlefield under its owner's control (610.3, 610.3c)."
+    ],
+    "cite": [
+      "610.3"
+    ]
+  },
+  {
+    "id": "r4-52",
+    "text": "Can the cast trigger of Devourer of Destiny target my opponent's Urza's Saga?",
+    "expect": [
+      "No: the ability targets a permanent that's one or more col",
+      "Urza's Saga is colo"
+    ],
+    "cite": [
+      "115.1"
+    ]
+  },
+  {
+    "id": "r4-53",
+    "text": "I control two Ruby Medallions. How much does Lightning Bolt cost?",
+    "expect": [
+      "reductions come off generic mana only, so the coloured part of {R} is still paid in full (601.2f)"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "r4-54",
+    "text": "I activate Goblin Charbelcher targeting my opponent and reveal ten nonland cards and then a Mountain. How much damage is dealt?",
+    "expect": [
+      "20: Goblin Charbelcher deals 20 damage (10 nonland cards revealed, doubled because the land was a Mountain)."
+    ],
+    "cite": [
+      "701.20a"
+    ]
+  },
+  {
+    "id": "r4-55",
+    "text": "I control Dryad of the Ilysian Grove and cast Explore. How many lands can I play this turn?",
+    "expect": [
+      "Dryad of the Ilysian Grove adds 1, and an effect this turn adds 1 more"
+    ],
+    "notExpect": [
+      "adds 2)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-56",
+    "text": "Primeval Titan attacks. Can its trigger search for Boseiju, Who Endures?",
+    "expect": [
+      "Yes: Boseiju, Who Endures is a land card"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "r4-57",
+    "text": "At my end step I sacrifice Leyline Binding to Enigmatic Incarnation. What mana value creature can I search for, and what happens to the card Leyline Binding exiled?",
+    "expect": [
+      "searches for a creature card with mana value exactly 7 (1 + Leyline Binding's 6)",
+      "The card Leyline Binding exiled returns to the battlefield"
+    ],
+    "cite": [
+      "202.3",
+      "610.3"
+    ]
+  },
+  {
+    "id": "r4-58",
+    "text": "I activate Thespian's Stage to become a copy of my Lotus Field. Do I have to sacrifice two lands?",
+    "expect": [
+      "No: Thespian's Stage doesn't enter the battlefield by becoming a copy"
+    ],
+    "cite": [
+      "603.6a",
+      "707.2"
+    ]
+  },
+  {
+    "id": "r4-59",
+    "text": "I control Krark-Clan Shaman and Ornithopter. I sacrifice Ornithopter to Krark-Clan Shaman. Does Krark-Clan Shaman deal damage to itself?",
+    "expect": [
+      "Yes: Krark-Clan Shaman has 1 damage marked.",
+      "Krark-Clan Shaman: the battlefield → your graveyard."
+    ],
+    "cite": []
+  },
+  {
+    "id": "r4-60",
+    "text": "My opponent casts Moment's Peace from their hand. With it on the stack, can I use Tormod's Crypt to stop them from casting it with flashback later?",
+    "expect": [
+      "Not yet: while it's on the stack, the spell isn't in the graveyard",
+      "its owner can respond by casting it with flashback"
+    ],
+    "cite": [
+      "608.2n",
+      "702.34a"
+    ]
+  },
+  {
+    "id": "r4-61",
+    "text": "Can Mystical Teachings find Chainer's Edict?",
+    "expect": [
+      "No: Mystical Teachings finds only an instant card or a card with flash, and Chainer's Edict is a Sorcery without flash"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "r4-62",
+    "text": "I have Mnemonic Wall and Ghostly Flicker and infinite mana. Can I shortcut the loop of flickering Mnemonic Wall?",
+    "expect": [
+      "a loop is a tournament shortcut, so you announce the exact number of iterations"
+    ],
+    "cite": [
+      "733.2a"
+    ]
+  },
+  {
+    "id": "r4-63",
+    "text": "My creature is enchanted with Captain's Tutelage and my opponent returns my creature to my hand. What happens to Captain's Tutelage?",
+    "expect": [
+      "Captain's Tutelage: the battlefield → your graveyard.",
+      "A creature: the battlefield → your hand."
+    ],
+    "cite": [
+      "704.5m"
+    ]
+  },
+  {
+    "id": "r4-64",
+    "text": "My creature enchanted with Ferocity of the Hunt dies. What happens to the creature and the Aura?",
+    "expect": [
+      "Ferocity of the Hunt: the battlefield → your graveyard.",
+      "A creature: your graveyard → the battlefield."
+    ],
+    "cite": [
+      "603.10a"
+    ]
   }
 ]

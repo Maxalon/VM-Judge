@@ -228,6 +228,7 @@
 401.5	some effects tell a player to
 402.2	each player has a maximum hand
 404.2	each graveyard is kept in a
+405.1	when a spell is cast the
 405.2	the stack keeps track of the
 405.5	when all players pass in succession
 405.6c	mana abilities resolve immediately if a

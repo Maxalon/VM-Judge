@@ -71,6 +71,7 @@ internal object Policy {
             "ooo" -> outOfOrder(x, r)
             "loop" -> loop(x, r)
             "p2" -> Policy2.rule(x, r)
+            "r4" -> Redteam4Asks.policy(x, r)   // Limited at Competitive REL (Redteam4Asks.kt)
             else -> generic(x, r)
         }
         // "Do I get a penalty?": the answer says so before the ruling.

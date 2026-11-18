@@ -140,6 +140,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 // Underworld Breach gives it escape: the cast from the graveyard pays for it (CedhMech.breachPay).
                 if (cost == null && mtg.judge.engine.CedhMech.breachEscapeCost(state, player, def) != null) { if (obj.zone != Zone.GRAVEYARD) obj.zone = Zone.GRAVEYARD; return plain }
                 if (cost == null) { state.outcomes += "${def.name} doesn't have escape, so it can't be cast from the graveyard."; return plain }
+                if (Redteam4Asks.graveyardHateStopsEscape(state, player, def)) return e.copy(verb = "statecheck", to = null)   // Rest in Peace (Redteam4Asks.kt)
                 val gyCard = if (obj.zone == Zone.GRAVEYARD) obj else { obj.zone = Zone.GRAVEYARD; obj }
                 val need = Regex("""(?i)exile (\w+) other cards? from your graveyard""").find(def.oracleText)?.groupValues?.get(1)?.let { numberWords[it.lowercase()] ?: it.toIntOrNull() } ?: 0
                 val others = state.objects.values.filter { it.zone == Zone.GRAVEYARD && it.owner == player && it !== gyCard }

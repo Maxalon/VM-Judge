@@ -219,6 +219,7 @@ internal object LegacyMech {
         val states = target.def.abilities.filterIsInstance<TriggeredAbility>().mapNotNull { (it.trigger as? Trigger.NoCountersOnThis)?.kind }.filter { (o.counters[it] ?: 0) == 0 }
         state.trace.step("${o.printedDef.name} becomes a copy of ${target.name}: it takes ${target.name}'s copiable values${if (keep) " except that it also has the ability that made it a copy" else ""}. Counters aren't copiable values, so it has none of ${target.name}'s counters${if (states.isNotEmpty()) ": it's a ${target.name} with no ${states.joinToString(" or ")} counters" else ""}.", "707.2", *(if (keep) arrayOf("707.9b") else emptyArray()), *(if (states.isNotEmpty()) arrayOf("122.1", "603.8") else emptyArray()))
         state.outcomes += "${o.printedDef.name} is now a copy of ${target.name}${if (states.isNotEmpty()) " with no ${states.joinToString(" or ")} counters on it" else ""}."
+        Redteam4Mech.becameCopyNote(state, o.printedDef.name, target)   // Thespian's Stage copying Lotus Field: it didn't enter, so no sacrifice (Redteam4Mechanics.kt)
         return states
     }
 

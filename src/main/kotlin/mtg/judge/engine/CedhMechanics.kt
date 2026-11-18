@@ -327,7 +327,7 @@ internal object CedhMech {
         val o = item.source; val here = o.isOnBattlefield()
         val x = (if (here) o.power else o.lkiPower ?: o.power ?: o.def.power)?.coerceAtLeast(0) ?: return effect
         e.state.trace.step("X is ${o.name}'s power, checked as the ability resolves: ${if (here) "it's $x" else "${o.name} has left the battlefield, so its power as it last existed there is used: $x"}. The ability exists on the stack independently of its source, so it still resolves.", "608.2h", "113.7a")
-        if (!here) e.state.outcomes += "${o.name}'s trigger still resolves without it: X is its last known power, $x, so paying {$x} stops the draw."
+        if (!here) e.state.outcomes += "${o.name}'s ${if (item.kind == StackKind.TRIGGERED) "trigger" else "ability"} still resolves without it: X is its last known power, $x, so paying {$x} ${if (effect.effect is Effect.Counter) "keeps the spell from being countered" else "stops the draw"}."
         return effect.copy(cost = "{$x}")
     }
 

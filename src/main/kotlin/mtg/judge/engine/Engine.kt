@@ -60,6 +60,8 @@ class Engine(val state: GameState) {
         }
         if (EdhMech.castBlocked(state, playerId, card)) return null   // Ranger-Captain of Eos: no noncreature spells this turn
         if (CoverageMech.castBlocked(state, playerId, card)) return null
+        if (Redteam4Mech.energyCast(this, playerId, card)) return null   // Amped Raptor's cast for energy (Redteam4Mechanics.kt)
+        if (Redteam4Mech.castBlocked(this, playerId, card)) return null   // Fires of Invention: only on your turn, two spells a turn (Redteam4Mechanics.kt)
         if (MoreEffects2.castBlocked(this, playerId, card)) return null   // Lavinia, Azorius Renegade (MoreEffects2.kt)   // a legendary sorcery with no legendary creature or planeswalker (205.4e)
         if (LegacyMech.altCostRefused(state, playerId, card, alternative, flashback)) return null   // 118.9, 118.9a
         // Beam me up (702.196a): cast from the graveyard returning a creature its caster controls to its owner's hand (Redteam3Mechanics.kt).
@@ -564,7 +566,7 @@ class Engine(val state: GameState) {
         AuditMech.splitCastNote(state, item)
         wardTriggers(item)
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
-        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect)) && !Leftovers3Mech.handles(unparsedText(item.effect)) && !Leftovers4Mech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
+        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect)) && !Leftovers3Mech.handles(unparsedText(item.effect)) && !Leftovers4Mech.handles(unparsedText(item.effect)) && !Redteam4Mech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         // A spell at a player ("any target") can be sent to Spellskite too, it being a creature.
         val skiteCouldTake = item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" } || (item.targets.any { it is Ref.Player } && Regex("""(?i)\bany target\b""").containsMatchIn(card.oracleText))
         if (skiteCouldTake) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
@@ -978,6 +980,7 @@ class Engine(val state: GameState) {
         // first, so Llanowar Elves made mana the turn it came down.
         if (ability.cost.contains("{T}") && obj.tapped == true) { trace.step("${obj.name} is already tapped, so its {T} ability can't be activated.", "118.3", "701.26a"); state.outcomes += "${obj.name}'s {T} ability can't be activated (already tapped)."; return null }
         if (ability.cost.contains("{T}") && state.isCreature(obj) && obj.summoningSick == true && !obj.has("haste")) { trace.step("${obj.name} hasn't been under ${state.player(playerId).possessive} control since the turn began and doesn't have haste, so its {T} ability can't be activated.", "302.6"); state.outcomes += "${obj.name}'s {T} ability can't be activated (summoning sickness)."; return null }
+        if (Redteam4Mech.illegalTargetBeforeCosts(this, obj, playerId, ability, targets)) return null   // Walking Ballista at a hexproof creature: no counter comes off (Redteam4Mechanics.kt)
         if (!paySacrificeCosts(playerId, obj, ability, choice)) return null
         MoreEffects2.payDiscardHand(this, playerId, ability)   // Lion's Eye Diamond's "Discard your hand" (MoreEffects2.kt)
         Leftovers4Mech.discardHandCost(this, playerId, obj, ability)   // why the hand goes first, and "activate only as an instant" (Leftovers4Mechanics.kt)
@@ -1151,7 +1154,7 @@ class Engine(val state: GameState) {
         targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, playerId, item.id)) } }
         if (wasOnBattlefield) onEvent(GameEvent.AbilityActivated(obj, playerId))
         state.player(playerId).let { p -> trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s ability (${ability.cost})${describeTargets(targets)}. It goes on top of the stack.", "602.2a", "405.2") }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect)) && !Redteam4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -3018,7 +3021,7 @@ class Engine(val state: GameState) {
         splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect)) && !Redteam4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -3144,6 +3147,8 @@ class Engine(val state: GameState) {
         }
     }
 
+    /** For Redteam4Mechanics.kt: an effect it has worked out, applied as the engine applies any other. */
+    internal fun applyEffectR4(effect: Effect, item: StackItem) = applyEffect(effect, item)
     private fun applyEffect(effect: Effect, item: StackItem) {
         if (MoreEffects2.apply(this, effect, item)) return   // "target opponent draws a card" (MoreEffects2.kt)
         if (MoreEffects3.apply(this, effect, item)) return   // once each turn, copy that spell, untap up to three lands (MoreEffects3.kt)
@@ -4236,6 +4241,7 @@ class Engine(val state: GameState) {
                 else trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${missing.joinToString(" or ") { "an $it" }}, so ${item.source.name} adds only what it says first, not ${effect.text}.", "605.1a")
             }
             is Effect.Narrated -> {
+                if (Redteam4Mech.narrated(this, effect.text, item)) return   // Heartfire Hero's death damage from its last known power (Redteam4Mechanics.kt)
                 if (Leftovers4Mech.narrated(this, effect.text, item)) return   // The Caretaker's free cast of the card it exiled (Leftovers4Mechanics.kt)
                 if (Leftovers3Mech.narrated(this, effect.text, item)) return   // Lethal Vapors destroying itself twice (Leftovers3Mechanics.kt)
                 if (Leftovers2Mech.narrated(this, effect.text, item)) return   // Amalia exploring with Wildgrowth Walker (Leftovers2Mechanics.kt)
@@ -4364,6 +4370,7 @@ class Engine(val state: GameState) {
                 state.outcomes += "${sp.source.name} can't be countered (${item.source.name})."
             } }
             is Effect.Unparsed -> {
+                if (Redteam4Mech.unparsed(this, effect.text, item)) return   // Arclight Phoenix's "if you've cast three or more instant and sorcery spells this turn" (Redteam4Mechanics.kt)
                 if (Leftovers4Mech.resolveText(this, effect.text, item)) return   // "you take the initiative" (Leftovers4Mechanics.kt)
                 if (Leftovers3Mech.resolve(this, effect.text, item)) return   // activation instructions, Grimoire, Taunt (Leftovers3Mechanics.kt)
                 if (Leftovers2Mech.resolve(this, effect.text, item)) return   // Ouroboroid, energy, Pox, Oblivion Stone (Leftovers2Mechanics.kt)
@@ -4400,7 +4407,9 @@ class Engine(val state: GameState) {
     private fun applyDiscard(effect: Effect.Discard, item: StackItem) {
         state.discardCause = item.controller
         for (p in resolvePlayers(effect.who, item)) {
-                val n = if (effect.x) (item.x ?: 0) else effect.count
+                val named = Redteam4Mech.discardNamed(this, p, item)   // "I activate Bazaar and discard Narcomoeba": the cards said, discarded now (Redteam4Mechanics.kt)
+                val n = (if (effect.x) (item.x ?: 0) else effect.count) - named
+                if (named > 0 && n <= 0) continue
                 if (effect.x && item.x == null) state.clarifications += Clarification("${item.source.name}'s X", "${item.source.name} makes a player discard X cards; what was X? (assuming 0)")
                 val hand = p.handSize
                 // "They Hymn me and I have Bolt and Bears in hand": every card the hand is known to hold goes when the count covers it.
@@ -5742,7 +5751,10 @@ class Engine(val state: GameState) {
         val altNote = Regex("""(?i)you may ([^.]*?) rather than pay this spell's mana cost""").find(card.oracleText)?.let { a ->
             if (tax > 0) " Cast for its alternative cost (${a.groupValues[1].trim()}) it still pays the extra {${tax}}: a tax applies to whatever cost is being paid (601.2f)." else ""
         } ?: ""
-        return "${card.name} costs $printed ${if (tax < 0) "minus" else "plus"} {${kotlin.math.abs(tax)}} (${parts.joinToString("; ")}) — $total mana in all." + altNote +
+        // Two Ruby Medallions and Lightning Bolt: a generic reduction bigger than the generic part leaves the coloured symbols to pay (601.2f).
+        val genericPrinted = Regex("""\{(\d+)\}""").findAll(printed).sumOf { it.groupValues[1].toInt() }
+        val wastedNote = if (tax < 0 && genericPrinted < -tax) " Only {$genericPrinted} of the {${-tax}} reduction can be used: reductions come off generic mana only, so the coloured part of $printed is still paid in full (601.2f)." else ""
+        return "${card.name} costs $printed ${if (tax < 0) "minus" else "plus"} {${kotlin.math.abs(tax)}} (${parts.joinToString("; ")}) — $total mana in all." + wastedNote + altNote +
             (if (avail != null) if (avail >= total) " ${p.subject} ${p.v("has", "have")} $avail available, enough." else " ${p.subject} ${p.v("has", "have")} only $avail available, so it can't be cast." else "")
     }
 

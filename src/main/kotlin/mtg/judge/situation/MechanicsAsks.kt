@@ -68,6 +68,13 @@ internal object MechanicsAsks {
         if (etbTrig != null) tr.step("${d.name} enters the battlefield, so its \"when ~ enters\" ability triggers: it doesn't matter that it was put there rather than cast.", "603.6a", "603.2")
         val etbText = etbTrig?.let { "Yes: ${n}'s enters ability triggers — it entered the battlefield, and an enters trigger doesn't care how (603.6a). " } ?: ""
         val castText = castTrig?.let { " ${n}'s \"${it.replace("~", n).substringBefore(',').trimEnd('.')}\" ability doesn't trigger: it was put onto the battlefield, not cast (601.2, 603.2)." } ?: ""
+        // Redteam4: "… my opponent exiles it with Solitude before combat": gone before it could attack, so neither annihilator nor the sacrifice happens.
+        state.objects.values.lastOrNull { it.def.name == d.name }?.takeIf { !it.isOnBattlefield() && key != "sneakend" && state.outcomes.any { l -> l.startsWith("${d.name}: the battlefield →") } }?.let { o ->
+            val where = if (o.zone == mtg.judge.engine.Zone.EXILE) "exiled" else "put into ${state.player(o.owner).possessive} graveyard"
+            tr.step("${d.name} left the battlefield before combat, so it is never declared as an attacker and its attack trigger never triggers; the delayed trigger later finds no ${d.name} on the battlefield to sacrifice, since a permanent that changes zones becomes a new object.", "400.7", "603.7c", "702.86a")
+            state.outcomes.add(0, "No: ${n} was $where before combat, so it never attacks — no annihilator (702.86a) — and the end-step sacrifice does nothing to it (400.7).$castText${if (o.zone == mtg.judge.engine.Zone.EXILE && gy != null) " Being exiled isn't being put into a graveyard, so its \"${gy.replace("~", n).substringBefore(',').trimEnd('.')}\" doesn't trigger either." else ""}")
+            return true
+        }
         state.outcomes.add(0, when (key) {
             "sneakend" -> "Yes: ${enabler.name}'s sacrifice is a delayed triggered ability that goes on the stack as the end step begins (603.7a), and ${p.subject.lowercase()} ${p.v("gets", "get")} priority with it on the stack. In response ${lifeText ?: "${p.subject.lowercase()} can activate ${n}'s abilities"}; ${n} is sacrificed only when the trigger resolves."
             // "Does it get annihilator?": yes, when it attacks; "When does annihilator trigger?" is answered by the timing itself.
