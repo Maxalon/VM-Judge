@@ -36,7 +36,7 @@ class AttachmentTest {
         assertTrue("704.5m" in s.cited(), "Aura goes to the graveyard when its creature leaves (704.5m)")
         assertEquals(Zone.HAND, r.zone, "and Rancor's own trigger then returns it to hand")
         assertTrue("704.5m" in s.cited())
-        assertTrue(s.trace.steps.any { it.text.startsWith("Rancor's ability triggers on Rancor dying") }, "Rancor's dies trigger (put into a graveyard from the battlefield) fired: " + s.trace.steps.map { it.text })
+        assertTrue(s.trace.steps.any { it.text.startsWith("Rancor's ability triggers on Rancor being put into a graveyard from the battlefield") }, "Rancor's dies trigger (put into a graveyard from the battlefield) fired: " + s.trace.steps.map { it.text })
     }
 
     @Test

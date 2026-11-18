@@ -37,6 +37,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
     /** The stand-in a face-down card is: 2/2, colourless, no name, no types but creature, no mana cost; disguise adds ward {2} (708.2, 702.168a). */
     private fun faceDownDef(real: CardDef, disguise: Boolean): CardDef =
         OracleParser.parse("face-down-${real.oracleId}", "a face-down creature", "Creature", null, 0.0, "", "2", "2", if (disguise) listOf("Ward") else emptyList(), if (disguise) "Ward {2}" else "")
+    /** A permanent the situation says is face down already: the stand-in's characteristics over the real card (708.2). */
     private val numberWords = mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10)
     private fun yours(p: mtg.judge.engine.Player) = if (p.you) "yours" else p.possessive
     private fun ordinal(n: Int) = when (n) { 1 -> "first"; 2 -> "second"; 3 -> "third"; 4 -> "fourth"; 5 -> "fifth"; else -> "${n}th" }
@@ -116,6 +117,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 val taxNote = tc?.changes?.takeIf { it.isNotEmpty() }?.let { cs -> ", ${cs.joinToString(" and ") { c -> "${c.source} ${if (c.amount < 0) "−" else "+"}${c.shown}" }} included" } ?: ""
                 state.trace.step("${def.name} has delve: after its total cost $totalText$taxNote is determined, ${p.subject.lowercase()} exile${if (p.you) "" else "s"} $n card${if (n == 1) "" else "s"} from ${p.possessive} graveyard, and each one pays for {1} of the generic mana in the cost. Delve isn't an additional or alternative cost, and it can pay only generic mana, never a coloured symbol. ${p.subject} ${p.v("pays", "pay")} $left (${totalMv - n} mana).", "702.66a", "702.66b", *(if (taxNote.isNotEmpty()) arrayOf("601.2f") else emptyArray()))
                 state.outcomes += "${def.name} costs $totalText ($totalMv mana$taxNote); delving $n card${if (n == 1) "" else "s"} out of the graveyard pays for $n of the generic mana, so ${p.subject.lowercase()} ${p.v("pays", "pay")} $left (${totalMv - n} mana) (702.66a)."
+                mtg.judge.engine.Exam5Mech.floorUnderDelve(state, tc?.total ?: totalMv, tc?.floor != null, "delve")   // Trinisphere doesn't see delve (Exam5Mechanics.kt)
                 if (said == 0 && gy.isEmpty() && (p.graveyardSize ?: 0) == 0) state.assumptions += "How many cards ${p.subject.lowercase()} exile${if (p.you) "" else "s"} with delve wasn't said and the graveyard wasn't described; say how many for the exact cost."
             }
             "convoke" -> {
@@ -139,6 +141,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 // Underworld Breach gives it escape: the cast from the graveyard pays for it (CedhMech.breachPay).
                 if (cost == null && mtg.judge.engine.CedhMech.breachEscapeCost(state, player, def) != null) { if (obj.zone != Zone.GRAVEYARD) obj.zone = Zone.GRAVEYARD; return plain }
                 if (cost == null) { state.outcomes += "${def.name} doesn't have escape, so it can't be cast from the graveyard."; return plain }
+                if (Redteam4Asks.graveyardHateStopsEscape(state, player, def)) return e.copy(verb = "statecheck", to = null)   // Rest in Peace (Redteam4Asks.kt)
                 val gyCard = if (obj.zone == Zone.GRAVEYARD) obj else { obj.zone = Zone.GRAVEYARD; obj }
                 val need = Regex("""(?i)exile (\w+) other cards? from your graveyard""").find(def.oracleText)?.groupValues?.get(1)?.let { numberWords[it.lowercase()] ?: it.toIntOrNull() } ?: 0
                 val others = state.objects.values.filter { it.zone == Zone.GRAVEYARD && it.owner == player && it !== gyCard }
@@ -200,7 +203,11 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 prior?.let { state.objects.remove(it.id) }
                 val o = state.add(GameObject(id, front, Zone.HAND, player)); o.timestamp = state.tick()
                 o.def = adv; o.kwf.castAsAdventure = true
-                state.trace.step("${p.subject} ${p.v("casts", "cast")} ${front.name} as an Adventure, ${adv.name}: only its Adventure characteristics (${adv.typeLine}, ${adv.manaCost}) are looked at to see whether it can be cast, and while it is on the stack it has only those characteristics.", "715.3", "715.3a", "715.3b")
+                // Redteam2: an omen card cast as its Omen (721.3): only the Omen's characteristics while on the stack.
+                if (adv.typeLine.contains("Omen")) { o.kwf.castAsOmen = true
+                    state.trace.step("${p.subject} ${p.v("casts", "cast")} ${front.name} as an Omen, ${adv.name}: only the Omen's characteristics (${adv.typeLine}, ${adv.manaCost}) are looked at to see whether it can be cast, and while it is on the stack it has only those, so it's ${if (adv.typeLine.startsWith("Instant")) "an instant" else "a sorcery"} spell, not a creature spell.", "721.3", "721.3a", "721.3b")
+                    return plain.copy(obj = id) }
+                state.trace.step("${p.subject} ${p.v("casts", "cast")} ${front.name} as an Adventure, ${adv.name}: only its Adventure characteristics (${adv.typeLine}, ${adv.manaCost}) are looked at to see whether it can be cast, and while it is on the stack it has only those characteristics.", "716.3", "716.3a", "716.3b")
                 return plain.copy(obj = id)
             }
             "multikicker" -> {
@@ -390,6 +397,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
         if (kwName == "megamorph") obj.counters["+1/+1"] = (obj.counters["+1/+1"] ?: 0) + 1
         state.trace.step("${p.subject} ${p.v("turns", "turn")} the face-down creature face up by paying its $kwName cost $cost. This is a special action: it doesn't use the stack, can't be responded to, and can be done any time ${p.subject.lowercase()} ${p.v("has", "have")} priority. It's ${real.name} again with its normal characteristics (${state.describePt(obj)}). Enters-the-battlefield abilities don't trigger, because it already entered.", if (kwName == "disguise") "702.168d" else "702.37e", "116.2b", "708.8")
         state.outcomes += "${real.name} is turned face up for $cost: ${state.describePt(obj)} again, with all its abilities. It didn't enter the battlefield, so its enters abilities don't trigger (708.8)."
+        mtg.judge.engine.Leftovers3Mech.turnedFaceUp(engine, obj)   // "When this creature is turned face up, …" goes on the stack (Leftovers3Mechanics.kt)
     }
 
     private fun castAdventure(e: EventSpec, state: GameState, engine: Engine) {
@@ -398,7 +406,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
         lastKw = "adventure"; lastObj = obj.id
         if (!obj.kwf.onAdventure || obj.zone != Zone.EXILE) { state.outcomes += "${obj.printedDef.name} isn't on an adventure in exile."; return }
         obj.kwf.onAdventure = false
-        state.trace.step("${p.subject} ${p.v("casts", "cast")} ${obj.printedDef.name} from exile as the creature (the card's normal characteristics), paying its mana cost. It can't be cast as the Adventure again from exile.", "715.3d")
+        state.trace.step("${p.subject} ${p.v("casts", "cast")} ${obj.printedDef.name} from exile as the creature (the card's normal characteristics), paying its mana cost. It can't be cast as the Adventure again from exile.", "716.3d")
         engine.cast(player, obj.printedDef, emptyList(), obj.id)
         engine.resolveAll()
     }
@@ -460,8 +468,8 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
                 val dis = def.oracleText.contains("Disguise {", true)
                 say(state, if (o.kwf.faceDown) "It's a face-down 2/2 colourless creature with no name, no types but creature, no abilities${if (dis) " except ward {2}" else ""} and mana value 0 (708.2). ${p.subject} may look at it, and may turn it face up any time ${p.subject.lowercase()} ${p.v("has", "have")} priority by paying its ${if (dis) "disguise" else "morph"} cost (${if (dis) "702.168d" else "702.37e"}, 116.2b)." else "It's ${def.name} face up now, with its normal characteristics (708.8).")
             }
-            "adventure" -> say(state, if (o.zone == Zone.EXILE && o.kwf.onAdventure) "${def.name} goes to exile instead of the graveyard. Yes: ${p.subject.lowercase()} may cast it as the creature from exile on a later turn (715.3d), but not as the Adventure again." else "${def.name} is in ${p.possessive} ${o.zone.name.lowercase()} now.")
-            "mutate" -> if (o.kwf.merged.isNotEmpty()) say(state, "The result is one creature, a mutated permanent: it has the characteristics of its topmost card and all the abilities of both cards (702.140c, 702.140e), and it's the same object as before, so it isn't summoning sick again (730.2c).")
+            "adventure" -> say(state, if (o.zone == Zone.EXILE && o.kwf.onAdventure) "${def.name} goes to exile instead of the graveyard. ${p.subject} may cast it as the creature from exile on a later turn (716.3d), but not as the Adventure again." else "${def.name} is in ${p.possessive} ${o.zone.name.lowercase()} now.")
+            "mutate" -> if (o.kwf.merged.isNotEmpty()) say(state, "The result is one creature, a mutated permanent: it has the characteristics of its topmost card and all the abilities of both cards (702.140c, 702.140e), and it's the same object as before, so it isn't summoning sick again (731.2c).")
             "plot" -> if (o.kwf.plotted) { val t = e.amount ?: turnNow(state); say(state, if (t > o.kwf.sinceTurn) "Yes: ${def.name} was plotted on turn ${o.kwf.sinceTurn}, so on turn $t it can be cast without paying its mana cost, as a sorcery (main phase, empty stack) (702.170d)." else if (canQ) "No, not this turn: a plotted card can be cast only on a later turn (702.170d)." else "${def.name} can be cast without paying its mana cost on any later turn of ${yours(p)}, in a main phase with the stack empty (702.170d).") }
             "foretell" -> if (o.kwf.foretold) { val t = e.amount ?: turnNow(state); say(state, if (t > o.kwf.sinceTurn) "Yes: ${def.name} was foretold on turn ${o.kwf.sinceTurn}, so on turn $t it can be cast for its foretell cost (702.143a)." else if (canQ) "No, not this turn: a foretold card can be cast only after the turn it was foretold has ended, for its foretell cost (702.143a)." else "${def.name} can be cast on a later turn for its foretell cost (702.143a).") }
         }

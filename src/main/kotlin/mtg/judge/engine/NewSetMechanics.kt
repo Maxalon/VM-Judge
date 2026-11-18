@@ -21,7 +21,7 @@ internal object NewSetMech {
     fun cards(s: GameState): MutableMap<String, CardDef> = stateCards.getOrPut(s) { mutableMapOf() }
 
     private fun freshId(state: GameState, name: String): String { val base = name.lowercase().replace(Regex("[^a-z0-9]+"), "_").trim('_'); var id = base; var i = 2; while (state.objects.containsKey(id)) id = base + "_" + (i++); return id }
-    private fun plural(n: Int, w: String) = "$n $w${if (n == 1) "" else "s"}"
+    private fun plural(n: Int, w: String) = "$n $w${if (n == 1 || w == "mana") "" else "s"}"   // "2 mana", not "2 manas"
 
     // ---- reading the cards ------------------------------------------------------------------------------------------
 
@@ -77,8 +77,8 @@ internal object NewSetMech {
             val eff = mtg.judge.oracle.OracleParser.parseEffect(m.groupValues[2])
             return listOf(ActivatedAbility(m.groupValues[1].trim(), eff, l, "Activate only once (power-up)"))
         }
-        // Preparation cards (722.3a): "This creature enters prepared." / Storied's enduring-story restrictions.
-        if (Regex("""^~ enters prepared\.?$""", RegexOption.IGNORE_CASE).matches(l)) return listOf(StaticAbility(l, "prepared", listOf(StaticEffect.Note(l, listOf("722.3a")))))
+        // Preparation cards (723.3a): "This creature enters prepared." / Storied's enduring-story restrictions.
+        if (Regex("""^~ enters prepared\.?$""", RegexOption.IGNORE_CASE).matches(l)) return listOf(StaticAbility(l, "prepared", listOf(StaticEffect.Note(l, listOf("723.3a")))))
         if (Regex("""^~ doesn't untap during your untap step unless you have an enduring story\.?$""", RegexOption.IGNORE_CASE).matches(l)) return listOf(StaticAbility(l, "ns:untapunlessstory", listOf(StaticEffect.Note(l, listOf("702.195a")))))
         Regex("""^As long as you have an enduring story, if a triggered ability of an? ([A-Za-z]+) you control triggers, that ability triggers an additional time\.?$""", RegexOption.IGNORE_CASE).find(l)?.let { m ->
             return listOf(StaticAbility(l, "ns:storydoubler:${m.groupValues[1]}", listOf(StaticEffect.Note(l, listOf("603.2d")))))
@@ -103,7 +103,7 @@ internal object NewSetMech {
         typeSpellCost(l).takeIf { it.isNotEmpty() }?.let { return listOf(StaticAbility(l, null, it)) }
         // Tamiyo, Upriser Crowned: "Whenever one or more creatures deal combat damage to you while you're the monarch, tap those creatures and put a stun counter on each of them."
         if (Regex("""^Whenever one or more creatures deal combat damage to you while you're the monarch, tap those creatures and put a stun counter on each of them\.?$""", RegexOption.IGNORE_CASE).matches(l))
-            return listOf(StaticAbility(l, "ns:monarchhit", listOf(StaticEffect.Note(l, listOf("603.2", "725.2")))))
+            return listOf(StaticAbility(l, "ns:monarchhit", listOf(StaticEffect.Note(l, listOf("603.2", "726.2")))))
         // Diviner of Victory: "Whenever you scry or surveil, ~ gets +1/+1 until end of turn." — triggered by the keyword actions themselves.
         Regex("""^Whenever you scry or surveil, (.+)$""", RegexOption.IGNORE_CASE).find(l)?.let { m -> return listOf(StaticAbility(l, "ns:onscry", listOf(StaticEffect.Note(m.groupValues[1], listOf("603.2"))))) }
         // Paradigm (702.192a) on an instant or sorcery: the keyword line itself; what it does happens as the spell resolves.
@@ -143,7 +143,7 @@ internal object NewSetMech {
             if (spent > pw || spent > tf) repeat(n) { out += TriggeredAbility(Trigger.SpellCast(Who.YOU), Effect.NewMech("ns:increment", spent), "Increment (Whenever you cast a spell, if the amount of mana you spent is greater than this creature's power or toughness, put a +1/+1 counter on this creature.)") }
             else if (state.trace.steps.none { it.text.startsWith("${obj.name}'s increment doesn't trigger") }) {
                 state.outcomes += "${obj.name}'s increment doesn't trigger: $spent mana isn't greater than its power ($pw) or its toughness ($tf) (702.191a)."
-                state.trace.step("${obj.name}'s increment doesn't trigger: ${plural(spent, "mana")} ${if (spent == 1) "was" else "were"} spent to cast ${item.source.name}, which isn't greater than its power ($pw) or its toughness ($tf). Increment's \"if\" is checked as the spell is cast.", "702.191a", "603.4") }
+                state.trace.step("${obj.name}'s increment doesn't trigger: ${plural(spent, "mana")} was spent to cast ${item.source.name}, which isn't greater than its power ($pw) or its toughness ($tf). Increment's \"if\" is checked as the spell is cast.", "702.191a", "603.4") }
         }
         if (item.kind == StackKind.SPELL && item.source.def.isInstantOrSorcery && targetsCreature(state, item))
             for (a in obj.abilities.filterIsInstance<StaticAbility>().filter { it.keyword == "repartee" }) {
@@ -225,7 +225,7 @@ internal object NewSetMech {
             n
         }
         "ns:unspentmana" -> state.player(o.controller).manaPool
-        else -> null
+        else -> Leftovers3Mech.count(state, text, o)   // Prime Speaker Zegana's "greatest power among other creatures you control" (Leftovers3Mechanics.kt)
     }
 
     /** Omnath, Locus of the Void: mana that would empty from [p]'s pool becomes colorless instead (614.1a). True when it stays. */
@@ -253,10 +253,10 @@ internal object NewSetMech {
         o.damage = 0
     }
 
-    /** Life gained this turn (infusion); a permanent entering prepared (722.3a) or attacking because of sneak (702.190b). */
+    /** Life gained this turn (infusion); a permanent entering prepared (723.3a) or attacking because of sneak (702.190b). */
     fun onEvent(state: GameState, event: Engine.GameEvent) {
         if (event is Engine.GameEvent.LifeGained && event.amount > 0) flags(state)["gained:${event.playerId}"] = (flags(state)["gained:${event.playerId}"] ?: 0) + event.amount
-        // Combat damage to the monarch, remembered while the player still is the monarch (725.2 hands the crown over right after).
+        // Combat damage to the monarch, remembered while the player still is the monarch (726.2 hands the crown over right after).
         // Combat damage is dealt all at once (510.2): a player who was the monarch as it began is "the monarch" for all of it.
         if (event is Engine.GameEvent.DamageDealt && event.combat && event.amount > 0 && event.target is Ref.Player &&
             (state.monarch == event.target.id || monarchHits[state]?.containsKey(event.target.id) == true))
@@ -302,23 +302,23 @@ internal object NewSetMech {
 
     private val prepCopies = WeakHashMap<GameObject, GameObject>()
     fun isPrepared(o: GameObject): Boolean = (flags(o)["prepared"] ?: 0) > 0
-    /** The copy of [o]'s prepare spell waiting in exile while it is prepared (722.3c). */
+    /** The copy of [o]'s prepare spell waiting in exile while it is prepared (723.3c). */
     fun preparedCopy(o: GameObject): GameObject? = prepCopies[o]
 
-    /** [o] becomes prepared (722.3a): with a prepare spell and not already prepared, a copy of that spell is created in exile (722.3c). */
+    /** [o] becomes prepared (723.3a): with a prepare spell and not already prepared, a copy of that spell is created in exile (723.3c). */
     fun prepare(state: GameState, o: GameObject, why: String): Boolean {
         val p = state.player(o.controller)
-        if (isPrepared(o)) { state.trace.step("${o.name} is already prepared, and a permanent can't gain the prepared designation while it has it, so nothing happens ($why).", "722.3a"); return false }
+        if (isPrepared(o)) { state.trace.step("${o.name} is already prepared, and a permanent can't gain the prepared designation while it has it, so nothing happens ($why).", "723.3a"); return false }
         val spell = state.backFaceOf?.invoke(o.printedDef)?.takeIf { it.isInstantOrSorcery }
-            ?: run { state.trace.step("${o.name} has no prepare spell, so it can't become prepared ($why).", "722.3a"); return false }
+            ?: run { state.trace.step("${o.name} has no prepare spell, so it can't become prepared ($why).", "723.3a"); return false }
         flags(o)["prepared"] = 1
         val copy = state.add(GameObject(freshId(state, spell.name), spell, Zone.EXILE, o.controller, token = true)); copy.timestamp = state.tick()
         prepCopies[o] = copy
-        state.trace.step("${o.name} becomes prepared ($why). As it gains the designation, ${p.subject.lowercase()} create${if (p.you) "" else "s"} a copy of its prepare spell, ${spell.name} (${spell.typeLine}, ${spell.manaCost ?: "no mana cost"}), in exile. The copy stays there for as long as ${o.name} stays on the battlefield prepared, and ${p.subject.lowercase()} may cast it; casting it unprepares ${o.name}.", "722.3a", "722.3c")
+        state.trace.step("${o.name} becomes prepared ($why). As it gains the designation, ${p.subject.lowercase()} create${if (p.you) "" else "s"} a copy of its prepare spell, ${spell.name} (${spell.typeLine}, ${spell.manaCost ?: "no mana cost"}), in exile. The copy stays there for as long as ${o.name} stays on the battlefield prepared, and ${p.subject.lowercase()} may cast it; casting it unprepares ${o.name}.", "723.3a", "723.3c")
         return true
     }
 
-    /** [o] stops being prepared (722.3b, 722.3c); its prepare spell's copy in exile ceases to exist unless [cast] (it is on the stack being cast). */
+    /** [o] stops being prepared (723.3b, 723.3c); its prepare spell's copy in exile ceases to exist unless [cast] (it is on the stack being cast). */
     fun unprepare(state: GameState, o: GameObject, why: String, rules: Array<String>, cast: Boolean = false) {
         if (!isPrepared(o)) return
         flags(o).remove("prepared")
@@ -360,12 +360,14 @@ internal object NewSetMech {
     fun condition(state: GameState, text: String, src: GameObject): Boolean? = when (text) {
         "ns:gainedlife" -> ((flags(state)["gained:${src.controller}"] ?: 0) > 0).also { ok ->
             val p = state.player(src.controller)
-            val line = "Infusion is an ability word: \"if you gained life this turn\" asks whether ${p.subject.lowercase()} gained any life at any time this turn, before or after ${src.name} was cast, and it is checked as ${src.name} resolves. ${if (ok) "${p.subject} did" else "${p.subject} didn't"}."
-            if (state.trace.steps.none { it.text == line }) state.trace.step(line, "207.2c", "608.2c")
+            // Only a card printed with the ability word says "Infusion" (Ocelot Pride has the same condition without it).
+            val infusion = src.def.oracleText.contains("Infusion", ignoreCase = true)
+            val line = "${if (infusion) "Infusion is an ability word: " else ""}\"if you gained life this turn\" asks whether ${p.subject.lowercase()} gained any life at any time this turn, before or after ${src.name} ${if (src.def.isPermanentCard && !infusion) "came under ${p.possessive} control" else "was cast"}, and it is checked as ${if (infusion) src.name else "${src.name}'s ability"} resolves. ${if (ok) "${p.subject} did" else "${p.subject} didn't"}."
+            if (state.trace.steps.none { it.text == line }) state.trace.step(line, *(if (infusion) arrayOf("207.2c", "608.2c") else arrayOf("603.4", "608.2c")))
         }
         else -> null
     }
-    fun describeCondition(text: String): String? = when (text) { "ns:gainedlife" -> "that its controller gained life this turn (infusion)"; else -> null }
+    fun describeCondition(text: String): String? = when (text) { "ns:gainedlife" -> "that its controller gained life this turn"; else -> null }
 
     // ---- resolving ------------------------------------------------------------------------------------------------------
 
@@ -412,7 +414,7 @@ internal object NewSetMech {
                 if (!src.isOnBattlefield() || !state.isCreature(src)) { state.trace.step("${src.name} isn't a creature on the battlefield any more, so increment does nothing.", "702.191a", "603.4"); return }
                 val pw = src.power ?: 0; val tf = src.toughness ?: 0
                 if (e.n > pw || e.n > tf) {
-                    state.trace.step("Increment resolves: ${plural(e.n, "mana")} ${if (e.n == 1) "was" else "were"} spent on that spell, still more than ${src.name}'s ${if (e.n > pw) "power ($pw)" else "toughness ($tf)"}, so it gets a +1/+1 counter. Only one of the two has to be smaller.", "702.191a", "603.4")
+                    state.trace.step("Increment resolves: ${plural(e.n, "mana")} was spent on that spell, still more than ${src.name}'s ${if (e.n > pw) "power ($pw)" else "toughness ($tf)"}, so it gets a +1/+1 counter. Only one of the two has to be smaller.", "702.191a", "603.4")
                     engine.putCounters(src.id, 1, "+1/+1")
                 } else {
                     state.trace.step("Increment checks its \"if\" again as it resolves: ${src.name} is now $pw/$tf, and ${plural(e.n, "mana")} isn't greater than either, so it does nothing.", "702.191a", "603.4")
@@ -425,17 +427,17 @@ internal object NewSetMech {
                 val spent = spell?.let { manaSpent(it) ?: (it.source.def.manaValue.toInt() + (it.x ?: 0)) }
                 if (spent == null) { state.trace.step("The spell that made ${src.name}'s ability trigger isn't known here, so how much mana was spent on it isn't either.", "601.2h"); return }
                 if (spent >= e.n) {
-                    state.trace.step("${plural(spent, "mana")} ${if (spent == 1) "was" else "were"} spent to cast ${spell.source.name}${spell.x?.let { x -> " (X = $x counts: the mana paid for X is mana spent)" } ?: ""}, ${e.n} or more, so the rest of ${src.name}'s ability happens: ${e.text}. Opus is only an ability word; the trigger resolves before the spell does.", "207.2c", "601.2h", "107.3a")
+                    state.trace.step("$spent mana was spent to cast ${spell.source.name}${spell.x?.let { x -> " (X = $x counts: the mana paid for X is mana spent)" } ?: ""}, ${e.n} or more, so the rest of ${src.name}'s ability happens: ${e.text}. Opus is only an ability word; the trigger resolves before the spell does.", "207.2c", "601.2h", "107.3a")
                     engine.meApply(mtg.judge.oracle.OracleParser.parseEffect(e.text.replace(src.name, "~").replaceFirstChar { it.uppercase() } + "."), item)
                 } else {
-                    state.trace.step("Only ${plural(spent, "mana")} ${if (spent == 1) "was" else "were"} spent to cast ${spell.source.name}, fewer than ${e.n}, so the rest of ${src.name}'s ability (${e.text}) doesn't happen.", "601.2h")
+                    state.trace.step("Only $spent mana was spent to cast ${spell.source.name}, fewer than ${e.n}, so the rest of ${src.name}'s ability (${e.text}) doesn't happen.", "601.2h")
                     state.outcomes += "${src.name}: only $spent mana was spent on ${spell.source.name}, so \"${e.text}\" doesn't happen."
                 }
             }
             // Tamiyo (603.2): "while you're the monarch" was true as the damage was dealt; the crown moving afterwards doesn't undo the trigger.
             "ns:monarchhit" -> {
                 val hit = e.text.split(',').mapNotNull { state.objects[it] }.filter { it.isOnBattlefield() }
-                state.trace.step("${src.name}'s ability triggered because the creatures dealt combat damage to ${subj} while ${subj} ${p.v("was", "were")} the monarch; that was true at the moment of the damage, so it doesn't matter that the same damage made their controller the monarch. It isn't an intervening \"if\", so nothing is checked again now. It taps ${hit.joinToString(" and ") { it.name }.ifEmpty { "nothing (they're gone)" }} and puts a stun counter on each.", "603.2", "725.2", "122.1d")
+                state.trace.step("${src.name}'s ability triggered because the creatures dealt combat damage to ${subj} while ${subj} ${p.v("was", "were")} the monarch; that was true at the moment of the damage, so it doesn't matter that the same damage made their controller the monarch. It isn't an intervening \"if\", so nothing is checked again now. It taps ${hit.joinToString(" and ") { it.name }.ifEmpty { "nothing (they're gone)" }} and puts a stun counter on each.", "603.2", "726.2", "122.1d")
                 for (o in hit) { o.tapped = true; engine.putCounters(o.id, 1, "stun") }
                 if (hit.isNotEmpty()) state.outcomes += "${hit.joinToString(" and ") { it.name }} ${if (hit.size == 1) "is" else "are"} tapped with a stun counter: the next time ${if (hit.size == 1) "it" else "each"} would untap, a stun counter is removed instead (122.1d)."
             }

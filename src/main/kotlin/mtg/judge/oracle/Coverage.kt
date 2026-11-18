@@ -33,11 +33,15 @@ object Coverage {
 
     data class Stats(var cards: Int = 0, var fully: Int = 0, var partly: Int = 0, var none: Int = 0, var noText: Int = 0, var abilities: Int = 0, var modeledAbilities: Int = 0)
 
-    fun report(conn: Connection, format: String, top: Int, words: Int = 7) {
+    /** [played] > 0 limits the count to the most-played cards (lowest EDHREC rank), the pool template work is ranked on. */
+    fun report(conn: Connection, format: String, top: Int, words: Int = 7, played: Int = 0) {
         val stats = Stats()
+        var structured = 0; var narrated = 0
+        val nPatterns = HashMap<String, Int>(); val nExamples = HashMap<String, String>()
         val patterns = HashMap<String, Int>()
         val examples = HashMap<String, String>()
-        val sql = "SELECT * FROM cards WHERE layout NOT IN ('token','double_faced_token','emblem','art_series') AND json_extract(legalities, '$.$format') IN ('legal','restricted')"
+        val sql = "SELECT * FROM cards WHERE layout NOT IN ('token','double_faced_token','emblem','art_series') AND json_extract(legalities, '$.$format') IN ('legal','restricted')" +
+            (if (played > 0) " AND json_extract(json, '$.edhrec_rank') IS NOT NULL ORDER BY json_extract(json, '$.edhrec_rank') LIMIT $played" else "")
         conn.createStatement().executeQuery(sql).use { rs ->
             while (rs.next()) {
                 val card = Card(rs.getString("oracle_id"), rs.getString("name"), rs.getString("layout"), rs.getString("mana_cost"), rs.getDouble("mana_value"),
@@ -57,6 +61,12 @@ object Coverage {
                 if (units.isEmpty()) { stats.noText++; continue }
                 stats.abilities += units.size; stats.modeledAbilities += units.count { it.first }
                 when (units.count { it.first }) { units.size -> stats.fully++; 0 -> stats.none++; else -> stats.partly++ }
+                // Fully structured: every unit modeled and none merely narrated back ("Narrated" placeholder sentences).
+                val n = def.abilities.sumOf { a -> when (a) { is StaticAbility -> a.effects.count { it is mtg.judge.engine.StaticEffect.Narration }; is TriggeredAbility -> narr(a.effect); is ActivatedAbility -> narr(a.effect); else -> 0 } } + (def.spellEffect?.let { narr(it) } ?: 0)
+                narrated += n
+                if (n > 0) for (t in def.abilities.flatMap { a -> when (a) { is StaticAbility -> a.effects.filterIsInstance<mtg.judge.engine.StaticEffect.Narration>().map { it.text }; is TriggeredAbility -> narrTexts(a.effect); is ActivatedAbility -> narrTexts(a.effect); else -> emptyList() } } + (def.spellEffect?.let { narrTexts(it) } ?: emptyList())) {
+                    val key = shape(t.replace(card.name, "~"), words); nPatterns[key] = (nPatterns[key] ?: 0) + 1; nExamples.putIfAbsent(key, "${card.name}: $t") }
+                if (n == 0 && units.all { it.first }) structured++
                 for ((ok, text) in units) if (!ok && text != null) { val key = shape(text, words); patterns[key] = (patterns[key] ?: 0) + 1; examples.putIfAbsent(key, "${card.name}: $text") }
             }
         }
@@ -66,10 +76,28 @@ object Coverage {
         println("  partly modeled:  ${stats.partly} (${pct(stats.partly, stats.cards)})")
         println("  nothing modeled: ${stats.none} (${pct(stats.none, stats.cards)})")
         println("  no rules text:   ${stats.noText}")
+        println("  fully structured (no narrated placeholder): $structured (${pct(structured, stats.cards)})")
+        println("  narrated placeholder sentences: $narrated")
         println("Ability units modeled: ${stats.modeledAbilities} / ${stats.abilities} (${pct(stats.modeledAbilities, stats.abilities)})")
         println()
         println("Most common unmodeled shapes (numbers -> N, self -> ~):")
         patterns.entries.sortedByDescending { it.value }.take(top).forEach { (k, n) -> println("  %5d  %s".format(n, k) + "\n         e.g. " + examples[k]!!.take(140)) }
+        if (nPatterns.isNotEmpty()) { println(); println("Most common narrated (placeholder) shapes:")
+            nPatterns.entries.sortedByDescending { it.value }.take(top).forEach { (k, n) -> println("  %5d  %s".format(n, k) + "\n         e.g. " + nExamples[k]!!.take(140)) } }
+    }
+
+    private fun narr(e: Effect): Int = when (e) {
+        is Effect.Narrated, is Effect.NarratedTargeted -> 1; is Effect.May -> narr(e.effect); is Effect.UnlessPays -> narr(e.effect)
+        is Effect.Seq -> e.effects.sumOf { narr(it) }; is Effect.IfYouDo -> narr(e.choice) + narr(e.then); is Effect.IfKicked -> narr(e.then) + narr(e.otherwise)
+        is Effect.IfCondition -> narr(e.then) + (e.otherwise?.let { narr(it) } ?: 0); is Effect.Repeat -> narr(e.body); is Effect.Modal -> e.modes.sumOf { narr(it) }
+        else -> 0
+    }
+
+    private fun narrTexts(e: Effect): List<String> = when (e) {
+        is Effect.Narrated -> listOf(e.text); is Effect.NarratedTargeted -> listOf(e.text); is Effect.May -> narrTexts(e.effect); is Effect.UnlessPays -> narrTexts(e.effect)
+        is Effect.Seq -> e.effects.flatMap { narrTexts(it) }; is Effect.IfYouDo -> narrTexts(e.choice) + narrTexts(e.then); is Effect.IfKicked -> narrTexts(e.then) + narrTexts(e.otherwise)
+        is Effect.IfCondition -> narrTexts(e.then) + (e.otherwise?.let { narrTexts(it) } ?: emptyList()); is Effect.Repeat -> narrTexts(e.body); is Effect.Modal -> e.modes.flatMap { narrTexts(it) }
+        else -> emptyList()
     }
 
     private fun unparsed(e: Effect): String = when (e) {

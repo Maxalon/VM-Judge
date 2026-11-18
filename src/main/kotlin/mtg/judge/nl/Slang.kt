@@ -24,7 +24,7 @@ object Slang {
         "murktide" to "murktide regent", "arcanist" to "dreadhorde arcanist", "borrower" to "brazen borrower", "skite" to "spellskite", "tnn" to "true name nemesis",
         "esg" to "elvish spirit guide", "trop" to "tropical island", "drc" to "dragon s rage channeler", "canonist" to "ethersworn canonist",
         "bowmasters" to "orcish bowmasters", "seize" to "thoughtseize", "tendrils" to "tendrils of agony", "bridge" to "ensnaring bridge", "birds" to "birds of paradise",
-        "led" to "lion s eye diamond", "swords to plowshare" to "swords to plowshares", "path to exhile" to "path to exile",
+        "led" to "lion s eye diamond", "manik vandal" to "manic vandal", "manic vandle" to "manic vandal", "swords to plowshare" to "swords to plowshares", "path to exhile" to "path to exile",
     )
 
     /** Nicknames that win over a real card of the same name: nobody at the table means the white instant by "tithe". */
@@ -47,7 +47,8 @@ object Slang {
             r("""\b(?:bc|cuz|cos)\b""", "because"), r("""\bidk\b""", "I don't know"),
             // "i got blood artist", "ive got", "opp got": have.
             r("""\b(i|we|you)(?:'ve| have)? got (?=(?:a|an|the|my|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 have "),
-            r("""\b(they|he|she)(?:'ve| have|'s| has)? got (?=(?:a|an|the|their|his|her|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 have "),
+            r("""\b(they)(?:'ve| have|'s| has)? got (?=(?:a|an|the|their|his|her|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 have "),
+            r("""\b(he|she)(?:'s| has)? got (?=(?:a|an|the|no|their|his|her|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 has "),
             r("""\b(opp|opponent)(?:'s| has)? got (?=(?:a|an|the|their|\d+)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 has "),
             // "my yard", "their gy": the graveyard.
             r("""\b(my|the|their|his|her|your|opp's|opponent's) yard\b""", "$1 graveyard"), r("""\b(?:gy|gv)\b""", "graveyard"), r("""\bbf\b""", "battlefield"),
@@ -183,7 +184,7 @@ object Slang {
             // "i have 40 life w/ felidar sovereign": and control it.
             r("""\b(i|we|my opponent|opponent|opp|they|he|she) (have|has) (\d+) life (?:with|w/) (?!\d|no |an? (?:\w+ ){0,2}(?:counters?|cards?)\b)""", "$1 $2 $3 life and $1 control "),
             // "i play arid mesa then crack it": the subject goes on through "then".
-            r("""\b(?![^.?!]*\bsays?\b)(i|we) ([^.?!]*?),? then (crack|cast|play|activate|sacrifice|attack|tap|cycle|exile|discard|equip|pay|return|put|flash|block)\b""", "$1 $2, then $1 $3"),
+            r("""\b(?![^.?!]*\bsays?\b)(?![^.?!]*,\s*(?:can|could|does|do|did|will|would|should|is|are|what|how|who|when|where)\b)(i|we) ([^.?!]*?),? then (crack|cast|play|activate|sacrifice|attack|tap|cycle|exile|discard|equip|pay|return|put|flash|block)\b""", "$1 $2, then $1 $3"),
             // "in response to the trigger" after the whole play: the trigger was already on the stack.
             // "i cast thoracle, opp bounces it in response to the trigger": the trigger is on the stack before the response.
             r("""(^|(?<=[.!?]\s))(i cast [^.?!,]+), ((?:my opponent|opponent|opp|they|he|she)\b[^.?!]*?),? in response to (?:the|its|that|their) (?:etb |enters |upkeep |attack |cast )?(?:trigger|ability)(?=\s*[.!?]|\s*$)""", "$1$2. With the trigger on the stack, $3"),

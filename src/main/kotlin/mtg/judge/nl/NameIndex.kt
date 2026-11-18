@@ -21,7 +21,8 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                      val manaValue: Int = 0) {
         val hasFlash: Boolean get() = Regex("""(?i)\bflash\b""").containsMatchIn(keywords)
         /** An instant or sorcery: it lives in hand or on the stack, never on the battlefield. */
-        val isSpellOnly: Boolean get() = (typeLine.contains("Instant") || typeLine.contains("Sorcery")) && !typeLine.contains("Land")
+        /** An omen card ("Creature — Dragon // Instant — Omen") is a creature card everywhere but the stack (721.4), so it isn't one. */
+        val isSpellOnly: Boolean get() = (typeLine.contains("Instant") || typeLine.contains("Sorcery")) && !typeLine.contains("Land") && !(typeLine.contains("— Omen") && !typeLine.substringBefore(" // ").let { it.contains("Instant") || it.contains("Sorcery") })
     }
 
     fun lookup(norm: String): Entry? = byNorm[norm]
@@ -50,7 +51,8 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                 // A first name shared by several legendary creatures ("Sheoldred", "Atraxa"): the front face of a transforming card
                 // that happens to carry it ("Sheoldred // The True Scriptures") doesn't win over them.
                 // "two Thalias": the plural of a first name is the same first name.
-                val headKey = if (len == 1 && key !in aliases && (e0 == null || e0.kind != "full" || !e0.isCard)) (key.takeIf { heads[it] != null } ?: sing?.takeIf { heads[it] != null }) else null
+                val headKey = if (len == 1 && key !in aliases && (e0 == null || e0.kind != "full" || !e0.isCard)) (key.takeIf { heads[it] != null } ?: sing?.takeIf { heads[it] != null })
+                    else if (len in 2..6 && e0 == null && key !in aliases) key.takeIf { heads[it] != null } else null
                 val e = if (headKey != null) heads.getValue(headKey).let { hs -> hs.first().copy(alternatives = hs.drop(1).map { it.display } + listOfNotNull(e0?.display)) } else e0
                 // A name made only of everyday words ("The End", "Turn Aside" no, "Wear // Tear" yes) is table talk unless it's a nickname.
                 // The singularized form counts too: "exiled" reaches the card Exile through "exile", and "exile" is
@@ -89,6 +91,11 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
         if (last.length > 3 && last.endsWith("s") && !last.endsWith("ss")) return (span.dropLast(1) + last.dropLast(1)).joinToString(" ")
         // "bolted", "pathed", "wrathed": a card name used as a past-tense verb.
         if (last.length > 4 && last.endsWith("ed")) { val stem = last.dropLast(2); val stemD = last.dropLast(1); return listOf(stem, stemD).firstOrNull { st -> val k = (span.dropLast(1) + st).joinToString(" "); byNorm.containsKey(k) || aliases.containsKey(k) }?.let { st -> (span.dropLast(1) + st).joinToString(" ") } }
+        // "doom blading", "giant growthing", "bolting": a card name used as a progressive verb (names of two words or more, and the common nicknames).
+        if (last.length > 5 && last.endsWith("ing") && (span.size >= 2 || aliases.containsKey(last.dropLast(3)))) {
+            val stems = listOf(last.dropLast(3), last.dropLast(3) + "e", last.dropLast(4))
+            stems.firstOrNull { st -> val k = (span.dropLast(1) + st).joinToString(" "); byNorm.containsKey(k) || aliases.containsKey(k) }?.let { st -> return (span.dropLast(1) + st).joinToString(" ") }
+        }
         return null
     }
 
@@ -107,6 +114,7 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
         /** Common nicknames -> normalized card names. Grow this by hand; it is not data from any card source. */
         val aliases: Map<String, String> = mapOf(
             "bolt" to "lightning bolt", "vial" to "aether vial", "surgical" to "surgical extraction", "hymn" to "hymn to tourach", "shadow" to "death s shadow", "maze" to "maze of ith", "chalice" to "chalice of the void", "snapcaster" to "snapcaster mage", "jace" to "jace the mind sculptor", "liliana" to "liliana of the veil", "elesh norn" to "elesh norn grand cenobite", "lili" to "liliana of the veil", "elspeth" to "elspeth sun s champion", "gideon" to "gideon ally of zendikar", "ugin" to "ugin the spirit dragon", "delver" to "delver of secrets", "leyline" to "leyline of sanctity", "ballista" to "walking ballista", "hangarback" to "hangarback walker", "craterhoof" to "craterhoof behemoth", "settle" to "settle the wreckage", "deluge" to "toxic deluge", "helix" to "lightning helix", "hailfire" to "torment of hailfire", "hoof" to "craterhoof behemoth", "snappy" to "snapcaster mage", "snap" to "snapcaster mage", "bears" to "grizzly bears", "swords" to "swords to plowshares", "path" to "path to exile",
+            "necro" to "necropotence", "grisel" to "griselbrand", "yawg" to "yawgmoth thran physician",
             "rhystic" to "rhystic study", "tithe" to "smothering tithe", "sol" to "sol ring", "wrath" to "wrath of god", "damnation" to "damnation",
             "cyc rift" to "cyclonic rift", "rift" to "cyclonic rift", "tutor" to "demonic tutor", "demonic" to "demonic tutor", "vamp tutor" to "vampiric tutor",
             "mana crypt" to "mana crypt", "crypt" to "mana crypt", "vault" to "mana vault", "goyf" to "tarmogoyf", "sdt" to "sensei s divining top", "divining top" to "sensei s divining top",
@@ -179,7 +187,10 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
             for (e in map.values) {
                 if (e.kind != "full" || !e.isCard || !e.typeLine.contains("Legendary")) continue
                 val head = if (e.display.contains(",")) Names.normalize(e.display.substringBefore(",")) else Regex("""^([A-Z][\w'-]+) (?:of|the)\b""").find(e.display)?.groupValues?.get(1)?.let { Names.normalize(it) } ?: continue
-                if (head.contains(' ') || head.length < 4 || head in commonWords || head in stopWords || map[head]?.let { it.kind == "full" && it.isCard } == true) continue
+                // Redteam3: "Captain Pike", "Elim Garak" — a two- or three-word name before the comma, when no card has that name.
+                // "U.S.S. Reliant": leading initials don't count as words.
+                val words = head.split(' ').dropWhile { it.length == 1 }
+                if (words.isEmpty() || words.size > 3 || (head.contains(' ') && words.all { it in commonWords || it in stopWords }) || head.length < 4 || head in commonWords || head in stopWords || map[head]?.let { it.kind == "full" && it.isCard } == true) continue
                 heads.getOrPut(head) { mutableListOf() }.let { l -> if (l.none { it.oracleId == e.oracleId }) l += e }
             }
             // A creature token type is printed in several sizes ("Soldier" is 1/1 far more often than 2/2). The

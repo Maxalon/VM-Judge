@@ -144,7 +144,7 @@ object Layers {
         if (f.legendary != null && f.legendary != ("Legendary" in c.supertypes)) return false
         if (f.colors.any { it !in c.colors } || f.notColors.any { it in c.colors }) return false
         // Anything else the filter asks (a keyword, a power) is read off the object as the rest of the engine sees it.
-        if (f.keywords.isNotEmpty() || f.notKeywords.isNotEmpty() || f.minPower != null || f.maxPower != null || f.tapped != null || f.attacking != null || f.blocking != null)
+        if (f.keywords.isNotEmpty() || f.notKeywords.isNotEmpty() || f.minPower != null || f.maxPower != null || f.maxTotalPT != null || f.tapped != null || f.attacking != null || f.blocking != null)
             return state.matches(f, o, src.controller, src)
         return true
     }
@@ -183,9 +183,10 @@ object Layers {
                     // Yixlid Jailer: cards in graveyards lose all abilities (layer 6).
                     StaticEffect.GraveyardCardsLoseAbilities -> LayerEffect(src, ts, src.name, listOf(6), true, eff,
                         { c -> c.obj.zone == Zone.GRAVEYARD }, { _, c -> c.abilitiesLostTo = src; c.abilitiesLostEffect = eff })
-                    else -> DeepMech.layerEffect(state, src, eff) ?: continue   // Song of the Dryads (DeepMechanics.kt)
+                    else -> DeepMech.layerEffect(state, src, eff) ?: Exam2Mech.layerEffect(state, src, eff) ?: continue   // Song of the Dryads (DeepMechanics.kt), Spreading Seas (Exam2Mechanics.kt)
                 }
             }
+            out += Exam5Mech.layerEffects(state, src)   // Conspiracy, Enchanted Evening (Exam5Mechanics.kt)
             // A leveler's band sets its base size (702.87b), its own static ability with its own timestamp.
             state.levelBand(src)?.let { band -> out += LayerEffect(src, src.timestamp, src.name, listOf(7), true, band, { c -> c.obj === src }, { _, c -> c.basePt = band.power to band.toughness; c.basePtBy = "its level" }) }
             // Resolved effects: "becomes a 2/2 creature until end of turn" (layers 4, 5 and 7b) and "has base power and toughness N/N".

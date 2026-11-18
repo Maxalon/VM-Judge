@@ -134,7 +134,7 @@ internal object EdhMech {
                 if (cmds.isEmpty()) { tr.step("${p.subject} ${p.v("controls", "control")} no commander on the battlefield, so nothing happens.", "903.3d"); state.outcomes += "${p.subject} ${p.v("controls", "control")} no commander, so ${item.source.name} does nothing."; return true }
                 for (c in cmds) {
                     val owner = state.player(c.owner)
-                    tr.step("${c.name} is a commander ${nm(p)} ${p.v("controls", "control")}${if (c.owner != p.id) " (${owner.possessive}, not ${p.possessive})" else ""}: \"each commander they control\" means any commander on the battlefield under ${p.possessive} control, whoever owns it. It goes to ${owner.possessive} command zone; it wasn't cast, so ${owner.possessive} commander tax doesn't change.", "903.3d", "903.8", "400.7")
+                    tr.step("${c.name} is a commander ${nm(p)} ${p.v("controls", "control")}${if (c.owner != p.id) " (${owner.possessive}, not ${if (p.you) "yours" else p.possessive})" else ""}: \"each commander they control\" means any commander on the battlefield under ${p.possessive} control, whoever owns it. It goes to ${owner.possessive} command zone; it wasn't cast, so ${owner.possessive} commander tax doesn't change.", "903.3d", "903.8", "400.7")
                     engine.leave(c.id, Zone.COMMAND)
                     state.outcomes += "${c.name} returns to ${owner.possessive} command zone (${item.source.name}); ${owner.possessive} commander tax stays as it was (it counts casts, 903.8)."
                 }
@@ -232,7 +232,7 @@ internal object EdhMech {
         return true
     }
 
-    /** 725.4: the monarch leaving the game passes the crown to the active player, or the next player in turn order. */
+    /** 726.4: the monarch leaving the game passes the crown to the active player, or the next player in turn order. */
     fun monarchLeaves(state: GameState, p: Player) {
         if (state.monarch != p.id) return
         val seats = state.players.filter { !it.lost || it.id == p.id }
@@ -242,9 +242,9 @@ internal object EdhMech {
             (seats.dropWhile { it.id != from }.drop(1) + seats.takeWhile { it.id != from }).firstOrNull { it.id != p.id && !it.lost }
         }
         state.monarch = next?.id
-        if (next == null) { state.trace.step("${p.subject} was the monarch and ${p.v("leaves", "leave")} the game; nobody is left to become the monarch.", "725.4"); return }
-        state.trace.step("${p.subject} ${p.v("is", "are")} the monarch and ${p.v("leaves", "leave")} the game, so ${if (ap != null && ap != p.id) "the active player, ${nm(next)}," else "the next player in turn order, ${nm(next)},"} ${next.v("becomes", "become")} the monarch at the same time. No creature had to deal combat damage for it.", "725.4")
-        state.outcomes += "${next.subject} ${next.v("becomes", "become")} the monarch (${nm(p)} left the game as the monarch, 725.4)."
+        if (next == null) { state.trace.step("${p.subject} was the monarch and ${p.v("leaves", "leave")} the game; nobody is left to become the monarch.", "726.4"); return }
+        state.trace.step("${p.subject} ${p.v("is", "are")} the monarch and ${p.v("leaves", "leave")} the game, so ${if (ap != null && ap != p.id) "the active player, ${nm(next)}," else "the next player in turn order, ${nm(next)},"} ${next.v("becomes", "become")} the monarch at the same time. No creature had to deal combat damage for it.", "726.4")
+        state.outcomes += "${next.subject} ${next.v("becomes", "become")} the monarch (${nm(p)} left the game as the monarch, 726.4)."
     }
 
     /**
@@ -282,6 +282,7 @@ internal object EdhMech {
 
     /** Deflecting Swat on a spell with no targets (Cyclonic Rift overloaded, a board wipe): there is nothing to change (115.7). */
     fun noTargetsToChange(state: GameState, spell: StackItem, item: StackItem) {
+        if (Leftovers4Mech.targetUnsaid(state, spell, item)) return   // its target wasn't said (Leftovers4Mechanics.kt)
         val over = spell.source.def.has("overload") && state.trace.steps.any { it.text.contains("${spell.source.name} for its overload cost") }
         state.trace.step("${spell.source.name} has no targets${if (over) " — cast overloaded, every \"target\" in its text became \"each\", so it was cast with none" else ""} — so there is nothing for ${item.source.name} to change. ${item.source.name} can still be cast targeting it; it just does nothing.", "115.7", *(if (over) arrayOf("702.96b") else emptyArray()))
         state.outcomes += "${item.source.name} changes nothing: ${spell.source.name} has no targets${if (over) " (overloaded, 702.96b)" else ""}, so it still affects everything it describes."

@@ -34,9 +34,11 @@ class KeywordFlags {
     /** Cast from a graveyard with escape (702.138b); [escapeIntent] is set by the cast and read as the spell is put on the stack. */
     var escaped = false
     var escapeIntent = false
-    /** Cast as an Adventure and now waiting in exile to be cast as the creature (715.3d). */
+    /** Cast as an Adventure and now waiting in exile to be cast as the creature (716.3d). */
     var onAdventure = false
     var castAsAdventure = false
+    /** Redteam2: cast as an Omen (721.3): shuffled into its owner's library as it resolves (721.3d). */
+    var castAsOmen = false
     /** Cards that merged with this permanent (mutate, 730): their names and their own definitions. */
     val merged = mutableListOf<String>()
     val mergedDefs = mutableListOf<CardDef>()
@@ -73,9 +75,9 @@ fun costMv(cost: String?): Int = cost?.let { Regex("""\{([^}]+)\}""").findAll(it
 fun Engine.keywordResolutionZone(item: StackItem): Zone? {
     val src = item.source
     if (src.token || item.flashback) return null
-    // A spell that was spliced or cast as an Adventure has the text or characteristics it gained only while it's on the stack (702.47e, 715.4).
+    // A spell that was spliced or cast as an Adventure has the text or characteristics it gained only while it's on the stack (702.47e, 716.4).
     if (src.def !== src.printedDef && (src.kwf.spliced.isNotEmpty() || src.kwf.castAsAdventure)) src.def = src.printedDef
-    if (src.kwf.castAsAdventure) return Zone.EXILE
+    if (src.kwf.castAsAdventure) return if (src.kwf.castAsOmen) Zone.LIBRARY else Zone.EXILE
     NewSetMech.resolutionZone(src)?.let { return it }   // paradigm exiles the spell (NewSetMechanics.kt)
     if (MoreEffects.selfShuffled(state, src)) return Zone.LIBRARY   // Green Sun's Zenith shuffled itself away (MoreEffects.kt)
     if (LegacyMech.exileOnResolve(src) != null) return Zone.EXILE   // Dreadhorde Arcanist: "exile it instead"
@@ -97,10 +99,14 @@ fun Engine.keywordResolutionNote(item: StackItem, zone: Zone) {
         src.kwf.jumpStarted = false
         state.trace.step("${def.name} was cast with jump-start, so it is exiled instead of being put anywhere else as it leaves the stack: it can't be cast from the graveyard again.", "702.133a", "608.2n")
         state.outcomes += "${def.name} is exiled (jump-start, 702.133a)."
+    } else if (zone == Zone.LIBRARY && src.kwf.castAsOmen) {
+        src.kwf.castAsAdventure = false; src.kwf.castAsOmen = false
+        state.trace.step("The Omen spell finishes resolving. Instead of putting it into its owner's graveyard, its controller shuffles it into its owner's library.", "721.3d", "608.2n")
+        state.outcomes += "${src.printedDef.name} is shuffled into ${owner.possessive} library instead of going to the graveyard (Omen, 721.3d)."
     } else if (zone == Zone.EXILE && src.kwf.castAsAdventure) {
         src.kwf.castAsAdventure = false; src.kwf.onAdventure = true
-        state.trace.step("The Adventure spell finishes resolving. Instead of putting it into its owner's graveyard, its controller exiles it, and for as long as it stays in exile that player may cast the creature card from there.", "715.3d", "608.2n")
-        state.outcomes += "${src.printedDef.name} goes to exile instead of the graveyard. Yes: ${owner.subject.lowercase()} may cast it as the creature from exile on a later turn (715.3d), but not as the Adventure again."
+        state.trace.step("The Adventure spell finishes resolving. Instead of putting it into its owner's graveyard, its controller exiles it, and for as long as it stays in exile that player may cast the creature card from there.", "716.3d", "608.2n")
+        state.outcomes += "${src.printedDef.name} goes to exile instead of the graveyard. ${owner.subject} may cast it as the creature from exile on a later turn (716.3d), but not as the Adventure again."
     } else if (zone == Zone.EXILE && LegacyMech.exileOnResolve(src) != null) {
         val by = LegacyMech.exileOnResolve(src)
         state.trace.step("${def.name} finishes resolving and would be put into ${owner.possessive} graveyard, but $by's ability said \"If that spell would be put into your graveyard, exile it instead\", so it's exiled. It can't be cast from the graveyard again.", "614.1a", "608.2n")

@@ -33,12 +33,12 @@ object RulesAnswers {
 
     // Longest (most specific) first: the first entry whose terms are all present wins.
     private val entries: List<Entry> = listOf(
-        // Loops and shortcuts: how a loop is shown and taken (732.1b–732.2c), and when a loop is a draw (732.4).
-        e("demonstrate + loop", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("show + loop", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("loop + tournament", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("shortcut + loop", DEMO_LOOP, "732.1b", "732.2a", "732.2b", "732.2c", "732.1c"),
-        e("mandatory + loop", "If a loop is made only of mandatory actions and nothing can stop it, the game is a draw. A loop with even one optional action in it isn't a draw: the player with that choice ends it by choosing differently, and nobody can be forced to take an action outside the loop to end it.", "732.4", "104.4b", "732.5"),
+        // Loops and shortcuts: how a loop is shown and taken (733.1b–733.2c), and when a loop is a draw (733.4).
+        e("demonstrate + loop", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("show + loop", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("loop + tournament", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("shortcut + loop", DEMO_LOOP, "733.1b", "733.2a", "733.2b", "733.2c", "733.1c"),
+        e("mandatory + loop", "If a loop is made only of mandatory actions and nothing can stop it, the game is a draw. A loop with even one optional action in it isn't a draw: the player with that choice ends it by choosing differently, and nobody can be forced to take an action outside the loop to end it.", "733.4", "104.4b", "733.5"),
         e("any target + planeswalker", "Yes. \"Any target\" means a creature, a player, a planeswalker or a battle, so a spell like Lightning Bolt can target a planeswalker directly; damage dealt to a planeswalker removes that many loyalty counters.", "115.4", "306.8"),
         e("oracle + trigger + draw", "Yes. Thassa's Oracle's ability triggers when it enters and goes on the stack, and opponents get priority before it resolves. If they make you draw from an empty library in response, you lose the game the next time state-based actions are checked, before the trigger resolves. If your library is small but not empty, drawing cards in response just makes it smaller, which only helps the Oracle.", "603.3", "117.4", "704.5b"),
         e("color identity + text", "Yes. A card's color identity is every color in its mana cost plus every color of mana symbol in its rules text (hybrid and Phyrexian symbols included), plus any color indicator. Reminder text doesn't count. Your deck can contain only cards whose color identity is within your commander's.", "903.4", "903.5c"),
@@ -254,6 +254,10 @@ object RulesAnswers {
         e("scoop",
             "Conceding happens immediately, at any time, even with something on the stack and even when that player doesn't have priority. That player leaves the game at once, and everything they own leaves with them — so a spell of theirs on the stack never resolves.",
             "104.3a", "800.4a"),
+        // "During my extra turn from Time Walk I cast another Time Walk. How many extra turns do I get?" (exam3)
+        e("extra turn + another + how many",
+            "One more. The second Time Walk adds an extra turn directly after the extra turn you're taking now, so you take that one too, and then the turn order goes back to normal. Each extra-turn effect adds one turn; if several are waiting, the one created last is taken first.",
+            "500.7"),
         e("extra turn",
             "An extra turn is added directly after the turn it was created during. If several are created, the last one created is taken first.",
             "500.7"),
@@ -269,6 +273,13 @@ object RulesAnswers {
         e("opalescence + humility",
             "Humility becomes a creature; Opalescence doesn't (it changes each other non-Aura enchantment, not itself). Opalescence makes Humility a creature in layer 4; Humility then takes every creature's abilities away in layer 6, its own included, but an effect that has started applying keeps applying (613.6), so in layer 7b Humility still sets 1/1 and Opalescence sets base power and toughness equal to mana value. Neither depends on the other, so the later timestamp wins: Humility entered later, Humility is a 1/1; Opalescence entered later, Humility is a 4/4. Either way Humility has no abilities, every creature that isn't an enchantment is a 1/1 with no abilities, and Opalescence stays a noncreature enchantment with its ability.",
             "613.6", "613.7", "613.4b", "613.1d"),
+        // "I steal my opponent's commander with Control Magic and it dies. Can it go to the command zone?" (exam3): yes, its owner's.
+        e("steal + commander + command zone",
+            "Yes, but it's your opponent's choice, not yours. A card always goes to its owner's graveyard, so the commander lands in your opponent's graveyard, and the next time state-based actions are checked its owner may put it into their command zone. Who controlled it when it died doesn't matter. Casting it again from there costs its owner {2} more for each earlier cast from the command zone.",
+            "400.3", "903.9a", "903.8"),
+        e("control magic + commander + command zone",
+            "Yes, but it's your opponent's choice, not yours. A card always goes to its owner's graveyard, so the commander lands in your opponent's graveyard, and the next time state-based actions are checked its owner may put it into their command zone. Who controlled it when it died doesn't matter. Casting it again from there costs its owner {2} more for each earlier cast from the command zone.",
+            "400.3", "903.9a", "903.8"),
         e("commander + lethal damage + command zone",
             "Yes. Lethal damage destroys your commander, and as it would be put into the graveyard you may put it into the command zone instead the next time state-based actions are checked. Casting it from there costs {2} more for each time it has been cast from the command zone before.",
             "903.9a", "704.5g", "903.8"),

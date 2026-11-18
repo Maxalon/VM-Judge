@@ -163,7 +163,7 @@ internal object CoverageMech {
                 val d = state.player(defender)
                 val perms = state.objects.values.filter { it.isOnBattlefield() && it.controller == defender }
                 if (perms.size <= e.n) {
-                    t.step("Annihilator ${e.n}: ${d.subject.lowercase()} ${d.v("sacrifices", "sacrifice")} ${plural(e.n, "permanent")}; ${d.subject.lowercase()} ${d.v("controls", "control")} only ${perms.size}, so all of them go. The trigger resolves in the declare attackers step, before blockers are declared.", "702.86a", "701.21a")
+                    t.step("Annihilator ${e.n}: ${d.subject.lowercase()} ${d.v("sacrifices", "sacrifice")} ${plural(e.n, "permanent")}; " + (if (perms.isEmpty()) "${d.subject.lowercase()} ${d.v("controls", "control")} none, so nothing is sacrificed." else "${d.subject.lowercase()} ${d.v("controls", "control")} only ${perms.size}, so all of them go.") + " The trigger resolves in the declare attackers step, before blockers are declared.", "702.86a", "701.21a")
                     for (o in perms) engine.sacrifice(defender, o.id)
                 } else {
                     t.step("Annihilator ${e.n}: as the trigger resolves in the declare attackers step (before blockers are declared), ${d.subject.lowercase()} ${d.v("chooses", "choose")} ${plural(e.n, "permanent")} ${d.subject.lowercase()} ${d.v("controls", "control")} and ${d.v("sacrifices", "sacrifice")} them: any permanents, lands included, from ${perms.joinToString(", ") { it.name }}. Sacrificing isn't destroying, so indestructible doesn't help.", "702.86a", "701.21a")

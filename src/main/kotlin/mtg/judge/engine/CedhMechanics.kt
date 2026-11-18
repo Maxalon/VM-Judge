@@ -249,7 +249,7 @@ internal object CedhMech {
                 val lib = p.librarySize
                 tr.step("$src exiles the top card of ${p.possessive} library; ${p.subject.lowercase()} may put it into ${p.possessive} hand but ${p.v("doesn't", "don't")} have to, and ${p.subject.lowercase()} ${p.v("declines", "decline")} each time. With no two cards sharing a name the process repeats until there's nothing left to exile, and then it ends: an instruction that can't be carried out is simply skipped. ${p.subject} ${p.v("ends", "end")} with no cards in ${p.possessive} library${lib?.let { " (all $it exiled)" } ?: ""}.", "608.2c", "608.2d", "609.3")
                 p.librarySize = 0
-                state.outcomes += "${p.subject} ${p.v("exiles", "exile")} ${p.possessive} whole library with $src and ${p.v("takes", "take")} nothing: putting a card into ${p.possessive} hand is optional, so the process runs until the library is empty."
+                state.outcomes += "${p.subject} ${p.v("exiles", "exile")} ${p.possessive} whole library with $src and ${p.v("takes", "take")} nothing: putting a card into ${p.possessive} hand is optional, so the process runs until the library is empty, provided no two cards exiled share a name (two basic lands of the same name would stop it there)."
             }
             how?.startsWith("dup:") == true -> {
                 val n = how.removePrefix("dup:")
@@ -327,7 +327,7 @@ internal object CedhMech {
         val o = item.source; val here = o.isOnBattlefield()
         val x = (if (here) o.power else o.lkiPower ?: o.power ?: o.def.power)?.coerceAtLeast(0) ?: return effect
         e.state.trace.step("X is ${o.name}'s power, checked as the ability resolves: ${if (here) "it's $x" else "${o.name} has left the battlefield, so its power as it last existed there is used: $x"}. The ability exists on the stack independently of its source, so it still resolves.", "608.2h", "113.7a")
-        if (!here) e.state.outcomes += "${o.name}'s trigger still resolves without it: X is its last known power, $x, so paying {$x} stops the draw."
+        if (!here) e.state.outcomes += "${o.name}'s ${if (item.kind == StackKind.TRIGGERED) "trigger" else "ability"} still resolves without it: X is its last known power, $x, so paying {$x} ${if (effect.effect is Effect.Counter) "keeps the spell from being countered" else "stops the draw"}."
         return effect.copy(cost = "{$x}")
     }
 

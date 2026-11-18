@@ -14,7 +14,8 @@ object Generic {
         NewSetMech.token(desc)?.let { return it }   // empower Jace's Jace planeswalker token (NewSetMechanics.kt)   // Voice of Resurgence's Elemental, Urza's Saga's Construct (DeepMechanics.kt)
         val n1 = desc.lowercase().removePrefix("a ").removePrefix("an ").trim()
         val legendary = n1.startsWith("legendary ")
-        val named = Regex("""\s+named (.+)$""").find(n1)?.groupValues?.get(1)
+        // "a tapped colorless land token named Everywhere that is every basic land type": the name is "Everywhere".
+        val named = Regex("""\s+named (.+?)(?: that is .+| with .+)?$""").find(n1)?.groupValues?.get(1)
         val n = n1.removePrefix("legendary ").replace(Regex("""\s+named .+$"""), "")
         val m = tokenRe.matchEntire(n) ?: return null
         val colors = m.groupValues[3].trim().split(' ').filter { it.isNotEmpty() }.mapNotNull { colorMap[it] }.joinToString("")
@@ -57,6 +58,7 @@ object Generic {
     /** "a spell", "an instant", "a creature spell", "a creature" (an unnamed 1/1 whose stats are assumed). */
     fun spell(name: String): CardDef? {
         val n = name.lowercase().replace('，', ',').removePrefix("a ").removePrefix("an ").trim()
+        Leftovers4Mech.genericCard(n)?.let { return it }   // "their Vehicle" with no card named (Leftovers4Mechanics.kt)
         creature(n)?.let { return it }
         if (n in setOf("counterspell", "counter", "counter spell", "generic counterspell")) return OracleParser.parse("generic-counterspell", "a counterspell", "Instant", "{1}{U}", 2.0, "U", null, null, emptyList(), "Counter target spell.")
         Regex("""^(\d+)[- ]mana (spell|instant|sorcery|creature spell|creature|artifact|enchantment|noncreature spell)$""").find(n)?.let { m ->

@@ -18,7 +18,7 @@ import mtg.judge.engine.Zone
 /**
  * "Can I gain infinite life?", "How much damage can I deal?", "Can I win this turn?" asked of a board: whether it
  * holds a sequence of actions that comes back to the same position with something gained each time round — a loop
- * the shortcut rules let a player repeat any number of times by naming the number (732.1b, 732.2a).
+ * the shortcut rules let a player repeat any number of times by naming the number (733.1b, 733.2a).
  *
  * It is found by playing it, not by knowing combos. The candidates come from what the cards can do: a free
  * "sacrifice a creature" ability and a creature that comes back when it dies (persist, undying); a creature that
@@ -55,7 +55,7 @@ internal class LoopFinder(private val judge: Judge, private val state: GameState
         .filterIsInstance<StaticEffect.EntersWithCounters>().firstOrNull { it.count != null && it.per == null }?.kind
 
     /** The position a game state is in, written as a situation to play the next round from. */
-    private fun boardOf(st: GameState): Situation {
+    internal fun boardOf(st: GameState): Situation {
         // Life totals are left unsaid: a round is measured by what it gains or costs (the ledger), and a total that ran
         // out partway would end the measuring rather than the loop.
         val players = st.players.map { p -> PlayerSpec(p.id, p.name, poison = p.poison.takeIf { it > 0 }, handSize = p.handSize, librarySize = p.librarySize) }

@@ -35,14 +35,17 @@ object DirectAnswers {
         if (state.outcomes.isEmpty()) return
         val c = Q(q, qs, sit, state)
         try {
+            if (TruthAudit3.fateLead(q, state)) return   // "Who dies?", "Can I kill both?" (TruthAudit3.kt)
+            if (yesNoWord.containsMatchIn(q) && TruthAudit3.payExtra(q, state)) return   // "Do I have to pay extra?" under Thalia (TruthAudit3.kt)
             when {
                 yesNoWord.containsMatchIn(q) -> yesNo(c)
-                Regex("""^how (?:much|many)\b""").containsMatchIn(q) -> number(c)
+                Regex("""^(?:if [^,]+, )?how (?:much|many)\b""").containsMatchIn(q) -> number(c)
                 Regex("""^what (?:happens|happened|will happen) to\b""").containsMatchIn(q) -> fate(c)
                 Regex("""^who (?:wins|loses|won|lost|will win|will lose)\b""").containsMatchIn(q) -> who(c)
                 Regex("""^which\b""").containsMatchIn(q) -> which(c)
                 Regex("""^when\b""").containsMatchIn(q) -> whenLead(c)
             }
+            TruthAudit3.killHalf(q, state)   // "Can I triple block and kill it?" (TruthAudit3.kt)
         } catch (e: RuntimeException) { if (System.getenv("MTG_DEBUG_LEAD") != null) e.printStackTrace() /* a lead is a convenience: a question it can't read keeps the narration as it was */ }
     }
 
@@ -51,6 +54,8 @@ object DirectAnswers {
     private fun yesNo(c: Q) {
         val outs = c.outs
         if (answered.containsMatchIn(outs[0])) return
+        // "Does Thalia get discarded?" to a random discard: neither yes nor no, but the odds.
+        outs.indexOfFirst { Regex("""^\d+% to (?:lose|keep) it: """).containsMatchIn(it) }.takeIf { it >= 0 }?.let { k -> val l = outs.removeAt(k); outs.add(0, "It depends on the random discard: $l"); return }
         // The engine's own Yes/No line, written further down (the narration of the events came first): it moves up.
         val bare = Regex("""^(?:can|could|may) (?:i|we|they|he|she)(?: still| even)?$""").matches(c.q)
         (outs.indexOfFirst { answered.containsMatchIn(it) && (bare || relevant(c, it)) }.takeIf { it > 0 }
@@ -368,7 +373,8 @@ object DirectAnswers {
     }
 
     private fun wearOff(c: Q): String? {
-        if (!Regex("""\b(?:wear off|wears off|go away|end|last|still (?:have|apply))\b""").containsMatchIn(c.q)) return null
+        // "Is it destroyed at the end step?" names the step; it doesn't ask whether an effect ends.
+        if (!Regex("""\b(?:wear off|wears off|go away|end(?! step)|last|still (?:have|apply))\b""").containsMatchIn(c.q)) return null
         c.outs.firstOrNull { it.startsWith("Until-end-of-turn effects still apply during the end step") }?.let { return "No, not yet: " + low(it) }
         return null
     }
@@ -530,7 +536,7 @@ object DirectAnswers {
         // "zombies" is a Zombie, "faeries" a Faerie, "rubies" would be a Ruby.
         val t = if (type.endsWith("ie")) "(?:${Regex.escape(type)}|${Regex.escape(type.dropLast(2) + "y")})" else Regex.escape(type)
         val made = c.outs.filter { Regex("""(?i)\bgets? (?:an? |\d+ )(?:[\w/-]+ )*?${t}s? tokens?\b""").containsMatchIn(it) }
-        if (made.isNotEmpty()) return yes(made.first()).removeSuffix(".") + (if (made.size > 1) " (×${made.size})" else "") + "."
+        if (made.isNotEmpty()) return Grammar.foldRepeat(yes(made.first()), made.size)
         c.outs.firstOrNull { Regex("""(?i)\bdoesn't trigger\b""").containsMatchIn(it) && relevantName(c, it) }?.let { return no(it) }
         return null
     }
@@ -1154,7 +1160,11 @@ object DirectAnswers {
     private fun whenLead(c: Q) {
         if (!Regex("""^when (?:can|could|do|does|did|will|would|is|are|should)\b""").containsMatchIn(c.q)) return
         val first = c.outs[0]
-        if (Regex("""^(?:At|On|During|In|When|Whenever|After|Before|Until|Only|Not until|Not this turn|Never|Now|Immediately|Right away|As soon as|Any time)\b""").containsMatchIn(first)) return
+        val timingStart = Regex("""^(?:At|On|During|In|When|Whenever|After|Before|Until|Only|Not until|Not this turn|Never|Now|Immediately|Right away|As soon as|Any time)\b""")
+        if (timingStart.containsMatchIn(first)) return
+        // A line that already answers "when" ("At the beginning of the end step of the next turn …", Goryo's at an end step) leads,
+        // rather than a timing pulled from another line that may say less.
+        c.outs.firstOrNull { timingStart.containsMatchIn(it) && Regex("""^At the beginning of\b""").containsMatchIn(it) }?.let { l -> c.outs.remove(l); c.outs.add(0, l); return }
         c.outs.firstNotNullOfOrNull { l -> Regex("""\bwith (\d+) time counters?\b""").find(l) }?.let { m ->
             val n = m.groupValues[1].toInt()
             c.outs.add(0, "At the beginning of your ${if (n == 1) "next upkeep" else "upkeep $n turns from now"}: the last time counter comes off then and it is cast without paying its mana cost (702.62a).")

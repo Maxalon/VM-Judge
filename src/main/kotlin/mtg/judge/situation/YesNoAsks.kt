@@ -133,12 +133,20 @@ object YesNoAsks {
         if (w.results.isEmpty()) return true
         // A block that was declared can still be undone as the declaration is checked ("can't block … on its own"): read everything said since.
         // An ability's effect comes when it resolves ("Thalia stays in hand" once the Vial's ability resolves): read everything said since, too.
-        for (r in w.results) { r.lines = state.outcomes.drop(r.from); if (r.ok == true && refusal(r.e, r.lines, state) != null) r.ok = false }
+        // ...but only up to the next action asked about: a later refusal ("then tap it for mana") isn't this one's.
+        for ((i, r) in w.results.withIndex()) { val until = w.results.getOrNull(i + 1)?.from?.coerceIn(r.from, state.outcomes.size) ?: state.outcomes.size; r.lines = state.outcomes.subList(r.from.coerceAtMost(until), until).toList(); if (r.ok == true && refusal(r.e, r.lines, state) != null) r.ok = false }
         val window = state.outcomes.drop(w.outcomesAtOpen)
         val bad = w.results.firstOrNull { it.ok != true }
         // "Does Pacifism stop it from attacking?": the same question turned round.
         val inverse = w.inverse
         // Refused, but with nothing said about why (the engine read the action some other way): no answer is better than a wrong one.
+        // "Can they activate Mutavault, and can they then tap it for mana?" under Linvala: the first part is a yes, the second a no.
+        val badAt = w.results.indexOf(bad)
+        // Only two different abilities of one permanent, asked one after the other: a second land or a second blocker is the question itself.
+        if (bad != null && !inverse && badAt > 0 && w.results.take(badAt).all { it.ok == true } && bad.e.verb.lowercase() == "activate" &&
+            w.results.take(badAt).all { it.e.verb.lowercase() == "activate" && it.e.obj != null && it.e.obj == bad.e.obj && it.e.to != bad.e.to }) {
+            reasonLine(bad, state)?.let { r -> state.outcomes += "Yes, then no: " + w.results.take(badAt).map { did(it, state) }.distinct().joinToString("; ") + "; but then " + lower(r.replace(Regex("""^No[:,]?\s*"""), "")) }; return true
+        }
         if (bad != null) { reasonLine(bad, state)?.let { state.outcomes += say(it, if (inverse) "Yes" else "No", state, inverse) }; return true }
         if (inverse) { state.outcomes += "No: " + w.results.map { did(it, state) }.distinct().joinToString("; ") + "."; return true }
         // The action happened; what the question wanted from it may not have.
@@ -175,7 +183,8 @@ object YesNoAsks {
         window.firstOrNull { it.startsWith("Yes") }?.let { y -> if (w.results.any { r -> y in r.lines }) { state.outcomes += say(y, null, state); return true } }
         val redirected = w.results.firstNotNullOfOrNull { r -> actedCard(r.e, state)?.takeIf { d -> Regex("""(?i)\bchange (?:a|the) targets? of target spell or ability\b""").containsMatchIn(d.def.oracleText) }?.let { d -> window.firstOrNull { l -> Regex("""now targets ${Regex.escape(d.name)}\b|changes .+'s target to ${Regex.escape(d.name)}\b""").containsMatchIn(l) } } }
         val clauses = w.results.map { did(it, state) }
-        val counted = clauses.distinct().map { c -> clauses.count { it == c }.let { n -> if (n == 1) c else "$c ${if (n == 2) "twice" else "$n times"}" } }
+        // "a 1/1 creature can block a 5/5 creature" for three different 1/1s is "three 1/1 creatures can block", not the one "3 times".
+        val counted = clauses.distinct().map { c -> clauses.count { it == c }.let { n -> if (n == 1) c else Regex("""^an? (.+?) (can|could) (.+)$""").find(c)?.let { m -> "${Grammar.numberWord(n)} ${Grammar.pluralPhrase(m.groupValues[1])} ${m.groupValues[2]} ${m.groupValues[3]}" } ?: "$c ${if (n == 2) "twice" else "$n times"}" } }
         state.outcomes += "Yes: " + counted.joinToString("; ") + (redirected?.let { ": " + lower(it).removeSuffix(".") } ?: "") + "."
         return true
     }
@@ -230,8 +239,15 @@ object YesNoAsks {
         val e = asked.e; val from = asked.from
         if (from > state.outcomes.size) return
         val lines = state.outcomes.drop(from)
-        if (lines.isEmpty() || lines.any { Regex("""^(?:Yes|No)\b""").containsMatchIn(it) }) return
         val (label, q) = e.to!!.removePrefix("yn:q ").split('|', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+        // "Does Teferi stop my Thoughtseize?" is answered as "can it be cast?", whose yes is this question's no.
+        if (label == "castAllowed" && Regex("""^(?:does|will|can) .+? (?:stop|block|prevent|shut off|turn off|counter|forbid) my """).containsMatchIn(q)) {
+            val i = (from until state.outcomes.size).firstOrNull { Regex("""^(?:Yes|No)\b""").containsMatchIn(state.outcomes[it]) } ?: return
+            val l = state.outcomes[i]
+            state.outcomes[i] = when { l.startsWith("Yes: ") -> "No, it doesn't stop it: " + l.removePrefix("Yes: "); l.startsWith("No: ") -> "Yes, it stops it: " + l.removePrefix("No: "); else -> l }
+            return
+        }
+        if (lines.isEmpty() || lines.any { Regex("""^(?:Yes|No)\b""").containsMatchIn(it) }) return
         val line = lines.last()
         val yes = when (label) {
             "tapped" -> tappedAnswer(e, q, state)

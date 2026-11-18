@@ -52,7 +52,16 @@ class NoInventedCardsTest {
                 val nameWords = Names.normalize(card).split(' ').filter { it.length >= 3 }
                 val shares = nameWords.any { w -> w in words || words.any { it.startsWith(w) || w.startsWith(it) && it.length >= 4 } }
                 val nick = (nicknames + slangNicknames).any { (k, v) -> k in words && v == card }
-                if (!shares && !nick) suspicious += "\"$text\" -> $card"
+                // "five differently named lands" (strange new worlds) is read as that many lands with different names,
+                // the basic lands first (SituationParser.redteam3Raw): named by the count, not by the text.
+                val distinctLands = Regex("""(?i)\bdifferent(?:ly)?[- ]named lands?\b|\bdifferent lands\b""").containsMatchIn(text) &&
+                    card in setOf("Plains", "Island", "Swamp", "Mountain", "Forest", "Wastes", "Snow-Covered Plains", "Snow-Covered Island", "Snow-Covered Swamp", "Snow-Covered Mountain", "Snow-Covered Forest", "Command Tower")
+                // "I crack three fetchlands" (Opposition Agent, Stranglehold): the word names the cycle, and named members stand in
+                // for the count (SituationParser, redteam3 early rewrites), so the stand-ins are allowed when the text says "fetchlands".
+                val fetchCycle = Regex("""(?i)\b(?:two|three) fetch ?lands\b""").containsMatchIn(text) &&
+                    card in setOf("Polluted Delta", "Flooded Strand", "Scalding Tarn", "Misty Rainforest", "Verdant Catacombs",
+                        "Arid Mesa", "Marsh Flats", "Windswept Heath", "Wooded Foothills", "Bloodstained Mire", "Prismatic Vista")
+                if (!shares && !nick && !distinctLands && !fetchCycle) suspicious += "\"$text\" -> $card"
             }
         }
         assertTrue(suspicious.isEmpty(), "Cards found in text that never names them:\n" + suspicious.joinToString("\n"))

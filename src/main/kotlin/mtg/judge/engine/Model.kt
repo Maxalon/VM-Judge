@@ -52,6 +52,10 @@ data class ObjFilter(
     val maxManaValueX: Boolean = false,
     /** "that's one or more colors" (true) / "colorless" as a requirement (false). */
     val colored: Boolean? = null,
+    /** Redteam2: Cut Down's "creature with total power and toughness 5 or less". */
+    val maxTotalPT: Int? = null,
+    /** Redteam3: "differently named lands" (strange new worlds) — each name counts once. */
+    val distinctNames: Boolean = false,
 ) {
     val verifiable get() = unknownWords.isEmpty()
 }
@@ -129,7 +133,7 @@ sealed interface Trigger {
     data class CountersPutOnThis(val kind: String, val atLeast: Int = 1) : Trigger
     /** Dark Depths: "When ~ has no ice counters on it" — a state trigger, once the last counter goes (603.8). */
     data class NoCountersOnThis(val kind: String) : Trigger
-    /** A Saga's chapter ability: triggers as the lore counter that reaches that number is put on it (714.2, 714.3c). */
+    /** A Saga's chapter ability: triggers as the lore counter that reaches that number is put on it (715.2, 715.3c). */
     data class Chapter(val n: Int) : Trigger
     /** Battalion: "~ and at least two other creatures attack" — ~ has to be one of them (702.101a). */
     data class ThisAndNOthersAttack(val others: Int) : Trigger
@@ -169,7 +173,9 @@ sealed interface Effect {
     /** `x` = the amount is X, chosen when the spell is cast (107.3a). */
     data class Damage(val amount: Int, val target: TargetSpec, val x: Boolean = false, val kickedAmount: Int? = null, val sacrificedPower: Boolean = false, val masteryAmount: Int? = null,
                       /** Murderous Redcap: "it deals damage equal to its power", its power as the ability resolves (or last known, 608.2h). */
-                      val selfPower: Boolean = false) : Effect
+                      val selfPower: Boolean = false,
+                      /** Saavik: "X damage, where X is the number of creature types among non-Borg creatures you control", counted as it resolves (Leftovers4Mechanics.kt). */
+                      val countText: String? = null) : Effect
     /** "Proliferate" (701.34a): assumed to choose everything of yours and your opponents' poison counters. */
     data object Proliferate : Effect
     /** "Exile all attacking creatures target player controls": an action on everything matching, among a target player's permanents. */
@@ -370,7 +376,7 @@ sealed interface Effect {
     /** "it deals that much damage to you" / "to each opponent": the recorded amount, to players rather than a target. */
     data class DamageThatMuchTo(val who: Who) : Effect
     /** "Creatures you control get +X/+X (and gain trample) until end of turn, where X is the number of [count]." */
-    data class PumpAllCount(val filter: ObjFilter, val count: CountExpr, val keywords: List<String>) : Effect
+    data class PumpAllCount(val filter: ObjFilter, val count: CountExpr, val keywords: List<String>, val negative: Boolean = false) : Effect
     /** "The owner of target permanent shuffles it into their library." */
     data class ShuffleIntoLibrary(val target: TargetSpec) : Effect
     /** "~ gets +N/+N until end of turn" (no target). */
@@ -425,7 +431,9 @@ sealed interface Effect {
     /** "You may pay [cost]. If you do, [effect]." / "You may [do X]. If you do, [effect]." */
     data class IfYouDo(val choice: Effect, val then: Effect, val cost: String?,
         /** "You may pay {2}{R}. When you do, ..." (Sparktongue Dragon): [then] is a reflexive trigger of its own (603.12), worded [reflexiveText]. */
-        val reflexive: Boolean = false, val reflexiveText: String? = null) : Effect
+        val reflexive: Boolean = false, val reflexiveText: String? = null,
+        /** Dark Depths: "sacrifice it. If you do, …" — the first part isn't a choice; "if you do" only asks whether it could be done. */
+        val mandatory: Boolean = false) : Effect
     /** Rite of Replication: "If this spell was kicked, create five of those tokens instead" — one effect or the other (702.33). */
     data class IfKicked(val then: Effect, val otherwise: Effect) : Effect
     /** "If you control five or more Mountains, …" — the condition is checked as the effect happens. */
@@ -476,6 +484,8 @@ sealed interface Effect {
         is WinLossEffect -> WinLoss.targets(this)
         is Populate, is Amass, is Cascade, is ExiledOwnerTokenMv, is CounterIfNoManaSpent, is NewMech -> emptyList()
         is More3 -> listOfNotNull(target)   // MoreEffects3.kt
+        is More4 -> listOfNotNull(target, target2)   // MoreEffects4.kt
+        is More5 -> listOfNotNull(target)   // MoreEffects5.kt
         is Modal -> emptyList()   // mode targets are chosen with the mode (700.2c); handled when a mode is picked
         is Exploit, is ProtectionUntilNextTurn, is PhaseOutAll, is ExileSelfSpell, is LoseKeywordsAll, is ExileInsteadOfGraveyardThisTurn, is LivingEnd, is PutBackFromHand, is DiscardHand, is WindfallDraw, is PlayerAndPermanentsGainHexproofFrom -> emptyList()
         is Investigate, is Surveil, is SacrificeUnlessEscaped, is Hideaway, is Draw, is GainLife, is LoseLife, is Unparsed, is PumpSelf, is PumpAll, is SetBasePtAll, is AddMana, is GainLifeLostThisWay, is GainLifeEqualToToughness, is Discard, is ExileIfDamagedDies, is RevealTopToHand, is LoseLifeEqualToRevealedMv, is LoseLifeEqualToTargetMv, is NoCombatDamageThisTurn, is OpponentMayTakeDamage, is PutSelfOnLibraryTop, is Narrated, is ForAll, is GainKeywordsSelf -> emptyList()
@@ -647,7 +657,9 @@ sealed interface StaticEffect {
                        /** Animar: the amount applies once for each counter of this kind on the source (MoreEffects2.kt). */
                        val perCounter: String? = null,
                        /** Tithe Taker: only during its controller's turn (MoreEffects2.kt). */
-                       val duringYourTurn: Boolean = false) : StaticEffect
+                       val duringYourTurn: Boolean = false,
+                       /** Emet-Selch of the Third Seat: only spells cast from a graveyard (Leftovers4Mechanics.kt). */
+                       val fromGraveyard: Boolean = false) : StaticEffect
     /** Trinisphere: a spell that would cost less than [amount] costs [amount] instead, while the source is untapped if [whileUntapped]. */
     data class CostFloor(val amount: Int, val whileUntapped: Boolean) : StaticEffect
     /** Cost modifiers and additional costs: narrated when the spell is cast (601.2b, 601.2f). */
@@ -723,7 +735,9 @@ sealed interface Replacement {
     /** "If you would gain life, you gain twice that much life instead." */
     data class LifeGainMultiplier(val factor: Int, val anyPlayer: Boolean = false) : Replacement
     /** "If an effect would place one or more counters on a permanent you control, it places twice that many instead." (Doubling Season) */
-    data class CounterMultiplier(val factor: Int, val anyPlayer: Boolean = false, val extra: Int = 0, val kind: String? = null) : Replacement
+    data class CounterMultiplier(val factor: Int, val anyPlayer: Boolean = false, val extra: Int = 0, val kind: String? = null,
+        /** Benevolent Hydra: "on another creature you control" — not the permanent with the ability (MoreEffects4.kt). */
+        val notSource: Boolean = false) : Replacement
     /** "If an effect would create one or more tokens under your control, it creates twice that many instead." */
     /** Doubling Season doubles its controller's tokens; Primal Vigor doubles everyone's (anyPlayer). */
     data class TokenMultiplier(val factor: Int, val anyPlayer: Boolean = false) : Replacement

@@ -141,8 +141,8 @@ internal object LimitedAsks {
             "sagasac" -> {
                 o ?: return false
                 val lore = o.counters["lore"] ?: 0
-                t.step("A Saga whose lore counters have reached its final chapter number is sacrificed as a state-based action only while it isn't the source of a chapter ability that has triggered and not yet left the stack. With chapter ${roman(lore)} on the stack, ${o.name} stays; once that ability has resolved (or left the stack some other way), the Saga is sacrificed the next time state-based actions are checked.", "714.4", "704.3")
-                state.outcomes += "No: ${o.name} isn't sacrificed while its chapter ${roman(lore)} ability is on the stack; it's sacrificed by the state-based action right after that ability resolves (714.4). Even if it were destroyed in response, the chapter ability would still resolve (113.7a)."
+                t.step("A Saga whose lore counters have reached its final chapter number is sacrificed as a state-based action only while it isn't the source of a chapter ability that has triggered and not yet left the stack. With chapter ${roman(lore)} on the stack, ${o.name} stays; once that ability has resolved (or left the stack some other way), the Saga is sacrificed the next time state-based actions are checked.", "715.4", "704.3")
+                state.outcomes += "No: ${o.name} isn't sacrificed while its chapter ${roman(lore)} ability is on the stack; it's sacrificed by the state-based action right after that ability resolves (715.4). Even if it were destroyed in response, the chapter ability would still resolve (113.7a)."
             }
             // "My Bloodrock Cyclops is tapped: do I have to attack with it?"
             "mustattack" -> {
@@ -162,12 +162,14 @@ internal object LimitedAsks {
             // "Does Goblin Raider have to block the creature enchanted with Lure?"
             "mustblock" -> {
                 o ?: return false
+                // Redteam2: "Does my creature have to block?" where the attacker is also "a creature": the defending player's creature is meant.
+                val o = if (o.attacking != null) state.objects.values.lastOrNull { it.isOnBattlefield() && it.attacking == null && state.isCreature(it) && it.controller != o.controller } ?: o else o
                 val attackers = state.objects.values.filter { it.isOnBattlefield() && it.attacking != null && it.controller != o.controller }
                 val lureRe = Regex("""(?i)all creatures able to block (?:enchanted creature|equipped creature|~|this creature) do so|must be blocked""")
                 val lured = attackers.firstOrNull { a -> lureRe.containsMatchIn(a.rulesText.replace(a.name, "~")) || state.objects.values.any { g -> g.isOnBattlefield() && g.attachedTo == a.id && lureRe.containsMatchIn(g.rulesText) } }
                 val lureSrc = lured?.let { a -> state.objects.values.firstOrNull { g -> g.isOnBattlefield() && g.attachedTo == a.id && lureRe.containsMatchIn(g.rulesText) }?.name ?: a.name }
                 val restriction = when {
-                    Regex("""(?i)(?:~|this creature) can't block\b(?! unless)""").containsMatchIn(o.rulesText.replace(o.name, "~")) || "cantblock" in o.tempKeywords -> "it can't block"
+                    Regex("""(?i)(?:(?:~|this creature) |^)can't block\b(?! unless)""").containsMatchIn(o.rulesText.replace(o.name, "~")) || "cantblock" in o.tempKeywords -> "it can't block"
                     o.tapped == true -> "it's tapped, and a tapped creature can't block (509.1a)"
                     lured != null -> engine.cantBlockWhy(lured, o)?.first?.trimEnd('.')
                     else -> engine.cantWhy(o.id, "block")?.let { "it can't block ($it)" }
@@ -203,10 +205,10 @@ internal object LimitedAsks {
                 val card = state.objects.values.lastOrNull { it.printedDef.oracleId == e.card?.oracleId || it.printedDef.name == e.card?.name } ?: return false
                 val adv = card.printedDef.name
                 when (card.zone) {
-                    Zone.EXILE -> { t.step("An Adventure that resolves is exiled instead of going to the graveyard, and its controller may cast the creature from exile later (not as an Adventure).", "715.3d"); state.outcomes += "Yes: $adv was exiled as its Adventure resolved, so you may cast it from exile later (715.3d)." }
-                    Zone.GRAVEYARD -> { t.step("Only an Adventure spell that resolves is exiled with permission to cast it later; one that's countered (or doesn't resolve) goes to its owner's graveyard like any other spell.", "715.3d", "701.6a"); state.outcomes += "No: the Adventure was countered, so $adv went to your graveyard, not exile; only an Adventure that resolves lets you cast the creature later (715.3d)." }
+                    Zone.EXILE -> { t.step("An Adventure that resolves is exiled instead of going to the graveyard, and its controller may cast the creature from exile later (not as an Adventure).", "716.3d"); state.outcomes += "Yes: $adv was exiled as its Adventure resolved, so you may cast it from exile later (716.3d)." }
+                    Zone.GRAVEYARD -> { t.step("Only an Adventure spell that resolves is exiled with permission to cast it later; one that's countered (or doesn't resolve) goes to its owner's graveyard like any other spell.", "716.3d", "701.6a"); state.outcomes += "No: the Adventure was countered, so $adv went to your graveyard, not exile; only an Adventure that resolves lets you cast the creature later (716.3d)." }
                     Zone.BATTLEFIELD -> state.outcomes += "$adv is already on the battlefield."
-                    else -> state.outcomes += "$adv is in ${card.zone.name.lowercase()}; it can be cast from exile only after its Adventure resolved (715.3d)."
+                    else -> state.outcomes += "$adv is in ${card.zone.name.lowercase()}; it can be cast from exile only after its Adventure resolved (716.3d)."
                 }
             }
             // "I gave my Bears hexproof with Ranger's Guile; can I still cast Rancor on it?"

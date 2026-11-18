@@ -42,8 +42,9 @@ internal object ModernMech {
     /** Subtlety: "choose up to one target creature spell or planeswalker spell. Its owner puts it on the top or bottom of their library." */
     private val subtletyChooseRe = Regex("""^choose (?:up to one )?target creature spell or planeswalker spell\.?$""", RegexOption.IGNORE_CASE)
     private val subtletyPutRe = Regex("""^its owner puts it on (?:their choice of )?the top or bottom of their library\.?$""", RegexOption.IGNORE_CASE)
-    private val gainsHasteRe = Regex("""^it gains haste(?: until end of turn)?\.?$""", RegexOption.IGNORE_CASE)
-    private val returnAtEndRe = Regex("""^return it to your hand at the beginning of the next end step\.?$""", RegexOption.IGNORE_CASE)
+    // (Greasefang's "It gains haste" arrives with "it" spelled out as its target: "Target Vehicle card in your graveyard gains haste".)
+    private val gainsHasteRe = Regex("""^(?:it|target vehicle card in your graveyard) gains haste(?: until end of turn)?\.?$""", RegexOption.IGNORE_CASE)
+    private val returnAtEndRe = Regex("""^return it to (?:your|its owner's) hand at the beginning of (?:the|your) next end step\.?$""", RegexOption.IGNORE_CASE)
 
     /** A card's exact mana cost matches one of [costs]: an {X} cost is {X}, not {0} — X is 0 only on the stack (107.3, 202.1). */
     fun exactCost(d: CardDef, costs: List<String>) = (d.manaCost ?: "") in costs.map { it.trim() }
@@ -94,6 +95,9 @@ internal object ModernMech {
         if (i <= 0 || state.stack[i - 1].source !== item.source || state.stack[i - 1].kind != StackKind.TRIGGERED) return
         while (i > 0 && state.stack[i - 1].source === item.source && state.stack[i - 1].kind == StackKind.TRIGGERED) { state.stack[i] = state.stack[i - 1]; state.stack[i - 1] = item; i-- }
         val p = state.player(item.controller)
+        // The step that just put it "above" the enters trigger is undone by this order: say "below" instead.
+        state.trace.steps.indexOfLast { it.text.endsWith(", above ${item.source.name}'s triggered ability.") }.takeIf { it >= 0 }?.let { k ->
+            state.trace.steps[k] = state.trace.steps[k].copy(text = state.trace.steps[k].text.removeSuffix(", above ${item.source.name}'s triggered ability.") + ", below ${item.source.name}'s enters trigger.") }
         state.trace.step("${p.subject} ${p.v("puts", "put")} the evoke sacrifice trigger on the stack first and ${item.source.name}'s own enters trigger above it: both triggered at the same time, so ${p.subject.lowercase()} ${p.v("chooses", "choose")} their order, and the one put on the stack last resolves first. ${item.source.name}'s ability resolves while it is still on the battlefield, and there is a window to respond before it is sacrificed.", "603.3b", "702.74a")
     }
 
@@ -108,16 +112,24 @@ internal object ModernMech {
 
     /**
      * Murktide Regent: "enters with a +1/+1 counter on it for each instant and sorcery card exiled with it" — the cards delve
-     * exiled to cast it (702.66a), counted by what they are in the graveyard: an adventurer card is only a creature card there (715.4).
+     * exiled to cast it (702.66a), counted by what they are in the graveyard: an adventurer card is only a creature card there (716.4).
      */
     fun entersWithExiled(state: GameState, o: GameObject) {
         val r = Regex("""(?i)enters with a ([+-]1/[+-]1) counter on it for each instant and sorcery card exiled with it""").find(o.def.oracleText) ?: return
         val exiled = state.md.delveExiled.remove(o.def.name) ?: return
+        // "They have Dress Down; I cast Murktide Regent delving three instants": which replacement effects apply as it enters is read
+        // off the permanent as it would exist on the battlefield, Dress Down's ability loss included (614.12, 613.1f), so it has no
+        // "enters with counters" ability to apply and comes in as a bare 3/3.
+        state.abilitiesLostOn(o)?.first?.let { lost ->
+            state.trace.step("${lost.name} would take ${o.name}'s abilities away once it is on the battlefield, and that is what decides which replacement effects apply as it enters: its \"enters with a counter for each instant and sorcery card exiled with it\" ability never applies, so ${o.name} enters with no counters.", "614.12", "613.1f")
+            state.outcomes += "${o.name} enters with no +1/+1 counters: ${lost.name} takes its abilities away as it enters, so its own \"enters with counters\" ability never applies (614.12)."
+            return
+        }
         val counted = exiled.filter { (d, _) -> d.types.any { it == "Instant" || it == "Sorcery" } }
         val n = counted.sumOf { it.second }
         val adv = exiled.filter { (d, _) -> d.typeLine.contains("Adventure") }
         val list = exiled.joinToString(", ") { (d, k) -> "${if (k > 1) "$k " else ""}${d.name.substringBefore(" // ")}" }
-        state.trace.step("Delve exiled $list from the graveyard to pay for ${o.name}. As it enters it gets a ${r.groupValues[1]} counter for each instant and sorcery card among them: $n.${if (adv.isNotEmpty()) " ${adv.joinToString(" and ") { it.first.name.substringBefore(" // ") }} was a creature card in the graveyard (an adventurer card has only its normal characteristics there), so it doesn't count." else ""}", "702.66a", "614.1c", *(if (adv.isNotEmpty()) arrayOf("715.4") else emptyArray()))
+        state.trace.step("Delve exiled $list from the graveyard to pay for ${o.name}. As it enters it gets a ${r.groupValues[1]} counter for each instant and sorcery card among them: $n.${if (adv.isNotEmpty()) " ${adv.joinToString(" and ") { it.first.name.substringBefore(" // ") }} was a creature card in the graveyard (an adventurer card has only its normal characteristics there), so it doesn't count." else ""}", "702.66a", "614.1c", *(if (adv.isNotEmpty()) arrayOf("716.4") else emptyArray()))
         if (n > 0) o.counters[r.groupValues[1]] = (o.counters[r.groupValues[1]] ?: 0) + n
     }
 

@@ -299,8 +299,19 @@ internal object MoreEffects2 {
         if (targets.isEmpty()) { step("${src.name} gives ${eff.filter.raw}s the land types $types, and there's none on the battlefield right now.", arrayOf("613.1d")); return true }
         for (t in targets) {
             val mana = eff.subtypes.mapNotNull { basics[it] }
+            // Blood Moon and Dryad of the Ilysian Grove: both layer 4, neither depends on the other, so timestamp order (613.7).
+            state.moonOn(t)?.let { moon ->
+                if (eff.subtypes.all { it in state.subtypesOf(t) }) {
+                    step("${moon.name} and ${src.name} both change ${t.name}'s land types in layer 4, and neither depends on the other, so they apply in timestamp order: ${src.name}'s applies after ${moon.name}'s, so ${t.name} is a Mountain (with no abilities from its own rules text) that is also $types, and each basic land type gives it that type's mana ability.", arrayOf("613.7", "613.1d", "305.7", "305.6"))
+                    out("${t.name} is ${state.subtypesOf(t).joinToString(" ")} land with no rules-text abilities and taps for ${mana.joinToString(" or ")} (${src.name}'s effect applies after ${moon.name}'s).")
+                } else {
+                    step("${moon.name} and ${src.name} both change ${t.name}'s land types in layer 4, and neither depends on the other, so they apply in timestamp order: ${moon.name}'s applies last and overwrites the types ${src.name} added, so ${t.name} is just a Mountain.", arrayOf("613.7", "613.1d", "305.7"))
+                }
+                return@let
+            } ?: run {
             step("${src.name} makes ${t.name} $types in addition to its other types (layer 4); it keeps its own types and abilities${if (mana.isNotEmpty()) ", and each basic land type gives it that type's mana ability, so it can tap for ${mana.joinToString(" or ")}" else ""}.", arrayOf("613.1d", "305.7", *(if (mana.isNotEmpty()) arrayOf("305.6") else emptyArray())))
             out("${t.name} is ${(listOf(t.def.subtypes.joinToString(" ")) + eff.subtypes.filter { it !in t.def.subtypes }).filter { it.isNotBlank() }.joinToString(" ")} land${if (mana.isNotEmpty()) " and taps for ${mana.joinToString(" or ")}" else ""} (${src.name}).")
+            }
         }
         return true
     }
@@ -573,8 +584,9 @@ internal object MoreEffects2 {
                     else -> { tr.step("${p.subject} may put ${article(what)} $what card from ${their(p)} hand onto the battlefield too; whether ${p.subject.lowercase()} ${p.v("does", "do")}, and which, wasn't said.", "608.2d"); state.outcomes += "${p.subject} may put ${article(what)} $what card from ${their(p)} hand onto the battlefield ($src); which, if any, wasn't said." }
                 }
             }
-            for (o in entering) e.enter(o.id)
-            for (o in put) if (o.def.abilities.filterIsInstance<TriggeredAbility>().any { it.trigger is Trigger.ThisCast }) {
+            // "Containment Priest is out and I Show and Tell in Griselbrand": it wasn't cast, so the Priest exiles it instead (614.1a).
+            for (o in entering) if (!e.rtUncastEntry(o, Zone.HAND)) e.enter(o.id)
+            for (o in put) if (o.isOnBattlefield()) if (o.def.abilities.filterIsInstance<TriggeredAbility>().any { it.trigger is Trigger.ThisCast }) {
                 tr.step("${o.name} was put onto the battlefield, not cast, so its \"when you cast\" ability doesn't trigger.", "601.2", "603.2")
                 state.outcomes += "${o.name} wasn't cast, so its \"when you cast\" ability doesn't trigger."
             }
@@ -587,7 +599,7 @@ internal object MoreEffects2 {
             val what = r.groupValues[2]; val tapped = r.groupValues[3].isNotEmpty()
             val f = OracleParser.parseFilter(what, Kind.CARD)
             val known = state.objects.values.filter { it.zone == Zone.HAND && it.owner == you.id && !Generic.isGeneric(it.def) && (!f.verifiable || state.matches(f, it, you.id, anyZone = true)) }.take(n)
-            for (o in known) { tr.step("${you.subject} ${you.v("puts", "put")} ${o.name} from ${their(you)} hand onto the battlefield${if (tapped) " tapped" else ""}. It's put there, not cast.", "110.2", "608.2c"); you.handSize = you.handSize?.minus(1); e.enter(o.id); if (tapped) o.tapped = true }
+            for (o in known) { tr.step("${you.subject} ${you.v("puts", "put")} ${o.name} from ${their(you)} hand onto the battlefield${if (tapped) " tapped" else ""}. It's put there, not cast.", "110.2", "608.2c"); you.handSize = you.handSize?.minus(1); if (e.rtUncastEntry(o, Zone.HAND)) continue; e.enter(o.id); if (tapped) o.tapped = true }
             if (known.isEmpty()) {
                 tr.step("${you.subject} ${you.v("puts", "put")} up to ${r.groupValues[1]} $what cards from ${their(you)} hand onto the battlefield${if (tapped) " tapped" else ""}, all at the same time; they're put there, not cast. Which cards (if any) wasn't said.", "110.2", "608.2c")
                 state.outcomes += "$src: ${you.subject.lowercase()} ${you.v("puts", "put")} up to ${r.groupValues[1]} $what cards from ${their(you)} hand onto the battlefield; which ones wasn't said."
@@ -805,7 +817,7 @@ internal object MoreEffects2 {
         Regex("""^put one of them into your hand, put one of them on the bottom of your library, and exile one of them$""", I).matchEntire(t)?.let {
             you.handSize = you.handSize?.plus(1)
             tr.step("Of the three cards, ${you.subject.lowercase()} ${you.v("puts", "put")} one into ${their(you)} hand (not a draw), one on the bottom of ${their(you)} library, and ${you.v("exiles", "exile")} the third, face up.", "401.4", "121.5", "406.3")
-            state.outcomes += "${you.subject} ${you.v("puts", "put")} one card into ${their(you)} hand, one on the bottom and exiles one ($src)."
+            state.outcomes += "${you.subject} ${you.v("puts", "put")} one card into ${their(you)} hand, one on the bottom and ${you.v("exiles", "exile")} one ($src)."
             return true
         }
         Regex("""^you may play (?:the exiled card|those cards|them) this turn$""", I).matchEntire(t)?.let {

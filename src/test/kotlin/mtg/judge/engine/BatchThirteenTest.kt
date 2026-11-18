@@ -333,7 +333,7 @@ class BatchThirteenTest {
     fun `blood moon turns urza's saga into a mountain that does nothing`() {
         val s = state(); s.put("moon", bloodMoon, "opp"); s.put("saga", urzasSaga, "me"); val e = Engine(s)
         e.narrateLandTypeSetters()
-        assertTrue(s.trace.steps.any { it.text.contains("chapter abilities included") && "714.4" in it.rules && "305.7" in it.rules }, s.trace.steps.joinToString("\n") { it.text })
+        assertTrue(s.trace.steps.any { it.text.contains("chapter abilities included") && "715.4" in it.rules && "305.7" in it.rules }, s.trace.steps.joinToString("\n") { it.text })
         assertTrue(s.outcomes.any { it.startsWith("Urza's Saga is a Mountain") })
     }
 

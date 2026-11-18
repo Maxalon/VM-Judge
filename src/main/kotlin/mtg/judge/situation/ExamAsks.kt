@@ -13,7 +13,7 @@ import mtg.judge.engine.Zone
 /**
  * Judge-exam questions ("ex:…" asks and "ex" events): can this creature block or be blocked once every requirement and
  * restriction is counted (509.1b-c), does a pumped creature with damage survive the cleanup step (514.2), a card's
- * mana value zone by zone (202.3, 709.4, 712.8, 715.4), the land plays left (305.2a, 305.4), and what a death trigger can
+ * mana value zone by zone (202.3, 709.4, 712.8, 716.4), the land plays left (305.2a, 305.4), and what a death trigger can
  * target when its target died in the same event (603.3d).
  */
 object ExamAsks {
@@ -198,12 +198,12 @@ object ExamAsks {
         val where = zoneWords(zone)
         val asked = faces.indexOfFirst { it.name.equals(face, true) }
         when {
-            // Adventurer cards: on the stack as an Adventure it has only its Adventure characteristics (715.3b); otherwise the creature's (715.4).
+            // Adventurer cards: on the stack as an Adventure it has only its Adventure characteristics (716.3b); otherwise the creature's (716.4).
             c.layout == "adventure" && faces.size == 2 -> {
                 val asAdventure = zone == "stack" && asked == 1
                 val f = faces[if (asAdventure) 1 else 0]; val v = mv(f.cost)
-                t.step(if (asAdventure) "On the stack as an Adventure, ${faces[0].name} has only its Adventure's characteristics, so its mana cost is ${f.cost}." else "In every zone except the stack (and on the stack when not cast as an Adventure), an adventurer card has only its normal characteristics: ${f.name}, ${f.cost}.", if (asAdventure) "715.3b" else "715.4", "202.3")
-                state.outcomes += "${f.name} has mana value $v $where (${if (asAdventure) "cast as an Adventure, only the Adventure's cost counts, 715.3b" else "only the card's normal characteristics count there, 715.4"})."
+                t.step(if (asAdventure) "On the stack as an Adventure, ${faces[0].name} has only its Adventure's characteristics, so its mana cost is ${f.cost}." else "In every zone except the stack (and on the stack when not cast as an Adventure), an adventurer card has only its normal characteristics: ${f.name}, ${f.cost}.", if (asAdventure) "716.3b" else "716.4", "202.3")
+                state.outcomes += "${f.name} has mana value $v $where (${if (asAdventure) "cast as an Adventure, only the Adventure's cost counts, 716.3b" else "only the card's normal characteristics count there, 716.4"})."
             }
             // Split cards: combined except for the half on the stack (709.4b, 202.3d).
             c.layout == "split" && faces.size == 2 -> {
@@ -212,8 +212,8 @@ object ExamAsks {
                 t.step(if (half != null) "On the stack only the half being cast exists: ${faces[half].name}, ${faces[half].cost}." else "In every zone but the stack, a split card's mana cost is its halves' combined: ${faces[0].cost} + ${faces[1].cost}.", if (half != null) "709.3b" else "709.4b", "202.3d")
                 state.outcomes += "${if (half != null) faces[half].name else c.name} has mana value $v $where (${if (half != null) "only the half cast, 709.3b" else "both halves' costs together, 709.4b"})."
             }
-            // Double-faced cards: the front face everywhere but the battlefield and stack (712.8a); there, the face that's up (712.8f),
-            // except that a transformed permanent's mana value is its front face's (712.8e).
+            // Double-faced cards: the front face everywhere but the battlefield and stack (712.6a); there, the face that's up (712.6e),
+            // except that a transformed permanent's mana value is its front face's (712.6d).
             (c.layout == "modal_dfc" || c.layout == "transform") && faces.size == 2 -> {
                 val up = zone == "battlefield" || zone == "stack"
                 val back = up && asked == 1
@@ -221,11 +221,11 @@ object ExamAsks {
                 val v = if (back && modal) mv(faces[1].cost) else mv(faces[0].cost)
                 val f = faces[if (back) 1 else 0]
                 when {
-                    back && modal -> t.step("${f.name} is the face that's up ${if (zone == "battlefield") "on the battlefield" else "on the stack"}, so the card has only that face's characteristics${if (f.cost.isEmpty()) ": it has no mana cost, so its mana value is 0" else ", mana cost ${f.cost}"}.", "712.8f", "202.3a")
-                    back -> t.step("${f.name} is a transformed permanent: it has its back face's characteristics, but its mana value is calculated from its front face's mana cost, ${faces[0].cost}.", "712.8e", "202.3b")
-                    else -> t.step("${if (up) "With its front face up" else "Outside the battlefield and the stack"}, a double-faced card has only its front face's characteristics: ${faces[0].name}, ${faces[0].cost}.", if (up) "712.8d" else "712.8a", "202.3")
+                    back && modal -> t.step("${f.name} is the face that's up ${if (zone == "battlefield") "on the battlefield" else "on the stack"}, so the card has only that face's characteristics${if (f.cost.isEmpty()) ": it has no mana cost, so its mana value is 0" else ", mana cost ${f.cost}"}.", "712.6e", "202.3a")
+                    back -> t.step("${f.name} is a transformed permanent: it has its back face's characteristics, but its mana value is calculated from its front face's mana cost, ${faces[0].cost}.", "712.6d", "202.3b")
+                    else -> t.step("${if (up) "With its front face up" else "Outside the battlefield and the stack"}, a double-faced card has only its front face's characteristics: ${faces[0].name}, ${faces[0].cost}.", if (up) "712.6c" else "712.6a", "202.3")
                 }
-                state.outcomes += "${f.name} has mana value $v $where (${when { back && modal -> "only the face that's up counts${if (f.cost.isEmpty()) ", and it has no mana cost" else ""}, 712.8f, 202.3a"; back -> "a transformed permanent uses its front face's mana cost, 712.8e"; up -> "its front face is up, 712.8d"; else -> "a double-faced card has only its front face's characteristics there, 712.8a" }})."
+                state.outcomes += "${f.name} has mana value $v $where (${when { back && modal -> "only the face that's up counts${if (f.cost.isEmpty()) ", and it has no mana cost" else ""}, 712.6e, 202.3a"; back -> "a transformed permanent uses its front face's mana cost, 712.6d"; up -> "its front face is up, 712.6c"; else -> "a double-faced card has only its front face's characteristics there, 712.6a" }})."
             }
             else -> {
                 val v = mv(c.manaCost)
@@ -245,7 +245,7 @@ object ExamAsks {
         val put = state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && "Land" in state.typesOf(it) && it.enteredFrom != null && it.enteredFrom != Zone.HAND }
         val extra = state.objects.values.filter { it.isOnBattlefield() && statics(it).any { s -> s is StaticEffect.ExtraLandPlays && (s.who != mtg.judge.engine.Who.YOU || it.controller == p.id) } }
         state.trace.step("${p.subject} may play $allowed land${if (allowed == 1) "" else "s"} this turn${if (extra.isNotEmpty()) " (one, plus ${allowed - 1} from ${extra.joinToString(" and ") { it.name }})" else ""} and ${p.v("has", "have")} played $played.${if (put.isNotEmpty()) " ${put.joinToString(" and ") { it.name.replace(Regex("^an? "), "the ") }.replaceFirstChar { it.uppercase() }} was put onto the battlefield by an effect, which isn't playing a land, so it doesn't count." else ""}", "305.2", "305.2a", *(if (put.isNotEmpty()) arrayOf("305.4") else emptyArray()))
-        state.outcomes += "${p.subject} can still play $left land${if (left == 1) "" else "s"} this turn: $allowed allowed${if (extra.isNotEmpty()) " (${extra.joinToString(" and ") { it.name }} adds ${allowed - 1})" else ""}, $played played.${if (put.isNotEmpty()) " ${put.joinToString(" and ") { it.name.replace(Regex("^an? "), "the ") }.replaceFirstChar { it.uppercase() }} put onto the battlefield by an effect wasn't played and doesn't use a land play (305.4)." else ""}"
+        state.outcomes += "${p.subject} can still play $left land${if (left == 1) "" else "s"} this turn: $allowed allowed${if (extra.isNotEmpty()) run { val fx = (state.extraLandsThisTurn[p.id] ?: 0).coerceIn(0, allowed - 1); " (${extra.joinToString(" and ") { it.name }} adds ${allowed - 1 - fx}${if (fx > 0) ", and an effect this turn adds $fx more" else ""})" } else ""}, $played played.${if (put.isNotEmpty()) " ${put.joinToString(" and ") { it.name.replace(Regex("^an? "), "the ") }.replaceFirstChar { it.uppercase() }} put onto the battlefield by an effect wasn't played and doesn't use a land play (305.4)." else ""}"
     }
 
     // ---- triggered abilities and targets (603.3d) ----

@@ -1,7 +1,7 @@
 package mtg.judge.engine
 
 /**
- * What the cards do to the shape of a turn (500.6–500.11, 614.10, 724.1, 603.7): extra turns and the order they're
+ * What the cards do to the shape of a turn (500.6–500.11, 614.10, 725.1, 603.7): extra turns and the order they're
  * taken in, "skip" effects, ending the turn (Time Stop, Sundial of the Infinite), additional combat and main phases,
  * additional steps, and the delayed "at the beginning of the next end step" triggers that wait for an end step and
  * then go on the stack like any other trigger.
@@ -17,11 +17,11 @@ class TurnPlan {
     val extraSteps = mutableListOf<Pair<String, String>>()
     /** Delayed "at the beginning of the next end step" triggers waiting to trigger (603.7a). */
     val delayed = mutableListOf<DelayedTrigger>()
-    /** The spell or ability that ended the turn (724.1b): it's exiled with everything else, not put into a graveyard. */
+    /** The spell or ability that ended the turn (725.1b): it's exiled with everything else, not put into a graveyard. */
     var endedBy: String? = null
     /** What ending the turn exiled from the stack, by description, for the answer. */
     val exiledByEnding = mutableListOf<String>()
-    /** Creatures ending the turn took out of combat (724.1d). */
+    /** Creatures ending the turn took out of combat (725.1d). */
     val removedFromCombat = mutableListOf<String>()
 }
 
@@ -36,7 +36,7 @@ object Turns {
 
     /** Oracle sentences played out here, with the rules each cites; OracleParser reads them as narrated effects. */
     private val effectRes: List<Pair<Regex, List<String>>> = listOf(
-        Regex("""^end the turn\.?$""", I) to listOf("724.1"),
+        Regex("""^end the turn\.?$""", I) to listOf("725.1"),
         Regex("""^untap all creatures that attacked this turn\.?$""", I) to listOf("701.26b"),
         Regex("""^after this (?:main )?phase, there is an additional combat phase followed by an additional main phase\.?$""", I) to listOf("500.8", "505.1a"),
         Regex("""^(?:you )?skip your next turn\.?$""", I) to listOf("614.10", "614.10a"),
@@ -204,7 +204,7 @@ object Turns {
     }
 
     /**
-     * Ending the turn (724.1): every object on the stack is exiled, the one resolving included; state-based actions are
+     * Ending the turn (725.1): every object on the stack is exiled, the one resolving included; state-based actions are
      * checked with no priority; combat ends with everything removed from it; the end step is skipped, and the game
      * goes straight to the cleanup step.
      */
@@ -220,24 +220,24 @@ object Turns {
         }
         if (item.kind == StackKind.SPELL && !item.source.token) item.source.zone = Zone.EXILE
         val self = if (item.kind == StackKind.SPELL) "${item.source.name} itself" else "${item.source.name}'s ability itself"
-        st.trace.step("${item.describe.replaceFirstChar { it.uppercase() }} ends the turn. First, every object on the stack is exiled, $self included${if (others.isEmpty()) " (nothing else was there)" else ": " + others.joinToString(", ") { it.describe }}. Exiling isn't countering: even something that can't be countered is gone.", "724.1", "724.1a", "724.1b")
+        st.trace.step("${item.describe.replaceFirstChar { it.uppercase() }} ends the turn. First, every object on the stack is exiled, $self included${if (others.isEmpty()) " (nothing else was there)" else ": " + others.joinToString(", ") { it.describe }}. Exiling isn't countering: even something that can't be countered is gone.", "725.1", "725.1a", "725.1b")
         for (o in others) if (o.kind == StackKind.SPELL && !o.source.token) st.outcomes += "${o.source.name}: the stack → exile (the turn was ended)."
         // "Time Stop in response to Emrakul's cast trigger": a triggered ability exiled this way never resolves, so what it would do never happens.
-        for (o in others) if (o.kind == StackKind.TRIGGERED && !o.text.startsWith("~turns-delayed~")) st.outcomes += "${o.describe.replaceFirstChar { it.uppercase() }} is exiled from the stack and never resolves${if (Regex("(?i)extra turn").containsMatchIn(o.text)) ": no extra turn is taken" else ""} (724.1b)."
+        for (o in others) if (o.kind == StackKind.TRIGGERED && !o.text.startsWith("~turns-delayed~")) st.outcomes += "${o.describe.replaceFirstChar { it.uppercase() }} is exiled from the stack and never resolves${if (Regex("(?i)extra turn").containsMatchIn(o.text)) ": no extra turn is taken" else ""} (725.1b)."
         for (d in plan.delayed.filter { it.exiled }) st.objects[d.objectId]?.let { o ->
-            st.trace.step("${d.source.name}'s delayed trigger to ${d.action} ${o.name} had already triggered; exiled from the stack, it never resolves. A delayed triggered ability triggers only once, the next time its event happens, so it won't trigger at a later end step either.", "603.7b", "724.1b")
-            if (o.isOnBattlefield()) st.outcomes += "${o.name} stays on the battlefield: ${d.source.name}'s delayed trigger was exiled from the stack before it resolved, and it won't trigger again (603.7b, 724.1b)."
+            st.trace.step("${d.source.name}'s delayed trigger to ${d.action} ${o.name} had already triggered; exiled from the stack, it never resolves. A delayed triggered ability triggers only once, the next time its event happens, so it won't trigger at a later end step either.", "603.7b", "725.1b")
+            if (o.isOnBattlefield()) st.outcomes += "${o.name} stays on the battlefield: ${d.source.name}'s delayed trigger was exiled from the stack before it resolved, and it won't trigger again (603.7b, 725.1b)."
         }
         e.stateBasedActions()
-        st.trace.step("State-based actions are checked. No player gets priority, and no triggered abilities are put on the stack.", "724.1c")
+        st.trace.step("State-based actions are checked. No player gets priority, and no triggered abilities are put on the stack.", "725.1c")
         val inCombat = st.objects.values.filter { it.isOnBattlefield() && (it.attacking != null || it.blocking != null || it.alsoBlocking.isNotEmpty()) }
         val combat = st.phase == "combat" || inCombat.isNotEmpty()
         inCombat.forEach { it.attacking = null; it.blocking = null; it.alsoBlocking.clear(); plan.removedFromCombat += it.name }
-        if (combat) st.trace.step("It's the combat phase, so all creatures are removed from combat${if (inCombat.isEmpty()) "" else ": " + inCombat.joinToString(", ") { it.name }}. No combat damage is dealt; attackers that were tapped stay tapped.", "724.1d", "506.4")
+        if (combat) st.trace.step("It's the combat phase, so all creatures are removed from combat${if (inCombat.isEmpty()) "" else ": " + inCombat.joinToString(", ") { it.name }}. No combat damage is dealt; attackers that were tapped stay tapped.", "725.1d", "506.4")
         val waiting = plan.delayed.filter { !it.triggered && !it.exiled }
         val endTriggers = st.objects.values.filter { o -> o.isOnBattlefield() && Regex("""(?i)at the beginning of (?:your|each|the|each player's) end step""").containsMatchIn(o.rulesText) }
-        st.trace.step("The current ${if (st.step == null || st.step == st.phase) "phase" else "step"} ends and the game skips straight to the cleanup step; the steps and phases in between, the end step included, are skipped. So \"at the beginning of the end step\" abilities don't trigger this turn${if (endTriggers.isEmpty()) "" else " (" + endTriggers.joinToString(", ") { it.name } + ")"}${if (waiting.isEmpty()) "" else ", and the delayed trigger from ${waiting.joinToString(", ") { it.source.name }} waits for the next end step"}.", "724.1d", "724.1e")
-        st.outcomes += "${item.source.name} ends the turn: everything on the stack is exiled${if (combat) ", all creatures are removed from combat (no combat damage)" else ""}, and the game skips to the cleanup step; the end step doesn't happen, so \"at the beginning of the end step\" abilities don't trigger (724.1)."
+        st.trace.step("The current ${if (st.step == null || st.step == st.phase) "phase" else "step"} ends and the game skips straight to the cleanup step; the steps and phases in between, the end step included, are skipped. So \"at the beginning of the end step\" abilities don't trigger this turn${if (endTriggers.isEmpty()) "" else " (" + endTriggers.joinToString(", ") { it.name } + ")"}${if (waiting.isEmpty()) "" else ", and the delayed trigger from ${waiting.joinToString(", ") { it.source.name }} waits for the next end step"}.", "725.1d", "725.1e")
+        st.outcomes += "${item.source.name} ends the turn: everything on the stack is exiled${if (combat) ", all creatures are removed from combat (no combat damage)" else ""}, and the game skips to the cleanup step; the end step doesn't happen, so \"at the beginning of the end step\" abilities don't trigger (725.1)."
         st.step = "end"
         e.beginStep("cleanup", st.activePlayer ?: item.controller)
     }

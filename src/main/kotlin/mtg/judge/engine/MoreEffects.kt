@@ -90,7 +90,8 @@ internal object MoreEffects {
     /** Melira: a permanent saying its controller can't get poison counters (101.2: "can't" beats the infect damage's counters). */
     fun poisonBlocked(e: Engine, playerId: String, count: Int): Boolean {
         val state = e.state
-        val src = notes(state).firstOrNull { (o, t) -> o.controller == playerId && Regex("""(?i)^you can't get poison counters""").containsMatchIn(t) }?.first ?: return false
+        // Solemnity's "Players can't get counters" reaches every player: with Phyrexian Unlife at 0 life, damage then does nothing at all.
+        val src = notes(state).firstOrNull { (o, t) -> (o.controller == playerId && Regex("""(?i)^you can't get poison counters""").containsMatchIn(t)) || Regex("""(?i)^players can't get counters""").containsMatchIn(t) }?.first ?: return false
         val p = state.player(playerId)
         state.trace.step("${src.name} says ${p.subject.lowercase()} can't get poison counters, so the $count poison counter${if (count == 1) "" else "s"} ${if (count == 1) "isn't" else "aren't"} given. Damage from a source with infect still causes no life loss: it's simply wasted.", "101.2", "122.1f", "702.90b")
         state.outcomes += "${p.subject} ${p.v("gets", "get")} no poison counters (${src.name})."
@@ -427,7 +428,7 @@ internal object MoreEffects {
             e.meDestroy(o, "$src's ability resolves: ${o.name}, which dealt damage to ${you.subject.lowercase()}, is destroyed.", "701.8a", "603.2")
             return true
         }
-        // "Transform ~" (Delver of Secrets, werewolves): turn the double-faced permanent over (701.27a); nothing happens to a single-faced one (701.27c).
+        // "Transform ~" (Delver of Secrets, werewolves): turn the double-faced permanent over (701.27a); nothing happens to a single-faced one (701.27d).
         Regex("""^(?:if an? (\w+(?: or \w+)?) card is revealed this way, )?transform (.+)$""", I).matchEntire(t)?.takeIf { it.groupValues[2] == src || it.groupValues[2] == "it" && it.groupValues[1].isEmpty() }?.let { r ->
             val o = item.source
             if (r.groupValues[1].isNotEmpty()) {
@@ -443,10 +444,11 @@ internal object MoreEffects {
             }
             if (!o.isOnBattlefield()) { tr.step("${o.name} has left the battlefield, so there's nothing to transform.", "701.27a"); return true }
             val back = if (o.transformed) o.printedDef else state.backFaceOf?.invoke(o.printedDef)
-            if (back == null) { tr.step("${o.name} isn't a double-faced card, so it can't transform: nothing happens.", "701.27c"); return true }
+            if (back == null) { tr.step("${o.name} isn't a double-faced card, so it can't transform: nothing happens.", "701.27d"); return true }
             val was = o.name
+            if (Exam3Mech.transformMerged(state, o, back)) return true   // Delver of Secrets on top of a mutated pile (Exam3Mechanics.kt)
             o.def = back; o.transformed = !o.transformed
-            tr.step("$was transforms: it's turned over so that ${back.name} is face up, and it has only that face's characteristics. It's the same object, so counters, damage and Auras stay with it, and it isn't summoning sick again.", "701.27a", "712.8e")
+            tr.step("$was transforms: it's turned over so that ${back.name} is face up, and it has only that face's characteristics. It's the same object, so counters, damage and Auras stay with it, and it isn't summoning sick again.", "701.27a", "712.6d")
             state.outcomes += "$was transforms into ${back.name}${if (state.isCreature(o)) " (${state.describePt(o)})" else ""}."
             return true
         }

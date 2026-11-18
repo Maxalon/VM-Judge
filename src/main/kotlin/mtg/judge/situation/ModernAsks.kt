@@ -19,7 +19,7 @@ internal object ModernAsks {
     /**
      * "Dragon's Rage Channeler with Bonecrusher Giant, Mishra's Bauble and a Forest in my graveyard": the card types counted for
      * delirium (207.2c), said one by one. Each card counts every card type it has (205.2a); an adventurer card in a graveyard has
-     * only its creature characteristics (715.4); a kindred card adds kindred. The one count behind every delirium answer.
+     * only its creature characteristics (716.4); a kindred card adds kindred. The one count behind every delirium answer.
      */
     fun deliriumTypes(player: String, state: GameState): Set<String> {
         val p = state.player(player)
@@ -33,7 +33,7 @@ internal object ModernAsks {
             (if (adv.isNotEmpty()) " ${adv.joinToString(" and ") { it.def.name.substringBefore(" // ") }} ${if (adv.size == 1) "is" else "are"} only a creature card there: an adventurer card has its Adventure's characteristics only on the stack as an Adventure, so the instant or sorcery half doesn't count." else "") +
             (if (kindred.isNotEmpty()) " ${kindred.joinToString(" and ") { it.def.name }} ${if (kindred.size == 1) "is" else "are"} kindred as well as ${kindred.first().def.types.filter { it != "Kindred" && it != "Tribal" }.joinToString(" and ") { it.lowercase() }}, and kindred is a card type of its own." else "") +
             " ${if (types.size >= 4) "That's four or more, so delirium is on." else "That's fewer than four, so delirium is off."}"
-        if (state.trace.steps.none { it.text == text }) state.trace.step(text, *(listOf("207.2c", "205.2a") + (if (adv.isNotEmpty()) listOf("715.4") else emptyList())).toTypedArray())
+        if (state.trace.steps.none { it.text == text }) state.trace.step(text, *(listOf("207.2c", "205.2a") + (if (adv.isNotEmpty()) listOf("716.4") else emptyList())).toTypedArray())
         return types
     }
 
