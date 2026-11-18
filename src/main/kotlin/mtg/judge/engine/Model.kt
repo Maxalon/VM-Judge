@@ -173,7 +173,9 @@ sealed interface Effect {
     /** `x` = the amount is X, chosen when the spell is cast (107.3a). */
     data class Damage(val amount: Int, val target: TargetSpec, val x: Boolean = false, val kickedAmount: Int? = null, val sacrificedPower: Boolean = false, val masteryAmount: Int? = null,
                       /** Murderous Redcap: "it deals damage equal to its power", its power as the ability resolves (or last known, 608.2h). */
-                      val selfPower: Boolean = false) : Effect
+                      val selfPower: Boolean = false,
+                      /** Saavik: "X damage, where X is the number of creature types among non-Borg creatures you control", counted as it resolves (Leftovers4Mechanics.kt). */
+                      val countText: String? = null) : Effect
     /** "Proliferate" (701.34a): assumed to choose everything of yours and your opponents' poison counters. */
     data object Proliferate : Effect
     /** "Exile all attacking creatures target player controls": an action on everything matching, among a target player's permanents. */
@@ -654,7 +656,9 @@ sealed interface StaticEffect {
                        /** Animar: the amount applies once for each counter of this kind on the source (MoreEffects2.kt). */
                        val perCounter: String? = null,
                        /** Tithe Taker: only during its controller's turn (MoreEffects2.kt). */
-                       val duringYourTurn: Boolean = false) : StaticEffect
+                       val duringYourTurn: Boolean = false,
+                       /** Emet-Selch of the Third Seat: only spells cast from a graveyard (Leftovers4Mechanics.kt). */
+                       val fromGraveyard: Boolean = false) : StaticEffect
     /** Trinisphere: a spell that would cost less than [amount] costs [amount] instead, while the source is untapped if [whileUntapped]. */
     data class CostFloor(val amount: Int, val whileUntapped: Boolean) : StaticEffect
     /** Cost modifiers and additional costs: narrated when the spell is cast (601.2b, 601.2f). */

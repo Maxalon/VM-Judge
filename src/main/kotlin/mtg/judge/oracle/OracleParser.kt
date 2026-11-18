@@ -194,6 +194,7 @@ object OracleParser {
                     abilities += StaticAbility(selfRef.removeSuffix(ltb).trim(), null, listOf(StaticEffect.Note(selfRef.removeSuffix(ltb).trim(), listOf("303.4a"))))
                     abilities += TriggeredAbility(Trigger.ThisLeavesBattlefield, Effect.SacrificeEnchanted, ltb)
                 }
+                mtg.judge.engine.Leftovers4Mech.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.Leftovers4Mech.parseAbilityLine(selfRef)!!   // Worf's "whenever you attack while …" (Leftovers4Mechanics.kt)
                 mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.NewSetMech.parseAbilityLine(selfRef)!!   // repartee, power-up, prepared, storied (NewSetMechanics.kt)
                 statics.isNotEmpty() -> abilities += StaticAbility(selfRef, null, statics)
                 mtg.judge.engine.Exam2Mech.parseAbilityLine(selfRef) != null -> abilities += mtg.judge.engine.Exam2Mech.parseAbilityLine(selfRef)!!   // Kaya's Ghostform (Exam2Mechanics.kt)
@@ -712,6 +713,7 @@ object OracleParser {
 
     /** "Creatures you control get +1/+1", "Other Elf creatures you control get +1/+1 and have trample", "Creatures you control have haste". */
     fun parseStatic(line: String): List<StaticEffect> {
+        mtg.judge.engine.Leftovers4Mech.parseStatic(line)?.let { return it }   // Emet-Selch's graveyard discount, Marina Vendrell's Grimoire (Leftovers4Mechanics.kt)
         mtg.judge.engine.MoreEffects4.parseStatic(line)?.let { return it }   // Shiny Impetus, Whispersilk Cloak, Pathrazer of Ulamog (MoreEffects4.kt)
         WinLoss.parseStatic(line)?.let { return it }
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
@@ -1080,6 +1082,7 @@ object OracleParser {
     fun parseCondition(text: String): Condition? {
         val t = text.trim().trimEnd('.')
         mtg.judge.engine.MoreEffects3.parseCondition(t)?.let { return it }   // "you have two or more opponents" (MoreEffects3.kt)
+        if (Regex("""^(?:~|this (?:spacecraft|vehicle|artifact|permanent)) isn't a creature$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.Unknown("l4:notcreature")   // Sarcophagus (Leftovers4Mechanics.kt)
         mtg.judge.engine.MoreEffects4.parseCondition(t)?.let { return it }   // "you gained 5 or more life this turn", "an opponent controls more lands than you" (MoreEffects4.kt)
         if (Regex("""^(?:~|it|this spell) was kicked$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.WasKicked
         if (Regex("""^~ is untapped$""", RegexOption.IGNORE_CASE).matches(t)) return Condition.SourceTapped(false)
@@ -1454,6 +1457,7 @@ object OracleParser {
         // A leading "Then" only orders the sentence after the one before it ("Then amass Orcs 1"); the pronoun
         // rewrites that care about it have already run by now.
         val s = s0.replace(abilityWordStatic, "").replace(Regex("""^[Tt]hen ,?\s*"""), "")
+        mtg.judge.engine.Leftovers4Mech.parseSentence(s) { target(it) }?.let { return it }   // Enterprise NX-01's tap-and-stun, Sarcophagus's "if ~ isn't a creature" (Leftovers4Mechanics.kt)
         mtg.judge.engine.PauperMech.parseSentence(s) { target(it) }?.let { return it }   // Pestilence, Earthquake, Skred, Ghostly Flicker, Timetwister (PauperMechanics.kt)
         mtg.judge.engine.CedhMech.parseSentence(s)?.let { return it }   // Isochron Scepter's copy (CedhMechanics.kt)
         mtg.judge.engine.LifeDmgMech.parseSentence(s)?.let { return it }   // life totals set, exchanged, redistributed (LifeDamageMechanics.kt)

@@ -487,7 +487,7 @@ class GameState(
         }
         Condition.WasKicked -> src.wasKicked
         is Condition.SourceTapped -> (src.tapped == true) == c.tapped
-        is Condition.Unknown -> NewSetMech.condition(this, c.text, src) ?: MoreEffects3.condition(this, c.text, src) ?: MoreEffects4.condition(this, c.text, src) ?: false
+        is Condition.Unknown -> Leftovers4Mech.condition(this, c.text, src) ?: NewSetMech.condition(this, c.text, src) ?: MoreEffects3.condition(this, c.text, src) ?: MoreEffects4.condition(this, c.text, src) ?: false
     }
 
     /** What a static ability's condition asks for, for traces and for saying why one doesn't apply. */
@@ -502,7 +502,7 @@ class GameState(
         is Condition.GraveyardAtLeast -> "${c.amount} or more ${if (c.cardTypes) "card types among cards in" else "cards in"} its controller's graveyard"
         Condition.WasKicked -> "the spell to have been kicked"
         is Condition.SourceTapped -> "it to be ${if (c.tapped) "tapped" else "untapped"}"
-        is Condition.Unknown -> NewSetMech.describeCondition(c.text) ?: MoreEffects3.describeCondition(c.text) ?: MoreEffects4.describeCondition(c.text) ?: c.text
+        is Condition.Unknown -> Leftovers4Mech.describeCondition(c.text) ?: NewSetMech.describeCondition(c.text) ?: MoreEffects3.describeCondition(c.text) ?: MoreEffects4.describeCondition(c.text) ?: c.text
     }
 
     /** Layer 7a: a characteristic-defining ability's value, or null when it depends on something the situation doesn't say. */

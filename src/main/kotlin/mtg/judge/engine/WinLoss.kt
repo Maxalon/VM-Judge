@@ -230,6 +230,7 @@ fun Engine.leaveGame(p: Player) {
     val st = state; val tr = st.trace
     if (st.players.size <= 2) return
     EdhMech.monarchLeaves(st, p)   // 726.4
+    Leftovers4Mech.initiativeLeaves(this, p)   // 727.4 (Leftovers4Mechanics.kt)
     val gone = mutableListOf<String>()
     // Spells and abilities they control on the stack.
     for (item in st.stack.toList().filter { it.controller == p.id }) {

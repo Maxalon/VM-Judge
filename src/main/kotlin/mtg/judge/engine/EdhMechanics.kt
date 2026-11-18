@@ -282,6 +282,7 @@ internal object EdhMech {
 
     /** Deflecting Swat on a spell with no targets (Cyclonic Rift overloaded, a board wipe): there is nothing to change (115.7). */
     fun noTargetsToChange(state: GameState, spell: StackItem, item: StackItem) {
+        if (Leftovers4Mech.targetUnsaid(state, spell, item)) return   // its target wasn't said (Leftovers4Mechanics.kt)
         val over = spell.source.def.has("overload") && state.trace.steps.any { it.text.contains("${spell.source.name} for its overload cost") }
         state.trace.step("${spell.source.name} has no targets${if (over) " — cast overloaded, every \"target\" in its text became \"each\", so it was cast with none" else ""} — so there is nothing for ${item.source.name} to change. ${item.source.name} can still be cast targeting it; it just does nothing.", "115.7", *(if (over) arrayOf("702.96b") else emptyArray()))
         state.outcomes += "${item.source.name} changes nothing: ${spell.source.name} has no targets${if (over) " (overloaded, 702.96b)" else ""}, so it still affects everything it describes."

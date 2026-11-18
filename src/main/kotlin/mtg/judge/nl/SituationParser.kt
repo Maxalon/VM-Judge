@@ -5078,6 +5078,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
         t2 = truth3Rewrites(t2, m, ctx)
+        t2 = leftovers4Rewrites(t2, m, ctx)
         t2 = exam4Rewrites(t2, m, ctx)
         t2 = leftovers3Rewrites(t2, m, ctx)
         t2 = redteam3EarlyRewrites(t2, m, ctx)
@@ -9891,6 +9892,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     private fun readEarlyQuestionsD(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        readLeftovers4Questions(clause0, m, ctx)?.let { return it }
         readExam4Questions(clause0, m, ctx)?.let { return it }
         readLeftovers3Questions(clause0, m, ctx)?.let { return it }
         readRedteam3Questions(clause0, m, ctx)?.let { return it }
@@ -18899,4 +18901,283 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+
+    // ---- track leftovers4 --------------------------------------------------------------------------------------------------
+
+    /** Sentences the hit-by-combat initiative ruling (MechanicsAsks "initiativehit") reads in words rather than as an attack. */
+    private val l4HitSaid = Regex("""(?i)\b(?:i|we|my opponent|they|he|she) (?:deals?|dealt) combat damage to (?:me|us|my opponent|them|him|her)\b|\b(?:hits?|hit) (?:me|us|my opponent|them|him|her) with (?:a|my|their|an?) (?:creature|attacker)\b""")
+
+    /**
+     * Track leftovers4: the initiative as game state (727), a mana ability paid mid-cast (Ashnod's Altar), goad with one opponent
+     * left, a change-of-target question about a creature that wasn't named.
+     */
+    private fun leftovers4Rewrites(t: String, m: Marked, ctx: Ctx): String {
+        val io = RegexOption.IGNORE_CASE
+        val q0 = t.trim().trimEnd('?', '.', '!').trim()
+        fun who(w: String) = if (w.lowercase() in setOf("i", "we", "my", "me", "our", "us")) "me" else "opp"
+        fun ask(to: String, obj: String? = null, card: NameIndex.Entry? = null, player: String? = null, source: String? = null): String {
+            ctx.asks += EventSpec("ask", obj = obj, card = card?.let { CardRef(name = it.display, oracleId = it.oracleId) }, player = player, source = source, to = to); return "l4noted" }
+        fun asked(k: String) = ctx.asks.any { it.to?.startsWith(k) == true }
+        // "In a three-player game …": the table, then the sentence (the same prefix exam4Rewrites reads).
+        var q = q0
+        Regex("""^in an? (two|three|four|five|six|\d)[- ]player (?:game|pod|commander game|multiplayer game),?\s+(.+)$""", io).find(q0)?.let { r ->
+            val rest = r.groupValues[2]
+            if (!Regex("""(?i)\binitiative\b|\bgoads?\b|\bgoaded\b""").containsMatchIn(rest)) return@let
+            val n = numberWords[r.groupValues[1].lowercase()] ?: r.groupValues[1].toIntOrNull() ?: return@let
+            ensureOpponents(n - 1, ctx); ctx.tableSize = n; ctx.usesMe = true
+            q = rest }
+        val initiativeMine = Regex("""(?i)\binitiative\b""").containsMatchIn(ctx.fullText) && !l4HitSaid.containsMatchIn(ctx.fullText)
+        // "My opponent has the initiative and concedes during another opponent's turn": the holder leaves (727.4), played out.
+        Regex("""^(my opponent|the opponent|opponent (\d)) has the initiative,? and (?:then )?(?:concedes|leaves the game|loses the game) during (another opponent's|my other opponent's|opponent (\d)'s|my|their own|his own|her own) turn$""", io).find(q)?.let { r ->
+            val holder = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { "opp$it" } ?: "opp"
+            val active = when { r.groupValues[3].lowercase() == "my" -> "me"; r.groupValues[3].lowercase().endsWith(" own") -> holder; else -> r.groupValues[4].takeIf { it.isNotEmpty() }?.let { "opp$it" } ?: "opp2" }
+            if (active != "me" && active != holder && active !in ctx.players) return@let
+            ctx.activePlayer = active; ctx.note("opp")
+            ctx.events.add(0, EventSpec("l4", player = holder, to = "initiative"))
+            ctx.events += EventSpec("concede", player = holder); ctx.events += EventSpec("resolveAll")
+            return "l4noted" }
+        // "My opponent has the initiative." / "I have the initiative and my venture marker is on Lost Well": a fact of the game.
+        Regex("""^(i|we|my opponent|the opponent|opponent (\d)) (?:have|has|has got|have got|'ve got) the initiative(?:,? and (?:my|their|his|her) venture marker is (?:on|in) (?:the )?([@a-z0-9 !']+?)(?: room)?)?$""", io).find(q)?.let { r ->
+            if (!initiativeMine) return@let
+            val p = r.groupValues[2].takeIf { it.isNotEmpty() }?.let { "opp$it" } ?: who(r.groupValues[1])
+            ctx.events.add(0, EventSpec("l4", player = p, to = "initiative")); ctx.note(p)
+            r.groupValues[3].takeIf { it.isNotEmpty() }?.let { l4Room(it, m, ctx) }?.let { room -> ctx.events.add(1, EventSpec("l4", player = p, to = "room", source = room)) }
+            return "l4noted" }
+        // "My venture marker is on Lost Well" / "I'm in the Forge room of Undercity".
+        Regex("""^(?:(my|their|his|her) venture marker is (?:on|in)|(i|we|my opponent|they|he|she) (?:am|is|are|'m|'re) in) (?:the )?([@a-z0-9 !']+?)(?: room)?(?: (?:of|in) (?:the )?undercity)?$""", io).find(q)?.let { r ->
+            val room = l4Room(r.groupValues[3], m, ctx) ?: return@let
+            val p = who(r.groupValues[1].ifEmpty { r.groupValues[2] })
+            ctx.events.add(0, EventSpec("l4", player = p, to = "room", source = room)); ctx.note(p)
+            return "l4noted" }
+        // "I choose Lost Well" when venturing: the fork's choice.
+        Regex("""^(i|we|my opponent|they|he|she) (?:choose|chooses|pick|picks|go to|goes to|move to|moves to|take|takes) (?:the )?([@a-z0-9 !']+?)(?: room)?$""", io).find(q)?.let { r ->
+            val room = l4Room(r.groupValues[2], m, ctx) ?: return@let
+            ctx.events.add(0, EventSpec("l4", player = who(r.groupValues[1]), to = "prefer", source = room))
+            return "l4noted" }
+        // "I take the initiative" (with no card): it happens now (727.1), and the venture follows (727.2).
+        Regex("""^(?:then )?(i|we|my opponent|they|he|she) (?:take|takes|took) the initiative(?: again)?$""", io).find(q)?.let { r ->
+            if (!initiativeMine) return@let
+            val p = who(r.groupValues[1]); ctx.events += EventSpec("l4", player = p, to = "take"); ctx.note(p)
+            return "l4noted" }
+        Regex("""^who (?:has|gets|takes|now has|ends up with|holds) the initiative(?: now| then)?$""", io).find(q)?.let {
+            if (!initiativeMine) return@let
+            return ask("l4:initiative") }
+        Regex("""^(?:where is|which room is|what room is) (my|their|his|her) venture marker(?: now)?(?: on| in)?$|^(?:which|what) room (?:am i|are we|is (?:my opponent|he|she)|are they) in(?: now)?$""", io).find(q)?.let { r ->
+            return ask("l4:room", player = if (r.groupValues[1].isEmpty() || r.groupValues[1] == "my") (if (Regex("""(?i)\bam i|are we""").containsMatchIn(q) || r.groupValues[1] == "my") "me" else "opp") else "opp") }
+        // "I cast Hill Giant and while paying for it I sacrifice Grizzly Bears to Ashnod's Altar": a mana ability mid-cast (605.3a), played out.
+        Regex("""^(i|we) cast (c\d+),? and,? while paying (?:for it|its cost|for c\d+),? (?:i|we) sacrifice (?:my )?(c\d+) (?:to|with|using) (?:my )?(c\d+)$""", io).find(q)?.let { r ->
+            val sac = m.cards[r.groupValues[3]] ?: return@let; val altar = m.cards[r.groupValues[4]] ?: return@let
+            val sid = objectIdFor(sac, ctx) ?: addObject(sac, "me", false, ctx); val aid = objectIdFor(altar, ctx) ?: addObject(altar, "me", false, ctx)
+            ctx.events += EventSpec("l4", player = "me", obj = aid, to = "midcast", source = "sacrifice:$sid")
+            ask("l4:midcast", obj = sid, card = m.cards[r.groupValues[2]])
+            return "${r.groupValues[1]} cast ${r.groupValues[2]}" }
+        Regex("""^when (?:does|do|will) (?:c\d+'s |the |its )?(?:trigger|triggers|triggered ability|ability) (?:resolve|go on the stack|happen)$""", io).find(q)?.let { if (asked("l4:midcast")) return "l4noted" }
+        // "My opponent goads my Grizzly Bears and my other opponent has left the game": the other one leaves first, then the goad.
+        Regex("""^(my opponent|the opponent) (?:goads|goaded|has goaded) my (c\d+),? and (?:my other opponent|the other opponent|another opponent|opponent (\d)) (?:has left|left|has conceded|conceded) the game$""", io).find(q)?.let { r ->
+            val e = m.cards[r.groupValues[2]] ?: return@let
+            val gone = r.groupValues[3].takeIf { it.isNotEmpty() }?.let { "opp$it" } ?: "opp2"
+            if (gone !in ctx.players) return@let
+            val id = objectIdFor(e, ctx) ?: addObject(e, "me", false, ctx)
+            ctx.events.add(0, EventSpec("concede", player = gone))
+            ctx.events += EventSpec("edh", player = "opp", obj = id, to = "goad")
+            ctx.asks += EventSpec("ask", obj = id, to = "ed:goad")
+            ctx.note("me"); ctx.note("opp"); ctx.lastMentioned = id
+            return "l4noted" }
+        Regex("""^(?:does|must|will) (?:it|c\d+|my c\d+) (?:have to|need to|still have to)? ?attack(?: at all)?(?: and (?:who|whom))?$""", io).find(q)?.let { if (asked("ed:goad")) return "l4noted" }
+        // Worf: "Worf is a 3/3" (printed 1/1, grown by its own +1/+1 counters) said beside "total power": the counters are what make it that size.
+        Regex("""^(c\d+) is (?:a |an |now a |now an )?(\d+)/(\d+)$""", io).find(q)?.let { r ->
+            if (!Regex("""(?i)\btotal power\b""").containsMatchIn(ctx.fullText)) return@let
+            val e = m.cards[r.groupValues[1]] ?: return@let
+            val bp = e.power?.toIntOrNull() ?: return@let; val bt = e.toughness?.toIntOrNull() ?: return@let
+            val k = r.groupValues[2].toInt() - bp
+            if (k <= 0 || r.groupValues[3].toInt() - bt != k) return@let
+            val id = objectIdFor(e, ctx) ?: addObject(e, "me", false, ctx)
+            ctx.objects[id] = ctx.objects.getValue(id).let { o -> o.copy(counters = o.counters + ("+1/+1" to k)) }
+            ctx.notes += "${e.display} is printed ${bp}/${bt}; as a ${r.groupValues[2]}/${r.groupValues[3]} it's read as having $k +1/+1 counter${if (k == 1) "" else "s"} on it."
+            ctx.lastMentioned = id; ctx.note("me")
+            return "l4noted" }
+        // "I attack while my creatures have total power 9": the attack, with the rest of the power on the battlefield as a stand-in creature.
+        Regex("""^(i|we) attack(?: with (c\d+|it))? while (?:my creatures|creatures i control|the creatures i control) have (?:a )?total power (?:of )?(\d+)$""", io).find(q)?.let { r ->
+            val n = r.groupValues[3].toInt()
+            val mine = ctx.objects.values.filter { it.controller == "me" && it.zone == "battlefield" && (it.card.name?.let { nm -> names.lookup(Names.normalize(nm))?.typeLine?.contains("Creature") } == true) }
+            val attacker = r.groupValues[2].takeIf { it.startsWith("c") }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) } ?: ctx.lastMentioned?.takeIf { id -> mine.any { it.id == id } } ?: mine.firstOrNull()?.id ?: return@let
+            val have = mine.sumOf { o -> (o.card.name?.let { nm -> names.lookup(Names.normalize(nm))?.power?.toIntOrNull() } ?: 0) + (o.counters["+1/+1"] ?: 0) }
+            ctx.events += EventSpec("attack", player = "me", obj = attacker, targets = listOf("opp"))
+            ctx.note("me"); ctx.note("opp")
+            if (n > have) { ctx.notes += "The rest of the total power ($n − $have) is taken as one more creature you control, a ${n - have}/${n - have} that doesn't attack."; return "i control a ${n - have}/${n - have} creature" }
+            return "l4noted" }
+        // "Enterprise NX-01 enters and puts a stun counter on my opponent's creature": the asker's Spacecraft, its trigger aimed at their creature.
+        Regex("""^(c\d+) enters(?: the battlefield)?,? and (?:it |its trigger )?(?:taps and )?(?:puts?|places?) a stun counter on (my opponent's|their|his|her|an opponent's) (creature|c\d+)$""", io).find(q)?.let { r ->
+            val src = m.cards[r.groupValues[1]] ?: return@let
+            val tgt = r.groupValues[3].takeIf { it.startsWith("c") }?.let { m.cards[it] }
+            val sid = objectIdFor(src, ctx) ?: addObject(src, "me", false, ctx, zone = "hand")
+            ctx.objects[sid] = ctx.objects.getValue(sid).copy(controller = "me")
+            ctx.note("me"); ctx.note("opp")
+            if (tgt != null) { val tid = objectIdFor(tgt, ctx) ?: addObject(tgt, "opp", false, ctx); ctx.objects[tid] = ctx.objects.getValue(tid).copy(controller = "opp")
+                ctx.events += EventSpec("aim", card = CardRef(name = src.display, oracleId = src.oracleId), to = "obj:${tgt.display}")
+                return "${r.groupValues[1]} enters" }
+            if (ctx.objects.values.none { it.controller == "opp" && it.zone == "battlefield" }) ctx.notes += "Their creature wasn't named, so a 2/2 creature stands in for it."
+            ctx.events += EventSpec("aim", card = CardRef(name = src.display, oracleId = src.oracleId), to = "obj:a 2/2 creature")
+            return "my opponent controls a 2/2 creature, ${r.groupValues[1]} enters" }
+        // "Can I target it with the activated ability of my artifact creature?": a targeting restriction on where the ability comes from (Species 8472).
+        Regex("""^can (i|we) target (it|c\d+) with (?:the |an? )?(?:activated |triggered )?abilit(?:y|ies) of (?:my|an?|our) ((?:artifact |enchantment |land )?creature|artifact|enchantment|land|planeswalker)$|^can (i|we) target (it|c\d+) with (?:my|an?) ((?:artifact |enchantment )?creature|artifact|enchantment|land)(?:'s| card's)? (?:activated |triggered )?ability$""", io).find(q)?.let { r ->
+            val ph = r.groupValues[2].ifEmpty { r.groupValues[5] }
+            val id = ph.takeIf { it.startsWith("c") }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) } ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            return ask("l4:targetfrom", obj = id, player = "me", source = r.groupValues[3].ifEmpty { r.groupValues[6] }.lowercase()) }
+        // "I cast Live Long and Prosper at 10 life with three other cards in hand": the hand as the spell resolves (the spell itself is on the stack).
+        Regex("""^((?:i|we) casts? c\d+)( at \d+ life)? with (\w+|\d+) (other )?cards? (?:left )?in (?:my )?hand$""", io).find(q)?.let { r ->
+            val n = numberWords[r.groupValues[3].lowercase()] ?: r.groupValues[3].toIntOrNull() ?: return@let
+            ctx.handSize["me"] = n; ctx.note("me")
+            if (r.groupValues[4].isEmpty()) ctx.notes += "The $n cards in hand are read as the cards other than the spell being cast."
+            return r.groupValues[1] + r.groupValues[2] }
+        // "Chromatic Star and Mox Opal are in my graveyard": each card named is in that graveyard.
+        Regex("""^((?:c\d+,? )+)and (c\d+) are (?:both |all )?in (my|their|his|her|my opponent's) graveyard$""", io).find(q)?.let { r ->
+            val phs = Regex("""c\d+""").findAll(r.groupValues[1]).map { it.value }.toList() + r.groupValues[2]
+            return phs.joinToString(", ") { "$it is in ${r.groupValues[3]} graveyard" } }
+        // "A nontoken creature I control dies" (Bridge from Below): a creature of the asker's, unnamed.
+        Regex("""^an? (?:nontoken )?creature (?:i control|of mine|that i control) dies$""", io).find(q)?.let { return "a creature dies" }
+        // "I control a Human, a Vulcan and a Borg artifact creature" in a creature-type count: each one a creature of that type, unnamed.
+        if (Regex("""(?i)\bcreature types?\b""").containsMatchIn(ctx.fullText)) Regex("""^(i|we|my opponent|they) controls? (an? .+)$""", io).find(q)?.let { r ->
+            val items = restore(r.groupValues[2], m).split(Regex(""",\s*(?:and\s+)?|\s+and\s+""")).map { it.trim() }.filter { it.isNotEmpty() }
+            if (items.size < 2 || items.any { !Regex("""(?i)^an? [a-z][a-z' -]*$""").matches(it) || it.split(' ').size > 4 }) return@let
+            val w = who(r.groupValues[1])
+            for (it0 in items) {
+                val desc = it0.lowercase().let { d -> if (d.endsWith(" creature")) d else "$d creature" }
+                var id = desc.removePrefix("a ").removePrefix("an ").replace(Regex("[^a-z0-9]+"), "_"); var k = 2
+                while (id in ctx.objects) id = desc.removePrefix("a ").removePrefix("an ").replace(Regex("[^a-z0-9]+"), "_") + "_" + k++
+                ctx.objects[id] = ObjectSpec(id, CardRef(name = desc), controller = w)
+            }
+            ctx.notes += "${items.joinToString(", ")}: unnamed creatures of those types (vanilla 1/1s)."
+            ctx.note(w); return "l4noted" }
+        Regex("""^how many creature types (?:are there |are )?among (non-borg )?creatures (?:do )?(i|we|my opponent|they) control$""", io).find(q)?.let { r ->
+            return ask("l4:types", player = who(r.groupValues[2]), source = if (r.groupValues[1].isNotEmpty()) "nonborg" else "all") }
+        // Saavik: "I flash in Saavik with three creature types among my creatures": that many unnamed creatures, one of each type, already there.
+        Regex("""^(.*\b(?:i|we) (?:cast|flash in|flash|play) (c\d+)),? with (\w+|\d+) creature types? among (?:my|the) (?:other )?creatures$""", io).find(q)?.let { r ->
+            val n = (if (r.groupValues[3].lowercase() in setOf("one", "a", "an")) 1 else null) ?: numberWords[r.groupValues[3].lowercase()] ?: r.groupValues[3].toIntOrNull() ?: return@let
+            val pool = listOf("Human", "Elf", "Goblin", "Merfolk", "Zombie", "Soldier", "Wizard", "Knight").filter { t -> m.cards[r.groupValues[2]]?.typeLine?.contains(t) != true }
+            for (t in pool.take(n)) { val id = "${t.lowercase()}_creature"; if (id !in ctx.objects) ctx.objects[id] = ObjectSpec(id, CardRef(name = "a ${t.lowercase()} creature"), controller = "me") }
+            ctx.notes += "\"$n creature types among my creatures\" is read as the creatures already there before ${m.cards[r.groupValues[2]]?.display ?: "it"}: ${pool.take(n).joinToString(", ")} (one unnamed creature each). Its own types count too as its ability resolves."
+            ctx.note("me"); return r.groupValues[1] }
+        // "At my end step I assimilate a creature card from my opponent's graveyard" (Death Is Irrelevant): the end step, aimed at an unnamed card there.
+        Regex("""^(?:at (?:the beginning of )?my end step,? )?(i|we) assimilate (?:an? |their |my )?(creature card|c\d+) (?:from|in) (my|my opponent's|their|his|her|a) graveyard(?: at (?:the beginning of )?my end step)?$""", io).find(q)?.let { r ->
+            val src = ctx.objects.values.firstOrNull { o -> o.zone == "battlefield" && o.controller == "me" && o.card.name?.let { n -> Regex("""(?i)assimilate""").containsMatchIn(n) || n == "Death Is Irrelevant" } == true } ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && it.controller == "me" } ?: return@let
+            val owner = if (r.groupValues[3].lowercase() == "my") "me" else "opp"
+            val named = r.groupValues[2].takeIf { it.startsWith("c") }?.let { m.cards[it] }
+            val display: String
+            if (named != null) { val id = objectIdFor(named, ctx) ?: addObject(named, owner, false, ctx, zone = "graveyard"); ctx.objects[id] = ctx.objects.getValue(id).copy(zone = "graveyard", controller = owner); display = named.display }
+            else { val id = "creature_card_gy"; ctx.objects[id] = ObjectSpec(id, CardRef(name = "a 2/2 creature"), zone = "graveyard", controller = owner); display = "a 2/2 creature"; ctx.notes += "The creature card wasn't named, so a 2/2 creature card stands in for it." }
+            ctx.events += EventSpec("aim", card = src.card, to = "obj:$display")
+            ctx.activePlayer = ctx.activePlayer ?: "me"
+            ctx.note("me"); ctx.note(owner)
+            return "at my end step" }
+        // "A copy of my opponent's commander deals combat damage to me" with no card named: their commander and a copy of it are built, the copy attacks.
+        Regex("""^an? (?:token )?copy of (my opponent's|their|his|her|the opponent's) commander (?:deals|dealt|hits me for|hit me for) (?:(\d+) )?(?:combat )?(?:damage )?(?:to (?:me|us))?$""", io).find(q)?.let { r ->
+            if (Regex("""\bc\d+\b""").containsMatchIn(q) || ctx.objects.values.any { it.commander }) return@let
+            val n = r.groupValues[2].toIntOrNull() ?: 2
+            ctx.objects["their_commander"] = ObjectSpec("their_commander", CardRef(name = "a commander"), controller = "opp", commander = true)
+            ctx.objects["copy_of_commander"] = ObjectSpec("copy_of_commander", CardRef(name = "a $n/$n creature"), controller = "opp", token = true)
+            ctx.notes += "Neither card was named: their commander stands in as an unnamed commander, and the copy as a $n/$n token copy of it (a copy has the same name and characteristics, 707.2)."
+            ctx.events += EventSpec("attack", player = "opp", obj = "copy_of_commander", targets = listOf("me"))
+            ctx.note("me"); ctx.note("opp")
+            return ask("l4:copycmd", obj = "copy_of_commander", source = "their_commander" + if (r.groupValues[2].isNotEmpty()) "|said" else "", player = "me") }
+        Regex("""^(?:does|did|would|will) (?:that|it|this|the damage|its damage|the copy's damage) (?:count|counts) (?:as|toward|towards) commander damage$|^is (?:that|it|this) commander damage$""", io).find(q)?.let { if (asked("l4:copycmd")) return "l4noted" }
+        // "I activate Dack Fayden's -2 targeting my opponent's Vehicle": no Vehicle named, so a crew-1 3/3 stands in for it.
+        Regex("""^(i|we) activate (c\d+)'s ([+−-]?\d+) (?:ability )?(?:targeting|on) (my opponent's|their|his|her|an opponent's|the opponent's) vehicle$""", io).find(q)?.let { r ->
+            val src = m.cards[r.groupValues[2]] ?: return@let
+            val sid = objectIdFor(src, ctx) ?: addObject(src, "me", false, ctx)
+            if ("their_vehicle" !in ctx.objects) ctx.objects["their_vehicle"] = ObjectSpec("their_vehicle", CardRef(name = "a vehicle"), controller = "opp")
+            ctx.notes += "Their Vehicle wasn't named, so a 3/3 Vehicle with crew 1 stands in for it."
+            ctx.events += EventSpec("activate", player = "me", obj = sid, targets = listOf("their_vehicle"), to = r.groupValues[3].replace('−', '-'))
+            ctx.events += EventSpec("resolveAll")
+            ctx.lastMentioned = "their_vehicle"; ctx.note("me"); ctx.note("opp")
+            return "l4noted" }
+        Regex("""^can (i|we) (?:now )?crew (it|that|the vehicle|their vehicle|that vehicle)(?: this turn| now)?$""", io).find(q)?.let {
+            if ("their_vehicle" !in ctx.objects) return@let
+            // Played out only when a creature of the asker's was said to tap for it; otherwise the answer says what crew needs.
+            val crewers = ctx.objects.values.any { o -> o.controller == "me" && o.zone == "battlefield" && o.id != "their_vehicle" && (o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Creature") == true || n.endsWith("creature") } == true) }
+            if (crewers) { ctx.events += EventSpec("ask", to = "yn:cans=mev=activate")
+                ctx.events += EventSpec("activate", player = "me", obj = "their_vehicle"); ctx.events += EventSpec("resolveAll") }
+            return ask("l4:crewnote", obj = "their_vehicle", player = "me") }
+        // "I tap her to station a Spacecraft" with none named: a Spacecraft (station 8+) stands in, and the station is played out.
+        Regex("""^(i|we) tap (c\d+|her|him|it) to station (?:a|my) spacecraft$""", io).find(q)?.let { r ->
+            if (ctx.objects.values.any { o -> o.card.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Spacecraft") } == true }) return@let
+            ctx.objects["a_spacecraft"] = ObjectSpec("a_spacecraft", CardRef(name = "a spacecraft"), controller = "me")
+            ctx.notes += "No Spacecraft was named, so one with station 8+ (a 4/4 flier once it's a creature) stands in for it."
+            ctx.events += EventSpec("activate", player = "me", obj = "a_spacecraft"); ctx.events += EventSpec("resolveAll")
+            ctx.note("me"); return "l4noted" }
+        // "It deals combat damage to a player" with no attack said: the creature is read as attacking that player unblocked.
+        Regex("""^(it|c\d+) deals (?:(\d+) )?combat damage to (a player|my opponent|an opponent|the defending player|them|him|her)$""", io).find(q)?.let { r ->
+            if (ctx.events.any { it.verb == "attack" }) return@let
+            val id = r.groupValues[1].takeIf { it.startsWith("c") }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) } ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            val o = ctx.objects.getValue(id)
+            val foe = if (o.controller == "me") "opp" else "me"
+            ctx.events += EventSpec("attack", player = o.controller, obj = id, targets = listOf(foe))
+            ctx.notes += "\"Deals combat damage to a player\" is read as ${o.card.name} attacking ${if (foe == "opp") "your opponent" else "you"} and not being blocked."
+            ctx.note("me"); ctx.note("opp"); return "l4noted" }
+        // Living End: "What happens to the creatures in my graveyard?" with none named — one stands in, so the return is played out.
+        Regex("""^what happens to (?:the )?creatures? (?:cards? )?in (my|their|his|her|my opponent's) graveyard$""", io).find(q)?.let { r ->
+            if (!Regex("""(?i)\bliving end\b""").containsMatchIn(ctx.fullText)) return@let
+            val owner = who(r.groupValues[1])
+            if (ctx.objects.values.any { it.zone == "graveyard" && it.controller == owner }) return@let
+            ctx.objects["gy_creature"] = ObjectSpec("gy_creature", CardRef(name = "a 2/2 creature"), zone = "graveyard", controller = owner)
+            ctx.notes += "No creature cards in the graveyard were named, so a 2/2 creature card stands in for them."
+            return "l4noted" }
+        // "My opponent controls Oblivion Ring exiling my Karn, the Great Creator": the card is in exile, exiled by that permanent.
+        Regex("""^(i|we|my opponent|they|he|she) controls? (c\d+),? (?:exiling|which (?:is )?exil(?:es|ed|ing)|that (?:exiled|is exiling)|with) (my|their|his|her) (c\d+)(?: exiled(?: under it| with it)?)?$""", io).find(q)?.let { r ->
+            val ring = m.cards[r.groupValues[2]] ?: return@let; val card = m.cards[r.groupValues[4]] ?: return@let
+            val w = who(r.groupValues[1]); val ow = who(r.groupValues[3])
+            val rid = objectIdFor(ring, ctx) ?: addObject(ring, w, false, ctx)
+            val cid = objectIdFor(card, ctx) ?: addObject(card, ow, false, ctx, zone = "exile")
+            ctx.objects[cid] = ctx.objects.getValue(cid).copy(zone = "exile", controller = ow)
+            ctx.events.add(0, EventSpec("l4", obj = cid, source = rid, to = "exiledby"))
+            ctx.note(w); ctx.note(ow); return "l4noted" }
+        // "They cast Yorion, Sky Nomad and blink Oblivion Ring": the permanent its enters ability exiles until the end step.
+        Regex("""^(i|we|my opponent|they|he|she) (casts?) (c\d+),? and (?:blinks?|flickers?|exiles?) (?:my |their |his |her )?(c\d+)(?: with it)?$""", io).find(q)?.let { r ->
+            val pick = m.cards[r.groupValues[4]] ?: return@let
+            ctx.events += EventSpec("l4", player = who(r.groupValues[1]), source = pick.display, to = "blink")
+            return "${r.groupValues[1]} ${r.groupValues[2]} ${r.groupValues[3]}" }
+        // "I faced a dilemma this turn" (The Caretaker): a fact of the turn (700.17).
+        Regex("""^(i|we|my opponent|they|he|she) (?:have |has )?(?:faced|face|chose modes for a spell and faced) a dilemma this turn$|^(i|we|my opponent|they|he|she) (?:haven't|have not|didn't|did not|hasn't|has not) faced? a dilemma this turn$""", io).find(q)?.let { r ->
+            if (r.groupValues[1].isNotEmpty()) ctx.events.add(0, EventSpec("l4", player = who(r.groupValues[1]), to = "dilemma"))
+            ctx.note(who(r.groupValues[1].ifEmpty { r.groupValues[2] })); return "l4noted" }
+        // "Four players cast six spells this turn before my Flusterstorm": a storm count said for the table, no cards named (702.40a).
+        Regex("""^(?:(two|three|four|five|six|\d) players|the (?:other )?players|we all|everyone|my opponents and i) (?:have )?(?:cast|casted) (\w+|\d+) (?:other )?spells(?: between (?:them|us))?(?: this turn)?(?:,? before (?:i cast )?(my|their|his|her) (c\d+))?$""", io).find(q)?.let { r ->
+            val n = numberWords[r.groupValues[2].lowercase()] ?: r.groupValues[2].toIntOrNull() ?: return@let
+            r.groupValues[1].takeIf { it.isNotEmpty() }?.let { w -> (numberWords[w.lowercase()] ?: w.toIntOrNull())?.let { k -> if (k > 2 && ctx.tableSize == null) { ensureOpponents(k - 1, ctx); ctx.tableSize = k; ctx.usesMe = true } } }
+            ctx.spellsThisTurn["opp"] = n; ctx.note("opp")
+            ctx.notes += "$n spells were cast this turn before it, by all the players together; storm counts every one of them, whoever cast it (702.40a)."
+            val spell = r.groupValues[4]
+            if (spell.isEmpty()) return "l4noted"
+            // A storm spell that counters a spell (Flusterstorm) needs one of those spells still on the stack: the last of them stands in as its target.
+            if (m.cards[spell]?.display in setOf("Flusterstorm")) { ctx.spellsThisTurn["opp"] = n - 1
+                return "my opponent casts a spell, ${if (r.groupValues[3].lowercase() == "my") "i cast" else "my opponent casts"} $spell targeting it" }
+            return "${if (r.groupValues[3].lowercase() == "my") "i cast" else "my opponent casts"} $spell" }
+        // "How much does its ability cost?", "How much does it cost to equip Bonesplitter?": the activation cost, reductions applied (602.2b).
+        Regex("""^how much (?:does|do|will) (?:it|its|(c\d+)(?:'s|’s)?|the) ?(?:first |second )?(?:activated )?(ability|equip(?: ability)?|station(?: ability)?|boast(?: ability)?|cycling(?: ability)?) cost(?: to activate| me| now)*$|^how much (?:does it|will it) cost (?:me )?to (equip|activate|station|boast|cycle) (c\d+|it)(?:'s ability)?$|^how much (?:does|do|will) (equip|station|boast|cycling) cost (?:for )?(c\d+|it)$""", io).find(q)?.let { r ->
+            val ph = r.groupValues[1].ifEmpty { r.groupValues[4] }.ifEmpty { r.groupValues[6] }
+            val id = ph.takeIf { it.startsWith("c") }?.let { m.cards[it] }?.let { objectIdFor(it, ctx) } ?: ctx.lastMentioned?.takeIf { it in ctx.objects } ?: return@let
+            val kind = r.groupValues[2].ifEmpty { r.groupValues[3] }.ifEmpty { r.groupValues[5] }.substringBefore(' ').lowercase().let { if (it == "cycle") "cycling" else it }
+            return ask("l4:abilitycost", obj = id, source = kind) }
+        // "Can I change the target to their creature?" with no creature of theirs named: one stands in for it (a 2/2), so the change is played out.
+        Regex("""^can (i|we) (?:change|switch|redirect) (?:its|the|that|their|his|her) target to (their|his|her|my opponent's|an opponent's|the opponent's) creature$""", io).find(q)?.let { r ->
+            if (ctx.objects.values.any { it.controller == "opp" && it.zone == "battlefield" }) return@let
+            ctx.notes += "No creature of theirs was named, so a 2/2 creature stands in for it; name it for the exact result."
+            ctx.asks += EventSpec("ask", player = "me", to = "l4:retarget")
+            return "my opponent controls a 2/2 creature" }
+        return t
+    }
+
+    /** A room of Undercity as said; capitalised room words are read as player names ("@lost") or cards ("Arena"), so the text is consulted. */
+    private fun l4Room(w: String, m: Marked, ctx: Ctx): String? {
+        val said = Regex("""\bc\d+\b""").replace(w) { r -> m.cards[r.value]?.display ?: r.value }.replace("@", "").replace(Regex("""\b3\b"""), "three").trim()
+        mtg.judge.engine.Leftovers4Mech.roomNamed(said)?.let { return it }
+        val first = said.substringBefore(' ').lowercase().trimEnd('!')
+        return mtg.judge.engine.Leftovers4Mech.undercity.keys.firstOrNull { r -> r.substringBefore(' ').lowercase().trimEnd('!') == first && ctx.fullText.contains(r.removeSuffix("!"), true) }
+    }
+
+    private fun readLeftovers4Questions(clause0: String, m: Marked, ctx: Ctx): Boolean? {
+        val c = clause0.trim().trimEnd('?', '.')
+        if (c == "l4noted") { if (ctx.asks.any { it.to?.startsWith("l4:") == true }) ctx.notes += "The question is answered by the outcome below."; return true }
+        return null
+    }
 }

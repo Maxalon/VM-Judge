@@ -131,9 +131,9 @@ class Engine(val state: GameState) {
         if (breachPermit && CedhMech.breachPay(this, playerId, obj, card) == false) return null   // Underworld Breach's escape cost (702.138a)
         // Cost taxes (Thalia, the commander tax) against the mana the situation said is available.
         run {
-            val taxes = state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == playerId)) && spellMatches(t.filter, card) }.map { o to it } }
+            val taxes = state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == playerId)) && spellMatches(t.filter, card) && Leftovers4Mech.zoneFits(t, obj) }.map { o to it } }
             // "I cast Thalia and they cast Bolt": Thalia is still a spell on the stack, so its tax isn't applying yet.
-            state.stack.map { it.source }.filter { s -> s.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().any { t -> spellMatches(t.filter, card) } }
+            state.stack.map { it.source }.filter { s -> s.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().any { t -> spellMatches(t.filter, card) && Leftovers4Mech.zoneFits(t, obj) } }
                 .forEach { s -> trace.step("${s.name} is still on the stack, not on the battlefield, so its cost-raising ability isn't applying yet: ${card.name} costs its printed cost. (Once ${s.name} resolves, it would cost more.)", "604.2") }
             val commanderTax = if (obj.commander && obj.commanderCasts > 0) 2 * obj.commanderCasts else 0
             if (commanderTax > 0) trace.step("${card.name} is ${player.possessive} commander and has been cast from the command zone ${obj.commanderCasts} time${if (obj.commanderCasts == 1) "" else "s"} before, so it costs an additional {${commanderTax}} this time (the \"commander tax\").", "903.8")
@@ -263,7 +263,7 @@ class Engine(val state: GameState) {
         } else targets
         // The spell's own text names a target the engine couldn't model ("target creature loses all abilities …"): the target is kept, not queried.
         val unmodeledTarget = needed.isEmpty() && targets.isNotEmpty() && effect != null && effect.hasUnparsed() && !targetsAPlayer(effect) && Regex("""(?i)\btarget\b""").containsMatchIn(card.oracleText ?: "")
-        if (unmodeledTarget && !ModernMech.handles(unparsedText(effect!!)) && !Leftovers2Mech.handles(unparsedText(effect)) && !CoverageMech.handles(unparsedText(effect)) && !RedteamMech.handles(unparsedText(effect)) && !LeftoversMech.handles(unparsedText(effect)) && !Leftovers3Mech.handles(unparsedText(effect))) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
+        if (unmodeledTarget && !ModernMech.handles(unparsedText(effect!!)) && !Leftovers2Mech.handles(unparsedText(effect)) && !CoverageMech.handles(unparsedText(effect)) && !RedteamMech.handles(unparsedText(effect)) && !LeftoversMech.handles(unparsedText(effect)) && !Leftovers3Mech.handles(unparsedText(effect)) && !Leftovers4Mech.handles(unparsedText(effect))) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
         // "I Stifle the mana ability": an activated mana ability never goes on the stack, so there is nothing to
         // target. Before this the answer was a clarification asking which ability was meant.
         if (needed.any { Regex("""(?i)\bability\b""").containsMatchIn(it.raw) } && targets.isEmpty() &&
@@ -330,7 +330,9 @@ class Engine(val state: GameState) {
                 if (!state.hasKeyword(o, "hexproof")) { trace.step("${ley.name} gives ${state.player(o.controller).subject.lowercase()} hexproof, not ${state.player(o.controller).possessive} permanents: ${o.name} can still be targeted.", "702.11c", "115.1"); state.outcomes += "${ley.name} doesn't protect ${o.name}: it gives its controller hexproof, not their creatures." }
             }
         }
-        for (ref in targets) targetingProblem(obj, playerId, ref)?.let { (why, rule) ->
+        for ((ti, ref) in targets.withIndex()) targetingProblem(obj, playerId, ref)?.let { (why0, rule) ->
+            // Romulan Bird-of-Prey at 3 charge counters against Cut Down: hexproof, and not a creature at all (Leftovers4).
+            val why = why0 + (needed.getOrNull(ti)?.takeIf { spec -> !filterMatches(spec.filter, ref, playerId) }?.let { spec -> "; it isn't ${withArticle(spec.raw)} right now either" } ?: "")
             trace.step("${card.name} can't be cast targeting ${state.nameOf(ref)}: $why.", rule, "601.2c")
             state.outcomes += "${card.name} can't target ${state.nameOf(ref)}."
             state.outcomes += "Why: $why."
@@ -492,6 +494,7 @@ class Engine(val state: GameState) {
             }
         }
         trace.step("${player.subject} ${player.v("casts", "cast")} ${card.name}${if (modes.isNotEmpty() && modal != null) " choosing " + modes.joinToString(" and ") { "\"${modal.modeTexts.getOrNull(it - 1)?.replace("~", card.name) ?: "?"}\"" } else ""}${describeTargets(targets)}. It goes on top of the stack.", "601.2a", "405.2", *(if (modal != null) arrayOf("601.2b", "700.2a") else emptyArray()))
+        Leftovers4Mech.midCast(this, playerId, item)   // a mana ability activated while paying for it: Ashnod's Altar (Leftovers4Mechanics.kt)
         val playerTargetMode = targets.isNotEmpty() && targets.all { it is Ref.Player } && modes.any { modal?.modeTexts?.getOrNull(it - 1)?.lowercase()?.contains("target player") == true }
         if (modeEffect != null && modeEffect.targets().size != targets.size && !playerTargetMode && !playerModeExtra && !(modal != null && MoreEffects2.modeWithoutTarget(this, item, modeEffect.targets(), modes.mapNotNull { modal.modeTexts.getOrNull(it - 1) }, targets.size))) state.clarifications += Clarification("${card.name}'s target", "The chosen mode needs ${modeEffect.targets().size} target${if (modeEffect.targets().size == 1) "" else "s"} (${modeEffect.targets().joinToString("; ") { it.raw }}) but ${targets.size} ${if (targets.size == 1) "was" else "were"} given.")
         var lifeCostPaid = false
@@ -560,7 +563,7 @@ class Engine(val state: GameState) {
         AuditMech.splitCastNote(state, item)
         wardTriggers(item)
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
-        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect)) && !Leftovers3Mech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
+        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect)) && !Leftovers3Mech.handles(unparsedText(item.effect)) && !Leftovers4Mech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         // A spell at a player ("any target") can be sent to Spellskite too, it being a creature.
         val skiteCouldTake = item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" } || (item.targets.any { it is Ref.Player } && Regex("""(?i)\bany target\b""").containsMatchIn(card.oracleText))
         if (skiteCouldTake) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
@@ -976,6 +979,7 @@ class Engine(val state: GameState) {
         if (ability.cost.contains("{T}") && state.isCreature(obj) && obj.summoningSick == true && !obj.has("haste")) { trace.step("${obj.name} hasn't been under ${state.player(playerId).possessive} control since the turn began and doesn't have haste, so its {T} ability can't be activated.", "302.6"); state.outcomes += "${obj.name}'s {T} ability can't be activated (summoning sickness)."; return null }
         if (!paySacrificeCosts(playerId, obj, ability, choice)) return null
         MoreEffects2.payDiscardHand(this, playerId, ability)   // Lion's Eye Diamond's "Discard your hand" (MoreEffects2.kt)
+        Leftovers4Mech.discardHandCost(this, playerId, obj, ability)   // why the hand goes first, and "activate only as an instant" (Leftovers4Mechanics.kt)
         MoreEffects3.activationCost(this, playerId, obj, ability)   // Boseiju's channel cost (MoreEffects3.kt)
         val isMana = isManaEffect(ability.effect)
         if (!isMana) state.stack.firstOrNull { it.kind == StackKind.SPELL && it.source.def.has("split second") }?.let { ss ->
@@ -1145,7 +1149,7 @@ class Engine(val state: GameState) {
         targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, playerId, item.id)) } }
         if (wasOnBattlefield) onEvent(GameEvent.AbilityActivated(obj, playerId))
         state.player(playerId).let { p -> trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s ability (${ability.cost})${describeTargets(targets)}. It goes on top of the stack.", "602.2a", "405.2") }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -2485,6 +2489,7 @@ class Engine(val state: GameState) {
         if (event is GameEvent.EntersBattlefield) Exam2Mech.stateTriggerOnEnter(this, event.obj)?.let { k -> onEvent(GameEvent.CountersGone(event.obj, k)) }   // Dark Depths under Solemnity (Exam2Mechanics.kt)
         LegacyMech.onEvent(state, event)   // storm's last known information, life lost this turn (LegacyMechanics.kt)
         NewSetMech.onEvent(state, event)   // life gained this turn, for infusion (NewSetMechanics.kt)
+        Leftovers4Mech.onEvent(this, event)   // the initiative's upkeep and combat-damage triggers (Leftovers4Mechanics.kt)
         if (event is GameEvent.Attacks) PauperMech.onEvent(state, event.obj)   // Berserk's "if it attacked this turn" (PauperMechanics.kt)
         // Torpor Orb / Hushbringer: creatures entering (or dying) don't cause abilities to trigger.
         val hush = state.objects.values.filter { it.isOnBattlefield() }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.NoEtbTriggers>().map { o to it } }
@@ -2712,7 +2717,7 @@ class Engine(val state: GameState) {
         is Trigger.PermanentDealsCombatDamage -> event is GameEvent.DamageDealt && event.combat && onBf() && state.matches(trigger.filter, event.source, obj.controller, obj)
         Trigger.YourCreaturesDealCombatDamageToPlayer -> event is GameEvent.CreaturesDealtCombatDamageToPlayer && event.playerId == obj.controller && onBf()
         is Trigger.Edh -> EdhMech.matches(state, obj, trigger, event)
-        is Trigger.Unknown -> Redteam3Mech.unknownTriggerMatches(state, obj, trigger.text, event)   // "you face a dilemma", "charge counters … for the first time each turn" (Redteam3Mechanics.kt)
+        is Trigger.Unknown -> Leftovers4Mech.unknownTriggerMatches(state, obj, trigger.text, event) || Redteam3Mech.unknownTriggerMatches(state, obj, trigger.text, event)   // "you face a dilemma", "charge counters … for the first time each turn" (Redteam3Mechanics.kt)
         is MoreTrigger -> MoreEffects.triggerMatches(state, obj, trigger, event)   // Mikaeus (MoreEffects.kt)
         is MoreTrigger2 -> MoreEffects2.triggerMatches(state, obj, trigger, event)   // Voice of Resurgence (MoreEffects2.kt)
         is MoreTrigger3 -> MoreEffects3.triggerMatches(state, obj, trigger, event)   // Aurelia (MoreEffects3.kt)
@@ -2724,7 +2729,7 @@ class Engine(val state: GameState) {
 
     /** Whether a triggered ability works while its card sits in a graveyard (603.6e): the ones that talk about returning it from there. */
     private fun functionsFromGraveyard(ability: TriggeredAbility): Boolean =
-        ability.text.contains("from your graveyard", true) || ability.text.contains("from their graveyard", true) ||
+        ability.text.contains("from your graveyard", true) || ability.text.contains("from their graveyard", true) || ability.text.contains("if this card is in your graveyard", true) || ability.text.contains("if ~ is in your graveyard", true) ||
             hasReturnSelf(ability.effect)
 
     private fun hasReturnSelf(e: Effect): Boolean = when (e) {
@@ -2833,8 +2838,12 @@ class Engine(val state: GameState) {
     /** Bridges for CoverageMechanics.kt: destroy, gain life, a trigger put on the stack, and an event fired. */
     internal fun crDestroy(o: GameObject, text: String, vararg rules: String) = destroy(o, text, *rules)
     internal fun crGainLife(p: Player, n: Int) = gainLife(p, n)
+    /** Triggers that happen inside [block] wait until it's done, then go on the stack together (Leftovers4Mechanics.kt: a mana ability paid mid-cast). */
+    internal fun <T> crHeldTriggers(block: () -> T): T = heldTriggers(block)
     internal fun crPutTrigger(obj: GameObject, ability: TriggeredAbility, targets: List<Ref> = emptyList(), causedObject: String? = null) = putTriggerOnStack(obj, ability, targets, causedObject = causedObject)
     internal fun crEvent(e: GameEvent) = onEvent(e)
+    /** An effect parsed on the spot, applied as part of [item]'s resolution (Leftovers4Mechanics.kt: Finale of Devastation's "+X/+X and haste"). */
+    internal fun crApply(effect: Effect, item: StackItem) = applyEffect(effect, item)
     /** Bridge for PauperMechanics.kt: damage from a source, with its replacement and prevention effects. */
     internal fun pcDamage(sourceName: String, target: Ref, amount: Int, source: GameObject?) = applyDamage(sourceName, target, amount, source)
     /** Bridges for DeepMechanics.kt: draw cards. */
@@ -3005,7 +3014,7 @@ class Engine(val state: GameState) {
         splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect)) && !Leftovers4Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -3146,7 +3155,8 @@ class Engine(val state: GameState) {
             is Effect.ExiledOwnerTokenMv -> AuditMech.exiledOwnerToken(this, state, item, effect.token)
             is Effect.CounterIfNoManaSpent -> if (AuditMech.noManaSpent(state, item)) applyEffect(Effect.CounterThatSpell, item)
             is Effect.Amass -> GapMech.amass(state, item, effect.subtype, effect.n) { onEvent(GameEvent.EntersBattlefield(it)) }
-            is Effect.NewMech -> if (effect.kind.startsWith("pc:")) PauperMech.resolve(this, effect, item)   // Pestilence, Balance, Timetwister, The Abyss … (PauperMechanics.kt)
+            is Effect.NewMech -> if (effect.kind.startsWith("l4:")) Leftovers4Mech.resolve(this, effect, item)   // venture into Undercity, take the initiative (Leftovers4Mechanics.kt)
+                else if (effect.kind.startsWith("pc:")) PauperMech.resolve(this, effect, item)   // Pestilence, Balance, Timetwister, The Abyss … (PauperMechanics.kt)
                 else if (effect.kind.startsWith("cr:")) CoverageMech.resolve(this, effect, item)   // battle cry, annihilator, rampage, renown … (CoverageMechanics.kt)
                 else if (effect.kind.startsWith("ex:")) ExamMech.resolve(this, effect, item)   // Rabid Elephant, Hydroid Krasis (ExamMechanics.kt)
                 else if (effect.kind.startsWith("ex2:")) Exam2Mech.resolve(this, effect, item)   // Kaya's Ghostform (Exam2Mechanics.kt)
@@ -3221,7 +3231,8 @@ class Engine(val state: GameState) {
                     trace.step(if (on) "Delirium: $types card types are among cards in ${state.player(item.controller).possessive} graveyard, so ${item.source.name} deals the delirium amount instead of ${effect.amount}." else "Delirium isn't on: only $types card type${if (types == 1) "" else "s"} ${if (types == 1) "is" else "are"} among cards in ${state.player(item.controller).possessive} graveyard, so ${item.source.name} deals its usual ${effect.amount}.", "608.2c")
                     on
                 }
-                forEachLegalTarget(item, effect.target) { ref -> val amt = sacAmount ?: if (effect.x) (item.x ?: 0) else if (item.kicked && effect.kickedAmount != null) effect.kickedAmount else mastery ?: delirium ?: effect.amount
+                val counted = effect.countText?.let { Leftovers4Mech.countFor(this, it, item) }   // creature types among non-Borg creatures (Leftovers4Mechanics.kt)
+                forEachLegalTarget(item, effect.target) { ref -> val amt = sacAmount ?: counted ?: if (effect.x) (item.x ?: 0) else if (item.kicked && effect.kickedAmount != null) effect.kickedAmount else mastery ?: delirium ?: effect.amount
                     // Flame Spill: damage beyond lethal goes to the creature's controller instead (120.4a, CoverageMechanics.kt).
                     val split = CoverageMech.excessSplit(state, item, ref, amt)
                     if (split == null) applyDamage(item.source.name, ref, amt) else { applyDamage(item.source.name, ref, split.first); if (split.second.second > 0) applyDamage(item.source.name, split.second.first, split.second.second) } }
@@ -3470,11 +3481,11 @@ class Engine(val state: GameState) {
                                 state.clarifications += Clarification("${item.describe}'s new target", "${item.describe} changes ${spell.source.name}'s target, but the situation doesn't say what to; it was aimed at ${spell.targets.joinToString(" and ") { state.nameOf(it) }}. Name the new target for a complete answer.")
                                 trace.step("${item.describe} may change ${spell.source.name}'s target, but nothing says what to and there is no obvious swap, so its target is left as it was.", "115.7")
                             }
-                            illegal.isNotEmpty() -> trace.step("${illegal.joinToString(" and ") { state.nameOf(it) }} can't be chosen as ${spell.source.name}'s new target, and a target can only be changed to a legal one, so it stays as it was.", "115.7b")
+                            illegal.isNotEmpty() -> trace.step("${illegal.joinToString(" and ") { state.nameOf(it) }} can't be chosen as ${spell.source.name}'s new target, and a target can only be changed to a legal one, so it stays as it was.", Leftovers4Mech.changeRule(item))
                             else -> {
                                 spell.targets = newTargets
                                 if (named == null) state.assumptions += "${item.describe} turns ${spell.source.name} back on ${state.player(spell.controller).name} (${newTargets.joinToString(" and ") { state.nameOf(it) }}); any other legal target could have been chosen."
-                                trace.step("${you.subject} ${you.v("changes", "change")} ${spell.source.name}'s target to ${newTargets.joinToString(" and ") { state.nameOf(it) }}. The spell isn't recast and nothing about it changes but the target.", "115.7", "115.7b")
+                                trace.step("${you.subject} ${you.v("changes", "change")} ${spell.source.name}'s target to ${newTargets.joinToString(" and ") { state.nameOf(it) }}. The spell isn't recast and nothing about it changes but the target.", "115.7", Leftovers4Mech.changeRule(item))
                                 state.outcomes += "${spell.source.name} now targets ${newTargets.joinToString(" and ") { state.nameOf(it) }}."
                             }
                         }
@@ -4219,6 +4230,7 @@ class Engine(val state: GameState) {
                 else trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${missing.joinToString(" or ") { "an $it" }}, so ${item.source.name} adds only what it says first, not ${effect.text}.", "605.1a")
             }
             is Effect.Narrated -> {
+                if (Leftovers4Mech.narrated(this, effect.text, item)) return   // The Caretaker's free cast of the card it exiled (Leftovers4Mechanics.kt)
                 if (Leftovers3Mech.narrated(this, effect.text, item)) return   // Lethal Vapors destroying itself twice (Leftovers3Mechanics.kt)
                 if (Leftovers2Mech.narrated(this, effect.text, item)) return   // Amalia exploring with Wildgrowth Walker (Leftovers2Mechanics.kt)
                 if (Leftovers2Mech.resolve(this, effect.text, item)) return   // energy got and paid (Leftovers2Mechanics.kt)
@@ -4309,7 +4321,9 @@ class Engine(val state: GameState) {
                     exiled.forEach { move(it, Zone.EXILE, "${p.subject} ${p.v("exiles", "exile")} ${it.name} from ${p.possessive} graveyard.", "701.13a") }
                     if (exiled.isEmpty()) trace.step("${p.subject} ${p.v("has", "have")} no creature cards in ${p.possessive} graveyard to exile.", "701.13a")
                 }
+                val sacrificedAll = state.objects.values.filter { it.isOnBattlefield() && state.hasCreatureType(it) }.toList()
                 for (p in state.players) state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && state.hasCreatureType(it) }.toList().forEach { sacrifice(p.id, it.id) }
+                Leftovers4Mech.livingEndWhy(this, sacrificedAll, exiledBy.values.flatten())   // Containment Priest is gone before the cards return (Leftovers4Mechanics.kt)
                 for (p in state.players) {
                     val exiled = exiledBy.getValue(p.id)
                     exiled.forEach { enter(it.id) }
@@ -4344,6 +4358,7 @@ class Engine(val state: GameState) {
                 state.outcomes += "${sp.source.name} can't be countered (${item.source.name})."
             } }
             is Effect.Unparsed -> {
+                if (Leftovers4Mech.resolveText(this, effect.text, item)) return   // "you take the initiative" (Leftovers4Mechanics.kt)
                 if (Leftovers3Mech.resolve(this, effect.text, item)) return   // activation instructions, Grimoire, Taunt (Leftovers3Mechanics.kt)
                 if (Leftovers2Mech.resolve(this, effect.text, item)) return   // Ouroboroid, energy, Pox, Oblivion Stone (Leftovers2Mechanics.kt)
                 if (RedteamMech.resolve(this, effect.text, item)) return   // (RedteamMechanics.kt)
@@ -5660,8 +5675,9 @@ class Engine(val state: GameState) {
             state.outcomes += "${card.name} can be cast for ${alt.groupValues[2]} life instead of its mana cost if ${p.subject.lowercase()} ${p.v("controls", "control")} a ${alt.groupValues[1]} (an alternative cost, 118.9)${if (has) ", which ${p.subject.lowercase()} ${p.v("does", "do")}: so it can cost ${alt.groupValues[2]} life and no mana" else "; with no ${alt.groupValues[1]} described, it costs its mana cost"}."
         }
         // "I flashback Deep Analysis. How much does it cost?": the flashback cost, not the printed one.
-        if (state.trace.steps.any { it.text.contains("flashback", true) && it.text.contains(card.name) }) Regex("""(?i)flashback(?:—|-|\s)\s*((?:\{[^}]*\})+)(?:,\s*([^.\n(]+))?""").find(card.oracleText)?.let { fb ->
+        if ((obj.kwf.castFrom ?: obj.zone) != Zone.HAND && state.trace.steps.any { it.text.contains("flashback", true) && it.text.contains(card.name) }) Regex("""(?i)flashback(?:—|-|\s)\s*((?:\{[^}]*\})+)(?:,\s*([^.\n(]+))?""").find(card.oracleText)?.let { fb ->
             val extra = fb.groupValues[2].trim().takeIf { it.isNotEmpty() }?.let { ", plus ${it.lowercase()}" } ?: ""
+            Leftovers4Mech.flashbackTaxed(this, obj, fb.groupValues[1], extra)?.let { return it }   // Emet-Selch's discount on a flashback cast (Leftovers4Mechanics.kt)
             return "${card.name} cast with flashback costs ${fb.groupValues[1]}$extra (its flashback cost, 702.34a); the printed ${printed} isn't paid. It's exiled as it resolves."
         }
         // "I cast Fireball with X=4 under Goblin Electromancer", "Gitaxian Probe paying life under Trinisphere": the
@@ -5672,13 +5688,13 @@ class Engine(val state: GameState) {
         val recorded0 = obj.taxesAtCast ?: state.objects.values.filter { it.def.name == obj.def.name && it.controller == obj.controller }.mapNotNull { it.taxesAtCast }.lastOrNull()
         val recorded = recorded0?.takeIf { it.isNotEmpty() }
         if (recorded0 != null && recorded0.isEmpty() && obj.zone != Zone.HAND) {
-            val late = state.objects.values.filter { it.isOnBattlefield() && it.timestamp > obj.timestamp }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o } }
+            val late = state.objects.values.filter { it.isOnBattlefield() && it.timestamp > obj.timestamp }.flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>().filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) && Leftovers4Mech.zoneFits(t, obj) }.map { o } }
             if (late.isNotEmpty()) { trace.step("${late.joinToString(" and ") { it.name }} came to the battlefield after ${card.name} was cast, and a cost increase applies only to spells cast while its source is on the battlefield; ${card.name}'s cost was locked in as it was cast.", "601.2f", "601.2a"); return "${card.name} cost $printed when it was cast: ${late.joinToString(" and ") { it.name }} wasn't on the battlefield yet, and a cost increase applies only to spells cast while it's there (601.2f); the cost was paid as the spell was cast and doesn't change afterwards." }
         }
         val taxes: List<Pair<GameObject, StaticEffect.CostTax>> = recorded?.map { (n, amt) -> (state.objects.values.firstOrNull { it.def.name == n } ?: obj) to StaticEffect.CostTax(ObjFilter(kinds = emptySet()), amt) }
             ?: if (recorded0 != null && obj.zone != Zone.HAND) emptyList() else state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }
             .flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
-                .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o to it } }
+                .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) && Leftovers4Mech.zoneFits(t, obj) }.map { o to it } }
         val commanderTax = if (obj.commander && obj.commanderCasts > 0) 2 * obj.commanderCasts else 0
         // Blasphemous Act: the spell's own reduction, which can only take the generic part away (601.2f).
         val self = selfReduction(obj)
@@ -5723,7 +5739,7 @@ class Engine(val state: GameState) {
         val card = obj.def; val printed = card.manaCost ?: return null
         val taxes = state.objects.values.filter { it.isOnBattlefield() || NewSetMech.functionsFromCommand(it) }
             .flatMap { o -> o.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.filterIsInstance<StaticEffect.CostTax>()
-                .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) }.map { o to it } }
+                .filter { t -> (t.whose == null || (t.whose == Who.YOU) == (o.controller == obj.controller)) && spellMatches(t.filter, card) && Leftovers4Mech.zoneFits(t, obj) }.map { o to it } }
         val commanderTax = if (obj.commander && obj.commanderCasts > 0) 2 * obj.commanderCasts else 0
         val tax = taxes.sumOf { it.second.amount } + commanderTax - selfReduction(obj).first
         val total = maxOf(colouredPips(printed), card.manaValue.toInt() + tax)
@@ -5900,6 +5916,7 @@ class Engine(val state: GameState) {
         if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects2.discarded(this, obj)   // Necropotence (MoreEffects2.kt)
         if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects3.discarded(this, obj)   // Megrim (MoreEffects3.kt)
         if (from == Zone.HAND && to == Zone.GRAVEYARD) MoreEffects4.discarded(this, obj.owner, 1, obj)   // Waste Not (MoreEffects4.kt)
+        if (to == Zone.GRAVEYARD) Leftovers4Mech.notFromLibrary(this, obj, from)   // Narcomoeba discarded (Leftovers4Mechanics.kt)
     
         // A commander put into a graveyard or exile may go to the command zone at the next state-based action check
         // (903.9a); one that would go to hand or library may go there instead (903.9b). See CommanderRules.kt.
@@ -5946,6 +5963,7 @@ class Engine(val state: GameState) {
             val hit = prots.firstOrNull { it == "everything" || it in qualities || (it == "colored spells" && isSpell && state.colorsOf(source).isNotEmpty()) || (it == "spells" && isSpell) || (it.startsWith("player:") && it.removePrefix("player:") == controller) }
             if (hit != null) return "${o.name} has protection from ${protectionName(hit)}, so it can't be targeted by ${if (source.def.isInstantOrSorcery || source.zone == Zone.STACK || source.zone == Zone.HAND) "that spell" else "an ability from that source"}" to "702.16b"
         }
+        Leftovers4Mech.cantTargetFrom(state, o, source, controller)?.let { return it }   // Species 8472: "can't be the target of abilities from artifact sources your opponents control" (Leftovers4Mechanics.kt)
         return null
     }
 
@@ -6241,7 +6259,7 @@ class Engine(val state: GameState) {
         is WinLossEffect -> WinLoss.describe(effect, item.source.name)
         is More3 -> MoreEffects3.describe(effect, item.source.name)   // MoreEffects3.kt
         is More4 -> MoreEffects4.describe(effect, item.source.name)   // MoreEffects4.kt
-        is Effect.NewMech -> if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex2:")) Exam2Mech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
+        is Effect.NewMech -> if (effect.kind.startsWith("l4:")) Leftovers4Mech.describe(effect) else if (effect.kind.startsWith("ns:")) NewSetMech.describe(effect, item.source.name) else if (effect.kind.startsWith("pc:")) PauperMech.describe(effect, item.source.name) else if (effect.kind.startsWith("cr:")) CoverageMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex:")) ExamMech.describe(effect, item.source.name) else if (effect.kind.startsWith("ex2:")) Exam2Mech.describe(effect, item.source.name) else NewMech.describe(effect, item.source.name)
         is Effect.Populate -> "populate"; is Effect.Amass -> "amass ${effect.subtype} ${effect.n}"; is Effect.Cascade -> "cascade"; is Effect.CounterIfNoManaSpent -> "counter that spell if no mana was spent to cast it"; is Effect.ExiledOwnerTokenMv -> "the exiled card's owner creates an X/X ${effect.token}"
         is Effect.Investigate -> "investigate (create a Clue token)"; is Effect.Surveil -> "surveil ${effect.n}"; is Effect.SacrificeUnlessEscaped -> "sacrifice it unless it escaped"; is Effect.Hideaway -> "hideaway ${effect.n}"
         is Effect.Draw -> if (effect.countBy != null) "draw a card for each ${when (val c = effect.countBy) { is CountExpr.Permanents -> c.filter.raw; is CountExpr.CardsInHand -> "card in your hand"; is CountExpr.YourLifeTotal -> "life you have"; else -> "…" }}" else "draw ${if (effect.x) "X" else effect.count.toString()} card${if (effect.count > 1 || effect.x) "s" else ""}"

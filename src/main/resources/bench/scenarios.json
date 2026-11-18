@@ -81951,7 +81951,7 @@
     "id": "x4-37",
     "text": "In a three-player game my opponent goads my Grizzly Bears and my other opponent has left the game. Does Grizzly Bears have to attack?",
     "expect": [
-      "Yes: goaded, Grizzly Bears must attack each combat if able (701.15b)."
+      "Yes: Grizzly Bears must attack opponent. It's goaded"
     ],
     "cite": [
       "701.15b"
@@ -82240,6 +82240,842 @@
     ],
     "notExpect": [
       "Opponent chooses to attach it to target creature you control"
+    ]
+  },
+  {
+    "id": "l4-1",
+    "text": "I cast Brainstorm and in response sacrifice Lion's Eye Diamond. What happens?",
+    "expect": [
+      "You discard your hand to pay Lion's Eye Diamond's cost (602.2b) while Brainstorm is still on the stack",
+      "\"activate only as an instant\" means only with priority (602.5e)",
+      "You put 2 cards from your hand back on top of your library (1 in hand now)."
+    ],
+    "cite": [
+      "605.1",
+      "602.5e",
+      "605.3a"
+    ]
+  },
+  {
+    "id": "l4-2",
+    "text": "I activate Bazaar of Baghdad and discard Narcomoeba. What happens?",
+    "expect": [
+      "Narcomoeba's ability doesn't trigger: it triggers only on going to the graveyard from the library, and it came from your hand (603.2)."
+    ],
+    "notExpect": [
+      "Narcomoeba: your graveyard → the battlefield"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "l4-3",
+    "text": "My opponent controls Stranglehold. I control Polluted Delta. Can I crack it?",
+    "expect": [
+      "Yes, but it gets you nothing: you can activate Polluted Delta's ability and pay its costs",
+      "Stranglehold stops the search as it resolves, so no land is found (701.23a)",
+      "the library is still shuffled (609.3)"
+    ],
+    "cite": [
+      "701.23a",
+      "609.3",
+      "602.2b"
+    ]
+  },
+  {
+    "id": "l4-4",
+    "text": "My opponent controls Stranglehold. Can I crack my Scalding Tarn?",
+    "expect": [
+      "Yes, but it gets you nothing: you can activate Scalding Tarn's ability",
+      "Stranglehold stops the search"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "l4-5",
+    "text": "I control Ocelot Pride. I didn't gain life this turn but I have the city's blessing. What happens at my end step?",
+    "expect": [
+      "it triggers only if you gained life this turn (603.4)"
+    ],
+    "notExpect": [
+      "(infusion)"
+    ],
+    "cite": []
+  },
+  {
+    "id": "l4-6",
+    "text": "My opponent casts Misdirection on my Swords to Plowshares. Can they change its target to my creature?",
+    "expect": [
+      "It depends on Swords to Plowshares's target, which wasn't said: Misdirection can change it to any other creature Swords to Plowshares could target",
+      "(115.7a). Name Swords to Plowshares's target"
+    ],
+    "notExpect": [
+      "No: Misdirection changes nothing"
+    ],
+    "cite": [
+      "115.7a"
+    ]
+  },
+  {
+    "id": "l4-7",
+    "text": "My opponent casts Misdirection on my Path to Exile. Can they change its target to my creature?",
+    "expect": [
+      "It depends on Path to Exile's target, which wasn't said: Misdirection can change it"
+    ],
+    "notExpect": [
+      "No: Misdirection changes nothing"
+    ],
+    "cite": [
+      "115.7a"
+    ]
+  },
+  {
+    "id": "l4-8",
+    "text": "My opponent casts Swords to Plowshares targeting my commander. I cast Deflecting Swat without paying its mana cost. Can I change the target to their creature?",
+    "expect": [
+      "Yes: their creature is a legal target for Swords to Plowshares, so its target can be changed to it (115.7d)",
+      "Swords to Plowshares now targets a 2/2 creature.",
+      "Opponent gains 2 life."
+    ],
+    "notExpect": [
+      "A commander: the battlefield → exile."
+    ],
+    "cite": [
+      "115.7",
+      "115.7d"
+    ]
+  },
+  {
+    "id": "l4-9",
+    "text": "In a four-player game my opponent has the initiative and concedes during their own turn. Who takes the initiative?",
+    "expect": [
+      "Opponent 2: the next player in turn order takes the initiative at the same moment opponent leaves the game (727.4)",
+      "Opponent 2 ventures into Undercity: the marker goes on Secret Entrance"
+    ],
+    "cite": [
+      "727.4",
+      "727.2",
+      "701.49d"
+    ]
+  },
+  {
+    "id": "l4-10",
+    "text": "I cast White Plume Adventurer. Who has the initiative?",
+    "expect": [
+      "You have the initiative, with your venture marker on Secret Entrance.",
+      "You take the initiative."
+    ],
+    "notExpect": [
+      "Your opponent: when their creatures deal combat damage"
+    ],
+    "cite": [
+      "727.1",
+      "727.2",
+      "309.4c"
+    ]
+  },
+  {
+    "id": "l4-11",
+    "text": "I have the initiative and my venture marker is on Lost Well. What happens at my upkeep?",
+    "expect": [
+      "You venture into Undercity: Lost Well → Arena: Goad target creature."
+    ],
+    "cite": [
+      "727.2",
+      "701.49b",
+      "309.5a"
+    ]
+  },
+  {
+    "id": "l4-12",
+    "text": "I have the initiative and my venture marker is on Lost Well. I choose Stash. What happens at my upkeep?",
+    "expect": [
+      "You venture into Undercity: Lost Well → Stash: Create a Treasure token."
+    ],
+    "cite": [
+      "727.2",
+      "701.49b"
+    ]
+  },
+  {
+    "id": "l4-13",
+    "text": "My opponent has the initiative. I attack with Grizzly Bears and it isn't blocked. Who has the initiative?",
+    "expect": [
+      "You have the initiative, with your venture marker on Secret Entrance.",
+      "You take the initiative from opponent."
+    ],
+    "cite": [
+      "727.2",
+      "727.3"
+    ]
+  },
+  {
+    "id": "l4-14",
+    "text": "I have the initiative and my venture marker is on Throne of the Dead Three. My opponent casts White Plume Adventurer. Where is my venture marker?",
+    "expect": [
+      "Your venture marker is on Throne of the Dead Three, Undercity's last room",
+      "Opponent takes the initiative from you."
+    ],
+    "cite": [
+      "727.3"
+    ]
+  },
+  {
+    "id": "l4-15",
+    "text": "In a four-player game my opponent goads my Grizzly Bears and opponent 3 has left the game. Does Grizzly Bears have to attack?",
+    "expect": [
+      "Yes: Grizzly Bears must attack opponent 2: a player who didn't goad it"
+    ],
+    "cite": [
+      "701.15b",
+      "800.4a"
+    ]
+  },
+  {
+    "id": "l4-16",
+    "text": "In a three-player game my opponent goads my Grizzly Bears and my other opponent has left the game. Does Grizzly Bears have to attack?",
+    "expect": [
+      "Yes: Grizzly Bears must attack opponent. It's goaded",
+      "the only opponent it can attack"
+    ],
+    "cite": [
+      "701.15b",
+      "508.1d"
+    ]
+  },
+  {
+    "id": "l4-17",
+    "text": "I control Phyrexian Altar, Zulaport Cutthroat and Llanowar Elves. I cast Hill Giant and while paying for it I sacrifice Llanowar Elves to Phyrexian Altar. When does Zulaport Cutthroat's trigger resolve?",
+    "expect": [
+      "After Hill Giant is cast, and before it resolves: Llanowar Elves dies while you pay for Hill Giant",
+      "Zulaport Cutthroat's triggered ability went on the stack above Hill Giant once it was cast (601.2i), so it resolves first."
+    ],
+    "cite": [
+      "601.2g",
+      "605.3a",
+      "601.2i",
+      "603.3"
+    ]
+  },
+  {
+    "id": "l4-18",
+    "text": "My opponent controls Tolarian Terror. My opponent bolts me and I copy it with Twincast targeting their Tolarian Terror.",
+    "expect": [
+      "A copy of Lightning Bolt is put on the stack targeting Tolarian Terror.",
+      "Tolarian Terror's ward ability (ward {2}) triggered",
+      "You take 3 damage."
+    ],
+    "cite": [
+      "702.21a",
+      "707.10c"
+    ]
+  },
+  {
+    "id": "l4-19",
+    "text": "I control Emet-Selch of the Third Seat and Think Twice is in my graveyard. I cast Think Twice with flashback. How much does it cost?",
+    "expect": [
+      "Think Twice cast with flashback costs {U}: its flashback cost {2}{U} (702.34a), Emet-Selch of the Third Seat making it cost {2} less because it's cast from the graveyard (601.2f)."
+    ],
+    "notExpect": [
+      "Rules text not modelled"
+    ],
+    "cite": [
+      "702.34a",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "l4-20",
+    "text": "I control Emet-Selch of the Third Seat. I cast Think Twice from my hand. How much does it cost?",
+    "expect": [
+      "Think Twice costs {1}{U} — 2 mana."
+    ],
+    "notExpect": [
+      "costs {U}",
+      "Rules text not modelled"
+    ],
+    "cite": []
+  },
+  {
+    "id": "l4-21",
+    "text": "I control Marina Vendrell's Grimoire and I am at 2 life. My opponent casts Lightning Bolt targeting me. Do I lose the game?",
+    "expect": [
+      "No: you are still in the game at -1 life.",
+      "Marina Vendrell's Grimoire keeps you from losing for having 0 or less life."
+    ],
+    "notExpect": [
+      "Yes: you have lost"
+    ],
+    "cite": [
+      "704.5a"
+    ]
+  },
+  {
+    "id": "l4-22",
+    "text": "I control Marina Vendrell's Grimoire and I am at 2 life with 9 poison counters. My opponent casts Lightning Bolt targeting me and I get a poison counter. Do I lose the game?",
+    "expect": [
+      "Yes: you have lost the game.",
+      "You lose the game (poison)."
+    ],
+    "cite": [
+      "704.5c"
+    ]
+  },
+  {
+    "id": "l4-23",
+    "text": "I control Astute Terraformer and three differently named lands. How much does its ability cost?",
+    "expect": [
+      "Astute Terraformer's ability costs {3}: {6}, its own text takes off {3}"
+    ],
+    "cite": [
+      "602.2b",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "l4-24",
+    "text": "I control Astute Terraformer and five differently named lands. How much does its ability cost?",
+    "expect": [
+      "Astute Terraformer's ability costs {1}: {6}, its own text takes off {5}"
+    ],
+    "cite": [
+      "602.2b"
+    ]
+  },
+  {
+    "id": "l4-25",
+    "text": "I control Bureau Headmaster and Bonesplitter. How much does it cost to equip Bonesplitter?",
+    "expect": [
+      "Equip costs {0}: {1}, Bureau Headmaster takes off {1}"
+    ],
+    "notExpect": [
+      "Rules text not modelled"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "l4-26",
+    "text": "I control Training Grounds and Morphling. How much does Morphling's ability cost?",
+    "expect": [
+      "it has no generic mana, and Training Grounds can reduce only generic mana (118.7a), so nothing comes off."
+    ],
+    "notExpect": [
+      "Rules text not modelled"
+    ],
+    "cite": [
+      "118.7a"
+    ]
+  },
+  {
+    "id": "l4-27",
+    "text": "I control a D-7 Battle Cruiser. How much does its station ability cost?",
+    "expect": [
+      "Station costs tap another untapped creature you control — no mana, so cost reductions don't change it (118.7a)."
+    ],
+    "cite": [
+      "118.7a"
+    ]
+  },
+  {
+    "id": "l4-28",
+    "text": "Worf, Honor-Bound Warrior is a 3/3. I attack while my creatures have total power 9. How much power does Worf have?",
+    "expect": [
+      "Worf, Honor-Bound Warrior is 6/3 until end of turn.",
+      "Opponent takes 6 damage."
+    ],
+    "notExpect": [
+      "Rules text not modelled"
+    ],
+    "cite": [
+      "701.10a",
+      "603.2"
+    ]
+  },
+  {
+    "id": "l4-29",
+    "text": "Worf, Honor-Bound Warrior is a 3/3. I attack while my creatures have total power 7. How much power does Worf have?",
+    "expect": [
+      "Opponent takes 3 damage."
+    ],
+    "notExpect": [
+      "6/3",
+      "Rules text not modelled"
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "l4-30",
+    "text": "Enterprise NX-01 enters and puts a stun counter on my opponent's creature. What happens at their untap step?",
+    "expect": [
+      "A 2/2 creature has 1 stun counter.",
+      "A 2/2 creature stays tapped: a stun counter is removed from it instead of it untapping (122.1d)."
+    ],
+    "cite": [
+      "122.1d"
+    ]
+  },
+  {
+    "id": "l4-31",
+    "text": "My opponent controls Grizzly Bears. Enterprise NX-01 enters and puts a stun counter on my opponent's Grizzly Bears. What happens at their untap step?",
+    "expect": [
+      "Grizzly Bears stays tapped: a stun counter is removed from it instead of it untapping (122.1d)."
+    ],
+    "cite": [
+      "122.1d"
+    ]
+  },
+  {
+    "id": "l4-32",
+    "text": "My opponent controls Species 8472. Can I target it with the activated ability of my artifact creature?",
+    "expect": [
+      "No: Species 8472 can't be the target of abilities from artifact sources your opponents control, and your artifact creature is one (601.2c)."
+    ],
+    "notExpect": [
+      "Rules text not modelled"
+    ],
+    "cite": [
+      "601.2c",
+      "115.1c"
+    ]
+  },
+  {
+    "id": "l4-33",
+    "text": "My opponent controls Species 8472. Can I target it with the activated ability of my creature?",
+    "expect": [
+      "Yes: nothing on Species 8472 stops an ability of your creature from targeting it."
+    ],
+    "notExpect": [
+      "Rules text not modelled"
+    ],
+    "cite": []
+  },
+  {
+    "id": "l4-34",
+    "text": "I control Sarcophagus, Ship of the Dead with 3 charge counters. A creature dies. What happens?",
+    "expect": [
+      "Sarcophagus, Ship of the Dead has 4 charge counters."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "l4-35",
+    "text": "I control Sarcophagus, Ship of the Dead with 10 charge counters. A creature dies. What happens?",
+    "expect": [
+      "Nothing happens from Sarcophagus, Ship of the Dead's triggered ability: it needs that its source isn't a creature."
+    ],
+    "notExpect": [
+      "has 11 charge counters"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "l4-36",
+    "text": "I cast Finale of Devastation with X equal to 10. What happens to the creature I put onto the battlefield?",
+    "expect": [
+      "You put a creature card with mana value 10 or less onto the battlefield from your library or graveyard",
+      "the creature just found included: it was put onto the battlefield before this part applied (608.2c, 611.2c), so it can attack this turn."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "701.23a",
+      "611.2c"
+    ]
+  },
+  {
+    "id": "l4-37",
+    "text": "I cast Finale of Devastation with X equal to 4. What happens?",
+    "expect": [
+      "X is 4, less than 10: no +X/+X and no haste."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "l4-38",
+    "text": "I cast Live Long and Prosper at 10 life with three other cards in hand. My opponent casts Counterspell. What happens?",
+    "expect": [
+      "Live Long and Prosper isn't countered (it can't be).",
+      "You draw 3 cards.",
+      "You go from 10 to 20 life.",
+      "You have no maximum hand size until your next turn (402.2)."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "701.10d",
+      "402.2"
+    ]
+  },
+  {
+    "id": "l4-39",
+    "text": "I am at 7 life and have 5 cards in hand. I cast Live Long and Prosper.",
+    "expect": [
+      "You draw 5 cards.",
+      "You go from 7 to 14 life."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "701.10d"
+    ]
+  },
+  {
+    "id": "l4-40",
+    "text": "I control Krark-Clan Ironworks and Scrap Trawler. I sacrifice Scrap Trawler to Krark-Clan Ironworks. What happens?",
+    "expect": [
+      "Scrap Trawler's ability returns nothing: there's no artifact card in your graveyard with mana value less than 3 (Scrap Trawler's), so it has no target (603.3d)."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "603.10a",
+      "603.3d"
+    ]
+  },
+  {
+    "id": "l4-41",
+    "text": "I control Krark-Clan Ironworks and Scrap Trawler. Chromatic Star and Mox Opal are in my graveyard. I sacrifice Scrap Trawler to Krark-Clan Ironworks.",
+    "expect": [
+      "Chromatic Star: your graveyard → your hand."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "603.3d"
+    ]
+  },
+  {
+    "id": "l4-42",
+    "text": "I control Bridge from Below in my graveyard. A nontoken creature I control dies. What happens?",
+    "expect": [
+      "You get a Zombie token."
+    ],
+    "notExpect": [
+      "is gone (113.7a)"
+    ],
+    "cite": [
+      "113.6",
+      "603.4"
+    ]
+  },
+  {
+    "id": "l4-43",
+    "text": "Bridge from Below is in my graveyard. My opponent's Grizzly Bears dies. What happens?",
+    "expect": [
+      "Bridge from Below: your graveyard → exile."
+    ],
+    "notExpect": [
+      "Zombie token"
+    ],
+    "cite": [
+      "113.6"
+    ]
+  },
+  {
+    "id": "l4-44",
+    "text": "I control a Human, a Vulcan and a Borg artifact creature. How many creature types among non-Borg creatures do I control?",
+    "expect": [
+      "2: Human, Vulcan",
+      "is a Borg, so it doesn't count."
+    ],
+    "cite": [
+      "205.3m"
+    ]
+  },
+  {
+    "id": "l4-45",
+    "text": "I control a Human, an Elf and a Goblin. How many creature types among non-Borg creatures do I control?",
+    "expect": [
+      "3: Elf, Goblin, Human"
+    ],
+    "cite": [
+      "205.3m"
+    ]
+  },
+  {
+    "id": "l4-46",
+    "text": "My opponent attacks with a 4/4. I flash in Saavik, Stoic Student with three creature types among my creatures. What happens?",
+    "expect": [
+      "A 4/4 creature has 5 damage marked.",
+      "A 4/4 creature: the battlefield → opponent's graveyard."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "205.3m",
+      "608.2h"
+    ]
+  },
+  {
+    "id": "l4-47",
+    "text": "My opponent attacks with a 4/4. I flash in Saavik, Stoic Student with one creature type among my creatures. What happens?",
+    "expect": [
+      "A 4/4 creature has 3 damage marked."
+    ],
+    "notExpect": [
+      "not modelled",
+      "battlefield → opponent's graveyard"
+    ],
+    "cite": [
+      "205.3m"
+    ]
+  },
+  {
+    "id": "l4-48",
+    "text": "I control Death Is Irrelevant. At my end step I assimilate a creature card from my opponent's graveyard. What is it?",
+    "expect": [
+      "A 2/2 creature is a Borg artifact creature under your control, 3/3"
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "701.72b"
+    ]
+  },
+  {
+    "id": "l4-49",
+    "text": "I control Death Is Irrelevant and Grizzly Bears is in my opponent's graveyard. At my end step I assimilate Grizzly Bears from my opponent's graveyard. What is it?",
+    "expect": [
+      "Grizzly Bears is a Borg artifact creature under your control, 3/3"
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "701.72b"
+    ]
+  },
+  {
+    "id": "l4-50",
+    "text": "A copy of my opponent's commander deals 6 combat damage to me. Does that count as commander damage?",
+    "expect": [
+      "No: a copy of a commander isn't a commander (903.3, 707.2), so the combat damage the copy dealt you (6) is ordinary damage",
+      "You take 6 damage."
+    ],
+    "cite": [
+      "903.3",
+      "903.10a"
+    ]
+  },
+  {
+    "id": "l4-51",
+    "text": "I activate Dack Fayden's -2 targeting my opponent's Vehicle. Can I crew it?",
+    "expect": [
+      "Yes, if you have other untapped creatures with total power 1 or more to tap (702.122a)",
+      "it can't attack this turn without haste (302.6)",
+      "You control a Vehicle."
+    ],
+    "notExpect": [
+      "Dack Fayden's +1"
+    ],
+    "cite": [
+      "702.122a",
+      "302.6"
+    ]
+  },
+  {
+    "id": "l4-52",
+    "text": "I control Grizzly Bears. I activate Dack Fayden's -2 targeting my opponent's Vehicle. Can I crew it?",
+    "expect": [
+      "tapping Grizzly Bears (total power 2) pays crew 1 (702.122a)",
+      "A Vehicle is a 3/3 creature until end of turn."
+    ],
+    "notExpect": [
+      "Dack Fayden's +1"
+    ],
+    "cite": [
+      "702.122a"
+    ]
+  },
+  {
+    "id": "l4-53",
+    "text": "I control Jett Reno, Problem Solver. I tap her to station a Spacecraft. What happens?",
+    "expect": [
+      "A Spacecraft has 1 charge counter.",
+      "You surveil 1"
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "702.184a",
+      "701.25a"
+    ]
+  },
+  {
+    "id": "l4-54",
+    "text": "I control U.S.S. Reliant with 10 charge counters and Grizzly Bears is in my graveyard. It deals combat damage to a player. What happens?",
+    "expect": [
+      "Opponent takes 4 damage.",
+      "Grizzly Bears has a finality counter (if it would die, it's exiled instead, 122.1h)."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "122.1h"
+    ]
+  },
+  {
+    "id": "l4-55",
+    "text": "I control U.S.S. Reliant with 10 charge counters. It deals combat damage to a player. What happens?",
+    "expect": [
+      "Opponent takes 4 damage."
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "510.2"
+    ]
+  },
+  {
+    "id": "l4-56",
+    "text": "My opponent controls Containment Priest. I cast Living End. What happens to the creatures in my graveyard?",
+    "expect": [
+      "Containment Priest is already gone when the creature cards return — sacrificed in the step before — so its effect doesn't exile them (608.2c, 611.3a).",
+      "You get a 2/2 creature back from exile onto the battlefield (Living End)."
+    ],
+    "cite": [
+      "611.3a"
+    ]
+  },
+  {
+    "id": "l4-57",
+    "text": "My opponent controls Containment Priest. Street Wraith and Architects of Will are in my graveyard. I cast Living End.",
+    "expect": [
+      "Containment Priest is already gone when the creature cards return",
+      "You get Street Wraith, Architects of Will back from exile onto the battlefield (Living End)."
+    ],
+    "cite": [
+      "611.3a"
+    ]
+  },
+  {
+    "id": "l4-58",
+    "text": "My opponent controls Oblivion Ring exiling my Karn, the Great Creator. They cast Yorion, Sky Nomad and blink Oblivion Ring. What happens to Karn?",
+    "expect": [
+      "Karn, the Great Creator: exile → the battlefield (your control), returned by Oblivion Ring.",
+      "Oblivion Ring returns at the beginning of the next end step as a new object (603.7a, 400.7); then Oblivion Ring's enters ability triggers again"
+    ],
+    "notExpect": [
+      "not modelled",
+      "Karn, the Great Creator stays on the battlefield"
+    ],
+    "cite": [
+      "603.10a",
+      "603.7a"
+    ]
+  },
+  {
+    "id": "l4-59",
+    "text": "I control The Caretaker. I faced a dilemma this turn. What happens at the beginning of the end step?",
+    "expect": [
+      "Opponent exiles cards from the top of their library until they exile a nonland card",
+      "You may cast that card now, as the ability resolves, without paying its mana cost (608.2g, 118.9)"
+    ],
+    "notExpect": [
+      "not modelled",
+      "not tracked in detail"
+    ],
+    "cite": [
+      "700.17",
+      "608.2g"
+    ]
+  },
+  {
+    "id": "l4-60",
+    "text": "I control The Caretaker. I didn't face a dilemma this turn. What happens at the beginning of the end step?",
+    "expect": [
+      "Nothing happens: The Caretaker's ability needs you to have faced a dilemma this turn (700.17, 603.4)."
+    ],
+    "notExpect": [
+      "not modelled",
+      "not tracked in detail",
+      "You may cast that card"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "l4-61",
+    "text": "Four players cast six spells this turn before my Flusterstorm. How many copies of Flusterstorm are created?",
+    "expect": [
+      "Storm puts 6 copies of Flusterstorm on the stack"
+    ],
+    "cite": [
+      "702.40a"
+    ]
+  },
+  {
+    "id": "l4-62",
+    "text": "Three players cast four spells this turn before my Grapeshot. How many copies of Grapeshot are created?",
+    "expect": [
+      "Storm puts 4 copies of Grapeshot on the stack"
+    ],
+    "cite": [
+      "702.40a"
+    ]
+  },
+  {
+    "id": "l4-63",
+    "text": "I control The Tabernacle at Pendrell Vale and Phyrexian Dreadnought. What happens at my upkeep?",
+    "expect": [
+      "Phyrexian Dreadnought: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "118.12a",
+      "701.8a"
+    ]
+  },
+  {
+    "id": "l4-64",
+    "text": "I control Hill Giant and my opponent controls Grizzly Bears. I cast Swords to Plowshares targeting Grizzly Bears. My opponent casts Misdirection on it. Can they change its target to my Hill Giant?",
+    "expect": [
+      "Swords to Plowshares now targets Hill Giant.",
+      "You gain 3 life."
+    ],
+    "cite": [
+      "115.7a"
+    ]
+  },
+  {
+    "id": "l4-65",
+    "text": "My Romulan Bird-of-Prey has 3 charge counters. Can my opponent target it with Cut Down?",
+    "expect": [
+      "No: Cut Down can't target Romulan Bird-of-Prey.",
+      "it isn't a creature with total power and toughness 5 or less right now either."
+    ],
+    "cite": [
+      "702.11b",
+      "601.2c"
     ]
   }
 ]

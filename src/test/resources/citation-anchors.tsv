@@ -78,6 +78,7 @@
 115.7	some effects allow a player to
 115.7a	if an effect allows a player
 115.7b	if an effect allows a player
+115.7d	if an effect allows a player
 115.10a	just because an object or player
 116.2	there are twelve special actions
 116.2a	playing a land is a special
@@ -142,6 +143,7 @@
 122.1c	one or more shield counters on
 122.1d	one or more stun counters on
 122.1f	if a player has ten or
+122.1h	one or more finality counters on
 122.3	if a permanent has both a
 122.6	some spells and abilities refer to
 122.6a	if an object enters the battlefield
@@ -201,6 +203,10 @@
 306.9	if a planeswalker s loyalty is
 307.1	a player who has priority may
 307.5	if a spell ability or effect
+309.4a	as a player puts a dungeon
+309.4c	each room has a triggered ability
+309.5a	if a player ventures into the
+309.7	a player completes a dungeon as
 310.1	a player who has priority may
 310.6	damage dealt to a battle results
 310.9b	a battle s protector can never
@@ -310,6 +316,7 @@
 602.2b	the remainder of the process for
 602.5	a player can t begin to
 602.5d	activated abilities that read activate only
+602.5e	activated abilities that read activate only
 603.2	whenever a game event or game
 603.2b	when a phase or step begins
 603.2c	an ability triggers only once each
@@ -337,6 +344,7 @@
 604.2	static abilities create continuous effects some
 604.3	some static abilities are characteristic defining
 604.3a	a static ability is a characteristic
+605.1	some activated abilities and some triggered
 605.1a	an activated ability is a mana
 605.1b	a triggered ability is a mana
 605.3	activating an activated mana ability follows
@@ -438,6 +446,7 @@
 701.10a	doubling a creature s power and
 701.10b	to double a creature s power
 701.10c	if a creature s power is
+701.10d	to double a player s life
 701.12a	a spell or ability may instruct
 701.12b	when control of two permanents is
 701.12c	when life totals are exchanged each
@@ -491,6 +500,8 @@
 701.47a	to amass subtype n means if
 701.47b	a player amassed after the process
 701.48a	learn means you may discard a
+701.49b	if a player is instructed to
+701.49c	if a player is instructed to
 701.49d	venture into quality is a variant
 701.50a	certain spells and abilities instruct a
 701.50b	if a permanent is no longer
@@ -506,6 +517,7 @@
 701.69a	to heal damage already dealt to
 701.70a	recruit means draw a card then
 701.71a	to empower jace n means if
+701.72b	to assimilate a permanent card that
 702.2b	a creature with toughness greater than
 702.2c	any nonzero amount of combat damage
 702.2f	multiple instances of deathtouch on the
@@ -839,9 +851,11 @@
 726.2	there are two inherent triggered abilities
 726.3	only one player can be the
 726.4	if the monarch leaves the game
+727.1	the initiative is a designation a
 727.2	there are three inherent triggered abilities
 727.3	only one player can have the
 727.4	if the player who has the
+727.5	if the player who currently has
 731.2a	a merged permanent has only the
 731.2c	because a merged permanent is the
 731.2i	a merged permanent is not a
