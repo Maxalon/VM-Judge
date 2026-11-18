@@ -134,7 +134,7 @@ internal object EdhMech {
                 if (cmds.isEmpty()) { tr.step("${p.subject} ${p.v("controls", "control")} no commander on the battlefield, so nothing happens.", "903.3d"); state.outcomes += "${p.subject} ${p.v("controls", "control")} no commander, so ${item.source.name} does nothing."; return true }
                 for (c in cmds) {
                     val owner = state.player(c.owner)
-                    tr.step("${c.name} is a commander ${nm(p)} ${p.v("controls", "control")}${if (c.owner != p.id) " (${owner.possessive}, not ${p.possessive})" else ""}: \"each commander they control\" means any commander on the battlefield under ${p.possessive} control, whoever owns it. It goes to ${owner.possessive} command zone; it wasn't cast, so ${owner.possessive} commander tax doesn't change.", "903.3d", "903.8", "400.7")
+                    tr.step("${c.name} is a commander ${nm(p)} ${p.v("controls", "control")}${if (c.owner != p.id) " (${owner.possessive}, not ${if (p.you) "yours" else p.possessive})" else ""}: \"each commander they control\" means any commander on the battlefield under ${p.possessive} control, whoever owns it. It goes to ${owner.possessive} command zone; it wasn't cast, so ${owner.possessive} commander tax doesn't change.", "903.3d", "903.8", "400.7")
                     engine.leave(c.id, Zone.COMMAND)
                     state.outcomes += "${c.name} returns to ${owner.possessive} command zone (${item.source.name}); ${owner.possessive} commander tax stays as it was (it counts casts, 903.8)."
                 }

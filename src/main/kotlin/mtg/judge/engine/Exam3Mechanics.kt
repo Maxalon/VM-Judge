@@ -136,7 +136,7 @@ object Exam3Mech {
                 tr.step("${chosen.name} is a token, so its copiable values are the ones the effect that created it gave it (${chosen.def.name}${if (chosen.def.isCreature) ", ${chosen.def.power}/${chosen.def.toughness}" else ""}${chosen.def.keywords.takeIf { it.isNotEmpty() }?.let { ", " + it.joinToString(", ") { k -> k.toString().lowercase() } } ?: ""}). $was copies those, but it isn't a token.", "707.2", "111.3")
             }
             chosen.printedDef.name != chosen.def.name ->
-                tr.step("${chosen.name} is itself copying ${chosen.def.name}, and the copiable values include other copy effects, so $was copies ${chosen.def.name} too, not the card ${chosen.printedDef.name}.", "707.2")
+                tr.step("${chosen.printedDef.name} is itself copying ${chosen.def.name}, and the copiable values include other copy effects, so $was copies ${chosen.def.name} too, not the card ${chosen.printedDef.name}.", "707.2")
         }
     }
 }

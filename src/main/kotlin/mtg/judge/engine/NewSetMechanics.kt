@@ -367,7 +367,7 @@ internal object NewSetMech {
         }
         else -> null
     }
-    fun describeCondition(text: String): String? = when (text) { "ns:gainedlife" -> "that its controller gained life this turn (infusion)"; else -> null }
+    fun describeCondition(text: String): String? = when (text) { "ns:gainedlife" -> "that its controller gained life this turn"; else -> null }
 
     // ---- resolving ------------------------------------------------------------------------------------------------------
 

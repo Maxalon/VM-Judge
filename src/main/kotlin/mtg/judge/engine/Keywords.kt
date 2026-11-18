@@ -106,7 +106,7 @@ fun Engine.keywordResolutionNote(item: StackItem, zone: Zone) {
     } else if (zone == Zone.EXILE && src.kwf.castAsAdventure) {
         src.kwf.castAsAdventure = false; src.kwf.onAdventure = true
         state.trace.step("The Adventure spell finishes resolving. Instead of putting it into its owner's graveyard, its controller exiles it, and for as long as it stays in exile that player may cast the creature card from there.", "716.3d", "608.2n")
-        state.outcomes += "${src.printedDef.name} goes to exile instead of the graveyard. Yes: ${owner.subject.lowercase()} may cast it as the creature from exile on a later turn (716.3d), but not as the Adventure again."
+        state.outcomes += "${src.printedDef.name} goes to exile instead of the graveyard. ${owner.subject} may cast it as the creature from exile on a later turn (716.3d), but not as the Adventure again."
     } else if (zone == Zone.EXILE && LegacyMech.exileOnResolve(src) != null) {
         val by = LegacyMech.exileOnResolve(src)
         state.trace.step("${def.name} finishes resolving and would be put into ${owner.possessive} graveyard, but $by's ability said \"If that spell would be put into your graveyard, exile it instead\", so it's exiled. It can't be cast from the graveyard again.", "614.1a", "608.2n")

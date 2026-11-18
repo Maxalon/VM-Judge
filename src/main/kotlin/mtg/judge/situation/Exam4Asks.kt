@@ -53,6 +53,10 @@ object Exam4Asks {
                 val spell = e.card?.name ?: "the spell"
                 val watchers = state.objects.values.filter { it.isOnBattlefield() && it.id != sac.id && Regex("""(?i)whenever (?:~|this creature|${Regex.escape(it.def.name)})? ?(?:or another creature|another creature|a creature)(?: you control)? dies""").containsMatchIn(it.def.oracleText) }
                 if (sac.zone == Zone.BATTLEFIELD) sac.zone = Zone.GRAVEYARD
+                // The board was played out with the spell resolving at once; the sacrifice comes first, so that resolution is told after the trigger (truthaudit3).
+                val castAt = tr.steps.indexOfFirst { it.text.startsWith("You cast $spell.") || it.text.contains(" casts $spell.") }
+                val resolvedLater = castAt >= 0 && tr.steps.drop(castAt + 1).any { it.text.contains("$spell resolves") }
+                if (resolvedLater) { val keep = tr.steps.take(castAt + 1) + tr.steps.drop(castAt + 1).filter { it.text.startsWith("You receive priority again") || it.text.endsWith("receives priority again after casting.") }; tr.steps.clear(); tr.steps.addAll(keep) }
                 tr.step("While paying for $spell, ${state.player(altar.controller).subject.lowercase()} ${state.player(altar.controller).v("activates", "activate")} ${altar.name}'s mana ability, sacrificing ${sac.name} as its cost. A mana ability can be activated in the middle of casting a spell, when its mana is needed, and it doesn't use the stack: it resolves at once.", "605.3a", "605.3b", "601.2g")
                 if (watchers.isEmpty()) { state.outcomes.add(0, "${sac.name} is sacrificed while you pay for $spell; nothing on the battlefield triggers on it dying."); return true }
                 val names = watchers.joinToString(" and ") { it.name }
@@ -65,6 +69,7 @@ object Exam4Asks {
                     tr.step("${drain.name}'s ability resolves: ${opp?.subject?.lowercase() ?: "the target player"} ${opp?.v("loses", "lose") ?: "loses"} 1 life and ${me.subject.lowercase()} ${me.v("gains", "gain")} 1 life.", "119.3")
                 }
                 state.outcomes.add(0, "After $spell is cast, and before it resolves: ${sac.name} dies while you pay for $spell, but ${names}'s trigger waits until you'd get priority (603.3); ${altar.name}'s mana ability resolved at once (605.3b). The trigger then goes on the stack on top of $spell, so it resolves first (601.2i)${if (drain != null) ": your opponent loses 1 life and you gain 1 life, then $spell resolves" else ", then $spell resolves"}.")
+                if (resolvedLater) tr.step("Then $spell resolves: it enters the battlefield under its controller's control.", "608.3a")
                 return true
             }
             // "I'm at 40 life with Felidar Sovereign; they Bolt me in response to the upkeep trigger" (603.4).

@@ -244,7 +244,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         val cited = state.trace.steps.flatMap { it.rules }.distinct()
         val citations = cited.associateWith { n -> rules?.rule(n)?.text ?: "" }.filterValues { it.isNotEmpty() }
         return Grammar.polishAnswer(Answer(
-            outcome = if (state.outcomes.isEmpty()) listOf("Nothing changes.") else state.outcomes.groupingBy { it }.eachCount().let { counts -> state.outcomes.distinct().map { o -> Grammar.foldRepeat(o, counts.getValue(o)) } },
+            outcome = if (state.outcomes.isEmpty()) listOf("Nothing changes.") else state.outcomes.groupingBy { it }.eachCount().let { counts -> state.outcomes.distinct().map { o -> TruthAudit3.fold(o, counts.getValue(o), state) } },
             trace = state.trace.steps.map { TraceLine(it.text, it.rules) },
             assumptions = state.assumptions.distinct(),
             // A question about something else (life, a redirect, a creature's fate) doesn't need the unknown hand or top card asked for.
@@ -258,7 +258,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 // A countered spell's unsaid target is moot (Pact of Negation under Chalice on 0).
                 val mootTarget = c.about.endsWith("'s target") && state.outcomes.any { it == "${c.about.removeSuffix("'s target")} is countered." }
                 !mootTarget && !(hidden && (asks.isNotEmpty() || responded) && !aboutHidden) }.map { "${it.about}: ${it.why}" },
-            unsupported = state.unsupported.distinct().map { "${it.what}: ${it.detail}" },
+            unsupported = state.unsupported.distinct().mapNotNull { u -> TruthAudit3.unsupported(u.what, u.detail, state, sit)?.let { "${u.what}: $it" } },
             citations = citations,
             understood = understood,
         ), state.players.map { it.name })
@@ -737,6 +737,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                             stripped != null -> "No: ${o.name} has no abilities under $stripped, so there is nothing to trigger."
                             diesReplacedAnswer(o, state) != null -> diesReplacedAnswer(o, state)!!.let { (why, ans) -> state.trace.step(why, "614.6", "700.4"); ans }
                             LkiAsks.noTrigger(o, state) != null -> LkiAsks.noTrigger(o, state)!!
+                            // Land Tax with fewer lands across the table: the event happened, its intervening "if" was false (603.4).
+                            state.outcomes.any { it.startsWith("${o.name}'s ability doesn't trigger: it triggers only if ") } ->
+                                "No: " + state.outcomes.first { it.startsWith("${o.name}'s ability doesn't trigger: it triggers only if ") }.replaceFirst("doesn't trigger: it triggers", "didn't trigger: its trigger event happened, but it triggers").also { _ -> state.outcomes.removeAll { it.startsWith("${o.name}'s ability doesn't trigger: it triggers only if ") } }
                             else -> "No: ${o.name}'s ability didn't trigger (nothing that happened matched its trigger condition)."
                         }
                     }
@@ -2474,7 +2477,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         val won = !p.lost && state.players.all { it.id == p.id || it.lost }
         val alive = "${p.subject} ${p.v("is", "are")} still in the game${p.life?.let { " at $it life" } ?: ""}." + (Redteam3Asks.cantLoseNote(p, state) ?: "")
         return when (to) {
-            "playerDie" -> if (p.lost) "Yes: ${p.subject} ${p.v("has", "have")} lost the game." else "No: $alive" + (if (p.librarySize == 0) " An empty library isn't a loss by itself: ${p.subject.lowercase()} ${p.v("loses", "lose")} only when ${p.subject.lowercase()} would draw from it, at the next state-based check (704.5b)." else "")
+            "playerDie" -> if (p.lost) "Yes: ${p.subject} ${p.v("has", "have")} lost the game." else "No: $alive" + (TruthAudit3.commanderDamageNote(p, state) ?: "") + (if (p.librarySize == 0) " An empty library isn't a loss by itself: ${p.subject.lowercase()} ${p.v("loses", "lose")} only when ${p.subject.lowercase()} would draw from it, at the next state-based check (704.5b)." else "")
             "playerWin" -> (if (won) "Yes: ${p.subject} ${p.v("has", "have")} won the game." else if (p.lost) "No: ${p.subject} ${p.v("has", "have")} lost the game." else "No: ${p.subject} ${p.v("hasn't", "haven't")} won; ${alive.replaceFirstChar { it.lowercase() }}") + (state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && it.def.abilities.filterIsInstance<mtg.judge.engine.TriggeredAbility>().any { a -> a.trigger == mtg.judge.engine.Trigger.ThisEnters && a.text.contains("win the game", true) } && it.enteredFrom == null }.takeIf { !won }?.firstOrNull()?.let { o -> " ${o.name}'s ability triggers only as it enters the battlefield; it is already there, so nothing checks now. Say you cast it if that is what you mean." } ?: "")
             else -> if (p.lost) "No: ${p.subject} ${p.v("has", "have")} lost the game." else "Yes: $alive"
         }

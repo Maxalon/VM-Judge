@@ -162,7 +162,8 @@ class Engine(val state: GameState) {
                 trace.step("${rs.joinToString(" and ") { it.source }} would make ${card.name} cost ${rs.sumOf { -it.amount }} less, but a cost reduction takes off only generic mana, and ${card.name}'s cost has ${if (tc.generic == 0) "no generic mana left" else "only that much generic mana"}: it costs ${tc.text}.", "118.7a", "601.2f")
                 state.outcomes += "${rs.joinToString(" and ") { it.source }} can't take ${card.name} below ${tc.text}: a reduction takes off only generic mana (118.7a)."
             }
-            if (taxes.isNotEmpty() || commanderTax > 0) {
+            // "a spell" nobody named (the target of a Force of Will): its cost was never said, so no total is worked out for it.
+            if ((taxes.isNotEmpty() || commanderTax > 0) && card.name != "a spell") {
                 val change = when { tax > 0 -> "plus {$tax}"; tax < 0 -> "less {${-tax}}"; else -> "unchanged" }
                 val baseText = if (tc.alternative) "its alternative cost (${tc.baseMana} in mana)" else if (tc.phyrexianLife > 0) "${tc.baseMana} (its Phyrexian mana paid with life)" else card.manaCost ?: "?"
                 trace.step("${(taxes.map { "${it.first.name} makes ${card.name} cost {${kotlin.math.abs(it.second.amount)}} ${if (it.second.amount < 0) "less" else "more"}" } + (if (commanderTax > 0) listOf("the commander tax adds {$commanderTax}") else emptyList())).joinToString(" and ")}: its total cost is $baseText $change (${tc.floorFrom} mana in all).", "601.2f", "118.7", *(if (tc.alternative) arrayOf("118.9d") else emptyArray()))
@@ -1749,7 +1750,9 @@ class Engine(val state: GameState) {
         state.discardCause = item.controller   // whose spell or ability is making anyone discard while this resolves (Loxodon Smiter)
         trace.step("All players pass priority; ${item.describe} (top of the stack) starts to resolve.", "117.4", "608.1")
         // Killing the Top in response to its ability: the ability is already on the stack and exists independently of its source.
-        if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.source.zone != Zone.COMMAND && item.effect !is WinLossEffect && !worksFromGraveyard(item)) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
+        if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.source.zone != Zone.COMMAND && item.effect !is WinLossEffect && !worksFromGraveyard(item)) trace.step(if (item.source.successor?.let { state.objects[it] }?.isOnBattlefield() == true)   // Solitude flickered by Ephemerate: the one on the battlefield now is a new object
+                "The ${item.source.name} that put this ability on the stack has left the battlefield (the ${item.source.name} there now is a new object, 400.7), but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it."
+                else "${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
         // Urza's Saga's chapter III on the stack when Blood Moon enters: the source lost the ability, the ability on the stack didn't.
         if (item.kind == StackKind.TRIGGERED && item.source.isOnBattlefield() && underMoon(item.source)) trace.step("${item.source.name} has lost its abilities to ${state.moonOn(item.source)!!.name} since this ability triggered, but an ability on the stack exists independently of its source, so it still resolves in full.", "113.7a")
         // A bestowed Aura spell whose target is illegal resolves as a creature spell instead (702.103e).
@@ -2250,7 +2253,8 @@ class Engine(val state: GameState) {
         if (b.blocking != null && b.blocking != a.id) b.alsoBlocking += a.id else b.blocking = a.id
         a.wasBlocked = true
         // Menace with one blocker so far: the block stands only if a second creature joins it, so don't call it blocked yet (702.111b).
-        val menaceAlone = (a.has("menace") || (MoreEffects4.minBlockersOf(a) ?: 0) > 1) && blockersOf(a).size == 1
+        // Guile ("except by three or more") with a second blocker: still short of the number, so not blocked yet either.
+        val menaceAlone = (a.has("menace") || (MoreEffects4.minBlockersOf(a) ?: 0) > 1) && blockersOf(a).size < (MoreEffects4.minBlockersOf(a) ?: 2)
         trace.step("${p.subject} ${p.v("blocks", "block")} ${a.name} with ${b.name} (${state.describePt(b)}). " + (if (menaceAlone) "${a.name} can't be blocked except by ${(MoreEffects4.minBlockersOf(a) ?: 2).let { if (it <= 2) "two" else "$it" }} or more creatures, so this block is legal only if enough other creatures block it too."
             else "${a.name} is now a blocked creature and stays blocked even if ${b.name} leaves combat."), "509.1a", "509.1g", "509.1h")
         val evs = listOfNotNull(if (firstBlocker) GameEvent.BecomesBlocked(a) else null, GameEvent.BecomesBlockedBy(a, b), GameEvent.Blocks(b, a))
@@ -3187,7 +3191,8 @@ class Engine(val state: GameState) {
                 val chooser = (if (effect.who == Who.YOU) you else resolveWho(effect.who, item)) ?: you
                 val what = describe(effect.effect, item).let { d ->
                     if (chooser.you) d.replace("their library", "your library").replace("their hand", "your hand").replace("their graveyard", "your graveyard")
-                    else d.replace("your library", "their library").replace("your hand", "their hand").replace("your graveyard", "their graveyard")
+                    // Sigarda's Aid under the opponent's control: "attach it to target creature they control", not "you control".
+                    else d.replace("your library", "their library").replace("your hand", "their hand").replace("your graveyard", "their graveyard").replace(" you control", " they control")
                 }
                 trace.step("${chooser.subject} may choose to $what.", "608.2d")
                 state.assumptions += "${chooser.subject} ${chooser.v("chooses", "choose")} to $what (${item.describe} says \"${if (effect.who == Who.YOU) "you may" else "may"}\")."
@@ -3878,6 +3883,11 @@ class Engine(val state: GameState) {
                         if (best.size > 1) state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}: ${best.joinToString(" and ") { it.name }} are tied for greatest power ($top), and ${p.subject.lowercase()} ${p.v("chooses", "choose")} among them."
                         move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} creature with the greatest power ($top)${if (mine.size > 1) " (not ${mine.filter { it !== pick }.joinToString(", ") { "${it.name}, power ${it.power ?: 0}" }})" else ""}.", "701.21a"); onEvent(GameEvent.Sacrificed(pick, p.id))
                     }
+                    // "each player sacrifices two creatures" with exactly two left: both go, nobody chooses (truthaudit3).
+                    mine.size <= effect.count - sacIndex && !effect.greatestPower -> {
+                        for (o in mine) { move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${o.name}: ${p.subject.lowercase()} ${p.v("has", "have")} to sacrifice ${effect.count - sacIndex} and ${p.v("controls", "control")} only ${mine.size}, so there's no choice.", "701.21a"); onEvent(GameEvent.Sacrificed(o, p.id)) }
+                        break
+                    }
                     else -> { val pick = mine.minWith(compareBy<GameObject>({ if (it.token) 0 else 1 }, { it.power ?: 0 }, { it.toughness ?: 0 })); state.assumptions += "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name} (${p.subject.lowercase()} ${p.v("chooses", "choose")} which ${effect.filter.raw}; assuming a token before a card, then the smallest)."; state.outcomes += "${p.subject} ${p.v("chooses", "choose")} which ${effect.filter.raw} to sacrifice: ${mine.joinToString(" or ") { it.name }}; ${pick.name} is assumed${if (pick.token) " (a token is the usual pick)" else " (the smallest)"}."; move(pick, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${pick.name}, ${p.possessive} choice among ${mine.joinToString(", ") { it.name }}.", "701.21a"); onEvent(GameEvent.Sacrificed(pick, p.id)) }
                 } }
             }
@@ -4225,6 +4235,7 @@ class Engine(val state: GameState) {
                 LegacyMech.narratedAs(state, effect.text, item)?.let { applyEffect(it, item); return }   // Children of Korlis
                 if (ModernMech.narrated(this, state, effect.text, item)) return   // Undying Malice's return (ModernMechanics.kt)
                 CoverageMech.notADraw(state, effect.text, item)   // Impulse with Orcish Bowmasters out: into the hand isn't a draw (CoverageMechanics.kt)
+                if (TruthAudit3Mech.resolve(this, effect.text, item)) return   // Planar Engineering's sacrifice, "if X is N or more", Blade of the Bloodchief (TruthAudit3Mechanics.kt)
                 if (MoreEffects2.resolve(this, effect.text, item)) return   // unpreventable damage, gained abilities, Chandra's exile-and-cast (MoreEffects2.kt)
                 if (MoreEffects.resolve(this, effect.text, item)) return   // searches, reveals, looks, scry, shuffles, extra turns (MoreEffects.kt)
                 if (effect.text == "~persist-return~" || effect.text == "~undying-return~") { persistReturnNow(item.source, effect.text.startsWith("~undying")); return }
@@ -4342,6 +4353,7 @@ class Engine(val state: GameState) {
                 if (LimitedMech.unparsed(this, state, effect.text, item)) return   // Cytoshape, Preeminent Captain (LimitedMechanics.kt)
                 if (CoverageMech.unparsed(this, state, effect.text, item)) return   // Flame Spill's excess damage (CoverageMechanics.kt)
                 if (MoreEffects2.resolve(this, effect.text, item)) return   // (MoreEffects2.kt)
+                if (TruthAudit3Mech.resolve(this, effect.text, item)) return   // (TruthAudit3Mechanics.kt)
                 trace.step("(Not modeled: \"${effect.text}\")")
                 enterBlockersNote(item, effect.text)
                 // Counterbalance: the spell is countered if the revealed card's mana value matches it.
@@ -4939,7 +4951,7 @@ class Engine(val state: GameState) {
                 if (e.opponentsOnly && src.controller == o.controller) continue
                 if (e.filter.raw == "nonbasic land" && ("Basic" in state.supertypesOf(o) || "Land" !in state.typesOf(o))) continue
                 if (e.filter.raw != "nonbasic land" && !state.matches(e.filter, o, src.controller, src, anyZone = true)) continue
-                if (o.tapped != true) { o.tapped = true; trace.step("${src.name} makes each ${e.filter.raw} ${if (e.opponentsOnly) "${state.player(src.controller).possessive} opponents control " else ""}enter tapped, so ${o.name} enters tapped.", "614.1d", "614.12") }
+                if (o.tapped != true) { o.tapped = true; trace.step("${src.name} makes each ${e.filter.raw} ${if (e.opponentsOnly) "its controller's opponents control " else ""}enter tapped, so ${o.name} enters tapped.", "614.1d", "614.12") }
             }
         }
         // Under Blood Moon a nonbasic land is a Mountain with no abilities as it enters: no shock, no enters-tapped text.
@@ -5025,9 +5037,10 @@ class Engine(val state: GameState) {
         if (to == Zone.BATTLEFIELD && obj.zone != Zone.BATTLEFIELD) obj.enteredFrom = obj.zone
         // A merged permanent that leaves: each card that made it up goes to the new zone as its own object (731.3).
         if (obj.kwf.mergedDefs.isNotEmpty() && obj.zone == Zone.BATTLEFIELD && to != Zone.BATTLEFIELD) {
+            val mergedName = obj.def.name   // the merged permanent had its top card's name (Gemrazer on top of Grizzly Bears)
             val extra = obj.kwf.mergedDefs.toList(); obj.kwf.mergedDefs.clear(); obj.kwf.merged.clear(); obj.def = obj.printedDef
             for (d in extra) { val o2 = state.add(GameObject(freshObjectId(d.name), d, to, obj.owner, obj.owner)); o2.timestamp = state.tick() }
-            trace.step("${obj.printedDef.name} was a merged permanent, so each card that represented it (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) goes to ${zoneName(to, obj)} separately.", "731.3", "400.7")
+            trace.step("$mergedName was a merged permanent, so each card that represented it (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) goes to ${zoneName(to, obj)} separately.", "731.3", "400.7")
             state.outcomes += "Both cards of the merged creature (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) go to ${zoneName(to, obj)}."
             // Gemrazer mutated onto the commander: the merged permanent was the commander, but only the commander card may go to the command zone.
             if (obj.commander && (to == Zone.GRAVEYARD || to == Zone.EXILE)) {
@@ -5060,7 +5073,9 @@ class Engine(val state: GameState) {
         if (obj.isOnBattlefield()) {
             // A control-changing Aura leaving gives the creature back (the effect ends, 611.2b).
             if (obj.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.any { it is StaticEffect.ControlEnchanted }) obj.attachedTo?.let { state.objects[it] }?.let { host ->
-                if (host.controller != host.owner) { host.controller = host.owner; trace.step("${obj.name} has left the battlefield, so its control effect ends and ${host.name} goes back to ${state.player(host.owner).possessive} control.", "611.2b"); state.outcomes += "${state.player(host.owner).subject} ${state.player(host.owner).v("controls", "control")} ${host.name} again." }
+                // Control Magic falling off a stolen commander that already went to the command zone: nothing comes back under anyone's control.
+                if (host.controller != host.owner && !host.isOnBattlefield()) host.controller = host.owner
+                else if (host.controller != host.owner) { host.controller = host.owner; trace.step("${obj.name} has left the battlefield, so its control effect ends and ${host.name} goes back to ${state.player(host.owner).possessive} control.", "611.2b"); state.outcomes += "${state.player(host.owner).subject} ${state.player(host.owner).v("controls", "control")} ${host.name} again." }
             }
         }
         if (obj.isOnBattlefield()) obj.lkiPower = obj.power
@@ -5333,7 +5348,7 @@ class Engine(val state: GameState) {
                 // just as lethal. Without this a deathtouch creature won a fight it should have traded.
                 if (amount > 0 && "Planeswalker" !in state.typesOf(o) && source?.has("deathtouch") == true) o.dealtDeathtouchDamage = true
                 if (Battles.isBattle(state, o)) Battles.damage(state, o, amount, sourceName)
-                else if ("Planeswalker" in state.typesOf(o)) { val before = o.counters["loyalty"] ?: 0; o.counters["loyalty"] = maxOf(0, before - amount); trace.step("$sourceName deals $amount damage to ${o.name}, so $amount loyalty counters are removed from it (${o.counters["loyalty"]} left).", "306.8", "120.3c"); state.outcomes += "${o.name} has ${o.counters["loyalty"]} loyalty." }
+                else if ("Planeswalker" in state.typesOf(o)) { val before = o.counters["loyalty"] ?: 0; o.counters["loyalty"] = maxOf(0, before - amount); trace.step("$sourceName deals $amount damage to ${o.name}, so ${if (amount > before) "its $before loyalty counter${if (before == 1) " is" else "s are"} removed (damage removes that many counters, and it has only $before)" else "$amount loyalty counter${if (amount == 1) " is" else "s are"} removed from it"} (${o.counters["loyalty"]} left).", "306.8", "120.3c"); state.outcomes += "${o.name} has ${o.counters["loyalty"]} loyalty." }
                 else if (infect || wither) { o.counters["-1/-1"] = (o.counters["-1/-1"] ?: 0) + amount; trace.step("$sourceName has ${if (infect) "infect" else "wither"}, so the $amount damage to ${o.name} is dealt as $amount -1/-1 counter${if (amount > 1) "s" else ""}; it's now ${o.power}/${o.toughness}.", if (infect) "702.90c" else "702.80a", "120.3d"); state.outcomes += "${o.name} has ${o.counters["-1/-1"]} -1/-1 counter${if (o.counters["-1/-1"] == 1) "" else "s"}." }
                 else {
                     NewSetMech.healBeforeDamage(state, o, amount, sourceName)   // Wolverine: the new damage heals the old (NewSetMechanics.kt)

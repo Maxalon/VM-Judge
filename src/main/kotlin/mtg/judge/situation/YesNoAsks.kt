@@ -183,7 +183,8 @@ object YesNoAsks {
         window.firstOrNull { it.startsWith("Yes") }?.let { y -> if (w.results.any { r -> y in r.lines }) { state.outcomes += say(y, null, state); return true } }
         val redirected = w.results.firstNotNullOfOrNull { r -> actedCard(r.e, state)?.takeIf { d -> Regex("""(?i)\bchange (?:a|the) targets? of target spell or ability\b""").containsMatchIn(d.def.oracleText) }?.let { d -> window.firstOrNull { l -> Regex("""now targets ${Regex.escape(d.name)}\b|changes .+'s target to ${Regex.escape(d.name)}\b""").containsMatchIn(l) } } }
         val clauses = w.results.map { did(it, state) }
-        val counted = clauses.distinct().map { c -> clauses.count { it == c }.let { n -> if (n == 1) c else "$c ${if (n == 2) "twice" else "$n times"}" } }
+        // "a 1/1 creature can block a 5/5 creature" for three different 1/1s is "three 1/1 creatures can block", not the one "3 times".
+        val counted = clauses.distinct().map { c -> clauses.count { it == c }.let { n -> if (n == 1) c else Regex("""^an? (.+?) (can|could) (.+)$""").find(c)?.let { m -> "${Grammar.numberWord(n)} ${Grammar.pluralPhrase(m.groupValues[1])} ${m.groupValues[2]} ${m.groupValues[3]}" } ?: "$c ${if (n == 2) "twice" else "$n times"}" } }
         state.outcomes += "Yes: " + counted.joinToString("; ") + (redirected?.let { ": " + lower(it).removeSuffix(".") } ?: "") + "."
         return true
     }

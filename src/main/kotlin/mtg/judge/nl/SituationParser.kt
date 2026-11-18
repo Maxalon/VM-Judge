@@ -5077,6 +5077,7 @@ class SituationParser(private val names: NameIndex) {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = truth3Rewrites(t2, m, ctx)
         t2 = exam4Rewrites(t2, m, ctx)
         t2 = leftovers3Rewrites(t2, m, ctx)
         t2 = redteam3EarlyRewrites(t2, m, ctx)
@@ -5647,7 +5648,7 @@ class SituationParser(private val names: NameIndex) {
             // "with Notion Thief out on their side": whose it is, said after it.
         t2 = t2.replace(Regex("""\bwith (c\d+)(?: (out|in play|on the battlefield))? on (my|their|his|her) side\b""", RegexOption.IGNORE_CASE), "with $3 $1 out")
             // "Force of Will pitching a blue card on their Thoughtseize": the target belongs to the cast, not the pitch.
-        t2 = t2.replace(Regex(""",\s*(pitching|exiling) ((?:an?|one|two) (?:blue |red |green |black |white )?cards?) ((?:on|at|targeting) .+)$""", RegexOption.IGNORE_CASE), " $3, $1 $2")
+        t2 = t2.replace(Regex(""",\s*(pitching|exiling) ((?:an?|one|two) (?:blue |red |green |black |white )?cards?),? ((?:on|at|targeting) .+)$""", RegexOption.IGNORE_CASE), " $3, $1 $2")
             // "does Ensnaring Bridge stop my 3/3 from attacking (if I have no cards in hand)": the Bridge is out, the
             // condition is a fact, and the attack is tried.
         t2 = t2.let { t0 -> Regex("""\b(?:does|will|would|can|could) ((?:my |their |the |his |her )?c\d+) (?:stop|prevent|keep|block) ((?:my |their |his |her )?[^,]+?) from attacking(?: if (i|they|we|he|she|my opponent|the opponent) ([^,]+?))?(?=,| and\b|$)""", RegexOption.IGNORE_CASE).replace(t0) { r ->
@@ -5848,7 +5849,8 @@ class SituationParser(private val names: NameIndex) {
         t2 = t2.replace(Regex("""^can (?:i|we) (?:save|protect|keep) (?:my|our) (?:team|board|guys|dudes|other creatures)(?: from (?:it|that|this|dying))?\??$""", RegexOption.IGNORE_CASE), "saveteam-question")
             // "My opponent casts Doom Blade on my Tarmogoyf. What do I do?": what would save it.
         t2 = t2.let { t0 -> Regex("""^what (?:do|can|should|could) (?:i|we) do(?: now| here| about (?:it|that|this))?\??$""", RegexOption.IGNORE_CASE).replace(t0) { r -> if (ctx.events.lastOrNull { it.verb == "cast" || it.verb == "activate" }?.player.let { it != null && it != "me" }) "can i save it" else r.value } }
-        t2 = t2.replace(Regex("""\bdo my (creatures|tokens|guys|dudes) survive\??$""", RegexOption.IGNORE_CASE), "do my $1 die")
+        // "do my creatures survive" stays a survive question ("be safe", which the save-my-team reading doesn't take): answered as "die" its leads came out inverted ("No: … is still on the battlefield").
+        t2 = t2.replace(Regex("""\bdo my (creatures|tokens|guys|dudes) survive\??$""", RegexOption.IGNORE_CASE), "do my $1 be safe")
             // "Can Lightning Bolt target a planeswalker?": one of theirs stands in, and the Bolt is aimed at it.
         t2 = t2.replace(Regex("""^can (?:an? |my )?(c\d+) (?:target|hit|be cast at) an? (planeswalker)\??$""", RegexOption.IGNORE_CASE), "they have a planeswalker with 4 loyalty, i cast $1 targeting their planeswalker")
         t2 = t2.replace(Regex("""^can (?:an? |my )?(c\d+) (?:target|hit|be cast at) an? (creature|artifact|enchantment|land)\??$""", RegexOption.IGNORE_CASE), "they have a $2, i cast $1 targeting their $2")
@@ -8034,7 +8036,9 @@ class SituationParser(private val names: NameIndex) {
                 ?: ctx.objects.values.firstOrNull { it.card.name == "Aether Vial" && it.zone == "battlefield" }
                 ?: names.lookup(Names.normalize("Aether Vial"))?.let { v -> val vid = addObject(v, "me", false, ctx); val mvGuess = (if (cardRef.matches(r.groupValues[1])) m.cards[r.groupValues[1]]?.manaValue else null)?.takeIf { it > 0 } ?: 1; ctx.objects[vid] = ctx.objects.getValue(vid).copy(counters = mapOf("charge" to mvGuess)); ctx.notes += "No Aether Vial was described: one is assumed on the battlefield under your control with $mvGuess charge counter${if (mvGuess == 1) "" else "s"}, enough for the creature named (say how many it really has)."; ctx.objects.getValue(vid) }
                 ?: return@let
-            if (ctx.objects.values.any { it.zone == "battlefield" && it.card.name in setOf("Thalia, Guardian of Thraben", "Chalice of the Void", "Counterbalance", "Sphere of Resistance", "Thorn of Amethyst", "Lodestone Golem") } || ctx.events.any { e -> e.verb == "cast" && e.card?.name in setOf("Thalia, Guardian of Thraben", "Chalice of the Void", "Sphere of Resistance", "Thorn of Amethyst") }) ctx.asks += EventSpec("ask", to = "text:Yes, if the counters match the creature's mana value (the outcome above says). Aether Vial puts the creature onto the battlefield without casting it, so nothing that taxes or counters spells (Thalia, Chalice of the Void, counterspells) touches it: it was never a spell (601.2, 603.6).")
+            // Chalice on 1, Vial on 1, Thalia (mana value 2): the counters don't match, so the canned "Yes, if …" would contradict the No below (truthaudit3).
+            val vialMismatch = (if (cardRef.matches(r.groupValues[1])) m.cards[r.groupValues[1]]?.manaValue else null)?.let { mv -> (vial.counters["charge"] ?: mv) != mv } == true
+            if (ctx.objects.values.any { it.zone == "battlefield" && it.card.name in setOf("Thalia, Guardian of Thraben", "Chalice of the Void", "Counterbalance", "Sphere of Resistance", "Thorn of Amethyst", "Lodestone Golem") } || ctx.events.any { e -> e.verb == "cast" && e.card?.name in setOf("Thalia, Guardian of Thraben", "Chalice of the Void", "Sphere of Resistance", "Thorn of Amethyst") }) ctx.asks += EventSpec("ask", to = if (vialMismatch) "text:The taxing and countering cards don't matter for Aether Vial: it puts the creature onto the battlefield without casting it (601.2, 603.6). What decides it here is the mana value, below." else "text:Yes, if the counters match the creature's mana value (the outcome above says). Aether Vial puts the creature onto the battlefield without casting it, so nothing that taxes or counters spells (Thalia, Chalice of the Void, counterspells) touches it: it was never a spell (601.2, 603.6).")
             val cardId = if (cardRef.matches(r.groupValues[1])) m.cards[r.groupValues[1]]?.let { c -> ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "hand" && it.card.name == c.display }?.id ?: addObject(c, "me", false, ctx, zone = "hand", allowDuplicate = true) }
                          else if (r.groupValues[1] in setOf("it", "that")) ctx.objects.values.lastOrNull { it.controller == "me" && it.zone == "hand" && isCreatureName(it.card.name) }?.id
                          else {
@@ -8074,7 +8078,8 @@ class SituationParser(private val names: NameIndex) {
             return true
         }
         Regex("""^delver-reveal-question (c\d+|[a-z ]+)$""").find(clause0)?.let { r ->
-            val card = m.cards[r.groupValues[1]]?.let { it.display to it.typeLine } ?: (r.groupValues[1] to r.groupValues[1].replaceFirstChar { it.uppercase() })
+            // "I reveal an instant": no card named, so "the revealed instant", not "instant is an instant or sorcery card" (truthaudit3).
+            val card = m.cards[r.groupValues[1]]?.let { it.display to it.typeLine } ?: ("the revealed ${r.groupValues[1]}" to r.groupValues[1].replaceFirstChar { it.uppercase() })
             // "I reveal Brazen Borrower": an adventurer card in the library has only its normal characteristics (716.4), so Petty Theft's
             // instant type doesn't count; a double-faced card likewise has only its front face's (712.6a).
             val adventurer = card.second.contains(" // ")
@@ -12492,7 +12497,8 @@ class SituationParser(private val names: NameIndex) {
                 ctx.notes += "No ${if (tokens) "token" else "creature"} of theirs was described; ${if (tokens) "a 1/1 token" else "a creature"} stands in for them so the answer says what happens to one."
                 if (!readClause(if (tokens) "they have a 1/1 token" else "they have a creature", m, ctx)) return@let
             }
-            for (o in ctx.objects.values.filter { it.controller == opp && it.zone == "battlefield" && isCreatureName(it.card.name) && (!tokens || it.token) }) ctx.asks += EventSpec("ask", obj = o.id, to = "die")
+            val surv = Regex("""\b(?:survive|live|make it|be safe|be fine)\b""").containsMatchIn(c)
+            for (o in ctx.objects.values.filter { it.controller == opp && it.zone == "battlefield" && isCreatureName(it.card.name) && (!tokens || it.token) }) ctx.asks += EventSpec("ask", obj = o.id, to = if (surv) "survive" else "die")
             return true
         }
         Regex("""^(?:do|will|would|does) (?:all )?(?:my|our) (?:own )?(creatures|guys|dudes|team|board|stuff|tokens|permanents|nonland permanents) (?:all )?(?:die|survive|live|get destroyed|get wiped|get killed|get bounced|bounce|get exiled|get hit|make it|be safe|be fine|come back|go away)(?: too| as well| also)?$""").find(c)?.let { r ->
@@ -12515,7 +12521,8 @@ class SituationParser(private val names: NameIndex) {
             // protect the team is used in response, quietly when there is nothing.
             if (theirCast != null) ctx.objects.values.firstOrNull { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) && (!tokens || it.token) }?.let { first -> ctx.events += EventSpec("save", player = "me", obj = first.id, to = "quiet") }
             // The question itself: each of the asker's creatures is asked about once everything has played out.
-            for (o in ctx.objects.values.filter { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) && (!tokens || it.token) }) ctx.asks += EventSpec("ask", obj = o.id, to = "die")
+            val surv = Regex("""\b(?:survive|live|make it|be safe|be fine)\b""").containsMatchIn(c)
+            for (o in ctx.objects.values.filter { it.controller == "me" && it.zone == "battlefield" && isCreatureName(it.card.name) && (!tokens || it.token) }) ctx.asks += EventSpec("ask", obj = o.id, to = if (surv) "survive" else "die")
             return true
         }
         // "I flash in a Snapcaster to block": a named creature cast now, and it blocks.
@@ -15054,7 +15061,9 @@ class SituationParser(private val names: NameIndex) {
             }
             // "has Lightning Greaves on Grizzly Bears" / "has Rancor on their Bears": the first card is attached to the second.
             Regex("""^ (?:on|attached to|equipped to|enchanting|equipping) ($possPrefix|an? )?(c\d+)(?: (?:creature )?token)?$""").find(rest)?.let { a ->
-                val hostOwner = when { a.groupValues[1].startsWith("@") -> a.groupValues[1].removePrefix("@").removeSuffix("'s "); a.groupValues[1] == "my " -> "me"; a.groupValues[1] == "their " -> pronounPlayer(ctx, "their"); else -> owner }
+                val hostOwner = when { a.groupValues[1].startsWith("@") -> a.groupValues[1].removePrefix("@").removeSuffix("'s "); a.groupValues[1] == "my " -> "me"; a.groupValues[1] == "their " -> pronounPlayer(ctx, "their")
+                    // "I control Shiny Impetus attached to my opponent's Grizzly Bears": the host is theirs, not the Aura's controller's.
+                    a.groupValues[1] in setOf("my opponent's ", "the opponent's ", "an opponent's ", "opponent's ") -> ctx.other("me") ?: "opp"; else -> owner }
                 val target = m.cards.getValue(a.groupValues[2]).let { objectIdFor(it, ctx) ?: addObject(it, hostOwner, false, ctx) }
                 ctx.objects[hostId] = ctx.objects.getValue(hostId).copy(attachedTo = target); ctx.lastVerb = "have"; ctx.lastOwner = owner; ctx.lastActor = owner; ctx.lastMentioned = target; return true
             }
@@ -17691,6 +17700,27 @@ class SituationParser(private val names: NameIndex) {
     // ---- judge-exam board states, fourth set ("x4:…" asks, see Exam4Asks.kt) ----
 
     /** Costs and mana abilities mid-cast, APNAP at a four-player table, protection, multi-blocker damage, adventures, 2HG. */
+    /** Sentences the third truth audit found read wrong (truthaudit3): each keeps the meaning it was said with. */
+    private fun truth3Rewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim().trimEnd('?', '.', '!').trim()
+        val io = RegexOption.IGNORE_CASE
+        // "I cast Abuelo's Awakening with Fable of the Mirror-Breaker in my graveyard as the target": the card in the graveyard is the target.
+        Regex("""^(i|we) cast (c\d+) with (c\d+) in (my|our) graveyard as (?:the|its) target$""", io).find(q)?.let { r -> return "${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]} in ${r.groupValues[4]} graveyard" }
+        // "I cast Counterspell on my opponent's Lightning Bolt targeting my Grizzly Bears": the Bolt is cast first, at the Bears.
+        Regex("""^(i|we) cast (c\d+) (?:on|at) (?:my opponent's|the opponent's|their|his|her) (c\d+) targeting (my|our) (c\d+)$""", io).find(q)?.let { r ->
+            if (m.cards[r.groupValues[3]]?.isSpellOnly == true) return "my opponent casts ${r.groupValues[3]} targeting ${r.groupValues[4]} ${r.groupValues[5]}, ${r.groupValues[1]} cast ${r.groupValues[2]} targeting ${r.groupValues[3]}" }
+        // "I cast three spells this turn" before the Mindbreak Trap: a count of spells already cast (and resolved), not three on the stack.
+        Regex("""^(i|we) cast (\d+|two|three|four|five|six|seven) (?:other )?spells (?:earlier )?this turn$""", io).find(q)?.let { r -> return "${r.groupValues[1]} have cast ${r.groupValues[2]} spells this turn" }
+        // "My Solemn Simulacrum dies and my opponent exiles it with Scavenging Ooze": the Ooze's ability exiles it; the Ooze isn't cast.
+        Regex("""^(?:my )?(c\d+) dies,? and (?:my opponent|the opponent|they) (?:exiles?|exiled) (?:it|that card) with (?:their |his |her )?(c\d+)( in response(?: to (?:its|the|that) trigger)?)?$""", io).find(q)?.let { r ->
+            val c = m.cards[r.groupValues[2]]
+            if (c != null && !c.isSpellOnly && c.typeLine.contains("Creature")) return "my ${r.groupValues[1]} dies, my opponent controls ${r.groupValues[2]} and activates it targeting ${r.groupValues[1]}${r.groupValues[3]}" }
+        // "I cast Absorb Essence from Purging Stormbrood and my opponent tries to Essence Scatter it": the counter aims at the spell just cast.
+        Regex("""^(i|we) cast (c\d+) from (c\d+),? and (?:my opponent|the opponent|they) (?:tries|try|tried) to (c\d+) it$""", io).find(q)?.let { r ->
+            if (m.cards[r.groupValues[4]]?.isSpellOnly == true) return "${r.groupValues[1]} cast ${r.groupValues[2]} from ${r.groupValues[3]} and my opponent casts ${r.groupValues[4]} targeting ${r.groupValues[2]}" }
+        return t
+    }
+
     private fun exam4Rewrites(t: String, m: Marked, ctx: Ctx): String {
         val q = t.trim().trimEnd('?', '.', '!').trim()
         exam4Body(q, m, ctx)?.let { return it }

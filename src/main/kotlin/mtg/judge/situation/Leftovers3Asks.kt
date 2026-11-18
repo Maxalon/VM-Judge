@@ -146,6 +146,15 @@ internal object Leftovers3Asks {
         tr.step("\"${self(d, etb)}\" is a replacement effect that counts the $what exiled to pay for this spell with delve.", "614.1c", "702.66a")
         val delved = s.fact("delved")?.split('/')?.map { it.toIntOrNull() ?: 0 }
         val base = "${d.power}/${d.toughness}"
+        // "delving two instants": the board agrees with the answer, so the Murktide that entered has the counters (truthaudit3).
+        val k = delved?.getOrNull(0) ?: 0
+        if (k > 0) obj(state, d.name)?.takeIf { it.isOnBattlefield() && (it.counters[kind] ?: 0) == 0 }?.let { o ->
+            o.counters[kind] = k
+            val grown = "${(d.power ?: 0) + k}/${(d.toughness ?: 0) + k} ($base base, $k $kind counter${if (k == 1) "" else "s"})"
+            tr.steps.indices.firstOrNull { tr.steps[it].text.contains("${d.name} resolves and enters the battlefield") && tr.steps[it].text.endsWith(" as a $base.") }?.let { i ->
+                tr.steps[i] = tr.steps[i].copy(text = tr.steps[i].text.removeSuffix(" as a $base.") + " as a $grown.") }
+            state.outcomes.replaceAll { l -> if (l.startsWith("${d.name} has delve:") && l.contains(" wasn't said.")) l.substringBefore(" How many cards") else l }
+        }
         val lead = "It depends on delve, not on where it's cast from: ${short(d)} enters with a $kind counter for each $what exiled with its delve. Cast from exile${permission?.let { " with ${short(it)}'s permission" } ?: ""} you can still delve"
         return when {
             delved == null -> "$lead; with no cards delved it enters as a $base with no counters. Mana value and delve aren't changed by casting it from exile."

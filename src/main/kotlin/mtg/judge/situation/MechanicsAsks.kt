@@ -90,7 +90,7 @@ internal object MechanicsAsks {
         val lib = p.librarySize
         val tr = state.trace
         val who = { q: mtg.judge.engine.Player -> if (q.you) "you" else q.name }
-        tr.step("After a spell is cast, priority passes in turn order (${order.joinToString(", ") { who(it) }}); it resolves only once all ${state.players.size} players pass in succession, and the same happens again for its enters trigger. Each of the ${opps.size} opponent${if (opps.size == 1) "" else "s"} can respond to either.", "117.3d", "117.4")
+        tr.step("After a spell is cast, priority passes in turn order (${order.joinToString(", ") { who(it) }}); it resolves only once ${if (state.players.size == 2) "both players pass" else "all ${state.players.size} players pass"} in succession, and the same happens again for its enters trigger. ${if (opps.size == 1) "Your opponent" else "Each of the ${opps.size} opponents"} can respond to either.", "117.3d", "117.4")
         tr.step("The trigger looks at the top X cards, X being devotion to blue (now $devotion with Thassa's Oracle on the battlefield), and wins if X is at least the number of cards in the library${lib?.let { " ($it now)" } ?: ""}; both are counted only as it resolves.", "608.2h")
         tr.step("A player who leaves the game while the trigger waits takes their own objects with them, but the trigger isn't theirs, so it still resolves; \"you win the game\" then means every remaining opponent loses.", "800.4a", "104.2a")
         val now = lib?.let { if (devotion >= it) "With $devotion devotion and $it card${if (it == 1) "" else "s"} in your library, it wins as things stand." else "With $devotion devotion and $it cards in your library it doesn't win as things stand." } ?: ""

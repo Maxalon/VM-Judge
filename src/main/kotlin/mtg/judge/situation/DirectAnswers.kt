@@ -35,14 +35,17 @@ object DirectAnswers {
         if (state.outcomes.isEmpty()) return
         val c = Q(q, qs, sit, state)
         try {
+            if (TruthAudit3.fateLead(q, state)) return   // "Who dies?", "Can I kill both?" (TruthAudit3.kt)
+            if (yesNoWord.containsMatchIn(q) && TruthAudit3.payExtra(q, state)) return   // "Do I have to pay extra?" under Thalia (TruthAudit3.kt)
             when {
                 yesNoWord.containsMatchIn(q) -> yesNo(c)
-                Regex("""^how (?:much|many)\b""").containsMatchIn(q) -> number(c)
+                Regex("""^(?:if [^,]+, )?how (?:much|many)\b""").containsMatchIn(q) -> number(c)
                 Regex("""^what (?:happens|happened|will happen) to\b""").containsMatchIn(q) -> fate(c)
                 Regex("""^who (?:wins|loses|won|lost|will win|will lose)\b""").containsMatchIn(q) -> who(c)
                 Regex("""^which\b""").containsMatchIn(q) -> which(c)
                 Regex("""^when\b""").containsMatchIn(q) -> whenLead(c)
             }
+            TruthAudit3.killHalf(q, state)   // "Can I triple block and kill it?" (TruthAudit3.kt)
         } catch (e: RuntimeException) { if (System.getenv("MTG_DEBUG_LEAD") != null) e.printStackTrace() /* a lead is a convenience: a question it can't read keeps the narration as it was */ }
     }
 

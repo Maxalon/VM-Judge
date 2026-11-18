@@ -148,7 +148,7 @@ internal object Leftovers3Mech {
             return true
         }
         if (exileInsteadRe.matches(t)) { tr.step("A spell cast this way is exiled instead of going to the graveyard when it resolves or is countered: a replacement effect.", "614.1a"); return true }
-        if (onceEachTurnRe.matches(t)) { tr.step("\"Do this only once each turn\": after the first time this turn, the ability still triggers but does nothing more this turn.", "603.2"); return true }
+        if (onceEachTurnRe.matches(t)) { tr.step("\"Do this only once each turn\": once the instruction has been carried out this turn, the ability doesn't trigger again this turn.", "603.2h"); return true }
         // Taunt from the Rampart: "Until your next turn, those creatures can't block" — the creatures it goaded.
         if (cantBlockRe.matches(t)) {
             val goaded = st.objects.values.filter { it.isOnBattlefield() && st.isCreature(it) && it.controller != p.id }

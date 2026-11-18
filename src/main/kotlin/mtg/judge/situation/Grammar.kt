@@ -156,10 +156,14 @@ object Grammar {
     /** Only the first outcome line is the answer ("Yes: ..."); a later "No: ..." line is an explanation or a second part, said without a second lead. */
     fun oneLead(lines: List<String>): List<String> {
         if (lines.size < 2 || !Regex("""^(?:Yes|No)\b[:,.]""").containsMatchIn(lines[0])) return lines
-        return lines.mapIndexed { i, l -> if (i > 0 && (l.startsWith("Yes: ") || l.startsWith("No: "))) l.substringAfter(": ").replaceFirstChar { it.uppercase() } else l }
+        // A later lead of the other polarity answers something else ("Can I play Sol Ring? Can I play a red card?",
+        // "Yes: Grizzly Bears can attack" / "No: Wall of Omens has defender"): without it the second answer reads as the first's.
+        val first = if (lines[0].startsWith("Yes")) "Yes: " else "No: "
+        return lines.mapIndexed { i, l -> if (i > 0 && l.startsWith(first)) l.substringAfter(": ").replaceFirstChar { it.uppercase() } else l }
     }
 
-    private fun norm(s: String) = s.trim().trimEnd('.', '!').lowercase()
+    // "Wall of Omens can't block Grizzly Bears (twice)" restates the lead as much as the line without the count does.
+    private fun norm(s: String) = s.trim().trimEnd('.', '!').replace(Regex(""" \((?:twice|[a-z0-9]+ times)\)$"""), "").lowercase()
 
     /** The last pass over a finished line. [names] are player names that must keep their capital letter (they get lower-cased by templates written for "you"). */
     fun polish(s: String, names: Collection<String> = emptyList(), capitalize: Boolean = false, sentences: Boolean = capitalize): String {
@@ -186,6 +190,9 @@ object Grammar {
         if (t.contains("1 counters")) t = t.replace("≠ 1 counters", "≠ 1 counter").replace("the 1 counters", "the 1 counter")
         if (t.contains(" counters")) t = kindCounters.replace(t) { "1 ${it.groupValues[1]} counter" }
         if (t.contains(" 0 ") && !t.contains(" 0 and ")) t = zeroOf.replace(t) { m -> m.groupValues[1] + " no " + m.groupValues[2] }
+        // "Opponent has only 0 mana available" / "You get 1 Treasure token." (truthaudit3)
+        if (t.contains("only 0 ")) t = Regex("""\bonly 0 (mana|cards?|lands?|creatures?)\b""").replace(t) { "no " + it.groupValues[1] }
+        if (t.contains(" get 1 ") || t.contains(" gets 1 ")) t = Regex("""\b(gets?) 1 ([A-Z][\w'-]*(?: [A-Z][\w'-]*)? token)\.$""").replace(t) { "${it.groupValues[1]} ${indefinite(it.groupValues[2])} ${it.groupValues[2]}." }
         if (t.contains(": You ") || t.contains(": Opponent ")) t = capAfterColonInParens.replace(t) { m -> m.groupValues[1] + ": " + m.groupValues[2].lowercase() + " " }
         if (t.startsWith("Opponent ") && t.contains(" opponent's") && !t.contains("opponent 2")) t = ownPossessive.replace(t) { it.groupValues[1] + "their" }
         if (t.contains(" a") || t.contains(" an")) t = collapseRepeats(t)

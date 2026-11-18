@@ -279,10 +279,11 @@ internal object MoreEffects4 {
             val (obj, ab) = it.next()
             val c = firstIf(ab.effect) ?: continue
             val text = (c.condition as? Condition.Unknown)?.text ?: continue
-            if (!text.startsWith("m4:") || !Regex("""^(?:when|whenever|at) [^,]+, if """, I).containsMatchIn(ab.text)) continue
-            if (condition(st, text, obj) != false) continue
+            if (!(text.startsWith("m4:") || text == "ns:gainedlife") || !Regex("""^(?:when|whenever|at) [^,]+, if """, I).containsMatchIn(ab.text)) continue
+            // Ocelot Pride: "At the beginning of your end step, if you gained life this turn, ..." is an intervening "if" too (603.4).
+            if ((if (text == "ns:gainedlife") NewSetMech.condition(st, text, obj) else condition(st, text, obj)) != false) continue
             it.remove()
-            val plain = if (text == "m4:opp-more-lands") "an opponent controls more lands than ${st.player(obj.controller).subject.lowercase()} ${st.player(obj.controller).v("does", "do")}" else "${st.player(obj.controller).subject.lowercase()} gained ${text.substringAfter(">=")} or more life this turn"
+            val plain = if (text == "ns:gainedlife") "${st.player(obj.controller).subject.lowercase()} gained life this turn" else if (text == "m4:opp-more-lands") "an opponent controls more lands than ${st.player(obj.controller).subject.lowercase()} ${st.player(obj.controller).v("does", "do")}" else "${st.player(obj.controller).subject.lowercase()} gained ${text.substringAfter(">=")} or more life this turn"
             st.trace.step("${obj.name}'s ability has an intervening \"if\": it triggers only if $plain when the trigger event happens. That isn't so, so it doesn't trigger at all.", "603.4")
             "${obj.name}'s ability doesn't trigger: it triggers only if $plain (603.4).".let { o -> if (o !in st.outcomes) st.outcomes += o }
         }
@@ -565,8 +566,10 @@ internal object MoreEffects4 {
                 else -> card?.let { !it.def.isCreature && "Land" !in it.def.types }
             }
             val who2 = st.player(playerId).subject.lowercase()
-            if (kindOk == null) { st.trace.step("${src.name} triggers only on discarding ${what.removePrefix("a ").removePrefix("an ")}; which card ${who2} discarded wasn't said, so whether it triggers can't be told.", "603.2", "701.9a"); st.assumptions += "Which card was discarded wasn't said, so ${src.name}'s trigger isn't played out."; continue }
-            if (!kindOk) { st.trace.step("${src.name} triggers only on discarding ${what.removePrefix("a ").removePrefix("an ")}; ${card?.name} isn't one, so it doesn't trigger.", "603.2", "701.9a"); continue }
+            // Waste Not's third trigger reads "a noncreature, nonland card": the comma cut the kind short ("noncreature").
+            val label = if (what in setOf("one or more cards", "a card", "a creature card", "a land card")) what.removePrefix("a ").removePrefix("an ") else "noncreature, nonland card"
+            if (kindOk == null) { st.trace.step("${src.name} triggers only on discarding $label; which card ${who2} discarded wasn't said, so whether it triggers can't be told.", "603.2", "701.9a"); st.assumptions += "Which card was discarded wasn't said, so ${src.name}'s trigger isn't played out."; continue }
+            if (!kindOk) { st.trace.step("${src.name} triggers only on discarding a $label; ${card?.name} isn't one, so it doesn't trigger.", "603.2", "701.9a"); continue }
             val times = if (what == "one or more cards") 1 else n
             repeat(times) {
                 st.trace.step("${src.name}'s ability triggers on $who2 discarding ${if (what == "one or more cards" && n > 1) "$n cards (one event, so it triggers once)" else card?.name ?: "a card"}.", "603.2", if (what == "one or more cards" && n > 1) "603.2c" else "701.9a")

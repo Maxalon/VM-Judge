@@ -200,11 +200,17 @@ internal object EdhAsks {
                 "${o.name} must attack ${if (freeOthers.size == 1) who(freeOthers[0]) else "${list(freeOthers)} (${ctl.possessive} choice)"}: a player who didn't goad it, which obeys every requirement${if (goaders.size > 1) " of both goads" else ""}. It can't attack ${goaders.joinToString(" or ") { who(it) }} while ${if (freeOthers.size == 1) "that" else "such an"} attack is possible${if (also.isNotEmpty()) "; paying ${also.joinToString(" or ") { "${taxOf(it)!!.second} to attack ${who(it)}" }} would also be allowed" else ""} (701.15b)."
             }
             others.isNotEmpty() && free.isNotEmpty() -> "Yes, ${o.name} still has to attack, but nobody has to pay a cost to obey a requirement (508.1d): it must attack ${list(free)}${if (free.all { f -> goaders.any { it.id == f.id } }) " — the player who goaded it, but the only one it can attack for free —" else ""} unless ${who(ctl)} ${ctl.v("chooses", "choose")} to pay ${others.joinToString(" or ") { "${taxOf(it)!!.second} to attack ${who(it)}" }} instead. Not attacking at all isn't an option."
-            others.isEmpty() && free.isNotEmpty() -> "${o.name} must attack, and every opponent who could be attacked goaded it, so it can't obey every \"other than\" requirement: it attacks ${list(free)} (${ctl.possessive} choice), which obeys as many requirements as possible (508.1d)."
+            others.isEmpty() && free.isNotEmpty() -> "${o.name} must attack, and every opponent who could be attacked goaded it, so it can't obey every \"other than\" requirement: it attacks ${if (free.size == 1) who(free[0]) else "${list(free)} (${ctl.possessive} choice)"}, which obeys as many requirements as possible (508.1d)."
             else -> "${o.name} doesn't have to attack: every opponent can be attacked only by paying a cost, and requirements never force a player to pay (508.1d). ${ctl.subject} may still pay to attack."
         }
         state.outcomes += line
-        state.outcomes += if (goaders.size == 1) "The goad lasts until ${goaders[0].possessive} next turn (701.15a)." else "Each goad lasts until that player's next turn: ${goaders.joinToString(" and ") { it.possessive }} (701.15a)."
+        // Shiny Impetus, Bloodthirsty Blade: "is goaded" from a static ability lasts as long as the Aura or Equipment stays on it,
+        // not until the goader's next turn (611.3a); only a goad an effect did (701.15a) ends then.
+        val statics = mtg.judge.engine.MoreEffects4.staticGoaders(state, o).distinct()
+        val attached = state.objects.values.filter { s -> s.isOnBattlefield() && s.attachedTo == o.id && s.controller in statics }.map { it.name }
+        val timed = goaders.filter { g -> g.id in state.edh.goadedBy[o.id].orEmpty() }
+        if (attached.isNotEmpty()) state.outcomes += "${o.name} is goaded for as long as ${attached.joinToString(" and ")} stay${if (attached.size == 1) "s" else ""} attached to it: a static ability, not a goad that ends at the goading player's next turn (611.3a)."
+        if (timed.isNotEmpty()) state.outcomes += if (timed.size == 1) "The goad lasts until ${timed[0].possessive} next turn (701.15a)." else "Each goad lasts until that player's next turn: ${timed.joinToString(" and ") { it.possessive }} (701.15a)."
         return true
     }
 }
