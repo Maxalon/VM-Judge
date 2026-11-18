@@ -89,6 +89,11 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
         if (last.length > 3 && last.endsWith("s") && !last.endsWith("ss")) return (span.dropLast(1) + last.dropLast(1)).joinToString(" ")
         // "bolted", "pathed", "wrathed": a card name used as a past-tense verb.
         if (last.length > 4 && last.endsWith("ed")) { val stem = last.dropLast(2); val stemD = last.dropLast(1); return listOf(stem, stemD).firstOrNull { st -> val k = (span.dropLast(1) + st).joinToString(" "); byNorm.containsKey(k) || aliases.containsKey(k) }?.let { st -> (span.dropLast(1) + st).joinToString(" ") } }
+        // "doom blading", "giant growthing", "bolting": a card name used as a progressive verb (names of two words or more, and the common nicknames).
+        if (last.length > 5 && last.endsWith("ing") && (span.size >= 2 || aliases.containsKey(last.dropLast(3)))) {
+            val stems = listOf(last.dropLast(3), last.dropLast(3) + "e", last.dropLast(4))
+            stems.firstOrNull { st -> val k = (span.dropLast(1) + st).joinToString(" "); byNorm.containsKey(k) || aliases.containsKey(k) }?.let { st -> return (span.dropLast(1) + st).joinToString(" ") }
+        }
         return null
     }
 

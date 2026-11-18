@@ -183,7 +183,7 @@ object Slang {
             // "i have 40 life w/ felidar sovereign": and control it.
             r("""\b(i|we|my opponent|opponent|opp|they|he|she) (have|has) (\d+) life (?:with|w/) (?!\d|no |an? (?:\w+ ){0,2}(?:counters?|cards?)\b)""", "$1 $2 $3 life and $1 control "),
             // "i play arid mesa then crack it": the subject goes on through "then".
-            r("""\b(?![^.?!]*\bsays?\b)(i|we) ([^.?!]*?),? then (crack|cast|play|activate|sacrifice|attack|tap|cycle|exile|discard|equip|pay|return|put|flash|block)\b""", "$1 $2, then $1 $3"),
+            r("""\b(?![^.?!]*\bsays?\b)(?![^.?!]*,\s*(?:can|could|does|do|did|will|would|should|is|are|what|how|who|when|where)\b)(i|we) ([^.?!]*?),? then (crack|cast|play|activate|sacrifice|attack|tap|cycle|exile|discard|equip|pay|return|put|flash|block)\b""", "$1 $2, then $1 $3"),
             // "in response to the trigger" after the whole play: the trigger was already on the stack.
             // "i cast thoracle, opp bounces it in response to the trigger": the trigger is on the stack before the response.
             r("""(^|(?<=[.!?]\s))(i cast [^.?!,]+), ((?:my opponent|opponent|opp|they|he|she)\b[^.?!]*?),? in response to (?:the|its|that|their) (?:etb |enters |upkeep |attack |cast )?(?:trigger|ability)(?=\s*[.!?]|\s*$)""", "$1$2. With the trigger on the stack, $3"),

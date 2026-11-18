@@ -4078,11 +4078,16 @@ class SituationParser(private val names: NameIndex) {
         val cloneLike = setOf("Clone", "Phyrexian Metamorph", "Phantasmal Image", "Vesuvan Doppelganger", "Mockingbird", "Sakashima the Impostor", "Spark Double", "Cursed Mirror", "Evil Twin", "Quicksilver Gargantuan")
         val exilers = setOf("Fiend Hunter", "Banisher Priest", "Skyclave Apparition", "Brutal Cathar")
         val etbTargeters = setOf("Snapcaster Mage", "Eternal Witness", "Flametongue Kavu", "Shriekmaw", "Man-o'-War", "Gravedigger", "Karmic Guide", "Mulldrifter") + graveyardReachers
-        val target = """(?:(?:at |on |onto |against )?(?:(?:my opponent's|opponent's|@\w+'s|my|their|his|her|the|that|this|an?|your|our)(?: own)?(?: [\w-]+){0,2}? (?:\d+/\d+|creatures?|permanents?|planeswalkers?|tokens?|lands?|artifacts?|enchantments?|c\d+)\b.*|c\d+\b.*|(?:their |the |his |her )?face\b.*|(?:it|that|the spell)\b.*|\d+/\d+\b.*))"""
+        val target = """(?:(?:at |on |onto |against )?(?:(?:my opponent's|opponent's|@\w+'s|my|their|his|her|the|that|this|an?|your|our)(?: own)?(?: [\w-]+){0,2}? (?:\d+/\d+|creatures?|permanents?|planeswalkers?|tokens?|lands?|artifacts?|enchantments?|c\d+)\b.*|c\d+\b.*|(?:their |the |his |her )?face\b.*|(?:it|that|the spell)\b.*|(?:me|myself)\b|\d+/\d+\b.*))"""
         // Cards named like a keyword ("Channel", "Unearth", "Plot"): the keyword is meant, and its own rewrites read it.
         val keywordNames = setOf("channel", "unearth", "suspend", "plot", "foretell", "dredge", "rebound", "cycling", "explore", "learn", "proliferate", "adapt", "evoke", "fight", "flash", "counter", "retrace", "replicate", "delve", "dash", "entwine", "buyback", "madness", "miracle", "overload", "cascade", "convoke", "equip", "crew", "echo", "kicker", "transmute", "haunt", "splice", "ninjutsu", "mutate", "morph", "disguise", "surge", "emerge", "escape", "spectacle", "prowl", "bestow", "awaken", "cleave", "squad", "casualty", "bargain", "gift", "offspring", "impending", "prototype", "backup", "boast", "exhaust", "saddle", "discover", "connive", "amass", "investigate", "manifest", "incubate", "support", "bolster", "surveil", "scry", "mill", "populate", "transform", "fateseal", "cipher", "flashback", "afflict", "companion")
         fun spellish(c: NameIndex.Entry) = (c.isSpellOnly || c.typeLine.contains("Aura")) && c.display.lowercase() !in keywordNames
         fun tgt(x: String) = x.replace(Regex("""^(?:at |on |onto |against )""", io), "").replace(Regex("""^(?:their |the |his |her )?face\b""", io), "my opponent").trim()
+        // "i'm doom blading his serra angel", "he's flame slashing it": the progressive of a spell's name, read as the plain verb.
+        t2 = t2.replace(Regex("""\b(i'm|i am|we're|we are|they're|they are|he's|he is|she's|she is|my opponent is|my opp is|opponent is)(?: just| now| gonna| going to)? (c\d+)(?= (?:my|their|his|her|the|that|this|your|it|c\d+|\d+/\d+)\b)""", io)) { r ->
+            val card = m.cards[r.groupValues[2]]
+            if (card == null || !(card.isSpellOnly || card.typeLine.contains("Aura"))) r.value
+            else { val who = r.groupValues[1].lowercase(); (when { who.startsWith("i") -> "i"; who.startsWith("we") -> "we"; who.startsWith("they") -> "they"; who.startsWith("he") -> "he"; who.startsWith("she") -> "she"; else -> "my opponent" }) + " " + r.groupValues[2] } }
         // "i gush by returning two islands", "i cabal therapy naming fire", "i consult naming a card", "i bolt at face": the card cast, said as a verb.
         t2 = t2.replace(Regex("""(^|(?<!\b(?:can|could|may|should|will|would|do|does|did) ))\b($subj) (c\d+)(?= (?:by|naming|returning|discarding|sacrificing|at|using|x=\d)\b|\s*$|\s*[,.?!])""", io)) { r ->
             val card = m.cards[r.groupValues[3]]
@@ -4108,7 +4113,7 @@ class SituationParser(private val names: NameIndex) {
                     Regex("""^(.+?) into (.+)$""").find(tx)!!.let { x -> "$pre${verb(who, "turn")} ${x.groupValues[1]} into ${x.groupValues[2]} with $ph" }
                 bare && spellish(card) && before.endsWith("and ") -> "$pre${verb(who, "cast")} $ph targeting $tx"
                 bare -> r.value
-                spellish(card) && !(startsCard || ownerPoss || isFace) -> r.value
+                spellish(card) && !(startsCard || ownerPoss || isFace || Regex("""^(?:me|myself)$""", io).matches(tx)) -> r.value
                 spellish(card) && head?.isSpellOnly == true && !needsSpellTarget(card) -> r.value
                 spellish(card) -> "$pre${verb(who, "cast")} $ph targeting $tx"
                 !(startsCard || describedCard) -> r.value
