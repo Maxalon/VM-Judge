@@ -160,6 +160,8 @@ class SituationParser(private val names: NameIndex) {
         "checkland" to "Glacial Fortress, Rootbound Crag, …", "fastland" to "Seachrome Coast, Blackcleave Cliffs, …",
         "manland" to "Celestial Colonnade, Raging Ravine, …", "creature land" to "Celestial Colonnade, Raging Ravine, …")
 
+    private val gluedQuestion = Regex("""^(?!.*\bthen\b)(?:i|we|he|she|they|my opponent|my opp|opp|the opponent|@\w+)\b[^?]*?,\s*(?:what|how|can|could|does|do|did|is|are|will|would|who|when|where|which (?:creatures?|permanents?|cards?|spells?|lands?|players?)|must)\b""", RegexOption.IGNORE_CASE)
+
     /** Table talk first ("dont", "my guy", "swords"), then the ordinary reading. */
     fun parse(text: String): Parsed {
         val base = TableTalk.plainOnly(PolicyCanon.canon(Slang.normalize(text)))
@@ -172,12 +174,14 @@ class SituationParser(private val names: NameIndex) {
         fun keeps(p: Parsed, q: Parsed): Boolean = q.situation.events.count { it.verb == "block" } <= p.situation.events.count { it.verb == "block" }
         val vs = TableTalk.variants(base)
         if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("p0 score=${score(p0)} unread=${p0.unread} events=${p0.situation.events.map { it.verb }} q=${p0.situation.question.kind}/${p0.situation.question.text}")
-        if (vs.isEmpty() || score(p0) == 0) return p0
+        // A question left glued to its statement ("I cast X with X=4, what is its mana value") counts as a reading that is not clean.
+        fun glued(p: Parsed) = p.situation.question.text?.let { gluedQuestion.containsMatchIn(it) } == true
+        if (vs.isEmpty() || (score(p0) == 0 && !glued(p0))) return p0
         for (v in vs) {
             if (System.getenv("MTG_DEBUG_CLAUSE") != null) System.err.println("variant: [$v]")
             val p = parseCore(perturbRewrites(v))
             // Told in order and fully read: that reading wins over one that got through by running things together.
-            if (score(p) == 0 && keeps(p, p0)) return p
+            if (score(p) == 0 && keeps(p, p0) && !glued(p)) return p
             val better = p.unread.size < best.unread.size || (p.unread.size == best.unread.size && score(p) < score(best) && keeps(p, best))
             if (better) best = p
         }
@@ -599,6 +603,8 @@ class SituationParser(private val names: NameIndex) {
      * Collect the distinctive words of every fully named card so later sentences can use them, as long as the
      * word points at exactly one of the mentioned cards and isn't a card name (or grammar word) in its own right.
      */
+    /** Words that are game actions in table talk and so never stand for a mentioned card by themselves. */
+    private val gameVerbShortNames = setOf("attack", "attacks", "block", "blocks", "cast", "casts", "play", "plays", "draw", "draws", "tap", "taps", "untap", "untaps", "sacrifice", "exile", "destroy", "counter", "fight", "discard", "search", "shuffle", "return", "create", "copy", "gain", "lose", "pay", "control", "trigger", "resolve", "target", "reveal", "mill", "scry")
     private fun shortNames(sentences: List<String>): Map<String, NameIndex.Entry> {
         val candidates = LinkedHashMap<String, MutableSet<NameIndex.Entry>>()
         val typeCandidates = LinkedHashMap<String, MutableSet<NameIndex.Entry>>()
@@ -623,7 +629,8 @@ class SituationParser(private val names: NameIndex) {
                 if (head != display) keys += Names.normalize(head)
                 if (nameWords.size > 1) { keys += nameWords.first(); keys += nameWords.last() }
                 // A stop word ("ring", "bolt") still names the card when the card was named in full and it is the last word: "the Ring" after Oblivion Ring.
-                for (k in keys) if (k.length >= 3 && (k !in shortNameStop || (f.end - f.start >= 2 && k == nameWords.last()))) candidates.getOrPut(k) { LinkedHashSet() } += f.entry
+                // ... but never a game verb: "I Sneak Attack in Emrakul and attack" must keep "attack" as the attack, not Sneak Attack.
+                for (k in keys) if (k.length >= 3 && k !in gameVerbShortNames && (k !in shortNameStop || (f.end - f.start >= 2 && k == nameWords.last()))) candidates.getOrPut(k) { LinkedHashSet() } += f.entry
                 // "the Angel" for Serra Angel: a creature-type word in the name, when only one mentioned card carries it.
                 for (k in nameWords) if (k in typeShortNames && Regex("""(?i)\b${Regex.escape(k)}\b""").containsMatchIn(f.entry.typeLine.substringAfter("—", ""))) typeCandidates.getOrPut(k) { LinkedHashSet() } += f.entry
             }
@@ -2969,7 +2976,7 @@ class SituationParser(private val names: NameIndex) {
                 Regex("""\b(?:takes?|took|picks?|picked|grabs?|grabbed|removes?|removed|pulls?|pulled) (?:two|2|both) cards?\b|\btwo picks\b|\bdouble.?pick""").containsMatchIn(lq) -> "two"
                 Regex("""\b(?:wrong (?:side|direction|way|player|neighbou?r)|to the (?:left|right) when|in the wrong direction)\b""").containsMatchIn(lq) -> "pass"
                 Regex("""\b(?:put|puts|putting) (?:it|the card|a card) back\b|\b(?:pulls?|pulled|takes?|took) (?:it|the card|a card|their pick|his pick|her pick) back\b|\bchang(?:e|es|ed) (?:their|his|her|my) pick\b""").containsMatchIn(lq) -> "pullback"
-                Regex("""\b(?:after (?:the )?time (?:expired|ran out|was up|is up)|time (?:expired|ran out)|(?:took|takes) too long|out of time|over time|exceed(?:s|ed)? the (?:pick )?time)\b""").containsMatchIn(lq) -> "time"
+                Regex("""\b(?:after (?:the )?time (?:has |had )?(?:expired|ran out|run out|was up|is up)|time (?:expired|ran out)|(?:took|takes) too long|out of time|over time|exceed(?:s|ed)? the (?:pick )?time)\b""").containsMatchIn(lq) -> "time"
                 Regex("""\b(?:reveals?|revealed|shows?|showed|shown|flashes|flashed|tells?|told)\b""").containsMatchIn(lq) -> "reveal"
                 Regex("""\b(?:looks?|looked|peek(?:s|ed)?|glance[sd]?|saw|sees|watch(?:es|ed)?|leans?|leaned)\b.*\b(?:at|over|into)?\b.*\b(?:picks?|picked|pile|pack|drafted cards|cards)\b""").containsMatchIn(lq) &&
                     Regex("""\b(?:my|their|his|her|other|another|neighbou?r's|next to them|next to him|next to her|the player next to)\b""").containsMatchIn(lq) &&
@@ -3076,14 +3083,14 @@ class SituationParser(private val names: NameIndex) {
         if (Regex("""^what(?: is|'s) (?:its|the spell's|that spell's|(?:my |the )?c\d+'s) (?:mana value|mv|converted mana cost|cmc)(?: (?:on|while (?:it's )?on|while it is on) the stack| now)?$""", io).matches(q) && ctx.events.any { it.verb == "cast" })
             return "r2ask mvstack - ${ctx.events.last { it.verb == "cast" }.card?.oracleId?.let { "oid:$it" } ?: ""}".trimEnd()
         // A Saga (or any source) removed with its chapter ability on the stack: the ability still resolves (113.7a).
-        Regex("""^(?:my opponent's|their|my|the) @?saga (c\d+) has its chapter (\w+) (?:ability|trigger) on the stack$""", io).find(q)?.let { r ->
-            return "${if (lq.startsWith("my opponent") || lq.startsWith("their")) "my opponent controls" else "i control"} ${r.groupValues[1]}" }
+        Regex("""^(?:my opponent's|their|his|her|my|the) @?saga (c\d+) has its chapter (\w+) (?:ability|trigger) on the stack$""", io).find(q)?.let { r ->
+            return "${if (lq.startsWith("my opponent") || lq.startsWith("their") || lq.startsWith("his") || lq.startsWith("her")) "my opponent controls" else "i control"} ${r.groupValues[1]}" }
         if (Regex("""^(?:i|we|my opponent|they|he|she) (?:destroys?|exiles?|bounces?|returns?) (?:the|their|my opponent's|my) @?saga$""", io).matches(q)) return "r2noted"
         Regex("""^(.+?) (?:bounces?|destroys?|exiles?|returns?) (it|the saga|c\d+)(?: to (?:its owner's|my|their) hand)? in response to (?:the|its) chapter (\w+) (?:trigger|ability)$""", io).find(q)?.let { return "r2ask indep" }
         if (Regex("""^(?:does|will) (?:the )?chapter (\w+)(?: ability| trigger)? (?:still )?resolve$|^(?:does|will) (?:the|its) chapter (?:ability|trigger) (?:still )?resolve$""", io).matches(q)) return if (ctx.asks.any { it.to == "r2:indep" }) "r2noted" else "r2ask indep"
         // Disguise (702.168): a face-down disguise creature has ward {2}; turning it face up doesn't remove it from combat; its mana value is 0.
         if (Regex("""\bdisguise\b|\bface.?down\b""").containsMatchIn(ctx.fullText.lowercase())) {
-            if (Regex("""^(?:my |their |a |the )?face.?down (?:disguise )?creature is targeted by .+$|^(?:my opponent|they|i) turns? (?:a |the |their |my )?face.?down (?:disguise )?creature face up(?: after blockers(?: are declared)?| during combat| while it's blocking)?$""", io).matches(q)) return "r2noted"
+            if (Regex("""^(?:my |their |a |the )?face.?down (?:disguise )?creature is targeted by .+$|^(?:a|the) (?:removal )?spell targets (?:my|their|a|the) face.?down (?:disguise )?creature$|^(?:my opponent|they|he|she|i) turns? (?:a |the |their |my )?face.?down (?:disguise )?creature face up(?: after blockers(?: are declared)?| during combat| while it's blocking)?$""", io).matches(q)) return "r2noted"
             if (Regex("""^(?:does|is) (?:the )?ward(?: \{?2\}?)? (?:still )?(?:apply|work|trigger|count)$|^does it have ward(?: \{?2\}?)?$""", io).matches(q)) return "r2ask disguiseward"
             if (Regex("""^(?:does|is) it still (?:block|blocking)$|^does it (?:stay|remain) (?:blocking|in combat)$""", io).matches(q)) return "r2ask faceupblock"
             if (Regex("""^what(?: is|'s) its (?:mana value|mv|converted mana cost)$""", io).matches(q)) return "r2ask facedownmv"
@@ -3331,7 +3338,7 @@ class SituationParser(private val names: NameIndex) {
             val a = r.groupValues[2].takeIf { it.isNotEmpty() && it != "-" }
             val card = ref(a)
             val obj = a?.takeIf { it in ctx.objects } ?: card?.let { c -> ctx.objects.values.lastOrNull { it.card.oracleId == c.oracleId }?.id }
-                ?: if (a == null && r.groupValues[1] in setOf("haskw", "blockmin")) {
+                ?: if (a == null && r.groupValues[1] in setOf("haskw", "blockmin") && !(ctx.lastMentioned?.startsWith("cast:") == true && ctx.events.lastOrNull { it.verb == "cast" }?.card?.name?.let { n -> names.lookup(Names.normalize(n))?.typeLine?.contains("Creature") } == true)) {
                     fun creature(id: String?) = id?.let { ctx.objects[it] }?.takeIf { o -> names.lookup(Names.normalize(o.card.name ?: ""))?.typeLine?.contains("Creature") == true }?.id
                     creature(ctx.lastMentioned) ?: ctx.objects.values.lastOrNull { it.zone == "battlefield" && creature(it.id) != null }?.id
                         ?: ctx.events.lastOrNull { it.verb == "cast" }?.card?.name?.let { n -> ctx.objects.values.lastOrNull { it.card.name == n }?.id }
@@ -4856,10 +4863,48 @@ class SituationParser(private val names: NameIndex) {
         return null
     }
 
+    /**
+     * Track wording5: a spell's name used as the verb in the newest rulings' table talk, before the older readers see the sentence:
+     * "I Elspeth's Smite one of them" (cast, targeting one), "he Cut Downs my crewed Boostbuggy" (the crew comes first, then the cast).
+     */
+    private fun wording5Rewrites(t: String, m: Marked, ctx: Ctx): String {
+        val q = t.trim()
+        val io = RegexOption.IGNORE_CASE
+        fun verbFor(who: String) = if (who.equals("i", true) || who.equals("we", true) || who.equals("they", true)) "cast" else "casts"
+        fun spell(ph: String) = m.cards[ph]?.let { it.isSpellOnly || it.typeLine.contains("Aura") } == true
+        Regex("""^(i|we|he|she|they|my opponent|opp) (c\d+) (one|each|both|all|two|three) of (?:them|those|the \w+)$""", io).find(q)?.let { r ->
+            if (spell(r.groupValues[2])) return "${r.groupValues[1]} ${verbFor(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]}" }
+        // "I Galvanic Discharge Tarmogoyf paying 1 energy": the spell's name as the verb, with what it is paid with.
+        Regex("""^(i|we|he|she|they|my opponent|opp) (c\d+) ((?:(?:my|their|his|her|the) (?:[\w/+-]+ ){0,2}?)?c\d+) (paying \d+ energy)$""", io).find(q)?.let { r ->
+            if (spell(r.groupValues[2])) return "${r.groupValues[1]} ${verbFor(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]} ${r.groupValues[4]}" }
+        // "I Galvanic Discharge a creature": the spell's name as the verb, aimed at a creature in general.
+        Regex("""^(i|we|he|she|they|my opponent|opp) (c\d+) ((?:a|an|that|this|another|target) (?:[\w/+-]+ ){0,2}?(?:creature|permanent|planeswalker|player|artifact|enchantment|attacker|blocker))$""", io).find(q)?.let { r ->
+            if (spell(r.groupValues[2])) return "${r.groupValues[1]} ${verbFor(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]}" }
+        // "I Ephemerate my Solitude while his Ragavan is targeted", "I Undying Malice my Grief and it dies": the spell's name as the verb, aimed at one of the speaker's own.
+        Regex("""^(?:(in response to (?:the|its|their) [\w ]+? (?:trigger|ability)),? )?(i|we|he|she|they|my opponent|opp) (c\d+) (my|their|his|her) (c\d+)((?: while .*| and it dies)?)$""", io).find(q)?.let { r ->
+            if (spell(r.groupValues[3])) {
+                val tail = r.groupValues[6]
+                val after = if (tail.trim() == "and it dies") ", ${r.groupValues[5]} dies" else tail
+                return "${r.groupValues[2]} ${verbFor(r.groupValues[2])} ${r.groupValues[3]} on ${r.groupValues[4]} ${r.groupValues[5]}${if (r.groupValues[1].isNotEmpty()) " " + r.groupValues[1] else ""}$after" } }
+        // "then Nourishing Shoal away Worldspine Wurm": the alternative cost said with "away".
+        Regex("""^(?:then )?(?:(i|we) )?(c\d+) away (c\d+)$""", io).find(q)?.let { r ->
+            if (m.cards[r.groupValues[2]]?.display == "Nourishing Shoal") return "i cast ${r.groupValues[2]} exiling ${r.groupValues[3]}" }
+        // "I Scapeshift away seven lands": the spell's name as the verb, sacrificing what it takes.
+        Regex("""^(i|we|he|she|they|my opponent|opp) (c\d+) away (.+)$""", io).find(q)?.let { r ->
+            if (spell(r.groupValues[2])) return "${r.groupValues[1]} ${verbFor(r.groupValues[1])} ${r.groupValues[2]} sacrificing ${r.groupValues[3]}" }
+        // "he Torch the Towers it and bargains": the cast, so the bargain cost is read with it.
+        Regex("""^(i|we|he|she|they|my opponent|opp) (c\d+) (it|that) (and (?:bargains?|c\d+))$""", io).find(q)?.let { r ->
+            if (spell(r.groupValues[2])) return "${r.groupValues[1]} ${verbFor(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]} ${r.groupValues[4]}" }
+        Regex("""^(i|we|he|she|they|my opponent|opp) (c\d+) (my|their|the|his|her) crewed (c\d+)$""", io).find(q)?.let { r ->
+            if (spell(r.groupValues[2])) return "${r.groupValues[1]} ${verbFor(r.groupValues[1])} ${r.groupValues[2]} targeting ${r.groupValues[3]} crewed ${r.groupValues[4]}" }
+        return t
+    }
+
     private fun earlyRewrites(t: String, m: Marked, ctx: Ctx): String {
         var t2 = layerRewrites(t, m)
         t2 = copySpellRewrites(t2, m, ctx)
         t2 = loopRewrite(t2, m, ctx)
+        t2 = wording5Rewrites(t2, m, ctx)
         t2 = leftovers2Rewrites(t2, m, ctx)
         t2 = redteam2Rewrites(t2, m, ctx)
         t2 = mechanicsRewrites(t2, m, ctx)
@@ -18079,7 +18124,7 @@ class SituationParser(private val names: NameIndex) {
             if (cast.targets.isNotEmpty() && cast.targets.all { it in ctx.objects }) return "l2q dealt" }
         // "I have 3 energy" before a spell that gets and pays energy: the counters it can pay with too (107.14).
         Regex("""^(i|we|my opponent|the opponent|they|he|she) (?:have|has|already have|already has) (\d+) energy(?: counters?)?$""").find(q)?.let { r ->
-            if (Regex("""\bcasts?\b""").containsMatchIn(ctx.fullText.lowercase())) return "l2q energy ${r.groupValues[2]} ${if (r.groupValues[1] in setOf("i", "we")) "me" else "foe"}" }
+            if (Regex("""\bcasts?\b|galvanic discharge""").containsMatchIn(ctx.fullText.lowercase())) return "l2q energy ${r.groupValues[2]} ${if (r.groupValues[1] in setOf("i", "we")) "me" else "foe"}" }
         // "I cast Galvanic Discharge on a creature with 3 energy": the energy said is what the caster has before casting.
         Regex("""^(.*\bcasts? c\d+) (?:on|at|targeting) (an? (?:opponent's )?creature|(?:their|my opponent's|his|her) (?:creature|c\d+)|c\d+) with (\d+) energy$""").find(q)?.let { r ->
             return "l2q energy ${r.groupValues[3]} me, ${r.groupValues[1]} targeting ${r.groupValues[2].replace(Regex("""^an? creature$"""), "my opponent's creature")}" }

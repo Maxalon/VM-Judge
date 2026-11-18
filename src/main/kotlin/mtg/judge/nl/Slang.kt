@@ -47,7 +47,8 @@ object Slang {
             r("""\b(?:bc|cuz|cos)\b""", "because"), r("""\bidk\b""", "I don't know"),
             // "i got blood artist", "ive got", "opp got": have.
             r("""\b(i|we|you)(?:'ve| have)? got (?=(?:a|an|the|my|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 have "),
-            r("""\b(they|he|she)(?:'ve| have|'s| has)? got (?=(?:a|an|the|their|his|her|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 have "),
+            r("""\b(they)(?:'ve| have|'s| has)? got (?=(?:a|an|the|their|his|her|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 have "),
+            r("""\b(he|she)(?:'s| has)? got (?=(?:a|an|the|no|their|his|her|\d+|two|three|four|five)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 has "),
             r("""\b(opp|opponent)(?:'s| has)? got (?=(?:a|an|the|their|\d+)\b|(?!(?:to|hit|it|them|me|killed|blocked|dealt|bolted|countered|shot|destroyed|exiled|up|out|back|rid|ahead|through|away)\b)[A-Za-z]{3,})""", "$1 has "),
             // "my yard", "their gy": the graveyard.
             r("""\b(my|the|their|his|her|your|opp's|opponent's) yard\b""", "$1 graveyard"), r("""\b(?:gy|gv)\b""", "graveyard"), r("""\bbf\b""", "battlefield"),

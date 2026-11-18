@@ -15,13 +15,13 @@ object TableTalk {
 
     private const val SUBJ = """(?:i|we|it|that|this|he|she|they|you|there|my|the|your|his|her|their|its|a|an|opp|opponent|[A-Z][\w'’-]*)"""
     private val tailQuestion = Regex(
-        """(?:,\s*(?:so |then )|\s+(?:so|and|then)\s+)((?:what(?:'s| is| are| happens| does| do| would| will| if| mana can| \w+ (?:can|do|does|would|will))|how (?:much|many|big|does|do|is|would|will|can|long)|who (?:has|wins|gets|takes|dies|survives)|when (?:do|does|would|will|did)|where (?:does|do|would|will)|(?:can|could|does|do|did|is|are|will|would|should|am|may) (?:$SUBJ)\b)[^.?!]*)\??$""",
+        """(?:,\s*(?:so |then )|\s+(?:so|and|then)\s+)((?:what(?:'s| is| are| happens| does| do| would| will| if| mana can| \w+ (?:can|do|does|would|will))|how (?:much|many|big|does|do|is|would|will|can|long)|who (?:has|wins|gets|takes|dies|survives)|when (?:do|does|would|will|did)|where (?:does|do|would|will)|(?:can|could|does|do|did|is|are|will|would|should|am|may|must) (?:$SUBJ)\b)[^.?!]*)\??$""",
         ci)
     // "... draws a card what happens": the question has no joiner at all.
     private val bareTail = Regex("""\s+(what happens(?: then| next| to [\w' ]+)?|who wins|what's the ruling)\??$""", ci)
     // Two questions in one: "do I get Treasures and can I sacrifice them for mana".
-    private val doubleQuestion = Regex("""^((?:can|could|does|do|did|is|are|will|would|should|am|may|what|how|who|when|where)\b[^.?!]*?)(?: and )((?:can|could|does|do|did|is|are|will|would|should|am|may|how much|how many|how big|what is) (?:$SUBJ)\b[^.?!]*)$""", ci)
-    private val qStart = Regex("""^(?:what|how|who|when|where|which|why|can|could|does|do|did|is|are|will|would|should|am|may|isn't|doesn't|can't)\b""", ci)
+    private val doubleQuestion = Regex("""^((?:can|could|does|do|did|is|are|will|would|should|am|may|what|how|who|when|where)\b[^.?!]*?)(?: and |,\s*)((?:can|could|does|do|did|is|are|will|would|should|am|may|how much|how many|how big|what is|who does|who do|who will|who can) (?:$SUBJ)\b[^.?!]*)$""", ci)
+    private val qStart = Regex("""^(?:what|how|who|when|where|which|why|can|could|does|do|did|is|are|will|would|should|am|may|must|isn't|doesn't|can't|in (?:which|what) order|at the beginning of [^,.?]+,? (?:what|how|do|does|is|will|can|who))\b""", ci)
 
     private val capName = Regex("""\b([A-Z][\w'’-]*(?:(?:,? (?:of|the|in|to|and|for|from) | ,? ?)[A-Z][\w'’-]*)*)""")
     private val notNames = setOf("I", "My", "They", "He", "She", "We", "It", "The", "That", "This", "Is", "Does", "Do", "Can", "How", "What", "Who", "When", "Where", "Will", "Are", "Did", "Opp", "Opponent", "Both", "If", "Which", "Could", "Would", "Should", "Am", "May", "So", "And", "Then", "In", "During", "After", "Before", "At", "On", "Why", "Their", "His", "Her", "Its")
@@ -39,7 +39,7 @@ object TableTalk {
         r("""\btakes up\b""", "uses"),
         r("""\btake up\b""", "use"),
         r("""\b(exile|exiles|sacrifice|destroy|destroys) his\b""", "$1 their"),
-        r("""\b(I control|I have) ([A-Z][\w',-]*(?: [\w',-]+)*?) and ((?:(?!is\b)[A-Z][\w',-]*)(?: (?!is\b)[\w',-]+)*?) in my graveyard\b""", "$1 $2. $3 is in my graveyard"),
+        r("""\b(I control|I have) ([A-Z][\w',-]*(?: (?!I (?:have|control)\b)[\w',-]+)*?) and ((?:(?!is\b)[A-Z][\w',-]*)(?: (?!is\b)(?!I (?:have|control)\b)[\w',-]+)*?) in my graveyard\b""", "$1 $2. $3 is in my graveyard"),
         r("""\bwith devotion to (\w+) of (\d+),?""", ". My devotion to $1 is $2."),
         r("""\band my devotion to\b""", ". My devotion to"),
         r("""(?<=[a-z]) and with the trigger on the stack""", ". With the trigger on the stack"),
@@ -101,7 +101,7 @@ object TableTalk {
     )
 
     // A name of one or more capitalised words: "Healing Salve", "Thalia, Guardian of Thraben".
-    private const val NM = """(?-i:[A-Z][\w'’-]*(?:,? (?:(?:of|the|in|to|and|for|from) )?(?-i:(?!I\b)[A-Z])[\w'’-]*)*)"""
+    private const val NM = """(?-i:[A-Z][\w'’-]*(?:,? (?:(?:of|the|in|to|and|for|from) )*(?-i:(?!I\b)[A-Z])[\w'’-]*)*)"""
 
     // Second round of word-for-word rewrites (the table-talk example is in each comment). Same mechanism as [plain].
     private val plain4: List<Pair<Regex, String>> = listOf(
@@ -235,6 +235,174 @@ object TableTalk {
     )
     private fun r(p: String, rep: String) = Regex(p, ci) to rep
 
+    // Third round of word-for-word rewrites, for the newest rulings (the table-talk example is in each comment). Same mechanism as [plain].
+    private val plain5: List<Pair<Regex, String>> = listOf(
+        // "is Sheoldred standard legal today", "can I play X in Standard, is it legal": the legality question as the rules table asks it.
+        r("""\bis ($NM) (standard|modern|pioneer|legacy|vintage|pauper|commander|historic|explorer|brawl) legal(?: (?:today|right now|now|currently|at the moment))?(?=\s*[?.]|$)""", "is $1 legal in $2"),
+        r("""\bcan I (?:play|run|use|cast|put) ($NM) in (standard|modern|pioneer|legacy|vintage|pauper|commander|historic|explorer|brawl),? (?:is it|is that) legal\b""", "is $1 legal in $2"),
+        // "so I Greasefang back Parhelion II", "Greasefang returned Parhelion II and I attack with it".
+        r("""\bI (Greasefang(?:, Okiba Boss)?) back ($NM)""", "I return $2 with $1"),
+        r("""^(Greasefang(?:, Okiba Boss)?) (?:returned|brought back|reanimated) ($NM) and I attack with it\b""", "I attack with $2 returned by $1"),
+        // "my guy can't block and his creature has Lure": the creature that can't block, as the board is told.
+        r("""^my (?:creature|guy|dude) (can't|cannot|can not) (block|attack)\b""", "I control a creature that $1 $2"),
+        r("""\b(that can't (?:block|attack)) and (?=(?:my opponent's|his|her|their|the opponent's) )""", "$1. "),
+        r("""\bgiving mine\b""", "giving my creature"),
+        // "at my opponent's end step I Goryo's Vengeance X": the time said last.
+        r("""(?:^|(?<=[.?!] ))at (my opponent's|their|his|her|the opponent's|my|our) (end step|upkeep|draw step),? (I|we|my opponent|he|she|they) ([^.?!]+?)(?=,|\.|\?|$)""", "$3 $4 at $1 $2"),
+        // "in a Commander game I use Karn's -2": the game said last, "use" for the loyalty ability's own verb.
+        r("""(?:^|(?<=[.?!] ))in (an? (?:commander|edh|four-player|three-player|multiplayer) game),? (I|we|my opponent|he|she|they) uses? ($NM's [-+\u2212]\d)""", "$2 activate $3 during $1"),
+        r("""\b(I|we) use ($NM's [-+\u2212]\d)\b""", "$1 activate $2"),
+        r("""\b(he|she|they|my opponent) uses ($NM's [-+\u2212]\d)\b""", "$1 activates $2"),
+        // "At a Regional Championship I activate Karn's -2, can I get a card from my sideboard": the event in the question.
+        r("""^at (an? [A-Z][\w ]+?) (I activate [^,?.]+?),? (can I get a card from my sideboard)\??$""", "$2. $3 at $1?"),
+        // "somebody concedes while a spell's on the stack", "a player concedes and he controls my creature".
+        r("""\b(?:somebody|someone) (concedes|leaves|drops)\b""", "a player $1"),
+        r("""\bwhile a spell(?:'s| is) on the stack\b""", "with a spell on the stack"),
+        r("""\b(concedes|leaves the game) and (?:he|she|they) (?:controls?|has) (?=my )""", "$1 while controlling "),
+        // "I cast Stock Up, I look at the top five cards, can he respond after that".
+        r("""^(I cast [^,.?]+?),? (?:and )?I look at the top (\w+) cards,? (?:can|could) (?:he|she|they|my opponent) respond(?: after that| then| there)?\??$""", "$1. Can my opponent respond after I look at the top $2 cards?"),
+        // "I cast a cascade spell and my opponent flashes in Spell Queller targeting it": the cast, then the flash.
+        r(""" and (?=(?:my opponent|he|she|they) flashes in\b)""", ". "),
+        r(""",? (with the (?:cascade )?trigger on the stack) (my opponent|he|she|they) flashes in ($NM) targeting it\b""", ". $2 flashes in $3 targeting it $1"),
+        // "Ugin's Labyrinth is exiling Devourer of Destiny under my control".
+        r("""\b($NM) is exiling ($NM) under my control\b""", "I control $1 exiling $2"),
+        r("""\bcontrol both ($NM) and ($NM)\b""", "control $1 and $2"),
+        r("""\bcan ($NM) untap ($NM)(?=\s*[?.]|$)""", "can I untap $2 with $1"),
+        // "... six other cards in my graveyard and ten in my library".
+        r("""\b(\d+|\w+) other cards? in my graveyard and (\d+|\w+) in my library\b""", "my graveyard has $1 other cards and my library has $2 cards"),
+        r("""\b(?:and )?(?:three|two|four|\d+) players respond,? (?:with )?((?:$NM)(?:, $NM)*(?: and $NM)?)""", ". Three players respond with $1"),
+        // "..., at the beginning of combat how many counters": the time, a comma, then the question.
+        r(""",? (at the beginning of (?:combat|my upkeep|my end step|the end step|combat on my turn)),? (how (?:many|much|big)|what|do|does|is|will)\b""", ". $1, $2".replace("At at", "At")),
+        r("""\b($NM) has (\d+|\w+) power[.,]? (?:and )?I (?:have|control) ($NM)(?: too| also)?\b""", "I control $1 with $2 power and $3"),
+        r(""" and (?=I (?:explore|vote)\b)""", ". "),
+        r("""\b(cast [^.?!]*?) and vote (\w+),? (the other \w+ players vote \w+)""", "$1. I vote $2 and $3"),
+        // "I Scapeshift away seven lands and get six Mountains and two Valakut".
+        r("""\b(get(?:ting)? (?:\d+|\w+) Mountains?) and (two|three|four|\d+) (Valakut(?:, the Molten Pinnacle)?)""", "$1 with $2 $3"),
+        r("""(sacrificing [^.?!,]*? lands?), getting """, "$1 and get "),
+        // "I cast Fireball with X equal to four", "X=two".
+        r("""\bX (?:equal to|=|equals) (one|two|three|four|five|six|seven|eight|nine|ten)\b""", "X equal to @n$1"),
+        // "with Kinnan and Grim Monolith can I generate infinite mana": the board first.
+        r("""(?:^|(?<=[.?!] ))with ($NM(?:, $NM)*) (?=(?:can|does|do|is|will|how|what)\b)""", "I control $1. "),
+        r("""^(can I generate infinite mana) with ($NM)\??$""", "I control $2. $1?"),
+        r("""\bI(?:'m| am) at (\d+) life,? and I (?=attack|cast|control|pay)""", "I have $1 life. I "),
+        r(""" and (?=I pay \d+ life\b)""", ". "),
+        r("""\b(?:and )?attacked with ($NM) (?:from|off) ($NM)""", ". I attack with $1 from $2"),
+        // "Bob's Grizzly Bears ... Alice, Bob and me are playing".
+        r("""\band me are playing\b""", "and I are playing"),
+        r("""\bhe draws (\w+) cards? during his turn\b""", "my opponent draws $1 cards during their turn"),
+        // "My opponent's Grizzly Bears has my Shiny Impetus attached".
+        r("""\b(my opponent's|his|her|their) ($NM) has my ($NM) attached\b""", "I control $3 attached to $1 $2"),
+        r("""\b(how big is $NM)(?:,| and) (who does it have to attack)\b""", "$1? $2"),
+        r("""\bmy ($NM) is (enchanted|equipped) with ($NM) and (attacks?)\b""", "I control $1 $2 with $3. $1 $4"),
+        // ---- the lo family: one rule per way of saying it (the table-talk example is in each comment) ----
+        // "my only card in hand is Nourishing Shoal", "I attack with a 3/3 Death's Shadow".
+        r("""(?:,|\band) my only card in hand is ($NM),? """, " and I have one card in hand, $1. "),
+        r("""^my only card in hand is ($NM),? """, "I have one card in hand, $1. "),
+        r("""\b(attack with) an? (\d+/\d+) ($NM)(?= and\b|[,.?]|$)""", "$1 $3, which is $2"),
+        // "my Urza's Saga's chapter III ability is on the stack and my opponent controls Blood Moon".
+        r("""(chapter \w+ (?:ability|trigger) is on the stack) and (?=my opponent)""", "$1. "),
+        r(""" and (?=my [A-Z][\w' ]+'s chapter \w+ (?:ability|trigger) is on the stack)""", ". "),
+        r(""" and (?=with the chapter \w+ trigger)""", ". "),
+        r("""\b(my $NM's chapter \w+ (?:ability|trigger) is on the stack)(?:\.|,)? (?:and )?(my opponent (?:controls|has) $NM)""", "$2. $1"),
+        r("""\b(attack with $NM),? which is (\d+/\d+),? and then cast """, "$1, which is $2, and, then I cast "),
+        r("""\b(attack with $NM),? which is (\d+/\d+),? and cast """, "$1, which is $2, and, then I cast "),
+        r("""\bwhile (?:his|her|their) ($NM) is targeted\b""", "while my opponent's $1 is targeted"),
+        r("""\bin response to (the evoke sacrifice trigger),? I (Undying Malice) my ($NM) and it dies\b""", "I cast $2 on $3 in response to $1. $3 dies"),
+        r("""^($NM) dies after I cast ($NM) on it( in response to [^.?!]+)""", "I cast $2 on $1$3. $1 dies"),
+        r("""\bwith the chapter (\w+) trigger on the stack (?=my opponent|he |they )""", "with the chapter $1 trigger on the stack, "),
+        r("""^($NM) with (\d+|\w+) lore counters?, chapter (\w+) trigger on the stack,? (?:he|my opponent) puts""", "I control $1 with $2 lore counters. With the chapter $3 trigger on the stack, my opponent puts"),
+        r(""" and (?=I put (?:an?|\d+|one|two) [+-]1/[+-]1 counters? on)""", ". "),
+        // "I ninjutsu in Sakashima's Student returning Grizzly Bears and copying Grizzly Bears".
+        r("""\bI ninjutsu (?:in |with )?($NM) returning ($NM)(?: to my hand)?,? (?:and )?cop(?:y|ying) ($NM)""", "I activate ninjutsu of $1, returning $2 to my hand, copying $3"),
+        // "...casts Murder on my commander Grizzly Bears, which has Gemrazer mutated on top of it".
+        r("""\b(my opponent|he|they) casts? ($NM) on my commander ($NM),? which has ($NM) mutated on top of it""", "My commander $3 has $4 mutated on top of it. $1 casts $2 on it"),
+        // "my opponent cracks a fetchland and I control Opposition Agent": what stands on the board first.
+        r("""\b(my opponent|he|they|opp) (cracks?) (a fetch(?:land)?) (?:and|while|when) I (?:control|have) ($NM)""", "I control $4. $1 $2 $3"),
+        r("""\bin response to the legend rule,? (my opponent|he) uses""", "$1 responds to the legend rule by using"),
+        r("""\b(my opponent's|his|their) ($NM) is targeted(?:\.|,| and) (?:and )?I cast ($NM) on my ($NM)""", "I cast $3 on my $4 while $1 $2 is targeted"),
+        // "Griselbrand came in off Sneak Attack, the delayed sacrifice trigger goes on the stack, can I still activate Grisel to draw seven".
+        r("""\b(Griselbrand came in off Sneak Attack),? (?:and )?the delayed sacrifice trigger goes on the stack[.,]? (can I still activate [^?]*)\??""", "$1. When the delayed sacrifice trigger goes on the stack, $2?"),
+        r("""^The delayed sacrifice trigger goes on the stack\.\s+(Griselbrand came in off Sneak Attack)\.\s+(Can I still activate [^?]*)\?""", "$1. When the delayed sacrifice trigger goes on the stack, $2?"),
+        r("""^(Can I still activate [^?]*?) when (the delayed sacrifice trigger goes on the stack)\?\s*(Griselbrand came in off Sneak Attack)\.?$""", "$3. When $2, $1?"),
+        r("""\b(?:he|she|they|my opponent|opp) Through the Breach(?:es)? ($NM)""", "my opponent casts Through the Breach on $1"),
+        r("""\bmy partner commanders are ($NM) and ($NM)\b""", "I have partner commanders $1 and $2"),
+        r("""^partner commanders ($NM) and ($NM)\b""", "I have partner commanders $1 and $2"),
+        r(""",\s+($NM) has died\b""", ". $1 has died"),
+        r(""",\s+($NM) died (?:one time|1 time|once)\b""", ". $1 died once"),
+        r("""\b(I control $NM) and I discard down to\b""", "$1 and discard down to"),
+        r(""",\s*(where does the discarded card go)\.?$""", ". Where does the discarded card go?"),
+        // "a copy of his commander deals combat damage to me, is that commander damage".
+        r("""\bhis commander\b""", "my opponent's commander"),
+        r("""\bis that commander damage\b""", "does that count as commander damage"),
+        r("""\bthe (?:clone|copy)'s damage count as commander damage\b""", "its damage count as commander damage"),
+        r("""\bmy ($NM) gets Dazed by (?:my opponent|him|them|opp)\b""", "my opponent Dazes my $1"),
+        r("""(?:^|(?<=[.?!] ))with ($NM) I cast ($NM) from exile\b""", "I cast $2 from exile with $1"),
+        r("""\bI cast my opponent's ($NM) from exile after ($NM) exiled it\b""", "$2 exiled my opponent's $1 and I cast it from exile"),
+        r(""" and (?=(?-i:[A-Z][a-z]+)'s (?:\w+ ){1,3}?dies\b)""", ". "),
+        r("""^((?-i:[A-Z][a-z]+)'s [\w ]+? dies) while (I control [^.?!]+?)(?=\?|\.|$|, (?:what|how|can|does|do|is)\b)""", "$2. $1"),
+        r("""\b(I cast ($NM) targeting ($NM)),? it's in my graveyard\b""", "$3 is in my graveyard. I cast $2 targeting it"),
+        r("""\b($NM) is in my graveyard and I control ($NM)(?=[,.?]|$)""", "I control $2 with $1 in my graveyard"),
+        r("""\bhow much does it cost to equip\b""", "how much does equip cost"),
+        r("""\bI equip ($NM) to my creature that has ($NM) on it\b""", "My creature is equipped with $2. I equip $1 to it"),
+        r("""\b(?:a|my) creature has ($NM) and I equip ($NM) to it\b""", "My creature is equipped with $1. I equip $2 to it"),
+        r("""^with ($NM) (?=I (?:pay|cast|activate|attack|sacrifice)\b)""", "I control $1. "),
+        r("""\bI pay (\d+|one) life to ($NM) and sacrifice\b""", "I control $2. I pay $1 life and sacrifice"),
+        r("""\bI (?:exile|pitch) (an? [\w ]+? card) to cast ($NM)""", "I cast $2 by pitching $1"),
+        r("""(?<=Show and Tell[^.?!]{0,120})\b(puts?) in ($NM)""", "$1 $2 onto the battlefield"),
+        r("""^(Show and Tell),\s+(?=I put)""", "I cast $1. "),
+        r("""\bmy ($NM) is named by ($NM)\b""", "my opponent casts $2 naming $1"),
+        r("""(city's blessing) and I gained""", "$1, and I gained"),
+        r(""" and (?=I cast [^.?!]*? copying\b)""", ". "),
+        // "I attacked with Griselbrand off Sneak Attack".
+        r("""\bI attacked with ($NM) (?:from|off|with) ($NM)""", "I attack with $1 from $2"),
+        // "he Sneak Attacks in Kozilek": the opponent's Sneak Attack puts it in. (The first-person form is left to the engine's own
+        // reading, which gives haste and plays the attack out: "I Sneak Attack in Emrakul and attack".)
+        r("""\b(?:he|she|they|my opponent|opp) (?:Sneak Attacks?) (?:in |with |on )?($NM)(?: onto the battlefield)?(?=[,.?]|$| and\b)""", "my opponent casts Sneak Attack and puts $1 onto the battlefield"),
+        // "three player Commander, ...", "We're playing four-player Commander, ...".
+        r("""(?:^|(?<=[.?!] ))(?:we're playing |we are playing |playing |in a )?(\w+)[- ]player (commander|edh)(?: game)?,?\s+(?=\S)""", "We're playing $1-player $2. "),
+        // "I control Necropotence at three life".
+        r("""\b(I control $NM) at (\d+|one|two|three|four|five|six|seven|eight|nine|ten) life\b""", "$1. I have @n$2 life"),
+        // "Future Sight is on my side", "Necropotence is mine".
+        r("""\b($NM)(?: with metalcraft)? (?:is|are) (?:mine|on my side|on my battlefield|out on my side|under my control)\b""", "I control $1"),
+        // "he has the initiative and I deal combat damage to him".
+        r(""" and (?=I deal combat damage)""", ". "),
+        r("""\bdeal combat damage to (him|them|her)\b""", "deal combat damage to my opponent"),
+        // "I cast Hidden Strings, untapping Lotus Field twice": the cost or choice follows the cast without a comma.
+        r("""\b(cast [^.?!,]*?),\s+(untapping|choosing|sacrificing|paying|tapping|returning|exiling|discarding) """, "$1 $2 "),
+        // "In a four-player game I cast Mindslaver on my opponent": the game said last.
+        r("""(?:^|(?<=[.?!] ))in (an? (?:\w+-player|multiplayer|commander|edh) game),? (I|we|my opponent|he|she|they) ((?:cast|casts|activate|activates)\b[^.?!,]*?)(?=\.|\?|$)""", "$2 $3 in $1"),
+        r("""\bI only have (\w+ creatures? that can block)""", "I have $1"),
+        r("""\bhow much damage does it do\b""", "how much damage does it deal"),
+        r("""\b(I control [^.?!]*?) and cast ($NM sacrificing)""", "$1. I cast $2"),
+        // "his creature has Lure": the opponent's.
+        r("""(?:^|(?<=[.?!] ))(his|her|their) (creature|guy|dude) has\b""", "my opponent's creature has"),
+        // "draw two cards in my draw step off a Howling Mine".
+        r("""\b(draw step) off (an?|the) """, "$1 from $2 "),
+        r("""\bcan (?:the )?(?:two|2|both) (?:modes )?be the same(?: mode)?\b""", "can I choose the same mode twice"),
+        // "if I cast a creature with disguise face down what's its mana value".
+        r("""^if (I cast [^,.?]*?),? (what is its mana value)\??$""", "$1. $2?"),
+        r("""^my (?:creature|guy|dude) (?:has to|must) attack each combat\b""", "I control a creature that must attack each combat"),
+        // "I control Valakut and I play my sixth Mountain": one statement, the land played as the rules table says it.
+        r("""\b(I (?:have|control) [^.?!]+?),? and I play (my (?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth) $NM)""", "$1 and play $2"),
+        // "I control Smothering Tithe and an opponent draws three cards".
+        r(""" and (?=an opponent \w+s\b)""", ". "),
+        // "Kitesail Larcenist has ward 1 and he targets it with X, he has no mana open".
+        r("""\b(targets? [^.,?!]*? with $NM)(?:,| and) (?:he|she|they|my opponent) (?:has|have|doesn't have) no mana (?:open|available|up|left)""", "$1 with no mana open"),
+        r("""\bwhat happens when (my opponent|he|they|she|I) (targets?) ($NM) with ($NM) and (?:has|have) no mana (?:open|available|up|left)\?\s*It has ward (\d+)\.?""", "$3 has ward $5. $1 $2 $3 with $4 with no mana open. What happens?"),
+        r(""" and (?=I $NM(?: $NM)* one of them\b)""", ". "),
+        r("""\bwhat happens when (my opponent|he|they|she|I) (targets?|casts?) ([^.?!]+?) and (?:has|have) no mana (?:open|available|up|left)\?""", "$1 $2 $3 with no mana open. What happens?"),
+        r("""\bwhen does (it|\w+) go back to my hand\b""", "when is $1 returned to my hand"),
+        r(""" and (?=(?:my opponent|he|she|they) counters it with\b)""", ". "),
+        // "my opponent attacks with X and I block with Y": the attack, then the block, one sentence each.
+        r("""(?<=\battacks? (?:with|my)\b[^.?!]{0,100}?) and (?=(?:my opponent|he|she|they|opp) (?:blocks?|casts?|flashes)\b|I (?:block|flash|cast|activate)\b)""", ". "),
+        // "I control Guide of Souls and a token creature enters": the entering is a sentence of its own.
+        r(""" and (?=(?:an?|another|the) (?:token )?creature(?: token)? (?:enters|dies)\b|(?:an?|the) token (?:creature )?enters\b)""", ". "),
+        // Rules that need the earlier ones' output ("Necropotence is mine and I discard down to seven": "is mine" first).
+        r("""\b(I control $NM) and I discard down to\b""", "$1 and discard down to"),
+        r(""",\s*(where does the discarded card go)\.?$""", ". Where does the discarded card go?"),
+    )
+
+
     private val colourLetter = mapOf("white" to "WW", "blue" to "UU", "black" to "BB", "red" to "RR", "green" to "GG")
 
     private fun applyPlain(t0: String): String {
@@ -262,8 +430,8 @@ object TableTalk {
 
     // A statement told as a run-on: "... and I cast ...", "... and in response I ...", "... , my opponent casts ...".
     private const val SUBJECT = """(?:I|we|my opponent|my opp|opp|he|they|she)"""
-    private const val VERBS = """(?:cast|casts|control|controls|activate|activates|attack|attacks|play|plays|crack|cracks|sacrifice|sacrifices|recruit|equip|equips|search|searches|discard|discards|have|has)"""
-    private val runOn = Regex("""(?:,\s*(?:and\s+)?|\s+and\s+(?:then\s+)?|\s+then\s+)(?=$SUBJECT $VERBS\b|my [A-Z][\w']*(?: [A-Z][\w']*)* (?:has|is)\b)""")
+    private const val VERBS = """(?:cast|casts|control|controls|activate|activates|attack|attacks|play|plays|crack|cracks|sacrifice|sacrifices|recruit|equip|equips|search|searches|discard|discards|have|has|explore|explores|vote|votes|put|puts|deal|deals|block|blocks|draw|draws|gain|gains|tap|taps|target|targets|bounce|bounces|destroy|destroys|exile|exiles|return|returns|counter|counters|respond|responds)"""
+    private val runOn = Regex("""(?:,\s*(?:and\s+)?|\s+and\s+(?:then\s+)?|\s+then\s+)(?=$SUBJECT (?:(?:only|also|just) )?$VERBS\b|(?<!then )(?:I|we|he|she|they|my opponent|opp) (?-i:[A-Z][a-z']+)(?: |$)|my [A-Z][\w']*(?: [A-Z][\w']*)* (?:has|is)\b)""")
     private val runOnAnd = Regex("""\s+and\s+(?:then\s+)?(?=$SUBJECT (?:cast|casts|control|controls|activate|activates|attack|attacks|sacrifice|sacrifices|recruit|equip|equips|search|searches|block|blocks|already|play|plays|discard|discards|destroy|destroys|exile|exiles|pay|pays|move|add|adds|tap|taps|return|returns)\b|(?:I|we|my opponent|my opp|opp|he|they|she) (?-i:[A-Z][a-z]))""")
     private val timingRunOn = Regex("""(?:,\s*(?:and\s+)?|\s+and\s+(?:then\s+)?|\s+then\s+)(?=(?:in response|after|during|before|in the|in my|on my|on their|later|at the beginning|with the trigger)\b)""", ci)
     private val timingAnd = Regex(timingRunOn.pattern.replace("""(?:,\s*(?:and\s+)?|\s+and\s+(?:then\s+)?|\s+then\s+)""", """(?:\s+and\s+(?:then\s+)?)"""), ci)
@@ -286,6 +454,7 @@ object TableTalk {
     private fun applyPlain4(t0: String): String {
         var t = bigNumbers(t0)
         if (!off("plain4")) for ((re, rep) in plain4) t = re.replace(t) { m -> m.expandReplacement(rep) }
+        if (!off("plain5")) for ((re, rep) in plain5) t = re.replace(t) { m -> m.expandReplacement(rep) }
         t = Regex("""@g(\w+)""").replace(t) { m -> when (m.groupValues[1].lowercase()) { "cycling" -> "cycle"; "casting" -> "cast"; "activating" -> "activate"; "equipping" -> "equip"; else -> "sacrifice" } }
         t = Regex("""@n(\w+)""").replace(t) { m -> (unitsW[m.groupValues[1].lowercase()] ?: if (m.groupValues[1].lowercase() == "ten") 10 else null)?.toString() ?: m.groupValues[1] }
         t = relatives(t)
@@ -306,7 +475,7 @@ object TableTalk {
         "eleven" to 11, "twelve" to 12, "thirteen" to 13, "fourteen" to 14, "fifteen" to 15, "sixteen" to 16, "seventeen" to 17, "eighteen" to 18, "nineteen" to 19)
     private val unitsW = mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9)
     private const val BIGW = """(?:(?:eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)|(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?)"""
-    private val bigNum = Regex("""(?<![\w-])($BIGW)\b(?=\s+(?:life|cards?|damage|poison|counters?|loyalty|mana)\b)|(?<=\bis at )($BIGW)\b""", ci)
+    private val bigNum = Regex("""(?<![\w-])($BIGW)\b(?=\s+(?:other\s+)?(?:life|cards?|damage|poison|counters?|loyalty|mana)\b)|(?<=\bis at )($BIGW)\b""", ci)
     /** "forty life", "at eighteen", "sixty cards": the number as digits. */
     private fun bigNumbers(t: String) = bigNum.replace(t) { m ->
         val w = m.groupValues[1].ifEmpty { m.groupValues[2] }.lowercase().split('-', ' ')
@@ -331,6 +500,21 @@ object TableTalk {
         val noun = Regex("""\b(?:two|three|four|five|six|\d+) (?-i:([a-z]+s))\b""", ci).find(t) ?: return t
         val n = noun.groupValues[1]
         return Regex("""\b(both|all(?: (?:two|three|four|five|\d+))?) of them\b""", ci).replace(t.substring(noun.range.last + 1)) { m -> "${m.groupValues[1]} $n" }.let { t.substring(0, noun.range.last + 1) + it }
+    }
+
+    // "I activate Gloin's ability on Serra Angel. Does it have to attack?": the "it" of a question about what a creature must do is the target just named.
+    private fun targetPronoun(t: String): String {
+        val sents = t.split(sentBreak).filter { it.isNotBlank() }
+        if (sents.size < 2) return t
+        val last = sents.last()
+        // "How big is Craw Wurm? Does it have trample?": the card the first question names is the "it" of the second.
+        if (Regex("""^does it have (?!to\b)""", ci).containsMatchIn(last) && sents[sents.size - 2].endsWith("?")) firstName(sents[sents.size - 2])?.let { n ->
+            return (sents.dropLast(1) + Regex("""^does it have""", ci).replaceFirst(last, "Does " + Regex.escapeReplacement(n) + " have")).joinToString(" ") }
+        if (!Regex("""^(?:does|do) it have to (?:attack|block)\b""", ci).containsMatchIn(last)) return t
+        val tgt = Regex("""\b(?:on|targeting|at) ($NM(?: $NM)*)[.,]?$""").find(sents[sents.size - 2]) ?: return t
+        val name = tgt.groupValues[1]
+        if (name == "I" || name.startsWith("My ") || name.startsWith("The ") && name.length < 8) return t
+        return (sents.dropLast(1) + Regex("""^(does|do) it""", ci).replaceFirst(last, "$1 " + Regex.escapeReplacement(name))).joinToString(" ")
     }
 
     // After the question has been put last: a name for "it's in there with 5 other cards", a comma question, statements told in one breath.
@@ -358,6 +542,7 @@ object TableTalk {
         }
         t = Regex("""(\bCan I [^?.]+?)\?\s+What does it cost\?""").replace(t, "$1, and what does it cost?")
         if (Regex("""\bcycl""", ci).containsMatchIn(t)) t = Regex("""\bwhat does it cost\b""", ci).replace(t, "how much does it cost")
+        t = targetPronoun(t)
         val sents = t.split(sentBreak).filter { it.isNotBlank() }
         val q = sents.lastOrNull { it.endsWith("?") || qStart.containsMatchIn(it) }
         if (q != null) {
@@ -369,11 +554,11 @@ object TableTalk {
     }
 
     // "X is prepared and I cast Y", "Wolverine has 4 damage marked and my opponent casts Z", "They cast A and my opponent controls B": the board said first, the play after, one sentence each.
-    private const val ACT = """(?:cast|casts|activate|activates|equip|equips|pay|pays|sacrifice|sacrifices|crack|cracks)"""
+    private const val ACT = """(?:cast|casts|activate|activates|equip|equips|pay|pays|sacrifice|sacrifices|crack|cracks|draw|draws|bounce|bounces|destroy|destroys|exile|exiles)"""
     private const val SUBJ2 = """(?:I|we|my opponent|my opp|opp|he|they|she)"""
     private val stateThenPlay = Regex("""^((?:(?!\b(?:cast|casts|attack|attacks|activate|activates)\b)[^.?!])*?\b(?:is|are|has|have|controls?)\b(?:(?!\b(?:cast|casts|attack|attacks|activate|activates)\b)[^.?!])*?)(?:\s+and\s+(?:then\s+)?|,\s+)(?=$SUBJ2 $ACT\b|(?:my opponent|my opp|opp|he) (?:deals|hits|attacks|blocks)\b)""", ci)
     private val playThenState = Regex("""^((?:[^.?!])*?\bcasts?\b[^.?!]*?)\s+and\s+(?=(?:my opponent|my opp|opp) controls\b)""", ci)
-    private val commaAux = Regex("""^(.{12,}?),\s*((?:can|could|does|do|did|is|are|will|would|should|am|may)\b[^.?!]*?)\??$""", ci)
+    private val commaAux = Regex("""^(.{12,}?),\s*((?:can|could|does|do|did|is|are|will|would|should|am|may|must)\b[^.?!]*?)\??$""", ci)
     // "my Llanowar Elves ... the Elves die": the short name said back, spelled out.
     private fun shortNameBack(t: String): String {
         var out = t
@@ -416,7 +601,7 @@ object TableTalk {
         val b = splitTailQuestion(a)
         val c = splitRunOns(b)
         val d = splitRunOns(splitTailQuestion(a))
-        return listOf(splitRunOns(splitCommaQuestion(b)), c, d, b).map { ensureQ(it) }.distinct().filter { it != plain }
+        return listOf(splitRunOns(splitCommaQuestion(b)), splitCommaQuestion(b), c, d, b).map { targetPronoun(ensureQ(it)) }.distinct().filter { it != plain }
     }
 
     // A question typed without its question mark ("..., what happens") gets one, so it is read as the question.
@@ -426,7 +611,7 @@ object TableTalk {
     }
 
     // ", can it be blocked" after a statement: a question of its own.
-    private val commaQuestion = Regex("""^(.{12,}?),\s*((?:can|could|does|do|did|is|are|will|would|should|am|may|what|how|who|when|where)\b[^.?!]*?)\??$""", ci)
+    private val commaQuestion = Regex("""^(.{12,}?),\s*((?:can|could|does|do|did|is|are|will|would|should|am|may|must|what|how|who|when|where|which (?:creatures?|permanents?|cards?|spells?|lands?|players?|ones?))\b[^.?!]*?)\??$""", ci)
     private fun splitCommaQuestion(t: String): String {
         val sents = t.split(sentBreak).toMutableList()
         val last = sents.last()
@@ -487,13 +672,17 @@ object TableTalk {
         val last = sents.last()
         if (!last.endsWith("?") && !qStart.containsMatchIn(last)) return t
         val m = doubleQuestion.find(last.trimEnd('?')) ?: return t
+        // "how big is Craw Wurm and does it have trample": the card the first half names is the "it" of the second.
+        val named = firstName(m.groupValues[1])
+        val m2 = if (named != null && Regex("""^does it have (?!to\b)""", ci).containsMatchIn(m.groupValues[2].trim())) m.groupValues[2].trim().let { Regex("""^does it have""", ci).replace(it, "does " + Regex.escapeReplacement(named) + " have") } else null
         // "can I play it, and does it use my land drop", "can I cast X, and what does it cost": one question, as people ask it.
         if (Regex("""^(?:does it|what does it|what is the cost|how much does it|can (?:they|I) then)\b""", ci).containsMatchIn(m.groupValues[2].trim())) {
-            sents[sents.size - 1] = capFirst(m.groupValues[1].trim().trimEnd(',')) + ", and " + m.groupValues[2].trim() + "?"
+            sents[sents.size - 1] = capFirst(m.groupValues[1].trim().trimEnd(',')) + ", and " + (m2 ?: m.groupValues[2].trim()) + "?"
             return sents.joinToString(" ")
         }
         sents[sents.size - 1] = capFirst(m.groupValues[1].trim().trimEnd(',')) + "?"
-        sents += capFirst(m.groupValues[2].trim()) + "?"
+        val second = m2 ?: m.groupValues[2].trim()
+        sents += capFirst(second) + "?"
         return sents.joinToString(" ")
     }
 
@@ -514,6 +703,8 @@ object TableTalk {
                 .let { Regex("""^It (?=[a-z])""").replaceFirst(it, "$name ") }
             rest[0] = Regex("""\b(control|controls|have|has|cast|casts|play|plays|activate|activates|equip) it\b""").replaceFirst(r, "$1 $name")
                 .let { s -> Regex("""\b(graveyard|hand|library) has it\b""").replaceFirst(s, "$1 has $name") }
+                .let { s -> Regex("""\b(attack|attacks|attacked) with it\b""").replaceFirst(s, "$1 with " + Regex.escapeReplacement(name)) }
+                .let { s -> Regex("""\b(put|puts) it onto\b""").replaceFirst(s, "$1 " + Regex.escapeReplacement(name) + " onto") }
                 .let { s -> Regex("""\b(equip|attach)\b([^.?!]*?) to it\b""").replaceFirst(s, "$1$2 to ${Regex.escapeReplacement(name)}") }
         }
         return (rest + qs).joinToString(" ")
