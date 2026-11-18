@@ -138,6 +138,7 @@
 121.6b	if an effect replaces a draw
 122.1	a counter is a marker placed
 122.1a	a x y counter on a
+122.1b	a keyword counter on a permanent
 122.1c	one or more shield counters on
 122.1d	one or more stun counters on
 122.1f	if a player has ten or
@@ -394,6 +395,7 @@
 613.4d	layer 7d effects that switch a
 613.6	if an effect should be applied
 613.7	within a layer or sublayer determining
+613.7c	each counter receives a timestamp as
 613.8	within a layer or sublayer determining
 613.8a	an effect is said to depend
 613.8b	an effect dependent on one or
@@ -632,6 +634,7 @@
 702.101a	extort is a triggered ability extort
 702.102a	fuse is a static ability found
 702.102b	a fused split spell has the
+702.102c	the total cost of a fused
 702.103a	bestow represents a static ability that
 702.103b	as a spell cast bestowed is
 702.103e	as a bestowed aura spell begins
@@ -752,6 +755,7 @@
 704.5v	if a siege battle has defense
 704.5w	if a non siege battle has
 704.5z	if a permanent has more than
+704.6b	in a two headed giant game
 704.6c	in a commander game a player
 704.6d	in a commander game if a
 705.1	some cards refer to flipping a
@@ -779,11 +783,13 @@
 709.4	in every zone except the stack
 709.4a	each split card has two names
 709.4b	the mana cost of a split
+709.4d	the characteristics of a fused split
 712.6a	while a double faced card is
 712.6c	while a double faced permanent has
 712.6d	while a nonmodal double faced permanent
 712.6e	while a modal double faced spell
 712.8a	if a double faced card or
+712.9	a player playing a modal double
 712.11a	if a spell or ability puts
 715.2	a chapter symbol is a keyword
 715.2b	rn effect means when one or
@@ -794,6 +800,7 @@
 716.3	as a player plays an adventurer
 716.3a	when casting an adventurer card as
 716.3b	while on the stack as an
+716.3c	if an adventure spell is copied
 716.3d	instead of putting a spell that
 716.4	in every zone except the stack
 717.2a	cost level n abilities means cost
@@ -834,6 +841,7 @@
 726.4	if the monarch leaves the game
 727.2	there are three inherent triggered abilities
 727.3	only one player can have the
+727.4	if the player who has the
 731.2a	a merged permanent has only the
 731.2c	because a merged permanent is the
 731.2i	a merged permanent is not a
@@ -852,6 +860,9 @@
 800.4c	if an effect that gives a
 800.4j	if a player leaves the game
 800.4k	if a player who has left
+810.8d	if a team has fifteen or
+810.10	effects that cause players to get
+810.10a	if an effect needs to know
 903.3	each deck has a legendary card
 903.3c	if a player s commander is
 903.3d	if an effect refers to controlling

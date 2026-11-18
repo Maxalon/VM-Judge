@@ -164,6 +164,11 @@ internal object RedteamAsks {
                 } else {
                     t.step("${c.name}'s abilities are worked out with every continuous effect applied in layer order: it ${if (has) "has" else "doesn't have"} $kw now.", "613.1", "613.1f")
                     state.outcomes += "${if (has) "Yes" else "No"}: ${c.name} ${if (has) "has" else "doesn't have"} $kw."
+                    // "Humility is out. I put a flying counter on my Grizzly Bears": the counter's timestamp is later, so it adds flying back (613.7c).
+                    if (has && remover != null && (c.counters[kw] ?: 0) > 0 && t.steps.any { it.text.contains("$kw counter") && it.text.contains("put on ${c.name}") }) {
+                        t.step("${remover.name}'s \"lose all abilities\" and the $kw counter both apply in layer 6, in timestamp order. A counter gets its timestamp as it's put on, so this one is later than ${remover.name}: abilities are removed first, then the counter adds $kw.", "122.1b", "613.7c", "613.1f")
+                        state.outcomes += "The $kw counter was put on after ${remover.name} was on the battlefield, so it has the later timestamp: in layer 6 ${remover.name} removes ${c.name}'s abilities first and the counter then grants $kw (122.1b, 613.7c)."
+                    }
                 }
             }
             // "Troll of Khazad-dûm: can it be blocked by one creature?"

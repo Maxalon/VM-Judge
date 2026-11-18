@@ -81544,5 +81544,480 @@
     "cite": [
       "115.7"
     ]
+  },
+  {
+    "id": "x4-1",
+    "text": "My opponent controls Trinisphere and Chalice of the Void with one charge counter on it. I cast Lightning Bolt paying three mana. What happens?",
+    "expect": [
+      "Lightning Bolt costs 3 mana in all (Trinisphere",
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "601.2f",
+      "701.6a"
+    ]
+  },
+  {
+    "id": "x4-2",
+    "text": "I control two Goblin Electromancers. I cast Lightning Bolt. How much does it cost?",
+    "expect": [
+      "can't take Lightning Bolt below {R}: a reduction takes off only generic mana (118.7a)."
+    ],
+    "cite": [
+      "118.7a"
+    ]
+  },
+  {
+    "id": "x4-3",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Bloodbraid Elf and cascade into Lightning Bolt. Do I have to pay extra to cast Lightning Bolt?",
+    "expect": [
+      "Lightning Bolt still costs {1} more (Thalia, Guardian of Thraben): a cost increase applies to an alternative cost too (601.2f)."
+    ],
+    "cite": [
+      "118.9d",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "x4-4",
+    "text": "I control Ashnod's Altar, Blood Artist and Grizzly Bears. I cast Hill Giant and while paying for it I sacrifice Grizzly Bears to Ashnod's Altar. When does Blood Artist's trigger resolve?",
+    "expect": [
+      "After Hill Giant is cast, and before it resolves",
+      "The trigger then goes on the stack on top of Hill Giant, so it resolves first (601.2i)"
+    ],
+    "cite": [
+      "605.3b",
+      "601.2i",
+      "603.3"
+    ]
+  },
+  {
+    "id": "x4-5",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Fireball with X=3 targeting my opponent. How much mana do I spend?",
+    "expect": [
+      "You spend 5 mana in all"
+    ],
+    "cite": [
+      "601.2f"
+    ]
+  },
+  {
+    "id": "x4-6",
+    "text": "My opponent controls Sphere of Resistance. I cast Force of Will by exiling a blue card and paying 1 life. Do I have to pay mana?",
+    "expect": [
+      "Force of Will still costs {1} more (Sphere of Resistance)"
+    ],
+    "cite": [
+      "118.9d"
+    ]
+  },
+  {
+    "id": "x4-7",
+    "text": "In a four-player game it's my turn and each player controls Soul Warden. I cast Grizzly Bears. In what order do the triggers resolve?",
+    "expect": [
+      "You are the active player, so yours go on first.",
+      "opponent 3's resolve first and yours resolve last"
+    ],
+    "notExpect": [
+      "Only one player's abilities triggered here"
+    ],
+    "cite": [
+      "603.3b"
+    ]
+  },
+  {
+    "id": "x4-8",
+    "text": "I'm at 40 life and control Felidar Sovereign. At my upkeep its trigger goes on the stack and my opponent responds with Lightning Bolt targeting me. Do I win?",
+    "expect": [
+      "Felidar Sovereign's ability checks its \"if\" again as it resolves (603.4).",
+      "so it does nothing and you don't win"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "x4-9",
+    "text": "My Solemn Simulacrum dies and my opponent exiles it with Scavenging Ooze in response to its trigger. Do I still draw a card?",
+    "expect": [
+      "Yes: you draw 1 card in all."
+    ],
+    "cite": [
+      "603.10a",
+      "113.7a"
+    ]
+  },
+  {
+    "id": "x4-10",
+    "text": "I control Young Pyromancer. I cast Lightning Bolt and my opponent counters it with Counterspell. Do I get a token?",
+    "expect": [
+      "You get an Elemental token.",
+      "Lightning Bolt is countered."
+    ],
+    "cite": [
+      "603.2"
+    ]
+  },
+  {
+    "id": "x4-11",
+    "text": "I control Young Pyromancer. I cast Lightning Bolt and then copy it with Reverberate. How many Elemental tokens do I get?",
+    "expect": [
+      "2: you get 2 Elemental tokens."
+    ],
+    "cite": [
+      "707.10"
+    ]
+  },
+  {
+    "id": "x4-12",
+    "text": "My Grizzly Bears is enchanted with my Rancor. I cast Gods Willing on Grizzly Bears choosing green. What happens to Rancor?",
+    "expect": [
+      "Rancor: the battlefield → your graveyard.",
+      "Rancor: your graveyard → your hand."
+    ],
+    "cite": [
+      "702.16c",
+      "704.5m"
+    ]
+  },
+  {
+    "id": "x4-13",
+    "text": "My Grizzly Bears is equipped with Bonesplitter. I cast Apostle's Blessing on Grizzly Bears choosing artifacts. What happens to Bonesplitter?",
+    "expect": [
+      "Bonesplitter falls off Grizzly Bears (protection from artifacts) and stays on the battlefield, unattached."
+    ],
+    "cite": [
+      "702.16d",
+      "704.5n"
+    ]
+  },
+  {
+    "id": "x4-14",
+    "text": "I control Progenitus. Can I cast Rancor on Progenitus?",
+    "expect": [
+      "No: Rancor can't target Progenitus."
+    ],
+    "cite": [
+      "702.16b"
+    ]
+  },
+  {
+    "id": "x4-15",
+    "text": "I attack with Grizzly Bears and my opponent blocks with Goblin Piker. After blockers I cast Gods Willing on Grizzly Bears choosing red. What happens in combat damage?",
+    "expect": [
+      "Damage to Grizzly Bears from Goblin Piker is prevented (protection).",
+      "Goblin Piker: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "702.16e"
+    ]
+  },
+  {
+    "id": "x4-16",
+    "text": "My opponent controls Slippery Bogle. My opponent casts Lightning Bolt targeting me and I copy it with Reverberate. Can the copy target Slippery Bogle?",
+    "expect": [
+      "No: you control the copy, and its new targets must be legal (707.10c); Slippery Bogle has hexproof against your spells"
+    ],
+    "cite": [
+      "707.10c",
+      "702.11b"
+    ]
+  },
+  {
+    "id": "x4-17",
+    "text": "I attack with Ghalta, Primal Hunger equipped with Basilisk Collar and my opponent blocks with two Craw Wurms. How much damage does my opponent take?",
+    "expect": [
+      "10: opponent takes 10 damage in all.",
+      "You gain 12 life."
+    ],
+    "cite": [
+      "702.19b",
+      "702.2b"
+    ]
+  },
+  {
+    "id": "x4-18",
+    "text": "I attack with Ghalta, Primal Hunger and my opponent blocks with Grizzly Bears. I cast Lightning Bolt on Grizzly Bears before damage. How much damage does my opponent take?",
+    "expect": [
+      "12: opponent takes 12 damage in all."
+    ],
+    "cite": [
+      "702.19d"
+    ]
+  },
+  {
+    "id": "x4-19",
+    "text": "I attack with White Knight and my opponent blocks with two Grizzly Bears. My opponent casts Sure Strike on one of the Grizzly Bears. What happens?",
+    "expect": [
+      "White Knight: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "510.4",
+      "702.7b"
+    ]
+  },
+  {
+    "id": "x4-20",
+    "text": "I attack my opponent's Jace, the Mind Sculptor with 3 loyalty with Ghalta, Primal Hunger and my opponent blocks with Grizzly Bears. How much damage does my opponent take?",
+    "expect": [
+      "No: opponent takes no damage.",
+      "Jace, the Mind Sculptor has 0 loyalty."
+    ],
+    "cite": [
+      "702.19b"
+    ]
+  },
+  {
+    "id": "x4-21",
+    "text": "I attack with Glistener Elf equipped with Basilisk Collar and it isn't blocked. What happens?",
+    "expect": [
+      "Opponent has 1 poison counter.",
+      "You gain 1 life."
+    ],
+    "cite": [
+      "702.90b",
+      "702.15b"
+    ]
+  },
+  {
+    "id": "x4-22",
+    "text": "I attack with Craw Wurm and my opponent blocks with two Grizzly Bears. Can I assign all 6 damage to one Grizzly Bears?",
+    "expect": [
+      "Yes: Craw Wurm is blocked by two creatures, so you divide its 6 damage among them however you like, and you may put all 6 on one Grizzly Bears"
+    ],
+    "cite": [
+      "510.1c"
+    ]
+  },
+  {
+    "id": "x4-23",
+    "text": "My opponent casts Stomp from Bonecrusher Giant and I Remand it. Where does Bonecrusher Giant go?",
+    "expect": [
+      "Stomp: the stack → its owner's hand.",
+      "Bonecrusher Giant is in opponent's hand now."
+    ],
+    "cite": [
+      "716.3b"
+    ]
+  },
+  {
+    "id": "x4-24",
+    "text": "My opponent casts Stomp from Bonecrusher Giant and I copy it with Reverberate. Can I cast Bonecrusher Giant later from exile?",
+    "expect": [
+      "No: your copy is an Adventure too (716.3c), but it isn't a card"
+    ],
+    "cite": [
+      "716.3c",
+      "707.10a"
+    ]
+  },
+  {
+    "id": "x4-25",
+    "text": "My Dark Confidant reveals Fire // Ice. How much life do I lose?",
+    "expect": [
+      "4: you lose 4 life in all."
+    ],
+    "cite": [
+      "202.3"
+    ]
+  },
+  {
+    "id": "x4-26",
+    "text": "My opponent controls Chalice of the Void with three charge counters. I cast Wear // Tear with fuse. Is it countered?",
+    "expect": [
+      "Yes: Wear // Tear is countered (by Chalice of the Void).",
+      "Fused, Wear // Tear is one spell with mana value 3"
+    ],
+    "cite": [
+      "702.102b",
+      "709.4d"
+    ]
+  },
+  {
+    "id": "x4-27",
+    "text": "My Dark Confidant reveals Agadeem's Awakening. How much life do I lose?",
+    "expect": [
+      "3: you lose 3 life in all."
+    ],
+    "cite": [
+      "202.3"
+    ]
+  },
+  {
+    "id": "x4-28",
+    "text": "My opponent controls Chalice of the Void with zero charge counters. I play Agadeem, the Undercrypt. What happens?",
+    "expect": [
+      "Nothing from Chalice of the Void: you play Agadeem, the Undercrypt as a land"
+    ],
+    "notExpect": [
+      "not modelled"
+    ],
+    "cite": [
+      "305.1",
+      "712.9"
+    ]
+  },
+  {
+    "id": "x4-29",
+    "text": "I control Hardened Scales and Grizzly Bears with a -1/-1 counter on it. I cast Travel Preparations targeting Grizzly Bears. How big is Grizzly Bears?",
+    "expect": [
+      "it's 3/3 with 1 +1/+1 counter left."
+    ],
+    "cite": [
+      "704.5q"
+    ]
+  },
+  {
+    "id": "x4-30",
+    "text": "My Geralf's Messenger has a +1/+1 counter on it. My opponent puts a -1/-1 counter on it and then it dies. Does undying return it?",
+    "expect": [
+      "Geralf's Messenger comes back with a +1/+1 counter (undying)"
+    ],
+    "cite": [
+      "704.5q",
+      "702.93a"
+    ]
+  },
+  {
+    "id": "x4-31",
+    "text": "Humility is on the battlefield. I put a flying counter on my Grizzly Bears. Does it have flying?",
+    "expect": [
+      "Yes: Grizzly Bears has flying.",
+      "the counter then grants flying (122.1b, 613.7c)"
+    ],
+    "cite": [
+      "613.7c",
+      "122.1b"
+    ]
+  },
+  {
+    "id": "x4-32",
+    "text": "My Grizzly Bears is enchanted with Rancor. I put two -1/-1 counters on Grizzly Bears. Does it die?",
+    "expect": [
+      "Grizzly Bears: the battlefield → your graveyard.",
+      "Rancor: your graveyard → your hand."
+    ],
+    "cite": [
+      "704.5f"
+    ]
+  },
+  {
+    "id": "x4-33",
+    "text": "I control Solemnity and Kitchen Finks. Kitchen Finks dies. What happens?",
+    "expect": [
+      "Kitchen Finks comes back with no -1/-1 counter (persist)"
+    ],
+    "cite": [
+      "702.79a",
+      "614.1a"
+    ]
+  },
+  {
+    "id": "x4-34",
+    "text": "In a four-player game my opponent is the monarch and concedes during my turn. Who becomes the monarch?",
+    "expect": [
+      "You become the monarch (opponent left the game as the monarch, 726.4)."
+    ],
+    "cite": [
+      "726.4"
+    ]
+  },
+  {
+    "id": "x4-35",
+    "text": "In a four-player game my opponent has the initiative and concedes during another opponent's turn. Who takes the initiative?",
+    "expect": [
+      "Opponent 2: the active player takes the initiative at the same moment opponent leaves the game (727.4)"
+    ],
+    "cite": [
+      "727.4"
+    ]
+  },
+  {
+    "id": "x4-36",
+    "text": "In a four-player game I control my opponent's Grizzly Bears with Control Magic. That opponent concedes. What happens to Grizzly Bears and Control Magic?",
+    "expect": [
+      "Grizzly Bears leaves the game with them",
+      "Control Magic: the battlefield → your graveyard."
+    ],
+    "notExpect": [
+      "Grizzly Bears stays on the battlefield"
+    ],
+    "cite": [
+      "800.4a",
+      "704.5m"
+    ]
+  },
+  {
+    "id": "x4-37",
+    "text": "In a three-player game my opponent goads my Grizzly Bears and my other opponent has left the game. Does Grizzly Bears have to attack?",
+    "expect": [
+      "Yes: goaded, Grizzly Bears must attack each combat if able (701.15b)."
+    ],
+    "cite": [
+      "701.15b"
+    ]
+  },
+  {
+    "id": "x4-38",
+    "text": "In Two-Headed Giant my teammate has 8 poison counters and I have 7 poison counters. Do we lose?",
+    "expect": [
+      "Yes: the team's poison counters are shared, 8 + 7 = 15"
+    ],
+    "cite": [
+      "810.10",
+      "704.6b"
+    ]
+  },
+  {
+    "id": "x4-39",
+    "text": "My River Boa has a regeneration shield. My opponent casts Disfigure on River Boa. What happens?",
+    "expect": [
+      "River Boa isn't saved by its regeneration shield"
+    ],
+    "cite": [
+      "704.5f"
+    ]
+  },
+  {
+    "id": "x4-40",
+    "text": "I regenerate River Boa and then sacrifice it to Fling. Does it die?",
+    "expect": [
+      "Yes: River Boa died (it's in the graveyard)."
+    ],
+    "cite": [
+      "701.21a",
+      "701.19a"
+    ]
+  },
+  {
+    "id": "x4-41",
+    "text": "My opponent controls Rest in Peace. I control Blood Artist and two Grizzly Bears. I cast Wrath of God. Does Blood Artist trigger?",
+    "expect": [
+      "so they never died and Blood Artist's ability doesn't trigger"
+    ],
+    "cite": [
+      "614.6"
+    ]
+  },
+  {
+    "id": "x4-42",
+    "text": "I control Leyline of the Void. My opponent's Prized Amalgam dies. Can it come back?",
+    "expect": [
+      "No: Prized Amalgam was exiled instead of going to the graveyard"
+    ],
+    "cite": [
+      "614.6"
+    ]
+  },
+  {
+    "id": "x4-43",
+    "text": "My Darksteel Myr is dealt 3 damage by a creature with deathtouch. Does it die?",
+    "expect": [
+      "No: deathtouch and lethal damage both work by destroying, and Darksteel Myr is indestructible (702.12b)"
+    ],
+    "cite": [
+      "702.12b",
+      "704.5h"
+    ]
   }
 ]

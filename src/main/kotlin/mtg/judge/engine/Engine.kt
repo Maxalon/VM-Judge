@@ -169,7 +169,7 @@ class Engine(val state: GameState) {
             }
             // Delve and convoke pay part of the locked-in total; they aren't reductions (702.66b, 702.51b).
             val due = maxOf(0, cost - obj.castCost.delved - obj.castCost.convoked)
-            if (tax > 0 && alternative && taxes.isNotEmpty()) state.outcomes += "${card.name} still costs {$tax} more (${taxes.joinToString(", ") { it.first.name }}): a cost increase applies to an alternative cost too (601.2f)."
+            if (tax > 0 && (alternative || tc.free) && taxes.isNotEmpty()) state.outcomes += "${card.name} still costs {$tax} more (${taxes.joinToString(", ") { it.first.name }}): a cost increase applies to an alternative cost too (601.2f)."
             // Mana stated as a count, or the untapped lands named ("I have 2 Islands"), less what earlier casts used.
             // A stated count plus any described mana sources (availableMana adds them up); described sources alone only when nothing else could pay.
             (if (player.mana != null) availableMana(player) else availableMana(player)?.takeIf { landsOnly(player) })?.let { avail -> obj.manaAvailableAtCast = avail
@@ -612,7 +612,7 @@ class Engine(val state: GameState) {
         if (!o.isOnBattlefield()) { trace.step("${o.name} isn't on the battlefield, so it can't be sacrificed.", "701.21a"); state.outcomes += "${o.name} can't be sacrificed (it isn't on the battlefield)."; return }
         if (o.controller != playerId) { trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${o.name}, so ${p.subject.lowercase()} can't sacrifice it.", "701.21a"); state.outcomes += "${o.name} can't be sacrificed by ${p.subject.lowercase()} (${p.subject.lowercase()} ${p.v("doesn't", "don't")} control it)."; return }
         o.lkiPower = o.power; state.lastSacrificed = o
-        move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${o.name}: it goes from the battlefield to its owner's graveyard. Sacrificing isn't destroying, so indestructible and regeneration don't help.", "701.21a")
+        move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${o.name}: it goes from the battlefield to its owner's graveyard. Sacrificing isn't destroying, so indestructible and regeneration don't help.", "701.21a", "701.19a")
         onEvent(GameEvent.Sacrificed(o, playerId))
         stateBasedActions()
     }
@@ -2617,6 +2617,8 @@ class Engine(val state: GameState) {
             putTriggerOnStack(obj, ability, emptyList(), causedBy, causedAmount, causedObject)
         }
         if (ordered.size > 1 && triggerHold == null) trace.step("Multiple abilities triggered at once; they are put on the stack in APNAP order, each player choosing the order among their own.", "603.3b")
+        // "Each player controls Soul Warden and I cast Grizzly Bears": one event, several players' triggers, for "in what order?" (603.3b).
+        if (controllers.size > 1 && triggerHold == null) state.apnapBatches += ordered.map { it.first.controller }
     }
 
     private fun matches(obj: GameObject, trigger: Trigger, event: GameEvent, fromGraveyard: Boolean = false): Boolean {
@@ -3663,7 +3665,7 @@ class Engine(val state: GameState) {
             is Effect.SacrificeSource -> {
                 val o = item.source; val p = state.player(o.controller)
                 if (!o.isOnBattlefield()) trace.step("${o.name} is no longer on the battlefield, so there's nothing to sacrifice.", "701.21a")
-                else { move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${o.name}: it goes to its owner's graveyard. Sacrificing isn't destroying, so indestructible and regeneration don't help.", "701.21a"); state.outcomes += "${o.name} is sacrificed." }
+                else { move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("sacrifices", "sacrifice")} ${o.name}: it goes to its owner's graveyard. Sacrificing isn't destroying, so indestructible and regeneration don't help.", "701.21a", "701.19a"); state.outcomes += "${o.name} is sacrificed." }
             }
             is Effect.ExileGraveyard -> for (p in resolvePlayers(effect.who, item)) {
                 val cards = state.objects.values.filter { it.zone == Zone.GRAVEYARD && it.owner == p.id }
@@ -5927,7 +5929,7 @@ class Engine(val state: GameState) {
             val qualities = qualitiesOf(source)
             val isSpell = source.def.isInstantOrSorcery || source.zone == Zone.STACK
             val hit = prots.firstOrNull { it == "everything" || it in qualities || (it == "colored spells" && isSpell && state.colorsOf(source).isNotEmpty()) || (it == "spells" && isSpell) || (it.startsWith("player:") && it.removePrefix("player:") == controller) }
-            if (hit != null) return "${o.name} has protection from ${protectionName(hit)}, so it can't be targeted by ${if (source.def.isInstantOrSorcery || source.zone == Zone.STACK) "that spell" else "an ability from that source"}" to "702.16b"
+            if (hit != null) return "${o.name} has protection from ${protectionName(hit)}, so it can't be targeted by ${if (source.def.isInstantOrSorcery || source.zone == Zone.STACK || source.zone == Zone.HAND) "that spell" else "an ability from that source"}" to "702.16b"
         }
         return null
     }
