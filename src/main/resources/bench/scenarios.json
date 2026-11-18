@@ -89537,5 +89537,2226 @@
       "800.4a",
       "702.143f"
     ]
+  },
+  {
+    "id": "p3-1",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Lightning Bolt targeting my opponent and only paid R, then I cast Brainstorm. Now we noticed I never paid the Thalia tax. What's the fix at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for you, and a Game Rule Violation, Warning, for your opponent too: Thalia's tax is a static ability, not a trigger (604.1), and your opponent controls the effect that changed the rules, so once play went on both players are responsible (IPG 2.5).",
+      "On this board: Thalia, Guardian of Thraben is still on the battlefield; Lightning Bolt resolved and your opponent has lost 3 life; Brainstorm resolved too. From now on each noncreature spell costs {1} more."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "120.3a",
+      "100.6",
+      "733.1c",
+      "604.1"
+    ],
+    "note": "track policy3: probe thalia"
+  },
+  {
+    "id": "p3-2",
+    "text": "Judge! Their Thalia is out and I just paid R for my Lightning Bolt, then cast Brainstorm. Nobody noticed the tax until now. RCQ, what happens?",
+    "expect": [
+      "Game Rule Violation, Warning, for you, and a Game Rule Violation, Warning, for your opponent too: Thalia's tax is a static ability, not a trigger (604.1), and your opponent controls the effect that changed the rules, so once play went on both players are responsible (IPG 2.5).",
+      "On this board: Thalia, Guardian of Thraben is still on the battlefield; Lightning Bolt resolved and your opponent has lost 3 life; Brainstorm resolved too. From now on each noncreature spell costs {1} more."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "120.3a",
+      "100.6",
+      "733.1c",
+      "604.1"
+    ],
+    "note": "track policy3: paraphrase of thalia"
+  },
+  {
+    "id": "p3-3",
+    "text": "I control Thalia. My opponent cast Lightning Bolt for just R and then cast Ponder, and we both missed the Thalia tax. What's the fix at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for your opponent, and a Game Rule Violation, Warning, for you too: Thalia's tax is a static ability, not a trigger (604.1), and you control the effect that changed the rules, so once play went on both players are responsible (IPG 2.5).",
+      "On this board: Thalia, Guardian of Thraben is still on the battlefield; Lightning Bolt resolved and you have lost 3 life; Ponder resolved too. From now on each noncreature spell costs {1} more."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "120.3a",
+      "100.6",
+      "733.1c",
+      "604.1"
+    ],
+    "note": "track policy3: paraphrase of thalia"
+  },
+  {
+    "id": "p3-4",
+    "text": "I cast Pact of Negation last turn. It's my upkeep and I forgot to pay for Pact of Negation and drew my card. What happens at an RCQ?",
+    "expect": [
+      "Missed trigger, Warning: Pact of Negation's delayed trigger is usually detrimental to you, and you own the card (IPG 2.1).",
+      "On this board: Pact of Negation countered Lightning Bolt (it's in your opponent's graveyard), and the debt is the only thing left of it."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: probe pact"
+  },
+  {
+    "id": "p3-5",
+    "text": "I countered their spell with Pact of Negation last turn and forgot to pay in my upkeep, then drew. RCQ, what happens?",
+    "expect": [
+      "Missed trigger, Warning: Pact of Negation's delayed trigger is usually detrimental to you, and you own the card (IPG 2.1).",
+      "On this board: Pact of Negation countered Lightning Bolt (it's in your opponent's graveyard), and the debt is the only thing left of it."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: paraphrase of pact"
+  },
+  {
+    "id": "p3-6",
+    "text": "My opponent cast Pact of Negation on my Lightning Bolt and then forgot to pay for it on their upkeep and drew. What happens at an RCQ?",
+    "expect": [
+      "Missed trigger, Warning: Pact of Negation's delayed trigger is usually detrimental to you, and you own the card (IPG 2.1).",
+      "On this board: Pact of Negation countered Lightning Bolt (it's in your opponent's graveyard), and the debt is the only thing left of it."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: paraphrase of pact"
+  },
+  {
+    "id": "p3-7",
+    "text": "I control Phantasmal Forces. I forgot its upkeep trigger to sacrifice it unless I pay U and drew my card. What's the penalty at an RCQ?",
+    "expect": [
+      "Missed trigger, Warning: \"sacrifice unless you pay\" is usually detrimental to its controller, who owns the card, so the missed trigger is upgraded (IPG 2.1).",
+      "On this board: Phantasmal Forces is still on the battlefield, so the trigger can still matter; had it left the battlefield, putting the trigger on the stack would change nothing."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "100.6",
+      "733.1c",
+      "603.2"
+    ],
+    "note": "track policy3: probe upkeepsac"
+  },
+  {
+    "id": "p3-8",
+    "text": "Forgot the Phantasmal Forces upkeep payment and went to draw. RCQ, is that a warning?",
+    "expect": [
+      "Missed trigger, Warning: \"sacrifice unless you pay\" is usually detrimental to its controller, who owns the card, so the missed trigger is upgraded (IPG 2.1).",
+      "On this board: Phantasmal Forces is still on the battlefield, so the trigger can still matter; had it left the battlefield, putting the trigger on the stack would change nothing."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "100.6",
+      "733.1c",
+      "603.2"
+    ],
+    "note": "track policy3: paraphrase of upkeepsac"
+  },
+  {
+    "id": "p3-9",
+    "text": "My opponent forgot to pay for their Phantasmal Forces in upkeep and drew. What happens at an RCQ?",
+    "expect": [
+      "Missed trigger, Warning: \"sacrifice unless you pay\" is usually detrimental to its controller, who owns the card, so the missed trigger is upgraded (IPG 2.1).",
+      "On this board: Phantasmal Forces is still on the battlefield, so the trigger can still matter; had it left the battlefield, putting the trigger on the stack would change nothing."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "100.6",
+      "733.1c",
+      "603.2"
+    ],
+    "note": "track policy3: paraphrase of upkeepsac"
+  },
+  {
+    "id": "p3-10",
+    "text": "I control The Eldest Reborn with a lore counter on it. I put the second lore counter on it but forgot to resolve chapter II and cast a sorcery. What happens at an RCQ?",
+    "expect": [
+      "Missed trigger, no penalty: the lore counter was put on, so the turn-based action was done; what was missed is chapter II's triggered ability (107.15a, IPG 2.1)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "100.6",
+      "733.1c",
+      "107.15a",
+      "715.3c"
+    ],
+    "note": "track policy3: probe saga"
+  },
+  {
+    "id": "p3-11",
+    "text": "I added the second lore counter to my Eldest Reborn but never resolved chapter II, then cast a sorcery. Penalty at an RCQ?",
+    "expect": [
+      "Missed trigger, no penalty: the lore counter was put on, so the turn-based action was done; what was missed is chapter II's triggered ability (107.15a, IPG 2.1)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "100.6",
+      "733.1c",
+      "107.15a",
+      "715.3c"
+    ],
+    "note": "track policy3: paraphrase of saga"
+  },
+  {
+    "id": "p3-12",
+    "text": "My opponent put the second lore counter on The Eldest Reborn and forgot chapter II. What happens at FNM?",
+    "expect": [
+      "No penalty at Regular REL: the lore counter was put on, so it's chapter II's trigger that was missed, and the judge puts it on the stack now unless that would be too disruptive — each opponent discards a card (JAR)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "100.6",
+      "733.1c",
+      "107.15a",
+      "715.3c"
+    ],
+    "note": "track policy3: paraphrase of saga"
+  },
+  {
+    "id": "p3-13",
+    "text": "I control Blood Artist and 2 Grizzly Bears. My opponent controls 3 Llanowar Elves. I cast Wrath of God and forgot the Blood Artist triggers, then played a land. What's the fix at an RCQ?",
+    "expect": [
+      "Missed trigger, no penalty: Wrath of God killed 6 creatures (Blood Artist and 2 of yours, 3 of your opponent's), so Blood Artist triggered 6 times; each needed a target announced before you next passed priority, and playing on missed them all (IPG 2.1).",
+      "On this board: all 6 creatures are in the graveyards (Blood Artist and the Grizzly Bears in yours, the Llanowar Elves in your opponent's). If the triggers go on the stack, your opponent loses 6 life and you gain 6, as the play-through shows; if not, both life totals stay where they were."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe bloodwrath"
+  },
+  {
+    "id": "p3-14",
+    "text": "I wrathed the board with Blood Artist out and forgot all the triggers. RCQ, what now?",
+    "expect": [
+      "Missed trigger, no penalty: Wrath of God killed 6 creatures (Blood Artist and 2 of yours, 3 of your opponent's), so Blood Artist triggered 6 times; each needed a target announced before you next passed priority, and playing on missed them all (IPG 2.1).",
+      "On this board: all 6 creatures are in the graveyards (Blood Artist and the Grizzly Bears in yours, the Llanowar Elves in your opponent's). If the triggers go on the stack, your opponent loses 6 life and you gain 6, as the play-through shows; if not, both life totals stay where they were."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of bloodwrath"
+  },
+  {
+    "id": "p3-15",
+    "text": "My Blood Artist died in a board wipe with 5 other creatures and I forgot the drain triggers. What's the fix at FNM?",
+    "expect": [
+      "No penalty at Regular REL: the judge puts the 6 Blood Artist triggers on the stack now unless that would be too disruptive (JAR).",
+      "On this board: all 6 creatures are in the graveyards (Blood Artist and the Grizzly Bears in yours, the Llanowar Elves in your opponent's). If the triggers go on the stack, your opponent loses 6 life and you gain 6, as the play-through shows; if not, both life totals stay where they were."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of bloodwrath"
+  },
+  {
+    "id": "p3-16",
+    "text": "My opponent controls Blood Artist. I cast Lightning Bolt on their Blood Artist and it died, and they forgot the trigger and cast a sorcery. Do they still get it?",
+    "expect": [
+      "Missed trigger, no penalty: Blood Artist's trigger exists without Blood Artist — once triggered, an ability is independent of its source (113.7a) — so its leaving the battlefield doesn't end the matter; casting a sorcery showed it was missed (IPG 2.1).",
+      "On this board: Blood Artist is in your opponent's graveyard, and the drain the play-through shows (your opponent has gained 1 life) happens only if the trigger is put on the stack."
+    ],
+    "cite": [
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe leftbf"
+  },
+  {
+    "id": "p3-17",
+    "text": "I bolted my opponent's Blood Artist, it died, and they forgot its trigger and cast a sorcery. What's the ruling at an RCQ?",
+    "expect": [
+      "Missed trigger, no penalty: Blood Artist's trigger exists without Blood Artist — once triggered, an ability is independent of its source (113.7a) — so its leaving the battlefield doesn't end the matter; casting a sorcery showed it was missed (IPG 2.1).",
+      "On this board: Blood Artist is in your opponent's graveyard, and the drain the play-through shows (your opponent has gained 1 life) happens only if the trigger is put on the stack."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of leftbf"
+  },
+  {
+    "id": "p3-18",
+    "text": "My Blood Artist died to a Lightning Bolt and I forgot its own trigger. Can I still get it at an RCQ?",
+    "expect": [
+      "Missed trigger, no penalty: Blood Artist's trigger exists without Blood Artist — once triggered, an ability is independent of its source (113.7a) — so its leaving the battlefield doesn't end the matter; casting a sorcery showed it was missed (IPG 2.1).",
+      "On this board: Blood Artist is in your graveyard, and the drain the play-through shows (you have gained 1 life) happens only if the trigger is put on the stack."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of leftbf"
+  },
+  {
+    "id": "p3-19",
+    "text": "My opponent controls Sheoldred, the Apocalypse. I drew a card and they forgot to make me lose 2 life. Do I have to point it out at an RCQ?",
+    "expect": [
+      "No, you don't have to say anything: Sheoldred's trigger is your opponent's to remember, and staying silent is never Failure to Maintain Game State or Cheating (MTR 4.5, IPG 2.6). At Regular REL too, players may choose whether to point out an opponent's missed triggers (JAR).",
+      "On this board: the play-through has the trigger resolve when you draw — you have lost 2 life — which is what happens if it's remembered in time."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.5",
+      "IPG 2.6",
+      "JAR",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe oppbenefit"
+  },
+  {
+    "id": "p3-20",
+    "text": "Opponent's Sheoldred trigger was missed when I drew. Do I need to say anything?",
+    "expect": [
+      "No, you don't have to say anything: Sheoldred's trigger is your opponent's to remember, and staying silent is never Failure to Maintain Game State or Cheating (MTR 4.5, IPG 2.6). At Regular REL too, players may choose whether to point out an opponent's missed triggers (JAR).",
+      "On this board: the play-through has the trigger resolve when you draw — you have lost 2 life — which is what happens if it's remembered in time."
+    ],
+    "cite": [
+      "MTR 4.5",
+      "IPG 2.6",
+      "JAR",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of oppbenefit"
+  },
+  {
+    "id": "p3-21",
+    "text": "At FNM my opponent's Sheoldred didn't make me lose life when I drew. Must I remind them?",
+    "expect": [
+      "No, you don't have to say anything: Sheoldred's trigger is your opponent's to remember, and staying silent is never Failure to Maintain Game State or Cheating (MTR 4.5, IPG 2.6). At Regular REL too, players may choose whether to point out an opponent's missed triggers (JAR).",
+      "On this board: the play-through has the trigger resolve when you draw — you have lost 2 life — which is what happens if it's remembered in time."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.5",
+      "IPG 2.6",
+      "JAR",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of oppbenefit"
+  },
+  {
+    "id": "p3-22",
+    "text": "I cast Claustrophobia on my opponent's Grizzly Bears and forgot to tap it. What happens at an RCQ?",
+    "expect": [
+      "Missed trigger, no penalty, and no choice for the opponent: Claustrophobia's trigger is an Aura's enters trigger that affects only the enchanted creature, visibly, so it resolves immediately — the creature is tapped now (IPG 2.1, its Additional Remedy).",
+      "On this board: Grizzly Bears is tapped with Claustrophobia attached, and it stays tapped, since it doesn't untap during its controller's untap step."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2c",
+      "608.2n",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe auraetb"
+  },
+  {
+    "id": "p3-23",
+    "text": "Forgot the Claustrophobia ETB trigger and the creature is still untapped. RCQ ruling?",
+    "expect": [
+      "Missed trigger, no penalty, and no choice for the opponent: Claustrophobia's trigger is an Aura's enters trigger that affects only the enchanted creature, visibly, so it resolves immediately — the creature is tapped now (IPG 2.1, its Additional Remedy).",
+      "On this board: Grizzly Bears is tapped with Claustrophobia attached, and it stays tapped, since it doesn't untap during its controller's untap step."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2c",
+      "608.2n",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of auraetb"
+  },
+  {
+    "id": "p3-24",
+    "text": "My opponent put Claustrophobia on my creature and never tapped it. What's the fix?",
+    "expect": [
+      "Missed trigger, no penalty, and no choice for the opponent: Claustrophobia's trigger is an Aura's enters trigger that affects only the enchanted creature, visibly, so it resolves immediately — the creature is tapped now (IPG 2.1, its Additional Remedy).",
+      "On this board: Grizzly Bears is tapped with Claustrophobia attached, and it stays tapped, since it doesn't untap during its controller's untap step."
+    ],
+    "cite": [
+      "IPG 2.1",
+      "608.2c",
+      "608.2n",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of auraetb"
+  },
+  {
+    "id": "p3-25",
+    "text": "I put Emrakul into play with Sneak Attack and forgot to sacrifice it at the end step. What happens at an RCQ?",
+    "expect": [
+      "Missed trigger: Sneak Attack's \"sacrifice the creature at the beginning of the next end step\" undoes the zone change Sneak Attack made, so it isn't simply lost: your opponent chooses whether it resolves the next time a player would get priority or at the start of the next phase (IPG 2.1).",
+      "On this board: Emrakul, the Aeons Torn is on the battlefield with haste; when the trigger resolves it is sacrificed, and Emrakul's own graveyard trigger shuffles your graveyard into your library."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: probe delayedzone"
+  },
+  {
+    "id": "p3-26",
+    "text": "I Sneak Attacked in Emrakul and forgot the sacrifice trigger; it's still on the battlefield on my opponent's turn. Ruling at an RCQ?",
+    "expect": [
+      "Missed trigger: Sneak Attack's \"sacrifice the creature at the beginning of the next end step\" undoes the zone change Sneak Attack made, so it isn't simply lost: your opponent chooses whether it resolves the next time a player would get priority or at the start of the next phase (IPG 2.1).",
+      "On this board: Emrakul, the Aeons Torn is on the battlefield with haste; when the trigger resolves it is sacrificed, and Emrakul's own graveyard trigger shuffles your graveyard into your library."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: paraphrase of delayedzone"
+  },
+  {
+    "id": "p3-27",
+    "text": "My opponent's creature from Sneak Attack is still around, they forgot to sacrifice it. What now at an RCQ?",
+    "expect": [
+      "Missed trigger: Sneak Attack's \"sacrifice the creature at the beginning of the next end step\" undoes the zone change Sneak Attack made, so it isn't simply lost: you choose whether it resolves the next time a player would get priority or at the start of the next phase (IPG 2.1).",
+      "On this board: Emrakul, the Aeons Torn is on the battlefield with haste; when the trigger resolves it is sacrificed, and Emrakul's own graveyard trigger shuffles their graveyard into their library."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: paraphrase of delayedzone"
+  },
+  {
+    "id": "p3-28",
+    "text": "In a four-player Commander game my opponent forgot their Rhystic Study trigger. Who decides whether it goes on the stack?",
+    "expect": [
+      "No penalty either way, and the other players didn't have to point it out (MTR 4.5)."
+    ],
+    "cite": [
+      "IPG 2.1",
+      "100.6",
+      "733.1c",
+      "113.7a",
+      "603.10a"
+    ],
+    "note": "track policy3: probe multimiss"
+  },
+  {
+    "id": "p3-29",
+    "text": "In a four-player Commander game at FNM my opponent missed their Blood Artist trigger. Who decides?",
+    "expect": [
+      "The Infraction Procedure Guide's remedy has \"the opponent\" choose whether the trigger goes on the stack (IPG 2.1); in a four-player game it doesn't say which opponent, so a judge would decide, usually the player the trigger would affect.",
+      "On this board: Blood Artist died to Lightning Bolt and is in the graveyard; its trigger still exists without it (113.7a), so it can still go on the stack."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of multimiss"
+  },
+  {
+    "id": "p3-30",
+    "text": "In a multiplayer game my opponent missed their Blood Artist trigger. Which opponent chooses whether it goes on the stack?",
+    "expect": [
+      "The Infraction Procedure Guide's remedy has \"the opponent\" choose whether the trigger goes on the stack (IPG 2.1); in a four-player game it doesn't say which opponent, so a judge would decide, usually the player the trigger would affect.",
+      "On this board: Blood Artist died to Lightning Bolt and is in the graveyard; its trigger still exists without it (113.7a), so it can still go on the stack."
+    ],
+    "cite": [
+      "IPG 2.1",
+      "608.2h",
+      "119.3",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of multimiss"
+  },
+  {
+    "id": "p3-31",
+    "text": "I cast Lightning Bolt targeting my opponent with no red source, it resolved, then my opponent drew a card and cast Ponder. We noticed now at an RCQ. What's the fix?",
+    "expect": [
+      "Game Rule Violation, Warning, for you (Lightning Bolt was cast without red mana: its cost wasn't paid, 601.2h); your opponent let play go on past it, which is Failure to Maintain Game State, also a Warning (IPG 2.5, 2.6).",
+      "On this board: Lightning Bolt is in the graveyard and your opponent has lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "120.3a",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: probe nored"
+  },
+  {
+    "id": "p3-32",
+    "text": "Judge, I bolted my opponent off an Island with no red source; it resolved, they drew and cast Ponder. RCQ, what's the fix?",
+    "expect": [
+      "Game Rule Violation, Warning, for you (Lightning Bolt was cast without red mana: its cost wasn't paid, 601.2h); your opponent let play go on past it, which is Failure to Maintain Game State, also a Warning (IPG 2.5, 2.6).",
+      "On this board: Lightning Bolt is in the graveyard and your opponent has lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "120.3a",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: paraphrase of nored"
+  },
+  {
+    "id": "p3-33",
+    "text": "My opponent cast Lightning Bolt without red mana, it resolved, then I drew and cast Ponder. What happens at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for your opponent (Lightning Bolt was cast without red mana: its cost wasn't paid, 601.2h); you let play go on past it, which is Failure to Maintain Game State, also a Warning (IPG 2.5, 2.6).",
+      "On this board: Lightning Bolt is in the graveyard and you have lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "120.3a",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: paraphrase of nored"
+  },
+  {
+    "id": "p3-34",
+    "text": "I cast Lightning Bolt with no red mana and it resolved, then I cracked a fetchland and shuffled my library. Can the judge back up at an RCQ?",
+    "expect": [
+      "No backup: a library has been shuffled since, and a backup can't put back a random order — undoing the fetchland would mean returning cards to a library its owner has shuffled, which the IPG keeps for extreme situations (IPG 1.4). The game goes on as it is.",
+      "On this board: Lightning Bolt is in the graveyard and your opponent has lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: probe shuffle"
+  },
+  {
+    "id": "p3-35",
+    "text": "I cast Lightning Bolt with no red mana; afterwards I cracked a fetch and shuffled. Can we back up to before the Bolt at an RCQ?",
+    "expect": [
+      "No backup: a library has been shuffled since, and a backup can't put back a random order — undoing the fetchland would mean returning cards to a library its owner has shuffled, which the IPG keeps for extreme situations (IPG 1.4). The game goes on as it is.",
+      "On this board: Lightning Bolt is in the graveyard and your opponent has lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: paraphrase of shuffle"
+  },
+  {
+    "id": "p3-36",
+    "text": "My opponent cast Lightning Bolt without a red source and then shuffled with a fetchland. Will the judge rewind it at an RCQ?",
+    "expect": [
+      "No backup: a library has been shuffled since, and a backup can't put back a random order — undoing the fetchland would mean returning cards to a library its owner has shuffled, which the IPG keeps for extreme situations (IPG 1.4). The game goes on as it is.",
+      "On this board: Lightning Bolt is in the graveyard and you have lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 1.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: paraphrase of shuffle"
+  },
+  {
+    "id": "p3-37",
+    "text": "I attacked with a summoning sick Grizzly Bears and dealt 2 damage to my opponent. We noticed in my opponent's end step. What's the fix at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for you: Grizzly Bears attacked while summoning sick (302.6); your opponent, who let the game go on into the next turn, gets a Warning for Failure to Maintain Game State (IPG 2.5, 2.6).",
+      "On this board: your opponent has lost 2 life from the attack, and it stays that way."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 2.6",
+      "510.3",
+      "100.6",
+      "733.1c",
+      "302.6"
+    ],
+    "note": "track policy3: probe sick"
+  },
+  {
+    "id": "p3-38",
+    "text": "My Tarmogoyf attacked the turn I cast it, it was summoning sick, and we noticed on my opponent's turn. What happens at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for you: Tarmogoyf attacked while summoning sick (302.6); your opponent, who let the game go on into the next turn, gets a Warning for Failure to Maintain Game State (IPG 2.5, 2.6)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 2.6",
+      "510.3",
+      "100.6",
+      "733.1c",
+      "302.6"
+    ],
+    "note": "track policy3: paraphrase of sick"
+  },
+  {
+    "id": "p3-39",
+    "text": "I attacked with Goblin Guide the turn I played it and we noticed later in my opponent's end step. Was that illegal?",
+    "expect": [
+      "It isn't a violation: Goblin Guide has haste, so it could attack the turn it came under your control (302.6). The damage stands.",
+      "On this board: your opponent has lost 2 life from the attack, and it stays that way."
+    ],
+    "cite": [
+      "IPG 2.5",
+      "IPG 2.6",
+      "510.3",
+      "100.6",
+      "733.1c",
+      "302.6"
+    ],
+    "note": "track policy3: paraphrase of sick"
+  },
+  {
+    "id": "p3-40",
+    "text": "My opponent cast Lightning Bolt, I cast Counterspell paying 1U, and then my opponent drew a card. What's the ruling at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning: Counterspell was cast for {1}{U}, but it costs {U}{U} (IPG 2.5). Your opponent drew a card since, which means they let the game go on — Failure to Maintain Game State, Warning (IPG 2.6).",
+      "On this board, as played: Lightning Bolt was countered and is in the graveyard; if the judge backs up, it's on the stack again, aimed at you, and resolves for 3 damage unless countered legally."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 1.4",
+      "IPG 2.5",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: probe counter"
+  },
+  {
+    "id": "p3-41",
+    "text": "I Counterspelled their Lightning Bolt tapping an Island and a Forest, and then they drew a card. Penalty at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning: Counterspell was cast for {1}{U}, but it costs {U}{U} (IPG 2.5). Your opponent drew a card since, which means they let the game go on — Failure to Maintain Game State, Warning (IPG 2.6).",
+      "On this board, as played: Lightning Bolt was countered and is in the graveyard; if the judge backs up, it's on the stack again, aimed at you, and resolves for 3 damage unless countered legally."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 1.4",
+      "IPG 2.5",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: paraphrase of counter"
+  },
+  {
+    "id": "p3-42",
+    "text": "I cast Counterspell for 1U on their Bolt and they drew for the turn after. What's the ruling at FNM?",
+    "expect": [
+      "No penalty at Regular REL: caught this quickly, the judge may back up — a random card from your opponent's hand goes back on top of their library (no shuffle), Counterspell goes back to your hand, and Lightning Bolt resolves unless you can pay {U}{U} now (JAR).",
+      "On this board, as played: Lightning Bolt was countered and is in the graveyard; if the judge backs up, it's on the stack again, aimed at you, and resolves for 3 damage unless countered legally."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 1.4",
+      "IPG 2.5",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "601.2h"
+    ],
+    "note": "track policy3: paraphrase of counter"
+  },
+  {
+    "id": "p3-43",
+    "text": "I cast Swords to Plowshares on my opponent's Tarmogoyf and they put it into the graveyard instead of exile. We noticed two turns later. What's the fix at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for both players: your opponent put Tarmogoyf in the graveyard on your instruction, and you let it stand (IPG 2.5).",
+      "On this board: Tarmogoyf is in exile once fixed (Swords to Plowshares gave its controller life equal to its power, 0 here: no card types were in the graveyards). While it sat in the graveyard it was a creature card there, which counted for any other Tarmogoyf."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "406.3"
+    ],
+    "note": "track policy3: probe wrongzone"
+  },
+  {
+    "id": "p3-44",
+    "text": "I Swords'd my opponent's Tarmogoyf and they binned it, it went into the graveyard instead of exile. We noticed two turns later at an RCQ. Fix?",
+    "expect": [
+      "Game Rule Violation, Warning, for both players: your opponent put Tarmogoyf in the graveyard on your instruction, and you let it stand (IPG 2.5).",
+      "On this board: Tarmogoyf is in exile once fixed (Swords to Plowshares gave its controller life equal to its power, 0 here: no card types were in the graveyards). While it sat in the graveyard it was a creature card there, which counted for any other Tarmogoyf."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "406.3"
+    ],
+    "note": "track policy3: paraphrase of wrongzone"
+  },
+  {
+    "id": "p3-45",
+    "text": "At FNM I cast Path to Exile on Tarmogoyf and my opponent put it in their graveyard. What now?",
+    "expect": [
+      "No penalty at Regular REL: Tarmogoyf is moved from the graveyard to exile, where it should be (JAR).",
+      "On this board: Tarmogoyf is in exile once fixed (Path to Exile let your opponent search for a basic land, which stays). While it sat in the graveyard it was a creature card there, which counted for any other Tarmogoyf."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "406.3"
+    ],
+    "note": "track policy3: paraphrase of wrongzone"
+  },
+  {
+    "id": "p3-46",
+    "text": "My opponent controls Sphere of Resistance. I cast Lightning Bolt for just R and my opponent let me. What's the penalty at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for both of you: Lightning Bolt was cast for {R} but costs {1}{R} with Sphere of Resistance out (601.2f), and your opponent controls Sphere, so they share the responsibility (IPG 2.5).",
+      "On this board: Lightning Bolt is in the graveyard and your opponent has lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 2.3",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "604.1"
+    ],
+    "note": "track policy3: probe sphere"
+  },
+  {
+    "id": "p3-47",
+    "text": "Opponent has Sphere of Resistance out and I cast Lightning Bolt for one mana; they didn't say anything. What's the penalty at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, for both of you: Lightning Bolt was cast for {R} but costs {1}{R} with Sphere of Resistance out (601.2f), and your opponent controls Sphere, so they share the responsibility (IPG 2.5).",
+      "On this board: Lightning Bolt is in the graveyard and your opponent has lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 2.3",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "604.1"
+    ],
+    "note": "track policy3: paraphrase of sphere"
+  },
+  {
+    "id": "p3-48",
+    "text": "At FNM my opponent's Sphere of Resistance is out and I paid only R for Lightning Bolt. What happens?",
+    "expect": [
+      "No penalty at Regular REL: caught right away, the judge backs up the spell (it returns to hand, the mana is untapped) and it may be cast again for {1}{R}; later, the game goes on (JAR).",
+      "On this board: Lightning Bolt is in the graveyard and your opponent has lost 3 life; that damage stands."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "IPG 2.3",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "604.1"
+    ],
+    "note": "track policy3: paraphrase of sphere"
+  },
+  {
+    "id": "p3-49",
+    "text": "I control Grizzly Bears with 2 damage on it that should have died, but it stayed on the battlefield. We noticed in the same turn. What's the fix at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning (IPG 2.5): the state-based action is applied as soon as it's noticed (704.5g) — the creature with lethal damage goes to the graveyard now, since its damage is still marked this turn.",
+      "On this board: Grizzly Bears has 2 damage and toughness 2; it is now in the graveyard."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "704.5g",
+      "100.6",
+      "733.1c",
+      "514.2"
+    ],
+    "note": "track policy3: probe lethaldmg"
+  },
+  {
+    "id": "p3-50",
+    "text": "My Grizzly Bears took lethal damage and never went to the graveyard; we noticed the next turn. What happens at an RCQ?",
+    "expect": [
+      "Game Rule Violation, Warning, and Failure to Maintain Game State for the other player (IPG 2.5, 2.6): the creature should have died. But its damage was removed in the cleanup step (514.2), so there's nothing left to fix — it stays on the battlefield and the game goes on (IPG 2.5)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "704.5g",
+      "100.6",
+      "733.1c",
+      "514.2"
+    ],
+    "note": "track policy3: paraphrase of lethaldmg"
+  },
+  {
+    "id": "p3-51",
+    "text": "My Grizzly Bears with lethal damage marked stayed on the battlefield; we caught it right away at FNM. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning (IPG 2.5): the state-based action is applied as soon as it's noticed (704.5g) — the creature with lethal damage goes to the graveyard now, since its damage is still marked this turn.",
+      "On this board: Grizzly Bears has 2 damage and toughness 2; it is now in the graveyard."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.5",
+      "704.5g",
+      "100.6",
+      "733.1c",
+      "514.2"
+    ],
+    "note": "track policy3: paraphrase of lethaldmg"
+  },
+  {
+    "id": "p3-52",
+    "text": "I cast Brainstorm, drew 4 cards and put 2 back. What's the fix at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning: Brainstorm drew 4 instead of 3, like the IPG's own example of Ancestral Recall drawing four (IPG 2.3).",
+      "On this board: Brainstorm has resolved — 3 cards drawn and 2 put back on top of the library."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe bs4"
+  },
+  {
+    "id": "p3-53",
+    "text": "Brainstormed, picked up four instead of three, and already put two back on top. RCQ ruling?",
+    "expect": [
+      "Hidden Card Error, Warning: Brainstorm drew 4 instead of 3, like the IPG's own example of Ancestral Recall drawing four (IPG 2.3).",
+      "On this board: Brainstorm has resolved — 3 cards drawn and 2 put back on top of the library."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of bs4"
+  },
+  {
+    "id": "p3-54",
+    "text": "My opponent cast Brainstorm and drew four, then put two back. What happens at FNM?",
+    "expect": [
+      "At Regular REL (FNM, prereleases, a Commander night) there's no penalty: that many cards are taken at random from the hand and put on top of the library, without shuffling (JAR). Then the two cards Brainstorm puts back go on top.",
+      "On this board: Brainstorm has resolved — 3 cards drawn and 2 put back on top of the library."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of bs4"
+  },
+  {
+    "id": "p3-55",
+    "text": "I cast Ponder and revealed the top 3 cards to my opponent by mistake. What happens at an RCQ?",
+    "expect": [
+      "No infraction: you showed the top three cards to your opponent by accident, but no card went into a set it shouldn't have and nobody saw cards they took into a hidden set — it isn't Looking at Extra Cards (that's a player seeing cards they're not entitled to) or a Hidden Card Error (IPG 2.2, 2.3)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.2",
+      "IPG 2.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe ponderreveal"
+  },
+  {
+    "id": "p3-56",
+    "text": "While resolving Ponder I accidentally flipped the top three cards face up so my opponent saw them. Penalty at an RCQ?",
+    "expect": [
+      "No infraction: you showed the top three cards to your opponent by accident, but no card went into a set it shouldn't have and nobody saw cards they took into a hidden set — it isn't Looking at Extra Cards (that's a player seeing cards they're not entitled to) or a Hidden Card Error (IPG 2.2, 2.3)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.2",
+      "IPG 2.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of ponderreveal"
+  },
+  {
+    "id": "p3-57",
+    "text": "My opponent cast Ponder and showed me the top 3 by mistake. Is that an infraction?",
+    "expect": [
+      "No infraction: your opponent showed the top three cards to you by accident, but no card went into a set it shouldn't have and nobody saw cards they took into a hidden set — it isn't Looking at Extra Cards (that's a player seeing cards they're not entitled to) or a Hidden Card Error (IPG 2.2, 2.3)."
+    ],
+    "cite": [
+      "IPG 2.2",
+      "IPG 2.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of ponderreveal"
+  },
+  {
+    "id": "p3-58",
+    "text": "I cast Collected Company and put a Lightning Bolt from the top six into my hand. What's the fix at an RCQ?",
+    "expect": [
+      "If your opponent saw which card it was (it was revealed or named as it went to the hand): Game Rule Violation, Warning — everyone knows the card, so Lightning Bolt goes from the hand to the bottom of the library, where Collected Company sends the rest (IPG 2.5)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "IPG 2.5",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe coco"
+  },
+  {
+    "id": "p3-59",
+    "text": "I resolved Collected Company and took an instant into my hand instead of putting it on the bottom. What's the fix at an RCQ?",
+    "expect": [
+      "If your opponent saw which card it was (it was revealed or named as it went to the hand): Game Rule Violation, Warning — everyone knows the card, so Lightning Bolt goes from the hand to the bottom of the library, where Collected Company sends the rest (IPG 2.5)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "IPG 2.5",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of coco"
+  },
+  {
+    "id": "p3-60",
+    "text": "My opponent cast CoCo and put a non-creature card in their hand. What happens at an RCQ?",
+    "expect": [
+      "If you saw which card it was (it was revealed or named as it went to the hand): Game Rule Violation, Warning — everyone knows the card, so Lightning Bolt goes from the hand to the bottom of the library, where Collected Company sends the rest (IPG 2.5)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "IPG 2.5",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of coco"
+  },
+  {
+    "id": "p3-61",
+    "text": "I kept 8 cards after my London mulligan instead of putting one on the bottom and we noticed on turn 2. What's the fix at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning: the game had begun, so the extra card from the mulligan is handled as excess cards, not a Mulligan Procedure Error (IPG 2.4, 2.3)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.4",
+      "IPG 2.3",
+      "100.6",
+      "733.1c",
+      "103.5"
+    ],
+    "note": "track policy3: probe mull8"
+  },
+  {
+    "id": "p3-62",
+    "text": "After mulliganing to 7 I forgot to put a card on the bottom and kept 8 cards; we noticed after my first draw. RCQ ruling?",
+    "expect": [
+      "Hidden Card Error, Warning: the game had begun, so the extra card from the mulligan is handled as excess cards, not a Mulligan Procedure Error (IPG 2.4, 2.3)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.4",
+      "IPG 2.3",
+      "100.6",
+      "733.1c",
+      "103.5"
+    ],
+    "note": "track policy3: paraphrase of mull8"
+  },
+  {
+    "id": "p3-63",
+    "text": "My opponent kept 8 cards after a mulligan, forgot to bottom one, and we noticed before the game started. What happens at an RCQ?",
+    "expect": [
+      "Mulligan Procedure Error, Warning: the game hasn't begun, so your opponent takes an additional mulligan (IPG 2.4)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.4",
+      "IPG 2.3",
+      "100.6",
+      "733.1c",
+      "103.5"
+    ],
+    "note": "track policy3: paraphrase of mull8"
+  },
+  {
+    "id": "p3-64",
+    "text": "My opponent cast Thoughtseize and saw my hand, then I noticed I had drawn an extra card. What's the fix at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning (IPG 2.3): you drew an extra card before Thoughtseize.",
+      "On this board: Thoughtseize has resolved — you discarded a nonland card your opponent chose, and your opponent has lost 2 life."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "701.9b"
+    ],
+    "note": "track policy3: probe tseize"
+  },
+  {
+    "id": "p3-65",
+    "text": "I drew an extra card, then my opponent Thoughtseized me and saw my hand. Now we noticed. What's the fix at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning (IPG 2.3): you drew an extra card before Thoughtseize.",
+      "On this board: Thoughtseize has resolved — you discarded a nonland card your opponent chose, and your opponent has lost 2 life."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "701.9b"
+    ],
+    "note": "track policy3: paraphrase of tseize"
+  },
+  {
+    "id": "p3-66",
+    "text": "My opponent drew an extra card and then I cast Thoughtseize on them and saw their hand. What happens at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning (IPG 2.3): your opponent drew an extra card before Thoughtseize.",
+      "On this board: Thoughtseize has resolved — your opponent discarded a nonland card you chose, and you have lost 2 life."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "701.9b"
+    ],
+    "note": "track policy3: paraphrase of tseize"
+  },
+  {
+    "id": "p3-67",
+    "text": "I control two Dark Confidant and revealed both cards at my upkeep, but put one into my hand without revealing it. What happens at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning: with 2 Dark Confidants there were 2 triggers; both resolved, one without its reveal (IPG 2.3, its example C)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "100.6",
+      "733.1c",
+      "603.2",
+      "603.3b"
+    ],
+    "note": "track policy3: probe bob2"
+  },
+  {
+    "id": "p3-68",
+    "text": "I have 2 Bobs; both triggered and I put one card into my hand without revealing it. RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning: with 2 Dark Confidants there were 2 triggers; both resolved, one without its reveal (IPG 2.3, its example C)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "100.6",
+      "733.1c",
+      "603.2",
+      "603.3b"
+    ],
+    "note": "track policy3: paraphrase of bob2"
+  },
+  {
+    "id": "p3-69",
+    "text": "My opponent controls two Dark Confidant and forgot to reveal one of the cards. What's the fix at an RCQ?",
+    "expect": [
+      "Hidden Card Error, Warning: with 2 Dark Confidants there were 2 triggers; both resolved, one without its reveal (IPG 2.3, its example C)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.3",
+      "100.6",
+      "733.1c",
+      "603.2",
+      "603.3b"
+    ],
+    "note": "track policy3: paraphrase of bob2"
+  },
+  {
+    "id": "p3-70",
+    "text": "My opponent controls Tarmogoyf and there's a creature and an instant in the graveyards. I asked what its power is. Do they have to tell me?",
+    "expect": [
+      "Your opponent doesn't have to work it out for you: Tarmogoyf's power is a characteristic of an object in a public zone, which is derived information — you're entitled to it, and can count the graveyards yourself, but they needn't assist (MTR 4.1).",
+      "On this board: Tarmogoyf is 2/3 — the graveyards hold 2 card types (a creature and an instant)."
+    ],
+    "cite": [
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe goyf"
+  },
+  {
+    "id": "p3-71",
+    "text": "My opponent won't tell me how big their Tarmogoyf is. Do they have to at an RCQ?",
+    "expect": [
+      "Your opponent doesn't have to work it out for you: Tarmogoyf's power is a characteristic of an object in a public zone, which is derived information — you're entitled to it, and can count the graveyards yourself, but they needn't assist (MTR 4.1).",
+      "On this board: Tarmogoyf is 2/3 — the graveyards hold 2 card types (a creature and an instant)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of goyf"
+  },
+  {
+    "id": "p3-72",
+    "text": "At FNM, does my opponent have to tell me their Goyf's power?",
+    "expect": [
+      "Your opponent doesn't have to work it out for you: Tarmogoyf's power is a characteristic of an object in a public zone, which is derived information — you're entitled to it, and can count the graveyards yourself, but they needn't assist (MTR 4.1).",
+      "On this board: Tarmogoyf is 2/3 — the graveyards hold 2 card types (a creature and an instant)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of goyf"
+  },
+  {
+    "id": "p3-73",
+    "text": "My opponent controls Delver of Secrets. Can I ask if it's flipped, and do they have to answer?",
+    "expect": [
+      "They have to answer: whether Delver of Secrets has transformed is free information — its name and state are visible — and specific questions about free information must be answered completely and honestly, at every REL (MTR 4.1).",
+      "On this board it is Delver of Secrets, its front face (a 1/1); it transforms only when its upkeep trigger reveals an instant or sorcery (712.1)."
+    ],
+    "cite": [
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe delver"
+  },
+  {
+    "id": "p3-74",
+    "text": "Is my opponent required to tell me whether their Delver is flipped?",
+    "expect": [
+      "They have to answer: whether Delver of Secrets has transformed is free information — its name and state are visible — and specific questions about free information must be answered completely and honestly, at every REL (MTR 4.1).",
+      "On this board it is Delver of Secrets, its front face (a 1/1); it transforms only when its upkeep trigger reveals an instant or sorcery (712.1)."
+    ],
+    "cite": [
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of delver"
+  },
+  {
+    "id": "p3-75",
+    "text": "Can my opponent refuse to tell me which side their Delver is on at an RCQ?",
+    "expect": [
+      "They have to answer: whether Delver of Secrets has transformed is free information — its name and state are visible — and specific questions about free information must be answered completely and honestly, at every REL (MTR 4.1).",
+      "On this board it is Delver of Secrets, its front face (a 1/1); it transforms only when its upkeep trigger reveals an instant or sorcery (712.1)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of delver"
+  },
+  {
+    "id": "p3-76",
+    "text": "My opponent controls Rhystic Study. I cast Lightning Bolt and they didn't ask me to pay. Did they miss the trigger?",
+    "expect": [
+      "Rhystic Study's trigger is your opponent's: they must acknowledge it and ask whether you pay {1}; you don't have to offer the payment or remind them (IPG 2.1, MTR 4.2).",
+      "On this board: Lightning Bolt resolved and your opponent has lost 3 life; the card the play-through shows them drawing comes only from a trigger they remembered."
+    ],
+    "cite": [
+      "IPG 2.1",
+      "MTR 4.2",
+      "117.3b",
+      "120.3a",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe rhystic"
+  },
+  {
+    "id": "p3-77",
+    "text": "My opponent has Rhystic Study and didn't ask if I'd pay when I cast my spell. Do I have to pay anyway?",
+    "expect": [
+      "Rhystic Study's trigger is your opponent's: they must acknowledge it and ask whether you pay {1}; you don't have to offer the payment or remind them (IPG 2.1, MTR 4.2).",
+      "On this board: Lightning Bolt resolved and your opponent has lost 3 life; the card the play-through shows them drawing comes only from a trigger they remembered."
+    ],
+    "cite": [
+      "IPG 2.1",
+      "MTR 4.2",
+      "117.3b",
+      "120.3a",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of rhystic"
+  },
+  {
+    "id": "p3-78",
+    "text": "At FNM my opponent's Rhystic Study triggered but they never asked me to pay. Do they draw?",
+    "expect": [
+      "Rhystic Study's trigger is your opponent's: they must acknowledge it and ask whether you pay {1}; you don't have to offer the payment or remind them (IPG 2.1, MTR 4.2).",
+      "On this board: Lightning Bolt resolved and your opponent has lost 3 life; the card the play-through shows them drawing comes only from a trigger they remembered."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "IPG 2.1",
+      "MTR 4.2",
+      "117.3b",
+      "120.3a",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of rhystic"
+  },
+  {
+    "id": "p3-79",
+    "text": "My opponent controls Settle the Wreckage with 4 untapped lands. I said go to combat. Can they cast Settle the Wreckage in my main phase?",
+    "expect": [
+      "\"Go to combat\" is a shortcut: if your opponent acts on it, they're acting at the beginning of combat, not in your main phase (MTR 4.2). They can cast Settle the Wreckage then, but no creature is attacking yet, so it would exile nothing."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "100.6",
+      "733.1c",
+      "506.1",
+      "508.1"
+    ],
+    "note": "track policy3: probe settle"
+  },
+  {
+    "id": "p3-80",
+    "text": "I said go to combat and my opponent wants to Settle the Wreckage right away. Does that exile my attackers?",
+    "expect": [
+      "\"Go to combat\" is a shortcut: if your opponent acts on it, they're acting at the beginning of combat, not in your main phase (MTR 4.2). They can cast Settle the Wreckage then, but no creature is attacking yet, so it would exile nothing."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "100.6",
+      "733.1c",
+      "506.1",
+      "508.1"
+    ],
+    "note": "track policy3: paraphrase of settle"
+  },
+  {
+    "id": "p3-81",
+    "text": "My opponent has Settle the Wreckage mana up. When I say go to combat, when do they get to cast it?",
+    "expect": [
+      "\"Go to combat\" is a shortcut: if your opponent acts on it, they're acting at the beginning of combat, not in your main phase (MTR 4.2). They can cast Settle the Wreckage then, but no creature is attacking yet, so it would exile nothing."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "100.6",
+      "733.1c",
+      "506.1",
+      "508.1"
+    ],
+    "note": "track policy3: paraphrase of settle"
+  },
+  {
+    "id": "p3-82",
+    "text": "I said attack with everything and my opponent accepted, then I wanted to cast a spell in response to the shortcut. Can I?",
+    "expect": [
+      "Not after it's been accepted and carried out: you could have interrupted your own shortcut by saying where you wanted to act (say, at the beginning of combat) before attacking, but once \"attack with everything\" was accepted, attackers are declared and the game is in the declare attackers step (MTR 4.2, 4.8)."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "MTR 4.8",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe shortresp"
+  },
+  {
+    "id": "p3-83",
+    "text": "I said attack with everything, my opponent said ok, and now I want to cast a spell before attacks. Can I respond to my own shortcut?",
+    "expect": [
+      "Not after it's been accepted and carried out: you could have interrupted your own shortcut by saying where you wanted to act (say, at the beginning of combat) before attacking, but once \"attack with everything\" was accepted, attackers are declared and the game is in the declare attackers step (MTR 4.2, 4.8)."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "MTR 4.8",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of shortresp"
+  },
+  {
+    "id": "p3-84",
+    "text": "My opponent accepted my shortcut to attack with all, can I still go back and cast something in response?",
+    "expect": [
+      "Not after it's been accepted and carried out: you could have interrupted your own shortcut by saying where you wanted to act (say, at the beginning of combat) before attacking, but once \"attack with everything\" was accepted, attackers are declared and the game is in the declare attackers step (MTR 4.2, 4.8)."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "MTR 4.8",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of shortresp"
+  },
+  {
+    "id": "p3-85",
+    "text": "I cast Lightning Bolt and my opponent said ok, then I played a land, and now they want to respond to the Bolt. Can they?",
+    "expect": [
+      "No: \"ok\" passed priority, so Lightning Bolt resolved, and the land played afterwards moved the game on. Your opponent can't go back to respond to the Bolt now; they'd be reversing a decision after gaining information — they've seen what you did next (MTR 4.2, 4.8).",
+      "On this board: Lightning Bolt resolved and your opponent has lost 3 life; your Mountain is on the battlefield."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "MTR 4.8",
+      "305.2",
+      "110.5b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe okresp"
+  },
+  {
+    "id": "p3-86",
+    "text": "My opponent said ok to my Lightning Bolt, I played a land, and then they wanted to respond to it. Is that allowed?",
+    "expect": [
+      "No: \"ok\" passed priority, so Lightning Bolt resolved, and the land played afterwards moved the game on. Your opponent can't go back to respond to the Bolt now; they'd be reversing a decision after gaining information — they've seen what you did next (MTR 4.2, 4.8).",
+      "On this board: Lightning Bolt resolved and your opponent has lost 3 life; your Mountain is on the battlefield."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "MTR 4.8",
+      "305.2",
+      "110.5b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of okresp"
+  },
+  {
+    "id": "p3-87",
+    "text": "I cast Lightning Bolt, my opponent said resolves, I cast another spell, then they wanted to respond to the Bolt. Can they?",
+    "expect": [
+      "No: \"ok\" passed priority, so Lightning Bolt resolved, and the action taken afterwards moved the game on. Your opponent can't go back to respond to the Bolt now; they'd be reversing a decision after gaining information — they've seen what you did next (MTR 4.2, 4.8).",
+      "On this board: Lightning Bolt resolved and your opponent has lost 3 life."
+    ],
+    "cite": [
+      "MTR 4.2",
+      "MTR 4.8",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of okresp"
+  },
+  {
+    "id": "p3-88",
+    "text": "I cast Brainstorm and drew three, then said I'd cracked my fetchland in response. Is that allowed at an RCQ?",
+    "expect": [
+      "Not allowed: having drawn Brainstorm's three cards, you can't go back and crack the fetchland \"in response\" — that's using out-of-order sequencing to retroactively take an action missed at the right time, after gaining information (MTR 4.3). Cracking it after Brainstorm has fully resolved, to shuffle away the two cards put back, is fine.",
+      "On this board: Brainstorm has resolved — 3 cards drawn and 2 put back on top of the library."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe fetchbs"
+  },
+  {
+    "id": "p3-89",
+    "text": "Is it allowed to crack a fetchland after Brainstorm resolved to shuffle away the two cards I put back?",
+    "expect": [
+      "Fine, if it's done before Brainstorm resolves: cracking the fetchland with Brainstorm on the stack is ordinary play, and so is cracking it after Brainstorm has resolved, to shuffle the two cards put back. What isn't allowed is drawing first and then saying it was \"in response\" (MTR 4.3).",
+      "On this board: Brainstorm has resolved — 3 cards drawn and 2 put back on top of the library."
+    ],
+    "cite": [
+      "MTR 4.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of fetchbs"
+  },
+  {
+    "id": "p3-90",
+    "text": "My opponent cast Brainstorm, drew, and then cracked a fetch out of order claiming it was in response. Is that legal?",
+    "expect": [
+      "Not allowed: having drawn Brainstorm's three cards, your opponent can't go back and crack the fetchland \"in response\" — that's using out-of-order sequencing to retroactively take an action missed at the right time, after gaining information (MTR 4.3). Cracking it after Brainstorm has fully resolved, to shuffle away the two cards put back, is fine.",
+      "On this board: Brainstorm has resolved — 3 cards drawn and 2 put back on top of the library."
+    ],
+    "cite": [
+      "MTR 4.3",
+      "608.2n",
+      "117.3b",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of fetchbs"
+  },
+  {
+    "id": "p3-91",
+    "text": "I told my opponent I was at 12 life but I was at 10, and they attacked with everything thinking it was lethal-proof. What's the penalty at an RCQ?",
+    "expect": [
+      "Communication Policy Violation, Warning: your life total is status information, you announced 12 when it was 10, and your opponent acted on it by attacking (MTR 4.1, IPG 3.7).",
+      "On this board: you are at 10 life."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "IPG 3.7",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe lifelie"
+  },
+  {
+    "id": "p3-92",
+    "text": "I said I was at 12 life but I was actually at 10, and my opponent attacked based on that. What's the penalty at an RCQ?",
+    "expect": [
+      "Communication Policy Violation, Warning: your life total is status information, you announced 12 when it was 10, and your opponent acted on it by attacking (MTR 4.1, IPG 3.7).",
+      "On this board: you are at 10 life."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "IPG 3.7",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of lifelie"
+  },
+  {
+    "id": "p3-93",
+    "text": "At FNM I told my opponent I was at 12 but I was really at 10, and they attacked. What happens?",
+    "expect": [
+      "No penalty at Regular REL for an honest mistake: the life total is corrected to 10 and the judge may back up the attack if that's easy. Lying about it to gain an advantage is a Serious Problem (JAR)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "IPG 3.7",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of lifelie"
+  },
+  {
+    "id": "p3-94",
+    "text": "I tapped two Islands for mana and then decided not to cast anything. Can I take it back?",
+    "expect": [
+      "Only with a judge's say-so: tapping lands for mana has been communicated, but if you have gained no information since and nothing else has happened, a judge may allow the lands to be untapped (MTR 4.8)."
+    ],
+    "cite": [
+      "MTR 4.8",
+      "100.6",
+      "733.1c",
+      "500.4"
+    ],
+    "note": "track policy3: probe manaback"
+  },
+  {
+    "id": "p3-95",
+    "text": "I tapped my lands for mana, then changed my mind and didn't cast anything. Can I untap them?",
+    "expect": [
+      "Only with a judge's say-so: tapping lands for mana has been communicated, but if you have gained no information since and nothing else has happened, a judge may allow the lands to be untapped (MTR 4.8)."
+    ],
+    "cite": [
+      "MTR 4.8",
+      "100.6",
+      "733.1c",
+      "500.4"
+    ],
+    "note": "track policy3: paraphrase of manaback"
+  },
+  {
+    "id": "p3-96",
+    "text": "My opponent tapped two Islands and then decided not to cast anything. Can they take it back?",
+    "expect": [
+      "Only with a judge's say-so: tapping lands for mana has been communicated, but if your opponent has gained no information since and nothing else has happened, a judge may allow the lands to be untapped (MTR 4.8)."
+    ],
+    "cite": [
+      "MTR 4.8",
+      "100.6",
+      "733.1c",
+      "500.4"
+    ],
+    "note": "track policy3: paraphrase of manaback"
+  },
+  {
+    "id": "p3-97",
+    "text": "I have 4 cards in hand and my opponent asked how many cards I have. Do I have to answer at an RCQ?",
+    "expect": [
+      "No, not at Competitive REL: the number of cards in your hand is derived information — your opponent may count them, and you don't have to do it for them (MTR 4.1)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe handcount"
+  },
+  {
+    "id": "p3-98",
+    "text": "My opponent asked how many cards are in my hand; I have 4 cards in hand. Do I have to tell them at FNM?",
+    "expect": [
+      "Yes at Regular REL: derived information is free there, so you must answer completely and honestly — 4 cards (MTR 4.1)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of handcount"
+  },
+  {
+    "id": "p3-99",
+    "text": "I have 4 cards in hand. Must I tell my opponent how many cards I have at a PTQ?",
+    "expect": [
+      "No, not at Competitive REL: the number of cards in your hand is derived information — your opponent may count them, and you don't have to do it for them (MTR 4.1)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of handcount"
+  },
+  {
+    "id": "p3-100",
+    "text": "I control Kiki-Jiki, Mirror Breaker and Pestermite. I want to do the loop and make a million hasty Pestermites. How does that work at an RCQ?",
+    "expect": [
+      "Name a number — \"a million\" is fine — and say where the game ends up: a million hasty Pestermite tokens, Kiki-Jiki untapped. Your opponent then agrees or names a lower number after which they'll act (say, to kill Kiki-Jiki in response to an activation), and the game advances to the lowest number (MTR 4.4).",
+      "On this board: each Pestermite token's enters ability untaps Kiki-Jiki; the tokens have haste and are exiled at the beginning of the next end step."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.4",
+      "IPG 3.3",
+      "100.6",
+      "733.1c",
+      "733.2a"
+    ],
+    "note": "track policy3: probe kiki"
+  },
+  {
+    "id": "p3-101",
+    "text": "I have Kiki-Jiki and Pestermite on the battlefield and want to go infinite. What do I need to say to my opponent?",
+    "expect": [
+      "Name a number — \"a million\" is fine — and say where the game ends up: a million hasty Pestermite tokens, Kiki-Jiki untapped. Your opponent then agrees or names a lower number after which they'll act (say, to kill Kiki-Jiki in response to an activation), and the game advances to the lowest number (MTR 4.4).",
+      "On this board: each Pestermite token's enters ability untaps Kiki-Jiki; the tokens have haste and are exiled at the beginning of the next end step."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "IPG 3.3",
+      "100.6",
+      "733.1c",
+      "733.2a"
+    ],
+    "note": "track policy3: paraphrase of kiki"
+  },
+  {
+    "id": "p3-102",
+    "text": "My opponent has Kiki-Jiki and Pestermite and just said infinite. Is that enough at an RCQ?",
+    "expect": [
+      "\"Infinite\" isn't enough: your opponent must name an exact number of iterations and the resulting game state (\"a million hasty Pestermite tokens\"); continuing a loop without that is Slow Play (MTR 4.4, IPG 3.3).",
+      "On this board: each Pestermite token's enters ability untaps Kiki-Jiki; the tokens have haste and are exiled at the beginning of the next end step."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.4",
+      "IPG 3.3",
+      "100.6",
+      "733.1c",
+      "733.2a"
+    ],
+    "note": "track policy3: paraphrase of kiki"
+  },
+  {
+    "id": "p3-103",
+    "text": "I control Walking Ballista and Heliod, Sun-Crowned and my opponent has Stifle in hand. I start the loop. When can my opponent stop it?",
+    "expect": [
+      "You name the number of iterations and where it ends (e.g. \"until you're dead\"); your opponent, in turn, agrees or names a lower number after which they'll act — with Stifle in hand they can say \"after 3 iterations, I Stifle the Heliod trigger\" (MTR 4.4).",
+      "On this board: Walking Ballista has 2 +1/+1 counters; the loop needs lifelink on it from Heliod's {1}{W} ability first."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "100.6",
+      "733.1c",
+      "702.15b",
+      "603.2"
+    ],
+    "note": "track policy3: probe ballista"
+  },
+  {
+    "id": "p3-104",
+    "text": "I control Walking Ballista and Heliod and want to loop damage. My opponent has Stifle. How does the shortcut work?",
+    "expect": [
+      "You name the number of iterations and where it ends (e.g. \"until you're dead\"); your opponent, in turn, agrees or names a lower number after which they'll act — with Stifle in hand they can say \"after 3 iterations, I Stifle the Heliod trigger\" (MTR 4.4).",
+      "On this board: Walking Ballista has 2 +1/+1 counters; the loop needs lifelink on it from Heliod's {1}{W} ability first."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "100.6",
+      "733.1c",
+      "702.15b",
+      "603.2"
+    ],
+    "note": "track policy3: paraphrase of ballista"
+  },
+  {
+    "id": "p3-105",
+    "text": "I'm looping Walking Ballista with Heliod, Sun-Crowned. Can my opponent stop it partway with Stifle?",
+    "expect": [
+      "You name the number of iterations and where it ends (e.g. \"until you're dead\"); your opponent, in turn, agrees or names a lower number after which they'll act — with Stifle in hand they can say \"after 3 iterations, I Stifle the Heliod trigger\" (MTR 4.4).",
+      "On this board: Walking Ballista has 2 +1/+1 counters; the loop needs lifelink on it from Heliod's {1}{W} ability first."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "100.6",
+      "733.1c",
+      "702.15b",
+      "603.2"
+    ],
+    "note": "track policy3: paraphrase of ballista"
+  },
+  {
+    "id": "p3-106",
+    "text": "I want to do the Four Horsemen loop to mill my deck. Can I shortcut it?",
+    "expect": [
+      "No: a loop that relies on shuffling (Four Horsemen mills and shuffles until the right cards line up) is non-deterministic, and non-deterministic loops can't be shortcut — you have to perform it, iteration by iteration (MTR 4.4)."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe horsemen"
+  },
+  {
+    "id": "p3-107",
+    "text": "Can I shortcut a loop that involves shuffling my library over and over, like Four Horsemen?",
+    "expect": [
+      "No: a loop that relies on shuffling (Four Horsemen mills and shuffles until the right cards line up) is non-deterministic, and non-deterministic loops can't be shortcut — you have to perform it, iteration by iteration (MTR 4.4)."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of horsemen"
+  },
+  {
+    "id": "p3-108",
+    "text": "My opponent is doing the Horsemen combo and wants to shortcut it. Is that allowed?",
+    "expect": [
+      "No: a loop that relies on shuffling (Four Horsemen mills and shuffles until the right cards line up) is non-deterministic, and non-deterministic loops can't be shortcut — you have to perform it, iteration by iteration (MTR 4.4)."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of horsemen"
+  },
+  {
+    "id": "p3-109",
+    "text": "My opponent has been thinking for three minutes on a complex board in extra turns. What's the penalty at an RCQ?",
+    "expect": [
+      "Slow Play, Warning: minutes over one decision is longer than reasonably required, however complex the board (MTR 5.5, IPG 3.3). A \"please play faster\" is often all a judge does first."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 5.5",
+      "IPG 3.3",
+      "IPG 4.7",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe think"
+  },
+  {
+    "id": "p3-110",
+    "text": "My opponent took five minutes to make one decision at an RCQ. Is that slow play?",
+    "expect": [
+      "Slow Play, Warning: minutes over one decision is longer than reasonably required, however complex the board (MTR 5.5, IPG 3.3). A \"please play faster\" is often all a judge does first."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 5.5",
+      "IPG 3.3",
+      "IPG 4.7",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of think"
+  },
+  {
+    "id": "p3-111",
+    "text": "At FNM my opponent keeps thinking for several minutes on each play. What can the judge do?",
+    "expect": [
+      "At Regular REL there's no Warning: the judge asks them to play faster, and a player who keeps doing it can be warned that the next time is a Game Loss (JAR)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 5.5",
+      "IPG 3.3",
+      "IPG 4.7",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of think"
+  },
+  {
+    "id": "p3-112",
+    "text": "Time was called and on extra turn 3 I declared the Kiki-Jiki and Pestermite loop. What happens?",
+    "expect": [
+      "Declaring the loop in extra turns is fine: name a number, your opponent agrees or names a lower one to act at, and the game jumps to the result — there's no clock to run down, the turn count is what's left (MTR 4.4, 2.4).",
+      "On this board: Kiki-Jiki's tokens have haste and are exiled at the beginning of the next end step, so they have to win this turn."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "IPG 3.3",
+      "MTR 2.4",
+      "100.6",
+      "733.1c",
+      "733.2a"
+    ],
+    "note": "track policy3: probe loopextra"
+  },
+  {
+    "id": "p3-113",
+    "text": "We're in extra turns and I have Kiki-Jiki and Pestermite. Can I still do the loop?",
+    "expect": [
+      "Declaring the loop in extra turns is fine: name a number, your opponent agrees or names a lower one to act at, and the game jumps to the result — there's no clock to run down, the turn count is what's left (MTR 4.4, 2.4).",
+      "On this board: Kiki-Jiki's tokens have haste and are exiled at the beginning of the next end step, so they have to win this turn."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "IPG 3.3",
+      "MTR 2.4",
+      "100.6",
+      "733.1c",
+      "733.2a"
+    ],
+    "note": "track policy3: paraphrase of loopextra"
+  },
+  {
+    "id": "p3-114",
+    "text": "Time was called and my opponent wants to loop Kiki-Jiki with Pestermite on the last turn. What happens?",
+    "expect": [
+      "Declaring the loop in extra turns is fine: name a number, your opponent agrees or names a lower one to act at, and the game jumps to the result — there's no clock to run down, the turn count is what's left (MTR 4.4, 2.4).",
+      "On this board: Kiki-Jiki's tokens have haste and are exiled at the beginning of the next end step, so they have to win this turn."
+    ],
+    "cite": [
+      "MTR 4.4",
+      "IPG 3.3",
+      "MTR 2.4",
+      "100.6",
+      "733.1c",
+      "733.2a"
+    ],
+    "note": "track policy3: paraphrase of loopextra"
+  },
+  {
+    "id": "p3-115",
+    "text": "Time was called during my opponent's turn and I cast Pact of Negation. Do I have to pay the trigger on my upkeep in extra turns?",
+    "expect": [
+      "Yes: extra turns are ordinary turns, so at the beginning of your next upkeep (the first additional turn, if time was called in your opponent's turn) the Pact trigger happens and you pay {3}{U}{U} or lose the game (MTR 2.4, 603.7c).",
+      "On this board: Pact of Negation has countered Lightning Bolt, and the debt is pending for your next upkeep."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: probe pacttime"
+  },
+  {
+    "id": "p3-116",
+    "text": "I cast Pact of Negation in my opponent's turn right after time was called. Does the trigger still happen in extra turns?",
+    "expect": [
+      "Yes: extra turns are ordinary turns, so at the beginning of your next upkeep (the first additional turn, if time was called in your opponent's turn) the Pact trigger happens and you pay {3}{U}{U} or lose the game (MTR 2.4, 603.7c).",
+      "On this board: Pact of Negation has countered Lightning Bolt, and the debt is pending for your next upkeep."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: paraphrase of pacttime"
+  },
+  {
+    "id": "p3-117",
+    "text": "If I Pact on turn 0 of extra turns, do I still need to pay on my upkeep?",
+    "expect": [
+      "Yes: extra turns are ordinary turns, so at the beginning of your next upkeep (the first additional turn, if time was called in your opponent's turn) the Pact trigger happens and you pay {3}{U}{U} or lose the game (MTR 2.4, 603.7c).",
+      "On this board: Pact of Negation has countered Lightning Bolt, and the debt is pending for your next upkeep."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "603.7c"
+    ],
+    "note": "track policy3: paraphrase of pacttime"
+  },
+  {
+    "id": "p3-118",
+    "text": "It's turn 5 of extra turns and Lightning Bolt for lethal is on the stack when the turn ends. Who wins?",
+    "expect": [
+      "Whoever cast the Bolt wins, if it's lethal: a turn can't end with a spell on the stack (500.2), so Lightning Bolt resolves first; the game is a draw only if it's still undecided once the fifth additional turn is over (MTR 2.4).",
+      "On this board: Lightning Bolt resolves, your opponent goes to 0 life and loses the game (704.5a) — before the turn ends."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "500.2"
+    ],
+    "note": "track policy3: probe lethalstack"
+  },
+  {
+    "id": "p3-119",
+    "text": "It's the last extra turn and I have a lethal Lightning Bolt on the stack as the turn would end. Is it a draw?",
+    "expect": [
+      "Whoever cast the Bolt wins, if it's lethal: a turn can't end with a spell on the stack (500.2), so Lightning Bolt resolves first; the game is a draw only if it's still undecided once the fifth additional turn is over (MTR 2.4).",
+      "On this board: Lightning Bolt resolves, your opponent goes to 0 life and loses the game (704.5a) — before the turn ends."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "500.2"
+    ],
+    "note": "track policy3: paraphrase of lethalstack"
+  },
+  {
+    "id": "p3-120",
+    "text": "Turn 5 of additional turns, my Bolt is on the stack for lethal. Does the game end in a draw?",
+    "expect": [
+      "Whoever cast the Bolt wins, if it's lethal: a turn can't end with a spell on the stack (500.2), so Lightning Bolt resolves first; the game is a draw only if it's still undecided once the fifth additional turn is over (MTR 2.4).",
+      "On this board: Lightning Bolt resolves, your opponent goes to 0 life and loses the game (704.5a) — before the turn ends."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "117.3b",
+      "100.6",
+      "733.1c",
+      "500.2"
+    ],
+    "note": "track policy3: paraphrase of lethalstack"
+  },
+  {
+    "id": "p3-121",
+    "text": "My opponent conceded during extra turns. How is it reported?",
+    "expect": [
+      "A concession in extra turns is allowed: the conceding player loses that game, and the match is reported with that game as a win for the other player — 2-1 if the conceding player had won a game (MTR 2.5)."
+    ],
+    "cite": [
+      "MTR 2.5",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe concedeextra"
+  },
+  {
+    "id": "p3-122",
+    "text": "Can my opponent concede during extra turns after time was called?",
+    "expect": [
+      "A concession in extra turns is allowed: the conceding player loses that game, and the match is reported with that game as a win for the other player — 2-1 if the conceding player had won a game (MTR 2.5)."
+    ],
+    "cite": [
+      "MTR 2.5",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of concedeextra"
+  },
+  {
+    "id": "p3-123",
+    "text": "We were 1-0 and my opponent scooped in extra turns. What's the match result?",
+    "expect": [
+      "A concession in extra turns is allowed: the conceding player loses that game, and the match is reported with that game as a win for the other player — 2-1 if the conceding player had won a game (MTR 2.5)."
+    ],
+    "cite": [
+      "MTR 2.5",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of concedeextra"
+  },
+  {
+    "id": "p3-124",
+    "text": "A judge took 5 minutes on a ruling during our match. Do we get extra time?",
+    "expect": [
+      "Yes: a judge who paused the match for more than a minute should extend the match time appropriately — by about the time the ruling took — and the end-of-match turns start only after the extension (MTR 2.6, 2.4)."
+    ],
+    "cite": [
+      "MTR 2.6",
+      "MTR 2.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe extension"
+  },
+  {
+    "id": "p3-125",
+    "text": "The judge spent a long time on a ruling in our match. Do we get more time?",
+    "expect": [
+      "Yes: a judge who paused the match for more than a minute should extend the match time appropriately — by about the time the ruling took — and the end-of-match turns start only after the extension (MTR 2.6, 2.4)."
+    ],
+    "cite": [
+      "MTR 2.6",
+      "MTR 2.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of extension"
+  },
+  {
+    "id": "p3-126",
+    "text": "The judge ruling took several minutes. Do we get a time extension at FNM?",
+    "expect": [
+      "Yes: a judge who paused the match for more than a minute should extend the match time appropriately — by about the time the ruling took — and the end-of-match turns start only after the extension (MTR 2.6, 2.4)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 2.6",
+      "MTR 2.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of extension"
+  },
+  {
+    "id": "p3-127",
+    "text": "Time was called after game 2 and we're tied 1-1. Do we start game 3?",
+    "expect": [
+      "No: once time has been called no new game begins, so the match is a draw at 1-1 (MTR 2.4)."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe game3"
+  },
+  {
+    "id": "p3-128",
+    "text": "We're 1-1 and time was called. Do we play game 3 in the top 8?",
+    "expect": [
+      "In a single-elimination round matches can't end in a draw: with the game wins tied between games, a game 3 is played with an extra state-based action — a player who doesn't have the highest life total loses the game (MTR 2.4)."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of game3"
+  },
+  {
+    "id": "p3-129",
+    "text": "Time was called right after game 2 ended. Can we start game 3 anyway?",
+    "expect": [
+      "No: once time has been called no new game begins, so the match is a draw at 1-1 (MTR 2.4)."
+    ],
+    "cite": [
+      "MTR 2.4",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of game3"
+  },
+  {
+    "id": "p3-130",
+    "text": "At Commander night my opponent says I've dealt 18 commander damage but I think it's 21. How is it settled?",
+    "expect": [
+      "Commander damage dealt earlier still affects the game, so it's free information both players may ask about and must state honestly (MTR 4.1); it isn't status information the players are required to track (MTR 4.1 lists life, counters and the like). Disputes go to the judge, who works out what happened from what everyone remembers and any notes."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c",
+      "903.10a",
+      "704.6c"
+    ],
+    "note": "track policy3: probe cmddmg"
+  },
+  {
+    "id": "p3-131",
+    "text": "At FNM Commander, we disagree about how much commander damage I've taken. How does the judge settle it?",
+    "expect": [
+      "Commander damage dealt earlier still affects the game, so it's free information both players may ask about and must state honestly (MTR 4.1); it isn't status information the players are required to track (MTR 4.1 lists life, counters and the like). Disputes go to the judge, who works out what happened from what everyone remembers and any notes."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.1",
+      "100.6",
+      "733.1c",
+      "903.10a",
+      "704.6c"
+    ],
+    "note": "track policy3: paraphrase of cmddmg"
+  },
+  {
+    "id": "p3-132",
+    "text": "My opponent says their commander has dealt 21 commander damage to me but I counted 18. What happens?",
+    "expect": [
+      "Commander damage dealt earlier still affects the game, so it's free information both players may ask about and must state honestly (MTR 4.1); it isn't status information the players are required to track (MTR 4.1 lists life, counters and the like). Disputes go to the judge, who works out what happened from what everyone remembers and any notes."
+    ],
+    "cite": [
+      "MTR 4.1",
+      "100.6",
+      "733.1c",
+      "903.10a",
+      "704.6c"
+    ],
+    "note": "track policy3: paraphrase of cmddmg"
+  },
+  {
+    "id": "p3-133",
+    "text": "At Commander night a player left in the middle of combat. What happens to their creatures?",
+    "expect": [
+      "The player who left has conceded (MTR 2.5), and everything they own leaves the game with them, including their attacking or blocking creatures, which are removed from combat (800.4a, 506.4); the game goes on for the rest."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 2.5",
+      "100.6",
+      "733.1c",
+      "800.4a",
+      "506.4"
+    ],
+    "note": "track policy3: probe leave"
+  },
+  {
+    "id": "p3-134",
+    "text": "At a Commander night one player walked away in the middle of combat while attacking. What happens to their attackers?",
+    "expect": [
+      "The player who left has conceded (MTR 2.5), and everything they own leaves the game with them, including their attacking or blocking creatures, which are removed from combat (800.4a, 506.4); the game goes on for the rest."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 2.5",
+      "100.6",
+      "733.1c",
+      "800.4a",
+      "506.4"
+    ],
+    "note": "track policy3: paraphrase of leave"
+  },
+  {
+    "id": "p3-135",
+    "text": "In a 4-player Commander game, a player conceded while blocking. What happens to the creature it blocked?",
+    "expect": [
+      "The player who left has conceded (MTR 2.5), and everything they own leaves the game with them, including their attacking or blocking creatures, which are removed from combat (800.4a, 506.4); the game goes on for the rest."
+    ],
+    "cite": [
+      "MTR 2.5",
+      "100.6",
+      "733.1c",
+      "800.4a",
+      "506.4"
+    ],
+    "note": "track policy3: paraphrase of leave"
+  },
+  {
+    "id": "p3-136",
+    "text": "At Commander night can I take back playing a land?",
+    "expect": [
+      "Taking back an action is allowed only if you've gained no information since — playing an Island and saying \"sorry, I meant a Swamp\" before anything else happens is MTR 4.8's own example (MTR 4.8)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.8",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: probe takeback"
+  },
+  {
+    "id": "p3-137",
+    "text": "Are take-backs allowed at a casual Commander night?",
+    "expect": [
+      "Taking back an action is allowed only if you've gained no information since — playing an Island and saying \"sorry, I meant a Swamp\" before anything else happens is MTR 4.8's own example (MTR 4.8)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.8",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of takeback"
+  },
+  {
+    "id": "p3-138",
+    "text": "At FNM can I take back a land I just played if I meant a different one?",
+    "expect": [
+      "Taking back an action is allowed only if you've gained no information since — playing an Island and saying \"sorry, I meant a Swamp\" before anything else happens is MTR 4.8's own example (MTR 4.8)."
+    ],
+    "cite": [
+      "MTR 1.12",
+      "MTR 4.8",
+      "100.6",
+      "733.1c"
+    ],
+    "note": "track policy3: paraphrase of takeback"
   }
 ]

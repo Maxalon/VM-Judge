@@ -5256,6 +5256,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = exam2Rewrites(t2, m, ctx)
         t2 = policyRewrites(t2, m, ctx)
         t2 = policy2Rewrites(t2, m, ctx)
+        t2 = policy3Rewrites(t2, m, ctx)
         t2 = lifeDamageRewrites(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
         t2 = cedhRewrites(t2, m, ctx)
@@ -9541,6 +9542,15 @@ class SituationParser(private val names: NameIndex) {
         f["sub"] = r.groupValues[1]
         for (kv in r.groupValues[2].trim().split(' ').filter { '=' in it }) { val k = kv.substringBefore('='); val v = kv.substringAfter('='); if (k == "ev") policyRel("at a " + v.replace('_', ' '), f) else f[k] = v }
         return "ippol p2 " + f.entries.joinToString(" ") { "${it.key}=${it.value.replace(' ', '_')}" }
+    }
+
+    /** Track policy3: the marker sentence Policy3Canon leaves after the board ("P3ask qthalia who=opp ev=rcq.") as an "ippol p3" marker. */
+    private fun policy3Rewrites(t: String, m: Marked, ctx: Ctx): String {
+        val r = Regex("""^p3ask q([a-z0-9]+)((?: [a-z]+=\S+)*)$""").find(t.trim().trimEnd('.', '?', '!').trim().lowercase()) ?: return t
+        val f = LinkedHashMap<String, String>()
+        f["sub"] = r.groupValues[1]
+        for (kv in r.groupValues[2].trim().split(' ').filter { '=' in it }) { val k = kv.substringBefore('='); val v = kv.substringAfter('='); if (k == "ev") policyRel("at a " + v.replace('_', ' '), f) else f[k] = v }
+        return "ippol p3 " + f.entries.joinToString(" ") { "${it.key}=${it.value.replace(' ', '_')}" }
     }
 
     /** The "ippol" markers [policyRewrites] leaves, as "ip:" asks. Each new one defers the ones before it, so the last one rules with everything said. */

@@ -14,6 +14,8 @@ import mtg.judge.engine.CardDef
 internal object Policy {
     /** What the table talk said: the kind of problem, its details (k=v), and the cards named, in order. */
     class Facts(val kind: String, val f: Map<String, String>, val cards: List<CardDef>) {
+        /** The game the Judge played out before the ask (track policy3 reads the board from it). */
+        var state: mtg.judge.engine.GameState? = null
         operator fun get(k: String): String? = f[k]
         val me: Boolean get() = (f["who"] ?: "me") == "me"
         /** "comp", "prof", "reg", or null when the question didn't say. */
@@ -71,6 +73,7 @@ internal object Policy {
             "ooo" -> outOfOrder(x, r)
             "loop" -> loop(x, r)
             "p2" -> Policy2.rule(x, r)
+            "p3" -> Policy3.rule(x, r)   // a ruling on a simulated board (Policy3.kt)
             "r4" -> Redteam4Asks.policy(x, r)   // Limited at Competitive REL (Redteam4Asks.kt)
             else -> generic(x, r)
         }

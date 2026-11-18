@@ -29,6 +29,7 @@ internal object PolicyCanon {
         "announcing" to "announce", "taking" to "take", "sacking" to "sacrifice", "giving" to "give", "using" to "use", "mentioning" to "mention", "counting" to "count")
 
     fun canon(text: String): String {
+        Policy3Canon.family(text)?.let { return it }
         Policy2Canon.family(text)?.let { return it }
         if (!strong.containsMatchIn(text)) return text
         shortcutFamily(text)?.let { return it }

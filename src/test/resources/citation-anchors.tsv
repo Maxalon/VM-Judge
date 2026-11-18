@@ -45,6 +45,7 @@
 107.4e	a hybrid mana symbol is also
 107.4f	phyrexian mana symbols are colored mana
 107.14	the energy symbol is e it
+107.15a	rn effect means when one or
 108.3	the owner of a card in
 109.2	if a spell or ability uses
 109.4c	an emblem is controlled by the
@@ -242,6 +243,7 @@
 408.1	the command zone is a game
 500.1	a turn consists of five phases
 500.2	a phase or step in which
+500.4	as a step or phase begins
 500.5	as a step or phase ends
 500.6	when a phase or step begins
 500.7	some effects can give a player
@@ -456,6 +458,7 @@
 701.8a	to destroy a permanent move it
 701.8c	a regeneration effect replaces a destruction
 701.9a	to discard a card move it
+701.9b	by default effects that cause a
 701.10a	doubling a creature s power and
 701.10b	to double a creature s power
 701.10c	if a creature s power is

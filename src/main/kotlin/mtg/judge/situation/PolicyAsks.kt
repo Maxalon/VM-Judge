@@ -53,6 +53,7 @@ internal object PolicyAsks {
             "ooo" -> "question: can actions be done out of order?"
             "loop" -> "question: how is the loop handled at a tournament?"
             "p2" -> "question: ${Policy2.question(f["sub"])}"
+            "p3" -> "question: ${Policy3.question(f["sub"])}"
             else -> null
         }
         return listOfNotNull(q, facts.takeIf { it.isNotEmpty() }?.joinToString("; ")).joinToString("; ").ifEmpty { "a detail of the tournament situation" }
@@ -68,7 +69,7 @@ internal object PolicyAsks {
         if (f["defer"] == "1") return true
         synchronized(acc) { acc.remove(state) }
         val defs = a.cards.mapNotNull { runCatching { cardDef(it) }.getOrNull() }.distinctBy { it.oracleId }
-        val ruling = Policy.rule(Policy.Facts(a.kind ?: "generic", a.f, defs))
+        val ruling = Policy.rule(Policy.Facts(a.kind ?: "generic", a.f, defs).also { it.state = state })
         for ((text, cites) in ruling.steps) state.trace.step(text, *cites.toTypedArray())
         // The ruling is the answer: the narration of the table talk ("You draw 1 card.") isn't what was asked.
         state.outcomes.clear()
