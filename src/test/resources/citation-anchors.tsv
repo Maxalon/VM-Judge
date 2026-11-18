@@ -207,9 +207,12 @@
 400.11	an object is outside the game
 400.11a	cards in a player s sideboard
 400.11b	some effects bring cards into a
+401.2	each library must be kept in
+401.3	any player may count the number
 401.4	if an effect puts two or
 401.5	some effects tell a player to
 402.2	each player has a maximum hand
+404.2	each graveyard is kept in a
 405.2	the stack keeps track of the
 405.5	when all players pass in succession
 406.2	to exile an object is to

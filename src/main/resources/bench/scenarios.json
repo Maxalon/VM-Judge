@@ -68034,10 +68034,11 @@
     "id": "r2-28",
     "text": "At a draft, a player's registered deck list has 39 cards but their deck has 40. What is the penalty?",
     "expect": [
-      "Decklist Problem, Game Loss: the deck is what the player meant to play"
+      "Decklist Problem, Game Loss: a 39-card list for a 40-card deck doesn't match the deck",
+      "The decklist is altered to match your deck"
     ],
     "cite": [
-      "100.6"
+      "IPG 3.4"
     ]
   },
   {
@@ -68329,5 +68330,2109 @@
     "cite": [
       "603.2"
     ]
+  },
+  {
+    "id": "p2-1",
+    "text": "I scried two cards when I should only have scried one. What's the penalty?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal the 2 cards looked at, and your opponent chooses 1 of them to shuffle into the random portion of the library; the scry goes on with the card left (IPG 2.3, its example B: scrying two instead of one)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "701.22a",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: probe hce_scry"
+  },
+  {
+    "id": "p2-2",
+    "text": "Judge, I looked at the top 2 for a scry 1 by mistake, what happens?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal the 2 cards looked at, and your opponent chooses 1 of them to shuffle into the random portion of the library; the scry goes on with the card left (IPG 2.3, its example B: scrying two instead of one)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "701.22a",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_scry"
+  },
+  {
+    "id": "p2-3",
+    "text": "At an RCQ my opponent scried 2 instead of 1. What's the fix?",
+    "expect": [
+      "Hidden Card Error, Warning: your opponent reveals the 2 cards looked at, and you choose 1 of them to shuffle into the random portion of the library; the scry goes on with the card left (IPG 2.3, its example B: scrying two instead of one)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 1.12",
+      "701.22a",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_scry"
+  },
+  {
+    "id": "p2-4",
+    "text": "My opponent resolved their Dark Confidant trigger but put the card in their hand without revealing it. What's the ruling?",
+    "expect": [
+      "Hidden Card Error, Warning: the trigger resolved, so it isn't a missed trigger; the reveal was skipped (IPG 2.3, its example C: a Dark Confidant card put into hand unrevealed)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: probe hce_reveal"
+  },
+  {
+    "id": "p2-5",
+    "text": "opponent's bob trigger, they just took the card into hand without showing me. penalty?",
+    "expect": [
+      "Hidden Card Error, Warning: the trigger resolved, so it isn't a missed trigger; the reveal was skipped (IPG 2.3, its example C: a Dark Confidant card put into hand unrevealed)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_reveal"
+  },
+  {
+    "id": "p2-6",
+    "text": "I forgot to reveal the card from Dark Confidant before putting it in my hand. What happens?",
+    "expect": [
+      "Hidden Card Error, Warning: the trigger resolved, so it isn't a missed trigger; the reveal was skipped (IPG 2.3, its example C: a Dark Confidant card put into hand unrevealed)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_reveal"
+  },
+  {
+    "id": "p2-7",
+    "text": "I cast Ponder, put the three cards back, then drew two cards instead of one. What happens?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back on top of the library, not shuffled in, because you already knew the top cards from Ponder (IPG 2.3, like its Sphinx of Jwar Isle example)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: probe hce_ponder"
+  },
+  {
+    "id": "p2-8",
+    "text": "After Ponder I kept the top three and accidentally drew 2 instead of 1, what's the fix?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back on top of the library, not shuffled in, because you already knew the top cards from Ponder (IPG 2.3, like its Sphinx of Jwar Isle example)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_ponder"
+  },
+  {
+    "id": "p2-9",
+    "text": "My opponent Pondered, kept the cards, and then drew two. What's the ruling?",
+    "expect": [
+      "Hidden Card Error, Warning: your opponent reveals their hand and you choose 1 card from it that you didn't already know; it goes back on top of the library, not shuffled in, because your opponent already knew the top cards from Ponder (IPG 2.3, like its Sphinx of Jwar Isle example)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_ponder"
+  },
+  {
+    "id": "p2-10",
+    "text": "I cast Brainstorm and drew four cards. What's the penalty?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "121.1",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: probe hce_brainstorm"
+  },
+  {
+    "id": "p2-11",
+    "text": "Brainstorm, drew 4 by accident. What happens?",
+    "expect": [
+      "Hidden Card Error, Warning: you reveal your hand and your opponent chooses 1 card from it that they didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "121.1",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_brainstorm"
+  },
+  {
+    "id": "p2-12",
+    "text": "My opponent cast Brainstorm and drew four cards instead of three. What's the ruling?",
+    "expect": [
+      "Hidden Card Error, Warning: your opponent reveals their hand and you choose 1 card from it that you didn't already know; it goes back into the library, shuffled into its random portion (IPG 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "121.1",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of hce_brainstorm"
+  },
+  {
+    "id": "p2-13",
+    "text": "I drew an extra card but my hand was empty, so it's the only card in my hand. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning, not a Hidden Card Error: the extra card is the only card in your hand, so everyone knows exactly which card it is, and it goes back on top of the library (IPG 2.3, 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: probe hce_only"
+  },
+  {
+    "id": "p2-14",
+    "text": "My hand was empty and I drew a card by mistake at the end of my turn, so it's the only card in my hand. What's the fix?",
+    "expect": [
+      "Game Rule Violation, Warning, not a Hidden Card Error: the extra card is the only card in your hand, so everyone knows exactly which card it is, and it goes back on top of the library (IPG 2.3, 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of hce_only"
+  },
+  {
+    "id": "p2-15",
+    "text": "My opponent had no cards in hand and accidentally drew a card, so now it's the only card they have. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning, not a Hidden Card Error: the extra card is the only card in their hand, so everyone knows exactly which card it is, and it goes back on top of the library (IPG 2.3, 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.3",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of hce_only"
+  },
+  {
+    "id": "p2-16",
+    "text": "This is my third Hidden Card Error today. What's the penalty?",
+    "expect": [
+      "Game Loss: a third Hidden Card Error Warning in the same tournament is upgraded to a Game Loss (IPG 2, 2.3). On a multi-day event the count resets each day."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2"
+    ],
+    "note": "track policy2: probe hce3"
+  },
+  {
+    "id": "p2-17",
+    "text": "Third warning for drawing extra cards today, is that a game loss?",
+    "expect": [
+      "Game Loss: a third Hidden Card Error Warning in the same tournament is upgraded to a Game Loss (IPG 2, 2.3). On a multi-day event the count resets each day."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2"
+    ],
+    "note": "track policy2: paraphrase of hce3"
+  },
+  {
+    "id": "p2-18",
+    "text": "I already have two Hidden Card Error warnings. What happens on the third?",
+    "expect": [
+      "Game Loss: a third Hidden Card Error Warning in the same tournament is upgraded to a Game Loss (IPG 2, 2.3). On a multi-day event the count resets each day."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2"
+    ],
+    "note": "track policy2: paraphrase of hce3"
+  },
+  {
+    "id": "p2-19",
+    "text": "How does a backup work?",
+    "expect": [
+      "A backup undoes every action since the error, one at a time, starting with the most recent and working backwards; nothing is skipped or reordered (IPG 1.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 1.4"
+    ],
+    "note": "track policy2: probe backup"
+  },
+  {
+    "id": "p2-20",
+    "text": "Judge said they'd back up the game, what does that mean exactly?",
+    "expect": [
+      "A backup undoes every action since the error, one at a time, starting with the most recent and working backwards; nothing is skipped or reordered (IPG 1.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 1.4"
+    ],
+    "note": "track policy2: paraphrase of backup"
+  },
+  {
+    "id": "p2-21",
+    "text": "What is a backup at a tournament and how is it done?",
+    "expect": [
+      "A backup undoes every action since the error, one at a time, starting with the most recent and working backwards; nothing is skipped or reordered (IPG 1.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 1.4"
+    ],
+    "note": "track policy2: paraphrase of backup"
+  },
+  {
+    "id": "p2-22",
+    "text": "When is a backup too disruptive?",
+    "expect": [
+      "It's the judge's call, and there's no fixed line: a backup is a last resort, used only when leaving the game as it is would be substantially worse, and limited to situations with minimal decision trees, where the information gained makes no difference to the line of play (IPG 1.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 1.4"
+    ],
+    "note": "track policy2: probe disrupt"
+  },
+  {
+    "id": "p2-23",
+    "text": "Can the judge always just rewind the game to fix a mistake?",
+    "expect": [
+      "It's the judge's call, and there's no fixed line: a backup is a last resort, used only when leaving the game as it is would be substantially worse, and limited to situations with minimal decision trees, where the information gained makes no difference to the line of play (IPG 1.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 1.4"
+    ],
+    "note": "track policy2: paraphrase of disrupt"
+  },
+  {
+    "id": "p2-24",
+    "text": "Will the judge back up if lots of things happened since the error?",
+    "expect": [
+      "It's the judge's call, and there's no fixed line: a backup is a last resort, used only when leaving the game as it is would be substantially worse, and limited to situations with minimal decision trees, where the information gained makes no difference to the line of play (IPG 1.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 1.4"
+    ],
+    "note": "track policy2: paraphrase of disrupt"
+  },
+  {
+    "id": "p2-25",
+    "text": "My opponent cast Path to Exile on my creature and I put it in the graveyard instead of exiling it. What's the penalty?",
+    "expect": [
+      "Game Rule Violation for both players, a Warning each: your opponent cast Path to Exile and you put the creature into the graveyard instead of exile; once the game went on, both are responsible — it's IPG 2.5's own Path to Exile example."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: probe path"
+  },
+  {
+    "id": "p2-26",
+    "text": "They Pathed my guy and I binned it by mistake, we noticed a turn later. Who gets the penalty?",
+    "expect": [
+      "Game Rule Violation for both players, a Warning each: your opponent cast Path to Exile and you put the creature into the graveyard instead of exile; once the game went on, both are responsible — it's IPG 2.5's own Path to Exile example."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of path"
+  },
+  {
+    "id": "p2-27",
+    "text": "I cast Path to Exile on my opponent's creature and they put it into their graveyard; we kept playing. What's the ruling?",
+    "expect": [
+      "Game Rule Violation for both players, a Warning each: you cast Path to Exile and your opponent put the creature into the graveyard instead of exile; once the game went on, both are responsible — it's IPG 2.5's own Path to Exile example."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of path"
+  },
+  {
+    "id": "p2-28",
+    "text": "I control Thalia and my opponent cast a spell without paying the Thalia tax and I didn't notice. Who gets the penalty?",
+    "expect": [
+      "Game Rule Violation for both players, a Warning each: your opponent cast the spell without paying the one extra mana Thalia adds, and you, who control Thalia — the effect that changed the rules — share the responsibility once play went on, so it isn't Failure to Maintain Game State (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "601.2f",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: probe thalia"
+  },
+  {
+    "id": "p2-29",
+    "text": "My Thalia was out, opponent didn't pay the extra one, we both missed it. Penalty?",
+    "expect": [
+      "Game Rule Violation for both players, a Warning each: your opponent cast the spell without paying the one extra mana Thalia adds, and you, who control Thalia — the effect that changed the rules — share the responsibility once play went on, so it isn't Failure to Maintain Game State (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "601.2f",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of thalia"
+  },
+  {
+    "id": "p2-30",
+    "text": "My opponent forgot to pay for my Thalia and neither of us noticed until later. What's the ruling?",
+    "expect": [
+      "Game Rule Violation for both players, a Warning each: your opponent cast the spell without paying the one extra mana Thalia adds, and you, who control Thalia — the effect that changed the rules — share the responsibility once play went on, so it isn't Failure to Maintain Game State (IPG 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "601.2f",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of thalia"
+  },
+  {
+    "id": "p2-31",
+    "text": "A creature with lethal damage stayed on the battlefield and we noticed several turns later. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning, for the creature's controller: a state-based action was missed (704.5g), not a trigger — IPG 2.5's own example C. The opponent, who let the game go on past it, gets a Failure to Maintain Game State Warning (IPG 2.5, 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "704.5g",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: probe lethal"
+  },
+  {
+    "id": "p2-32",
+    "text": "A creature should have died to damage a few turns ago and it's still on the battlefield. What's the fix?",
+    "expect": [
+      "Game Rule Violation, Warning, for the creature's controller: a state-based action was missed (704.5g), not a trigger — IPG 2.5's own example C. The opponent, who let the game go on past it, gets a Failure to Maintain Game State Warning (IPG 2.5, 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "704.5g",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of lethal"
+  },
+  {
+    "id": "p2-33",
+    "text": "We forgot to put a creature with lethal damage in the graveyard and noticed two turns later. What's the ruling?",
+    "expect": [
+      "Game Rule Violation, Warning, for the creature's controller: a state-based action was missed (704.5g), not a trigger — IPG 2.5's own example C. The opponent, who let the game go on past it, gets a Failure to Maintain Game State Warning (IPG 2.5, 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "704.5g",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of lethal"
+  },
+  {
+    "id": "p2-34",
+    "text": "I cast Brainstorm and forgot to put two cards back on top. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: you put two cards from your hand on top of your library now — the partial fix for a player who failed to return cards from their hand to another zone (IPG 2.5, its example E)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: probe bsback"
+  },
+  {
+    "id": "p2-35",
+    "text": "Brainstormed and never put the 2 back, what's the fix?",
+    "expect": [
+      "Game Rule Violation, Warning: you put two cards from your hand on top of your library now — the partial fix for a player who failed to return cards from their hand to another zone (IPG 2.5, its example E)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of bsback"
+  },
+  {
+    "id": "p2-36",
+    "text": "My opponent cast Brainstorm and didn't put two cards back. What's the ruling?",
+    "expect": [
+      "Game Rule Violation, Warning: your opponent puts two cards from their hand on top of their library now — the partial fix for a player who failed to return cards from their hand to another zone (IPG 2.5, its example E)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of bsback"
+  },
+  {
+    "id": "p2-37",
+    "text": "My opponent's Phyrexian Revoker never had a card named. What happens?",
+    "expect": [
+      "Game Rule Violation, Warning: your opponent names a card for Phyrexian Revoker now — the partial fix for a missing choice for a static ability still on the battlefield (IPG 2.5, its example D)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: probe revoker"
+  },
+  {
+    "id": "p2-38",
+    "text": "They played Revoker without naming anything. Ruling?",
+    "expect": [
+      "Game Rule Violation, Warning: your opponent names a card for Phyrexian Revoker now — the partial fix for a missing choice for a static ability still on the battlefield (IPG 2.5, its example D)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of revoker"
+  },
+  {
+    "id": "p2-39",
+    "text": "I forgot to name a card for Phyrexian Revoker. What's the fix?",
+    "expect": [
+      "Game Rule Violation, Warning: you name a card for Phyrexian Revoker now — the partial fix for a missing choice for a static ability still on the battlefield (IPG 2.5, its example D)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.5"
+    ],
+    "note": "track policy2: paraphrase of revoker"
+  },
+  {
+    "id": "p2-40",
+    "text": "My decklist only has 59 cards but my deck has 60. What's the penalty?",
+    "expect": [
+      "Decklist Problem, Game Loss: a 59-card list for a 60-card deck doesn't match the deck you're playing (IPG 3.4, its example B). The decklist is altered to match your deck (IPG 3.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: probe dl59"
+  },
+  {
+    "id": "p2-41",
+    "text": "I registered 56 cards on my decklist but my deck has 60. What happens?",
+    "expect": [
+      "Decklist Problem, Game Loss: a 56-card list for a 60-card deck doesn't match the deck you're playing (IPG 3.4, its example B). The decklist is altered to match your deck (IPG 3.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: paraphrase of dl59"
+  },
+  {
+    "id": "p2-42",
+    "text": "The judge found my decklist is short a card. What's the penalty?",
+    "expect": [
+      "Decklist Problem, Game Loss: a list with too few cards doesn't match the deck you're playing (IPG 3.4, its example B). The decklist is altered to match your deck (IPG 3.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: paraphrase of dl59"
+  },
+  {
+    "id": "p2-43",
+    "text": "I put a banned card on my decklist. What happens?",
+    "expect": [
+      "Decklist Problem, Game Loss: an illegal card on the list (a banned one is IPG 3.4's own example A). The illegal cards are removed from the decklist (and the deck) (IPG 3.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: probe dlbanned"
+  },
+  {
+    "id": "p2-44",
+    "text": "Registered a banned card on my list at an RCQ by mistake. Penalty?",
+    "expect": [
+      "Decklist Problem, Game Loss: an illegal card on the list (a banned one is IPG 3.4's own example A). The illegal cards are removed from the decklist (and the deck) (IPG 3.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 1.12",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: paraphrase of dlbanned"
+  },
+  {
+    "id": "p2-45",
+    "text": "My decklist has an illegal card on it. What's the fix?",
+    "expect": [
+      "Decklist Problem, Game Loss: an illegal card on the list (a banned one is IPG 3.4's own example A). The illegal cards are removed from the decklist (and the deck) (IPG 3.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: paraphrase of dlbanned"
+  },
+  {
+    "id": "p2-46",
+    "text": "I just wrote Sarkhan on my decklist. Is that a penalty?",
+    "expect": [
+      "It depends: an ambiguous name, like just \"Sarkhan\" in a format with several Sarkhans, is a Decklist Problem, a Game Loss (IPG 3.4, its example C)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: probe dlvague"
+  },
+  {
+    "id": "p2-47",
+    "text": "What if my decklist has an ambiguous card name?",
+    "expect": [
+      "It depends: an ambiguous name, like just \"Sarkhan\" in a format with several Sarkhans, is a Decklist Problem, a Game Loss (IPG 3.4, its example C)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: paraphrase of dlvague"
+  },
+  {
+    "id": "p2-48",
+    "text": "I only wrote the first name of a planeswalker on my decklist. Is that OK?",
+    "expect": [
+      "It depends: an ambiguous name, like just \"Sarkhan\" in a format with several Sarkhans, is a Decklist Problem, a Game Loss (IPG 3.4, its example C)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.4"
+    ],
+    "note": "track policy2: paraphrase of dlvague"
+  },
+  {
+    "id": "p2-49",
+    "text": "In game 1 I found a sideboard card in my deck. What's the penalty?",
+    "expect": [
+      "Deck Problem, Warning: a sideboard card in the deck in game 1 is IPG 3.5's own example C. It's revealed to your opponent with the missing main-deck card, and your opponent chooses whether that's fixed now or when a player next gets priority (IPG 3.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.5"
+    ],
+    "note": "track policy2: probe sbmain"
+  },
+  {
+    "id": "p2-50",
+    "text": "Game one, I drew a card that's registered in my sideboard. What happens?",
+    "expect": [
+      "Deck Problem, Warning: a sideboard card in the deck in game 1 is IPG 3.5's own example C. It's revealed to your opponent with the missing main-deck card, and your opponent chooses whether that's fixed now or when a player next gets priority (IPG 3.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.5"
+    ],
+    "note": "track policy2: paraphrase of sbmain"
+  },
+  {
+    "id": "p2-51",
+    "text": "My opponent has a sideboard card in their main deck in game 1. What's the ruling?",
+    "expect": [
+      "Deck Problem, Warning: a sideboard card in the deck in game 1 is IPG 3.5's own example C. It's revealed to you with the missing main-deck card, and you choose whether that's fixed now or when a player next gets priority (IPG 3.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.5"
+    ],
+    "note": "track policy2: paraphrase of sbmain"
+  },
+  {
+    "id": "p2-52",
+    "text": "I found my last opponent's card in my deck. What happens?",
+    "expect": [
+      "Deck Problem, Warning — for both of you: the card came from your previous opponent's deck, and when a missing card was in a previous opponent's deck both players are penalized (IPG 3.5, its example B). The card is removed and returned (IPG 3.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.5"
+    ],
+    "note": "track policy2: probe oppcard"
+  },
+  {
+    "id": "p2-53",
+    "text": "There's a card from my previous opponent's deck in my library. Penalty?",
+    "expect": [
+      "Deck Problem, Warning — for both of you: the card came from your previous opponent's deck, and when a missing card was in a previous opponent's deck both players are penalized (IPG 3.5, its example B). The card is removed and returned (IPG 3.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.5"
+    ],
+    "note": "track policy2: paraphrase of oppcard"
+  },
+  {
+    "id": "p2-54",
+    "text": "My opponent has one of my cards in their deck. What's the ruling?",
+    "expect": [
+      "Deck Problem, Warning, for both players: when a missing card is in a current opponent's deck, both are penalized (IPG 3.5). The card is revealed, removed and returned to your deck (IPG 3.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.5"
+    ],
+    "note": "track policy2: paraphrase of oppcard"
+  },
+  {
+    "id": "p2-55",
+    "text": "I passed my draft pack the wrong way. What's the penalty?",
+    "expect": [
+      "Limited Procedure Violation, Warning (IPG 3.6: passing the wrong way and overrunning a pick are its first examples). A second Warning in the same category is a Game Loss (IPG 3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.6"
+    ],
+    "note": "track policy2: probe lpv"
+  },
+  {
+    "id": "p2-56",
+    "text": "Passed left instead of right in the draft, penalty?",
+    "expect": [
+      "Limited Procedure Violation, Warning (IPG 3.6: passing the wrong way and overrunning a pick are its first examples). A second Warning in the same category is a Game Loss (IPG 3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.6"
+    ],
+    "note": "track policy2: paraphrase of lpv"
+  },
+  {
+    "id": "p2-57",
+    "text": "What's the penalty for taking too long on a draft pick?",
+    "expect": [
+      "Limited Procedure Violation, Warning (IPG 3.6: passing the wrong way and overrunning a pick are its first examples). A second Warning in the same category is a Game Loss (IPG 3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.6"
+    ],
+    "note": "track policy2: paraphrase of lpv"
+  },
+  {
+    "id": "p2-58",
+    "text": "My opponent kept a Llanowar Elves in with their lands and I attacked thinking they had no blockers. What happens?",
+    "expect": [
+      "Communication Policy Violation, Warning, for your opponent: keeping Llanowar Elves in with their lands is IPG 3.7's own example B, and you attacked because of it. A backup to the point of your attack may be considered (IPG 3.7)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.7"
+    ],
+    "note": "track policy2: probe cpv"
+  },
+  {
+    "id": "p2-59",
+    "text": "Their creature was hidden among their lands so I attacked into it. Is that a penalty?",
+    "expect": [
+      "Communication Policy Violation, Warning, for your opponent: keeping Llanowar Elves in with their lands is IPG 3.7's own example B, and you attacked because of it. A backup to the point of your attack may be considered (IPG 3.7)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.7"
+    ],
+    "note": "track policy2: paraphrase of cpv"
+  },
+  {
+    "id": "p2-60",
+    "text": "I told my opponent I had three cards in hand but I had four, and they cast a discard spell. What happens?",
+    "expect": [
+      "Communication Policy Violation, Warning: answering \"3\" when you had 4 is IPG 3.7's own example A, and your opponent acted on it; a backup to the point of the discard spell may be considered (IPG 3.7)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 4.1",
+      "IPG 3.7"
+    ],
+    "note": "track policy2: paraphrase of cpv"
+  },
+  {
+    "id": "p2-61",
+    "text": "My sleeves are marked. What's the penalty?",
+    "expect": [
+      "Marked Cards, Warning: the marked sleeves or cards are replaced with unmarked ones (or, if unsleeved, put in sleeves that hide the marks) (IPG 3.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.8",
+      "MTR 3.12"
+    ],
+    "note": "track policy2: probe marked"
+  },
+  {
+    "id": "p2-62",
+    "text": "A judge found marks on some of my sleeves at an RCQ. What happens?",
+    "expect": [
+      "Marked Cards, Warning: the marked sleeves or cards are replaced with unmarked ones (or, if unsleeved, put in sleeves that hide the marks) (IPG 3.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 1.12",
+      "IPG 3.8",
+      "MTR 3.12"
+    ],
+    "note": "track policy2: paraphrase of marked"
+  },
+  {
+    "id": "p2-63",
+    "text": "Several of my foils stand out from the rest of my deck. Is that a penalty?",
+    "expect": [
+      "Marked Cards, Warning: the marked sleeves or cards are replaced with unmarked ones (or, if unsleeved, put in sleeves that hide the marks) (IPG 3.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.8",
+      "MTR 3.12"
+    ],
+    "note": "track policy2: paraphrase of marked"
+  },
+  {
+    "id": "p2-64",
+    "text": "My friend told me the right play during my match. What's the penalty?",
+    "expect": [
+      "Outside Assistance, Match Loss — for the person who gave the advice, not for you: you didn't seek it (IPG 3.2, its example B). Call a judge right away."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.2",
+      "MTR 5.6"
+    ],
+    "note": "track policy2: probe oa"
+  },
+  {
+    "id": "p2-65",
+    "text": "A spectator pointed out a play to me in the middle of the game. Penalty?",
+    "expect": [
+      "Outside Assistance, Match Loss — for the person who gave the advice, not for you: you didn't seek it (IPG 3.2, its example B). Call a judge right away."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.2",
+      "MTR 5.6"
+    ],
+    "note": "track policy2: paraphrase of oa"
+  },
+  {
+    "id": "p2-66",
+    "text": "Can I ask my friend for advice during my match?",
+    "expect": [
+      "No: seeking play advice from anyone once you've sat for your match is Outside Assistance, a Match Loss (IPG 3.2, MTR 5.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.2",
+      "MTR 5.6"
+    ],
+    "note": "track policy2: paraphrase of oa"
+  },
+  {
+    "id": "p2-67",
+    "text": "Can I look at my notes during a game?",
+    "expect": [
+      "No: during a game you may refer only to notes you've taken during this match, and to Oracle text (MTR 2.11). Looking at notes made before the match is Outside Assistance, a Match Loss — a Game Loss if it's information you could have looked at between games, like a sideboard guide (IPG 3.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11",
+      "IPG 3.2"
+    ],
+    "note": "track policy2: probe notesgame"
+  },
+  {
+    "id": "p2-68",
+    "text": "Can I read my sideboard guide during the game?",
+    "expect": [
+      "Outside Assistance, Match Loss: referring during a game to notes made before the match is IPG 3.2's own example A — downgraded to a Game Loss if it was information you could have looked at between games, like a sideboard guide (IPG 3.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11",
+      "IPG 3.2"
+    ],
+    "note": "track policy2: paraphrase of notesgame"
+  },
+  {
+    "id": "p2-69",
+    "text": "I looked at my prepared notes in the middle of a game. What's the penalty?",
+    "expect": [
+      "Outside Assistance, Match Loss: referring during a game to notes made before the match is IPG 3.2's own example A — downgraded to a Game Loss if it was information you could have looked at between games, like a sideboard guide (IPG 3.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11",
+      "IPG 3.2"
+    ],
+    "note": "track policy2: paraphrase of notesgame"
+  },
+  {
+    "id": "p2-70",
+    "text": "Can I look at my sideboard notes between games?",
+    "expect": [
+      "Yes: between games you may refer to a brief set of notes made before the match, like a sideboard guide, without showing them to your opponent; put them away before the next game begins (MTR 2.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11",
+      "IPG 3.2"
+    ],
+    "note": "track policy2: probe notesbetween"
+  },
+  {
+    "id": "p2-71",
+    "text": "Am I allowed to check my sideboard guide between games?",
+    "expect": [
+      "Yes: between games you may refer to a brief set of notes made before the match, like a sideboard guide, without showing them to your opponent; put them away before the next game begins (MTR 2.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11",
+      "IPG 3.2"
+    ],
+    "note": "track policy2: paraphrase of notesbetween"
+  },
+  {
+    "id": "p2-72",
+    "text": "Can I use notes I made before the match between games?",
+    "expect": [
+      "Yes: between games you may refer to a brief set of notes made before the match, like a sideboard guide, without showing them to your opponent; put them away before the next game begins (MTR 2.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11",
+      "IPG 3.2"
+    ],
+    "note": "track policy2: paraphrase of notesbetween"
+  },
+  {
+    "id": "p2-73",
+    "text": "Can I take notes during my match?",
+    "expect": [
+      "Yes: you may take written notes during the match and refer to them while it's in progress. Your note sheet must be empty when the match begins and stay visible throughout; you don't have to explain it to your opponent, though a judge may ask to see it (MTR 2.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11"
+    ],
+    "note": "track policy2: probe notetaking"
+  },
+  {
+    "id": "p2-74",
+    "text": "Am I allowed to write things down during the match?",
+    "expect": [
+      "Yes: you may take written notes during the match and refer to them while it's in progress. Your note sheet must be empty when the match begins and stay visible throughout; you don't have to explain it to your opponent, though a judge may ask to see it (MTR 2.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11"
+    ],
+    "note": "track policy2: paraphrase of notetaking"
+  },
+  {
+    "id": "p2-75",
+    "text": "Can I write down my opponent's cards during the match?",
+    "expect": [
+      "Yes: you may take written notes during the match and refer to them while it's in progress. Your note sheet must be empty when the match begins and stay visible throughout; you don't have to explain it to your opponent, though a judge may ask to see it (MTR 2.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.11"
+    ],
+    "note": "track policy2: paraphrase of notetaking"
+  },
+  {
+    "id": "p2-76",
+    "text": "Can I go to the bathroom during my match?",
+    "expect": [
+      "Yes, with a judge's permission: ask a judge first. You then have up to 10 minutes, and the match gets a time extension for the time taken (IPG 3.1)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.1",
+      "IPG 3.3"
+    ],
+    "note": "track policy2: probe bathroom"
+  },
+  {
+    "id": "p2-77",
+    "text": "Do I need permission to go to the bathroom in the middle of a round?",
+    "expect": [
+      "Yes, with a judge's permission: ask a judge first. You then have up to 10 minutes, and the match gets a time extension for the time taken (IPG 3.1)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.1",
+      "IPG 3.3"
+    ],
+    "note": "track policy2: paraphrase of bathroom"
+  },
+  {
+    "id": "p2-78",
+    "text": "My opponent left to go to the bathroom without asking a judge. Is that a penalty?",
+    "expect": [
+      "Yes, at Competitive REL: going to the bathroom without an official's permission is Slow Play, a Warning (IPG 3.3, its example D)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 3.1",
+      "IPG 3.3"
+    ],
+    "note": "track policy2: paraphrase of bathroom"
+  },
+  {
+    "id": "p2-79",
+    "text": "Can we roll a die to decide the match?",
+    "expect": [
+      "No: deciding the match with a die roll or a coin flip is Improperly Determining a Winner, a Match Loss — even offering it is (IPG 4.3, MTR 5.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.3",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: probe die"
+  },
+  {
+    "id": "p2-80",
+    "text": "We're going to draw on time, can we just flip a coin for the win?",
+    "expect": [
+      "No: deciding the match with a die roll or a coin flip is Improperly Determining a Winner, a Match Loss — even offering it is (IPG 4.3, MTR 5.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.3",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of die"
+  },
+  {
+    "id": "p2-81",
+    "text": "Time was called and we rolled a die to see who wins. What happens?",
+    "expect": [
+      "Improperly Determining a Winner, Match Loss for both players: rolling a die to see who wins as time is called is IPG 4.3's own first example, and a match drawn on time must be reported as a draw (IPG 4.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.3",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of die"
+  },
+  {
+    "id": "p2-82",
+    "text": "Can we split the prizes if I concede?",
+    "expect": [
+      "No, not as a deal: a concession in exchange for a prize split is Bribery, a Match Loss — asking for it is IPG 4.4's own example C, and accepting such an offer is the same infraction (IPG 4.4, MTR 5.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: probe split"
+  },
+  {
+    "id": "p2-83",
+    "text": "My opponent asked me to concede in exchange for a prize split. Is that allowed?",
+    "expect": [
+      "No, not as a deal: a concession in exchange for a prize split is Bribery, a Match Loss — asking for it is IPG 4.4's own example C, and accepting such an offer is the same infraction (IPG 4.4, MTR 5.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of split"
+  },
+  {
+    "id": "p2-84",
+    "text": "Can we agree to split prizes in the finals?",
+    "expect": [
+      "Yes: in the announced last round of single elimination you may agree on a winner and how to divide the prizes — one of you drops, and prizes go by final ranking (MTR 5.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of split"
+  },
+  {
+    "id": "p2-85",
+    "text": "My opponent offered me 20 dollars to concede. What happens?",
+    "expect": [
+      "Bribery, Match Loss, for your opponent: offering money or a card for a concession or a draw is IPG 4.4's own example; accepting it would be the same infraction for you. Call a judge (IPG 4.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: probe bribe"
+  },
+  {
+    "id": "p2-86",
+    "text": "He offered me a card if I'd give him the draw. Penalty?",
+    "expect": [
+      "Bribery, Match Loss, for your opponent: offering money or a card for a concession or a draw is IPG 4.4's own example; accepting it would be the same infraction for you. Call a judge (IPG 4.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of bribe"
+  },
+  {
+    "id": "p2-87",
+    "text": "Can I offer my opponent money to concede?",
+    "expect": [
+      "No: offering your opponent money, a card or anything else to concede or draw is Bribery, a Match Loss (IPG 4.4, MTR 5.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of bribe"
+  },
+  {
+    "id": "p2-88",
+    "text": "Can we bet on our match?",
+    "expect": [
+      "No: betting on any part of a tournament, match or game is Wagering, a Match Loss — for players and spectators alike, even if the bet isn't money and even on someone else's match (IPG 4.4, MTR 5.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.3"
+    ],
+    "note": "track policy2: probe wager"
+  },
+  {
+    "id": "p2-89",
+    "text": "My friends are betting on my match. Is that allowed?",
+    "expect": [
+      "No: betting on any part of a tournament, match or game is Wagering, a Match Loss — for players and spectators alike, even if the bet isn't money and even on someone else's match (IPG 4.4, MTR 5.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.3"
+    ],
+    "note": "track policy2: paraphrase of wager"
+  },
+  {
+    "id": "p2-90",
+    "text": "Can I bet on who wins the tournament?",
+    "expect": [
+      "No: betting on any part of a tournament, match or game is Wagering, a Match Loss — for players and spectators alike, even if the bet isn't money and even on someone else's match (IPG 4.4, MTR 5.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.4",
+      "MTR 5.3"
+    ],
+    "note": "track policy2: paraphrase of wager"
+  },
+  {
+    "id": "p2-91",
+    "text": "My opponent used a racial slur against me. What's the penalty?",
+    "expect": [
+      "Unsporting Conduct — Major, Match Loss: harassment, bullying and insults based on race and similar traits are what it covers, and a racial slur is the IPG's first example. Judges end the match and separate the players (IPG 4.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.2"
+    ],
+    "note": "track policy2: probe major"
+  },
+  {
+    "id": "p2-92",
+    "text": "My opponent insulted my race. What happens?",
+    "expect": [
+      "Unsporting Conduct — Major, Match Loss: harassment, bullying and insults based on race and similar traits are what it covers, and a racial slur is the IPG's first example. Judges end the match and separate the players (IPG 4.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.2"
+    ],
+    "note": "track policy2: paraphrase of major"
+  },
+  {
+    "id": "p2-93",
+    "text": "My opponent is harassing me. What's the penalty?",
+    "expect": [
+      "Unsporting Conduct — Major, Match Loss: harassment, bullying and insults based on race and similar traits are what it covers, and a racial slur is the IPG's first example. Judges end the match and separate the players (IPG 4.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.2"
+    ],
+    "note": "track policy2: paraphrase of major"
+  },
+  {
+    "id": "p2-94",
+    "text": "My opponent swore loudly and threw their deck on the ground after losing. What's the penalty?",
+    "expect": [
+      "Unsporting Conduct — Minor, Warning: vulgar language and throwing a deck after losing are the IPG's own first and fourth examples. The player must stop immediately (IPG 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.1"
+    ],
+    "note": "track policy2: probe minor"
+  },
+  {
+    "id": "p2-95",
+    "text": "Opponent is using really vulgar language at the table. Penalty?",
+    "expect": [
+      "Unsporting Conduct — Minor, Warning: vulgar language and throwing a deck after losing are the IPG's own first and fourth examples. The player must stop immediately (IPG 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.1"
+    ],
+    "note": "track policy2: paraphrase of minor"
+  },
+  {
+    "id": "p2-96",
+    "text": "My opponent threw their deck after losing. Is that a penalty?",
+    "expect": [
+      "Unsporting Conduct — Minor, Warning: vulgar language and throwing a deck after losing are the IPG's own first and fourth examples. The player must stop immediately (IPG 4.1)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.1"
+    ],
+    "note": "track policy2: paraphrase of minor"
+  },
+  {
+    "id": "p2-97",
+    "text": "My opponent threatened to hit me. What happens?",
+    "expect": [
+      "Unsporting Conduct — Aggressive Behavior, Disqualification: threatening another player, or tearing up their card, is the IPG's own example; the organizer should ask the offender to leave the venue (IPG 4.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.5"
+    ],
+    "note": "track policy2: probe aggro"
+  },
+  {
+    "id": "p2-98",
+    "text": "My opponent threatened me because I wouldn't concede. Penalty?",
+    "expect": [
+      "Unsporting Conduct — Aggressive Behavior, Disqualification: threatening another player, or tearing up their card, is the IPG's own example; the organizer should ask the offender to leave the venue (IPG 4.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.5"
+    ],
+    "note": "track policy2: paraphrase of aggro"
+  },
+  {
+    "id": "p2-99",
+    "text": "My opponent tore up one of my cards. What's the penalty?",
+    "expect": [
+      "Unsporting Conduct — Aggressive Behavior, Disqualification: threatening another player, or tearing up their card, is the IPG's own example; the organizer should ask the offender to leave the venue (IPG 4.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.5"
+    ],
+    "note": "track policy2: paraphrase of aggro"
+  },
+  {
+    "id": "p2-100",
+    "text": "My opponent stole a card from my sideboard. What happens?",
+    "expect": [
+      "Unsporting Conduct — Theft of Tournament Material, Disqualification: stealing from an opponent's sideboard, or keeping a previous opponent's card instead of telling an official, are the IPG's own first and third examples (IPG 4.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.6"
+    ],
+    "note": "track policy2: probe theft"
+  },
+  {
+    "id": "p2-101",
+    "text": "Someone took cards out of my sideboard. Penalty?",
+    "expect": [
+      "Unsporting Conduct — Theft of Tournament Material, Disqualification: stealing from an opponent's sideboard, or keeping a previous opponent's card instead of telling an official, are the IPG's own first and third examples (IPG 4.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.6"
+    ],
+    "note": "track policy2: paraphrase of theft"
+  },
+  {
+    "id": "p2-102",
+    "text": "I found my last opponent's card and kept it. Is that a penalty?",
+    "expect": [
+      "Unsporting Conduct — Theft of Tournament Material, Disqualification: stealing from an opponent's sideboard, or keeping a previous opponent's card instead of telling an official, are the IPG's own first and third examples (IPG 4.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.6"
+    ],
+    "note": "track policy2: paraphrase of theft"
+  },
+  {
+    "id": "p2-103",
+    "text": "What counts as cheating?",
+    "expect": [
+      "Cheating, a Disqualification, needs all of these: the player breaks a tournament rule, lies to a tournament official, or notices an offense in their match and doesn't call attention to it; they're trying to gain an advantage from it; and they know it's illegal (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: probe cheat"
+  },
+  {
+    "id": "p2-104",
+    "text": "When is something cheating instead of a mistake?",
+    "expect": [
+      "Cheating, a Disqualification, needs all of these: the player breaks a tournament rule, lies to a tournament official, or notices an offense in their match and doesn't call attention to it; they're trying to gain an advantage from it; and they know it's illegal (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: paraphrase of cheat"
+  },
+  {
+    "id": "p2-105",
+    "text": "What does a player have to do for it to be cheating?",
+    "expect": [
+      "Cheating, a Disqualification, needs all of these: the player breaks a tournament rule, lies to a tournament official, or notices an offense in their match and doesn't call attention to it; they're trying to gain an advantage from it; and they know it's illegal (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: paraphrase of cheat"
+  },
+  {
+    "id": "p2-106",
+    "text": "I noticed my opponent made a mistake that helps me. Do I have to point it out?",
+    "expect": [
+      "Yes, you have to point it out: letting an opponent's illegal action go by on purpose, for your own advantage or to bring it up at a better time, is Cheating, a Disqualification (IPG 2.6, 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.6",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: probe cheatnotice"
+  },
+  {
+    "id": "p2-107",
+    "text": "Is it cheating to not point out my opponent's error?",
+    "expect": [
+      "Yes, you have to point it out: letting an opponent's illegal action go by on purpose, for your own advantage or to bring it up at a better time, is Cheating, a Disqualification (IPG 2.6, 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.6",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: paraphrase of cheatnotice"
+  },
+  {
+    "id": "p2-108",
+    "text": "My opponent resolved only half of their Sword trigger and I didn't say anything. Is that cheating?",
+    "expect": [
+      "Yes, if you noticed and chose to say nothing: an opponent resolving only half of Sword of Feast and Famine's trigger while you stay quiet is the IPG's own example D of Cheating, a Disqualification (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 2.6",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: paraphrase of cheatnotice"
+  },
+  {
+    "id": "p2-109",
+    "text": "I accidentally drew an extra card and didn't call a judge to avoid a penalty. Is that cheating?",
+    "expect": [
+      "That's Cheating, a Disqualification: realizing you drew an extra card and not calling a judge to avoid a penalty is the IPG's own example G (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: probe cheathide"
+  },
+  {
+    "id": "p2-110",
+    "text": "What if I draw an extra card and just don't say anything?",
+    "expect": [
+      "That's Cheating, a Disqualification: realizing you drew an extra card and not calling a judge to avoid a penalty is the IPG's own example G (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: paraphrase of cheathide"
+  },
+  {
+    "id": "p2-111",
+    "text": "Drew an extra and hid it so I wouldn't get a warning. What happens?",
+    "expect": [
+      "That's Cheating, a Disqualification: realizing you drew an extra card and not calling a judge to avoid a penalty is the IPG's own example G (IPG 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "IPG 4.8"
+    ],
+    "note": "track policy2: paraphrase of cheathide"
+  },
+  {
+    "id": "p2-112",
+    "text": "Can we agree to an intentional draw?",
+    "expect": [
+      "Yes: until the match result is recorded, you may mutually agree to a draw (MTR 2.5). An intentional draw with no games played is reported as 0-0-3 (MTR 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.5",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: probe id"
+  },
+  {
+    "id": "p2-113",
+    "text": "Can we just ID the last round?",
+    "expect": [
+      "Yes: until the match result is recorded, you may mutually agree to a draw (MTR 2.5). An intentional draw with no games played is reported as 0-0-3 (MTR 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.5",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of id"
+  },
+  {
+    "id": "p2-114",
+    "text": "Is it legal to agree to a draw with my opponent?",
+    "expect": [
+      "Yes: until the match result is recorded, you may mutually agree to a draw (MTR 2.5). An intentional draw with no games played is reported as 0-0-3 (MTR 2.5)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.5",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of id"
+  },
+  {
+    "id": "p2-115",
+    "text": "Time was called in the middle of my turn. What happens?",
+    "expect": [
+      "The player whose turn it is finishes it, then five more turns are played in total — usually three for one player and two for the other (MTR 2.4). If the active player had already passed the turn when time was called, the time counts as the next turn (MTR 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.4"
+    ],
+    "note": "track policy2: probe time"
+  },
+  {
+    "id": "p2-116",
+    "text": "The round ended while it was my turn. How many more turns do we get?",
+    "expect": [
+      "The player whose turn it is finishes it, then five more turns are played in total — usually three for one player and two for the other (MTR 2.4). If the active player had already passed the turn when time was called, the time counts as the next turn (MTR 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.4"
+    ],
+    "note": "track policy2: paraphrase of time"
+  },
+  {
+    "id": "p2-117",
+    "text": "What happens when time is called in a match?",
+    "expect": [
+      "The player whose turn it is finishes it, then five more turns are played in total — usually three for one player and two for the other (MTR 2.4). If the active player had already passed the turn when time was called, the time counts as the next turn (MTR 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.4"
+    ],
+    "note": "track policy2: paraphrase of time"
+  },
+  {
+    "id": "p2-118",
+    "text": "Time was called in game 3 of a top 8 match and nobody won. What happens?",
+    "expect": [
+      "In single elimination a match can't end in a draw: if game wins are tied at the end of the additional turns, the player with the highest life total wins the current game (MTR 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.4"
+    ],
+    "note": "track policy2: probe timese"
+  },
+  {
+    "id": "p2-119",
+    "text": "In single elimination, what happens if time runs out?",
+    "expect": [
+      "In single elimination a match can't end in a draw: if game wins are tied at the end of the additional turns, the player with the highest life total wins the current game (MTR 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.4"
+    ],
+    "note": "track policy2: paraphrase of timese"
+  },
+  {
+    "id": "p2-120",
+    "text": "We're in the top 8 and the game isn't finished at the end of extra turns. Who wins?",
+    "expect": [
+      "In single elimination a match can't end in a draw: if game wins are tied at the end of the additional turns, the player with the highest life total wins the current game (MTR 2.4)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.4"
+    ],
+    "note": "track policy2: paraphrase of timese"
+  },
+  {
+    "id": "p2-121",
+    "text": "Can I look at my opponent's graveyard?",
+    "expect": [
+      "Yes: graveyards are public, and you may examine the cards in any graveyard at any time (404.2). You may not change the order of your opponent's graveyard (MTR 3.15)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "404.2",
+      "MTR 3.15",
+      "IPG 3.3"
+    ],
+    "note": "track policy2: probe gy"
+  },
+  {
+    "id": "p2-122",
+    "text": "Am I allowed to look through my opponent's graveyard?",
+    "expect": [
+      "Yes: graveyards are public, and you may examine the cards in any graveyard at any time (404.2). You may not change the order of your opponent's graveyard (MTR 3.15)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "404.2",
+      "MTR 3.15",
+      "IPG 3.3"
+    ],
+    "note": "track policy2: paraphrase of gy"
+  },
+  {
+    "id": "p2-123",
+    "text": "My opponent keeps looking through my graveyard over and over. Is that allowed?",
+    "expect": [
+      "Looking is allowed — any player may examine any graveyard at any time (404.2) — but reviewing it over and over without a significant change in the game is Slow Play, a Warning (IPG 3.3, its example A). Call a judge if it's slowing the match."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "404.2",
+      "MTR 3.15",
+      "IPG 3.3"
+    ],
+    "note": "track policy2: paraphrase of gy"
+  },
+  {
+    "id": "p2-124",
+    "text": "Can I look at my opponent's library?",
+    "expect": [
+      "No: nobody may look at the cards in a library unless an effect allows it (401.2), and players must not actively try to gain hidden information (MTR 3.13). You may count how many cards are in it at any time (401.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "401.2",
+      "401.3",
+      "MTR 3.13"
+    ],
+    "note": "track policy2: probe lib"
+  },
+  {
+    "id": "p2-125",
+    "text": "Can I look through my opponent's deck?",
+    "expect": [
+      "No: nobody may look at the cards in a library unless an effect allows it (401.2), and players must not actively try to gain hidden information (MTR 3.13). You may count how many cards are in it at any time (401.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "401.2",
+      "401.3",
+      "MTR 3.13"
+    ],
+    "note": "track policy2: paraphrase of lib"
+  },
+  {
+    "id": "p2-126",
+    "text": "Can I look at my own library during the game?",
+    "expect": [
+      "No: nobody may look at the cards in a library, including their own, unless an effect allows it (401.2). You may count how many cards are in it at any time (401.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "401.2",
+      "401.3",
+      "MTR 3.13"
+    ],
+    "note": "track policy2: paraphrase of lib"
+  },
+  {
+    "id": "p2-127",
+    "text": "My opponent is showing their hand by accident. Do I have to tell them?",
+    "expect": [
+      "No: you're not required to tell an opponent who is accidentally revealing their hand, but you must not actively try to see it (MTR 3.13)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.13"
+    ],
+    "note": "track policy2: probe flash"
+  },
+  {
+    "id": "p2-128",
+    "text": "My opponent's cards are visible to me. Do I have to say something?",
+    "expect": [
+      "No: you're not required to tell an opponent who is accidentally revealing their hand, but you must not actively try to see it (MTR 3.13)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.13"
+    ],
+    "note": "track policy2: paraphrase of flash"
+  },
+  {
+    "id": "p2-129",
+    "text": "Can I show my hand to my opponent?",
+    "expect": [
+      "Yes: you may choose to show your hand, or any other hidden information you have, to other players unless the rules specifically prohibit it (MTR 3.13)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.13"
+    ],
+    "note": "track policy2: paraphrase of flash"
+  },
+  {
+    "id": "p2-130",
+    "text": "Do I have to return my sideboard to its original state before the next match?",
+    "expect": [
+      "Yes: your deck and sideboard must each be returned to their original, registered compositions before the first game of each match (MTR 3.16)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.16"
+    ],
+    "note": "track policy2: probe sbreset"
+  },
+  {
+    "id": "p2-131",
+    "text": "Do I have to desideboard between matches?",
+    "expect": [
+      "Yes: your deck and sideboard must each be returned to their original, registered compositions before the first game of each match (MTR 3.16)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.16"
+    ],
+    "note": "track policy2: paraphrase of sbreset"
+  },
+  {
+    "id": "p2-132",
+    "text": "Can I keep my sideboarded deck for the next round?",
+    "expect": [
+      "No: your deck and sideboard must each be returned to their original, registered compositions before the first game of each match (MTR 3.16)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.16"
+    ],
+    "note": "track policy2: paraphrase of sbreset"
+  },
+  {
+    "id": "p2-133",
+    "text": "Can I count my opponent's sideboard?",
+    "expect": [
+      "Yes: your opponent presents their sideboard face down before each game, and you may count its cards at any time (MTR 3.16)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.16"
+    ],
+    "note": "track policy2: probe sbcount"
+  },
+  {
+    "id": "p2-134",
+    "text": "Do I have to tell my opponent how many cards I sideboarded?",
+    "expect": [
+      "No: you don't have to say how many cards you swapped, and you needn't swap one for one; your opponent may count your sideboard at any time, though (MTR 3.16)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.16"
+    ],
+    "note": "track policy2: paraphrase of sbcount"
+  },
+  {
+    "id": "p2-135",
+    "text": "Can I look at my sideboard during a game?",
+    "expect": [
+      "Yes: during a game you may look at your own sideboard, as long as it stays clearly distinguishable from your other cards (MTR 3.16)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.16"
+    ],
+    "note": "track policy2: paraphrase of sbcount"
+  },
+  {
+    "id": "p2-136",
+    "text": "Can I use my phone during the match?",
+    "expect": [
+      "Yes, within limits: you may use it, but not to look up substantial strategic advice, and during the match anything but a brief personal call must be visible to all players; to look at something privately, ask a judge (MTR 2.12)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.12",
+      "MTR 2.11"
+    ],
+    "note": "track policy2: probe phone"
+  },
+  {
+    "id": "p2-137",
+    "text": "Am I allowed to look things up on my phone during a game?",
+    "expect": [
+      "Yes, within limits: you may use it, but not to look up substantial strategic advice, and during the match anything but a brief personal call must be visible to all players; to look at something privately, ask a judge (MTR 2.12)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.12",
+      "MTR 2.11"
+    ],
+    "note": "track policy2: paraphrase of phone"
+  },
+  {
+    "id": "p2-138",
+    "text": "Can I check the Oracle text of a card on my phone?",
+    "expect": [
+      "Yes: you may check Oracle text at any time, publicly and in a format with no other strategic information; at Regular REL online sources like Gatherer are fine even with a little strategy on them. To read it privately, ask a judge (MTR 2.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.12",
+      "MTR 2.11"
+    ],
+    "note": "track policy2: paraphrase of phone"
+  },
+  {
+    "id": "p2-139",
+    "text": "How much extra time do we get for a deck check?",
+    "expect": [
+      "The match gets a time extension equal to the time the deck check took, plus three minutes (MTR 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.6"
+    ],
+    "note": "track policy2: probe deckcheck"
+  },
+  {
+    "id": "p2-140",
+    "text": "The judges took our decks for a deck check. Do we get extra time?",
+    "expect": [
+      "The match gets a time extension equal to the time the deck check took, plus three minutes (MTR 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.6"
+    ],
+    "note": "track policy2: paraphrase of deckcheck"
+  },
+  {
+    "id": "p2-141",
+    "text": "How long is the time extension after a deck check?",
+    "expect": [
+      "The match gets a time extension equal to the time the deck check took, plus three minutes (MTR 2.6)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.6"
+    ],
+    "note": "track policy2: paraphrase of deckcheck"
+  },
+  {
+    "id": "p2-142",
+    "text": "How does the mulligan work at a tournament?",
+    "expect": [
+      "Before each game: sideboard (if allowed), shuffle, present your deck to your opponent for more shuffling along with your sideboard, note any companion, settle play or draw, draw seven, then mulligans in turn order (MTR 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.3",
+      "103.5"
+    ],
+    "note": "track policy2: probe mullproc"
+  },
+  {
+    "id": "p2-143",
+    "text": "Do I have to present my deck again after I mulligan?",
+    "expect": [
+      "Yes: each time you mulligan you shuffle again and present your deck to your opponent again, as before the first hand (MTR 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.3",
+      "103.5"
+    ],
+    "note": "track policy2: paraphrase of mullproc"
+  },
+  {
+    "id": "p2-144",
+    "text": "What is the pregame procedure at a tournament?",
+    "expect": [
+      "Before each game: sideboard (if allowed), shuffle, present your deck to your opponent for more shuffling along with your sideboard, note any companion, settle play or draw, draw seven, then mulligans in turn order (MTR 2.3)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.3",
+      "103.5"
+    ],
+    "note": "track policy2: paraphrase of mullproc"
+  },
+  {
+    "id": "p2-145",
+    "text": "I played an Island but meant to play a Swamp. Can I take it back?",
+    "expect": [
+      "Probably: playing an Island and saying \"Sorry, I meant to play a Swamp\" before anything else happens is MTR 4.8's own first example — a judge may let you change it, since you've gained no information since (MTR 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 4.8"
+    ],
+    "note": "track policy2: probe landback"
+  },
+  {
+    "id": "p2-146",
+    "text": "I played the wrong land and immediately said so. Can I change it?",
+    "expect": [
+      "Probably: playing an Island and saying \"Sorry, I meant to play a Swamp\" before anything else happens is MTR 4.8's own first example — a judge may let you change it, since you've gained no information since (MTR 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 4.8"
+    ],
+    "note": "track policy2: paraphrase of landback"
+  },
+  {
+    "id": "p2-147",
+    "text": "Can I take back a play after my opponent reacted?",
+    "expect": [
+      "No: once your opponent has reacted you've gained information, and players may not use an opponent's reaction (or lack of one) to decide whether to change what they committed to (MTR 4.8)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 4.8"
+    ],
+    "note": "track policy2: paraphrase of landback"
+  },
+  {
+    "id": "p2-148",
+    "text": "Can I ask a judge to check my opponent's sleeves?",
+    "expect": [
+      "Yes: during a match you may ask a judge to inspect your opponent's sleeves; the judge may disallow them if they believe they're marked or worn, and may delay a change of sleeves until the end of the match (MTR 3.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.11"
+    ],
+    "note": "track policy2: probe sleeves"
+  },
+  {
+    "id": "p2-149",
+    "text": "I think my opponent's sleeves are marked. What can I do?",
+    "expect": [
+      "Call a judge: during a match you may ask a judge to inspect your opponent's sleeves; the judge may disallow them if they believe they're marked or worn, and may delay a change of sleeves until the end of the match (MTR 3.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.11"
+    ],
+    "note": "track policy2: paraphrase of sleeves"
+  },
+  {
+    "id": "p2-150",
+    "text": "Can I call a judge about my opponent's sleeves?",
+    "expect": [
+      "Yes: during a match you may ask a judge to inspect your opponent's sleeves; the judge may disallow them if they believe they're marked or worn, and may delay a change of sleeves until the end of the match (MTR 3.11)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 3.11"
+    ],
+    "note": "track policy2: paraphrase of sleeves"
+  },
+  {
+    "id": "p2-151",
+    "text": "Who chooses to play or draw after a drawn game?",
+    "expect": [
+      "The player who chose to play or draw at the start of the drawn game chooses again (MTR 2.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.2"
+    ],
+    "note": "track policy2: probe playdraw"
+  },
+  {
+    "id": "p2-152",
+    "text": "Who decides play or draw for the next game?",
+    "expect": [
+      "The loser of the previous game chooses, and may wait until after sideboarding to decide; after a drawn game, the player who chose at the start of that game chooses again (MTR 2.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.2"
+    ],
+    "note": "track policy2: paraphrase of playdraw"
+  },
+  {
+    "id": "p2-153",
+    "text": "We drew game 1. Who chooses play or draw for game 2?",
+    "expect": [
+      "The player who chose to play or draw at the start of the drawn game chooses again (MTR 2.2)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 2.2"
+    ],
+    "note": "track policy2: paraphrase of playdraw"
+  },
+  {
+    "id": "p2-154",
+    "text": "At a Commander night at my LGS, my opponent drew an extra card. What happens?",
+    "expect": [
+      "No penalty at Regular REL: 1 card is taken at random from their hand and put on top of their library, without shuffling it (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 1.12",
+      "121.1",
+      "504.1",
+      "IPG 2.3",
+      "JAR"
+    ],
+    "note": "track policy2: probe cmdr"
+  },
+  {
+    "id": "p2-155",
+    "text": "At commander night my opponent forgot to reveal the card from Dark Confidant. What happens?",
+    "expect": [
+      "No penalty at Regular REL, and it isn't a missed trigger, since the trigger resolved: the judge fixes anything still illegal, or backs up if it was caught quickly and that's easy; otherwise the game goes on (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 1.12",
+      "IPG 2.3"
+    ],
+    "note": "track policy2: paraphrase of cmdr"
+  },
+  {
+    "id": "p2-156",
+    "text": "At my LGS Commander night, can we roll a die to decide who wins?",
+    "expect": [
+      "No — at Regular REL deciding a match with a die, coin or anything outside the game isn't allowed either; it's handled by educating the players, with a Game Loss if it continues, and doing it knowingly is a Serious Problem (JAR)."
+    ],
+    "cite": [
+      "100.6",
+      "733.1c",
+      "MTR 1.12",
+      "IPG 4.3",
+      "MTR 5.2"
+    ],
+    "note": "track policy2: paraphrase of cmdr"
   }
 ]

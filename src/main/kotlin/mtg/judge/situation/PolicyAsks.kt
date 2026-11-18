@@ -52,6 +52,7 @@ internal object PolicyAsks {
             "shortcut" -> "question: what does the shortcut mean?"
             "ooo" -> "question: can actions be done out of order?"
             "loop" -> "question: how is the loop handled at a tournament?"
+            "p2" -> "question: ${Policy2.question(f["sub"])}"
             else -> null
         }
         return listOfNotNull(q, facts.takeIf { it.isNotEmpty() }?.joinToString("; ")).joinToString("; ").ifEmpty { "a detail of the tournament situation" }

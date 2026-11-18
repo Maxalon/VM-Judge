@@ -70,6 +70,7 @@ internal object Policy {
             "shortcut" -> shortcut(x, r)
             "ooo" -> outOfOrder(x, r)
             "loop" -> loop(x, r)
+            "p2" -> Policy2.rule(x, r)
             else -> generic(x, r)
         }
         // "Do I get a penalty?": the answer says so before the ruling.

@@ -4857,6 +4857,7 @@ class SituationParser(private val names: NameIndex) {
         t2 = redteamRewrites(t2, m, ctx)
         t2 = exam2Rewrites(t2, m, ctx)
         t2 = policyRewrites(t2, m, ctx)
+        t2 = policy2Rewrites(t2, m, ctx)
         t2 = lifeDamageRewrites(t2, m, ctx)
         t2 = examRewrites(t2, m, ctx)
         t2 = cedhRewrites(t2, m, ctx)
@@ -8957,7 +8958,7 @@ class SituationParser(private val names: NameIndex) {
     }
 
     /** Card names that are also the words of a judge call ("I said go", "I saw the top card", "out of order"): read as the words. */
-    private val policyWords = setOf("forget", "saw", "said", "order", "suspend", "shuffle", "scry", "lie", "loop", "pass", "combat", "untap", "late", "remember", "notice", "penalty", "warning", "judge", "cheating", "mulligan", "tardy", "ago", "over the top", "turns", "later", "go", "attack", "lands", "extra", "rushed", "slow")
+    private val policyWords = setOf("forget", "saw", "said", "order", "suspend", "shuffle", "scry", "lie", "loop", "pass", "combat", "untap", "late", "night", "remember", "notice", "penalty", "warning", "judge", "cheating", "mulligan", "tardy", "ago", "over the top", "turns", "later", "go", "attack", "lands", "extra", "rushed", "slow")
 
     private val policyHints = listOf("cumulative" to """\bcumulative upkeep\b""", "upkeep" to """\bupkeep\b""", "oppdraw" to """\b(?:my opponent|they|he|she|opponent) (?:drew|draws|drawing)\b""",
         "draw" to """\bdraw step\b""", "exalted" to """\bexalted\b""", "attack" to """\battack(?:s|ing|ed)?\b""", "end" to """\bend step\b|\bend of (?:the )?turn\b""",
@@ -8974,6 +8975,8 @@ class SituationParser(private val names: NameIndex) {
         var s = t.trim().trimEnd('?', '.', '!').trim().lowercase()
         // "What happens if I forget my trigger": "Forget" is also a card's name; here it is the verb.
         for ((ph, e) in m.cards) if (e.display.lowercase() in policyWords) s = s.replace(Regex("""\b$ph\b"""), e.display.lowercase())
+        // "It's a Commander night": "night" read as the start of a card's name.
+        for ((ph, e) in m.cards) if (e.display.lowercase().startsWith("night")) s = s.replace(Regex("""\bcommander $ph\b"""), "commander night")
         s = s.replace('’', '\'').replace("\"", "")
         val inPolicy = ctx.asks.any { it.to?.startsWith("ip:") == true }
         val f = LinkedHashMap<String, String>()
@@ -9122,6 +9125,15 @@ class SituationParser(private val names: NameIndex) {
         } ?: return t
         f["q"] = q
         return mk("q")
+    }
+
+    /** Track policy2: the marker sentence Policy2Canon leaves ("P2ask qdie who=opp ev=commander_night.") as an "ippol p2" marker, the event read as policyRel reads it. */
+    private fun policy2Rewrites(t: String, m: Marked, ctx: Ctx): String {
+        val r = Regex("""^p2ask q([a-z0-9]+)((?: [a-z]+=\S+)*)$""").find(t.trim().trimEnd('.', '?', '!').trim().lowercase()) ?: return t
+        val f = LinkedHashMap<String, String>()
+        f["sub"] = r.groupValues[1]
+        for (kv in r.groupValues[2].trim().split(' ').filter { '=' in it }) { val k = kv.substringBefore('='); val v = kv.substringAfter('='); if (k == "ev") policyRel("at a " + v.replace('_', ' '), f) else f[k] = v }
+        return "ippol p2 " + f.entries.joinToString(" ") { "${it.key}=${it.value.replace(' ', '_')}" }
     }
 
     /** The "ippol" markers [policyRewrites] leaves, as "ip:" asks. Each new one defers the ones before it, so the last one rules with everything said. */
