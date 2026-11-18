@@ -730,7 +730,7 @@
     "id": "zulaport-damnation",
     "text": "I control Zulaport Cutthroat and my opponent casts Damnation. I have three creatures.",
     "expect": [
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "cite": [
       "603.10a",
@@ -762,7 +762,7 @@
     "id": "panharmonicon-mulldrifter",
     "text": "I control Panharmonicon and cast Mulldrifter.",
     "expect": [
-      "You draw 2 cards. (×2)"
+      "You draw 2 cards (twice)."
     ],
     "cite": [
       "603.2"
@@ -931,7 +931,7 @@
     "id": "three-players-rhystic-nobody-pays",
     "text": "Alice, Bob and Carol are playing. Alice has Rhystic Study. Bob casts Sol Ring and Carol casts Counterspell on it. Nobody pays.",
     "expect": [
-      "Alice draws 1 card. (×2)",
+      "Alice draws 1 card (twice).",
       "Sol Ring is countered"
     ],
     "cite": [
@@ -943,7 +943,7 @@
     "id": "exalted-commander-alone",
     "text": "I attack Bob with my commander Rafiq of the Many alone. Bob is at 6.",
     "expect": [
-      "Bob takes 4 damage. (×2)",
+      "Bob takes 4 damage (twice).",
       "Bob has taken 8 commander damage from Rafiq of the Many",
       "Bob loses the game"
     ],
@@ -1112,7 +1112,7 @@
     "id": "ponder-preordain",
     "text": "I cast Ponder. Then I cast Preordain. Do I draw?",
     "expect": [
-      "You draw 1 card. (×2)"
+      "You draw 1 card (twice)."
     ],
     "cite": [
       "121.1"
@@ -1520,7 +1520,7 @@
     "id": "craterhoof-under-norn",
     "text": "My opponent has Elesh Norn, Grand Cenobite. I cast Craterhoof Behemoth with two Llanowar Elves in play.",
     "expect": [
-      "Llanowar Elves: the battlefield → your graveyard. (×2)",
+      "Llanowar Elves: the battlefield → your graveyard (twice).",
       "Craterhoof Behemoth is 4/4 with trample until end of turn"
     ],
     "cite": [
@@ -1567,7 +1567,7 @@
     "text": "I control Sheoldred, the Apocalypse and cast Divination.",
     "expect": [
       "You draw 2 cards",
-      "You gain 2 life. (×2)"
+      "You gain 2 life (twice)."
     ],
     "cite": [
       "119.3"
@@ -1802,7 +1802,7 @@
     "id": "obliterator-bolted",
     "text": "My opponent has Phyrexian Obliterator. I have three Forests and Grizzly Bears. I bolt the Obliterator.",
     "expect": [
-      "Forest: the battlefield → your graveyard. (×3)"
+      "Forest: the battlefield → your graveyard (three times)."
     ],
     "cite": [
       "701.21a"
@@ -1813,7 +1813,7 @@
     "text": "My opponent attacks me with Phyrexian Obliterator and I block with Grizzly Bears. I control two Forests.",
     "expect": [
       "Grizzly Bears: the battlefield → your graveyard",
-      "Forest: the battlefield → your graveyard. (×2)"
+      "Forest: the battlefield → your graveyard (twice)."
     ],
     "cite": [
       "701.21a",
@@ -1857,7 +1857,7 @@
     "id": "rhystic-three-spells-none-paid",
     "text": "I have Rhystic Study and my opponent casts three spells this turn, paying for none of them.",
     "expect": [
-      "You draw 1 card. (×3)"
+      "You draw 1 card (three times)."
     ],
     "cite": [
       "608.2g"
@@ -1969,7 +1969,7 @@
     "id": "krenko-three-goblins",
     "text": "I control Krenko, Mob Boss and 3 other goblins. I tap Krenko.",
     "expect": [
-      "You get a Goblin token. (×4)"
+      "You get a Goblin token (four times)."
     ],
     "cite": [
       "608.2h",
@@ -2000,7 +2000,7 @@
     "id": "pyroclasm-described-creatures",
     "text": "I have two 2/2 zombies and a 4/4 with flying. My opponent casts Pyroclasm.",
     "expect": [
-      "a 2/2 zombie creature: the battlefield → your graveyard. (×2)",
+      "a 2/2 zombie creature: the battlefield → your graveyard (twice).",
       "a 4/4 creature with flying has 2 damage marked"
     ],
     "cite": [
@@ -2011,8 +2011,8 @@
     "id": "sheoldred-wheel",
     "text": "I control Sheoldred, the Apocalypse and my opponent casts Wheel of Fortune.",
     "expect": [
-      "opponent loses 2 life. (×7)",
-      "You gain 2 life. (×7)"
+      "opponent loses 2 life (seven times).",
+      "You gain 2 life (seven times)."
     ],
     "cite": [
       "121.1"
@@ -2109,7 +2109,7 @@
     "id": "ghostly-prison-named-two-creatures",
     "text": "Bob has Ghostly Prison. I attack Bob with two creatures but only have 2 mana.",
     "expect": [
-      "Bob takes 1 damage. (×2)"
+      "Bob takes 1 damage (twice)."
     ],
     "cite": [
       "508.1c"
@@ -2435,7 +2435,7 @@
     "id": "kci-two-treasures",
     "text": "I have Krark-Clan Ironworks and sacrifice two Treasure tokens to it.",
     "expect": [
-      "Krark-Clan Ironworks's mana ability: add {C}{C}. (×2)"
+      "Krark-Clan Ironworks's mana ability: add {C}{C} (twice)."
     ],
     "cite": [
       "605.1a",
@@ -2470,7 +2470,7 @@
     "id": "propaganda-pay-for-two",
     "text": "My opponent has Propaganda and I attack with three creatures but can only pay for two.",
     "expect": [
-      "opponent takes 1 damage. (×2)"
+      "opponent takes 1 damage (twice)."
     ],
     "cite": [
       "508.1c"
@@ -2657,7 +2657,7 @@
     "id": "sheoldred-brainstorm-at-five",
     "text": "My opponent has Sheoldred, the Apocalypse and I cast Brainstorm at 5 life. Do I die?",
     "expect": [
-      "You lose 2 life. (×3)",
+      "You lose 2 life (three times).",
       "You lose the game",
       "Yes: You have lost the game"
     ],
@@ -2834,7 +2834,7 @@
     "id": "overrun-attack-with-both",
     "text": "I have two Grizzly Bears and cast Overrun. I attack with both. My opponent blocks one with a 1/1.",
     "expect": [
-      "Grizzly Bears is 5/5 with trample until end of turn. (×2)",
+      "Grizzly Bears is 5/5 with trample until end of turn (twice).",
       "opponent takes 4 damage",
       "opponent takes 5 damage"
     ],
@@ -2943,7 +2943,7 @@
     "id": "sheoldred-draw-two",
     "text": "I have Sheoldred, the Apocalypse. My opponent draws a card. Then I draw two.",
     "expect": [
-      "You gain 2 life. (×2)",
+      "You gain 2 life (twice).",
       "opponent loses 2 life"
     ],
     "cite": [
@@ -3068,7 +3068,7 @@
     "id": "mirror-entity-x4-attack",
     "text": "I have Mirror Entity and three 1/1 Soldier tokens. I activate Mirror Entity with X=4 and attack with everything.",
     "expect": [
-      "opponent takes 4 damage. (×4)"
+      "opponent takes 4 damage (four times)."
     ],
     "notExpect": [
       "not modeled"
@@ -3148,7 +3148,7 @@
     "text": "I cast Torment of Hailfire with X=3. My opponent has no cards in hand and controls Grizzly Bears.",
     "expect": [
       "Grizzly Bears: the battlefield → opponent's graveyard",
-      "opponent loses 3 life. (×2)"
+      "opponent loses 3 life (twice)."
     ],
     "notExpect": [
       "not modeled"
@@ -3202,7 +3202,7 @@
     "id": "ghostly-prison-four-lands-three-attackers",
     "text": "My opponent has Ghostly Prison. I have 4 lands and attack with three creatures.",
     "expect": [
-      "opponent takes 1 damage. (×2)"
+      "opponent takes 1 damage (twice)."
     ],
     "notExpect": [
       "Not understood",
@@ -3786,8 +3786,8 @@
     "id": "blood-artist-pyroclasm-three-triggers",
     "text": "I have Blood Artist and my opponent casts Pyroclasm. I control two 1/1 tokens. How much life do they lose?",
     "expect": [
-      "opponent loses 1 life. (×3)",
-      "You gain 1 life. (×3)"
+      "opponent loses 1 life (three times).",
+      "You gain 1 life (three times)."
     ],
     "cite": [
       "603.10a"
@@ -3917,7 +3917,7 @@
     "id": "craterhoof-attack-with-everything",
     "text": "I control two Grizzly Bears and cast Craterhoof Behemoth. How much damage do I deal if I attack with everything?",
     "expect": [
-      "opponent takes 5 damage. (×2)",
+      "opponent takes 5 damage (twice).",
       "opponent takes 8 damage"
     ],
     "cite": [
@@ -3928,7 +3928,7 @@
     "id": "settle-how-many-lands",
     "text": "My opponent attacks with Grizzly Bears. I cast Settle the Wreckage. How many lands do they get?",
     "expect": [
-      "opponent searches their library for 1 (that many) basic land cards and puts it onto the battlefield tapped (Settle the Wreckage)."
+      "opponent searches their library for 1 (that many) basic land card and puts it onto the battlefield tapped (Settle the Wreckage)."
     ],
     "cite": [
       "701.13a"
@@ -3979,7 +3979,7 @@
     "text": "I'm at 5. I cast Lightning Bolt at my opponent who is at 3 and they respond with Lightning Helix targeting me. Who dies?",
     "expect": [
       "No: You are still in the game at 2 life",
-      "No: opponent is still in the game at 3 life"
+      "opponent is still in the game at 3 life"
     ],
     "cite": [
       "119.3"
@@ -3989,7 +3989,7 @@
     "id": "bears-vs-bears-both-die",
     "text": "I attack with Grizzly Bears and my opponent blocks with Grizzly Bears. Both die?",
     "expect": [
-      "Yes: Grizzly Bears died (it's in the graveyard). (×2)"
+      "Yes: Grizzly Bears died (it's in the graveyard) (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -4051,7 +4051,7 @@
     "id": "grave-titan-tokens",
     "text": "I have Grave Titan. It enters. How many tokens do I get?",
     "expect": [
-      "You get a Zombie token. (×2)"
+      "You get a Zombie token (twice)."
     ],
     "notExpect": [
       "not tracked"
@@ -4848,7 +4848,7 @@
     "id": "blood-artist-on-two-deaths",
     "text": "I control Blood Artist and two of my creatures die at once. How much life does my opponent lose?",
     "expect": [
-      "opponent loses 1 life. (×2)"
+      "opponent loses 1 life (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -4898,7 +4898,7 @@
     "text": "I control Elesh Norn, Mother of Machines and Soul Warden. A creature enters under my control. What happens?",
     "expect": [
       "trigger an additional time",
-      "You gain 1 life. (×2)"
+      "You gain 1 life (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -5423,7 +5423,7 @@
     "id": "wurmcoil-makes-two-tokens",
     "text": "I control Wurmcoil Engine and it dies. What happens?",
     "expect": [
-      "You get a Phyrexian Wurm token. (×2)"
+      "You get a Phyrexian Wurm token (twice)."
     ],
     "notExpect": [
       "not tracked in detail"
@@ -6024,7 +6024,7 @@
     "text": "I control Krenko, Mob Boss with five Goblins and I activate it. How many tokens do I get?",
     "expect": [
       "X is 6: the number of Goblins you control",
-      "You get a Goblin token. (×6)"
+      "You get a Goblin token (six times)."
     ],
     "notExpect": [
       "X is 1"
@@ -6809,7 +6809,7 @@
     "id": "sacrificing-a-number-of-creatures",
     "text": "I control Ashnod's Altar and sacrifice two creatures. How much mana do I get?",
     "expect": [
-      "a creature: the battlefield → your graveyard. (×2)"
+      "a creature: the battlefield → your graveyard (twice)."
     ],
     "notExpect": [],
     "cite": [
@@ -8244,7 +8244,7 @@
     "id": "six-creatures-said-as-a-word",
     "text": "I control six Grizzly Bears and my opponent casts Wrath of God. What happens?",
     "expect": [
-      "(×6)"
+      "(six times)"
     ],
     "notExpect": [],
     "cite": []
@@ -8516,7 +8516,7 @@
     "id": "who-dies-in-combat",
     "text": "I attack with Grizzly Bears and my opponent blocks with Hill Giant. Who dies?",
     "expect": [
-      "Yes: Grizzly Bears died"
+      "Grizzly Bears died"
     ],
     "notExpect": [
       "You are still in the game"
@@ -8624,7 +8624,7 @@
     "id": "commander-identity-mana",
     "text": "I control Command Tower. What mana can it make?",
     "expect": [
-      "any color in your commander's color identity"
+      "any colour in your commander's colour identity"
     ],
     "notExpect": [
       "Nothing changes"
@@ -8828,7 +8828,7 @@
     "id": "primal-vigor-doubles-everyones-tokens",
     "text": "My opponent controls Primal Vigor and casts Lingering Souls. What happens?",
     "expect": [
-      "(×4)"
+      "(four times)"
     ],
     "notExpect": [],
     "cite": [
@@ -8839,7 +8839,7 @@
     "id": "doubling-season-is-only-yours",
     "text": "I control Doubling Season and my opponent casts Lingering Souls. What happens?",
     "expect": [
-      "(×2)"
+      "(twice)"
     ],
     "notExpect": [
       "(×4)"
@@ -9002,7 +9002,7 @@
     "text": "I have cast three spells this turn and I cast Grapeshot targeting my opponent. What happens?",
     "expect": [
       "Storm puts 3 copies of Grapeshot on the stack",
-      "opponent takes 1 damage. (×4)"
+      "opponent takes 1 damage (four times)."
     ],
     "notExpect": [
       "Not modeled"
@@ -9016,7 +9016,7 @@
     "text": "I have cast two spells this turn and my opponent has cast one spell this turn. I cast Empty the Warrens. What happens?",
     "expect": [
       "Storm puts 3 copies of Empty the Warrens",
-      "Goblin token. (×8)"
+      "Goblin token (eight times)."
     ],
     "notExpect": [
       "Not modeled"
@@ -9212,7 +9212,7 @@
     "id": "kicked-with-goblins-out",
     "text": "I control Goblin Bushwhacker and cast it kicked with three 1/1 Goblins out. What happens?",
     "expect": [
-      "a 1/1 goblin creature is 2/1 with haste until end of turn. (×3)"
+      "a 1/1 goblin creature is 2/1 with haste until end of turn (three times)."
     ],
     "notExpect": [
       "Not understood",
@@ -9353,8 +9353,8 @@
     "id": "magecraft-counts-the-copy",
     "text": "I control Archmage Emeritus. I cast Lightning Bolt at my opponent, then cast Twincast targeting Lightning Bolt. What happens?",
     "expect": [
-      "You draw 1 card. (×3)",
-      "opponent takes 3 damage. (×2)"
+      "You draw 1 card (three times).",
+      "opponent takes 3 damage (twice)."
     ],
     "notExpect": [
       "Not modeled"
@@ -9365,7 +9365,7 @@
     "id": "dockside-counts-both-kinds",
     "text": "I control Dockside Extortionist and my opponent controls three artifacts and two enchantments. I cast Dockside Extortionist. What happens?",
     "expect": [
-      "You get a Treasure token. (×5)"
+      "You get a Treasure token (five times)."
     ],
     "notExpect": [
       "Not understood",
@@ -9949,7 +9949,7 @@
     "id": "howling-mine-draws-one-more",
     "text": "I control Howling Mine and it is my draw step. How many cards do I draw?",
     "expect": [
-      "You draw 1 card. (×2)"
+      "You draw 1 card (twice)."
     ],
     "notExpect": [
       "Not modeled",
@@ -10496,7 +10496,7 @@
     "id": "draw-during-draw-step-once",
     "text": "I control Howling Mine and I draw during my draw step. What happens?",
     "expect": [
-      "You draw 1 card. (×2)"
+      "You draw 1 card (twice)."
     ],
     "notExpect": [
       "(×3)"
@@ -10607,7 +10607,7 @@
     "id": "x-tokens-created",
     "text": "I cast Secure the Wastes for X=3. What happens?",
     "expect": [
-      "You get a Warrior token. (×3)"
+      "You get a Warrior token (three times)."
     ],
     "notExpect": [
       "not tracked in detail"
@@ -10620,7 +10620,7 @@
     "id": "x-tokens-doubled",
     "text": "I control Doubling Season and cast Secure the Wastes for X=3. What happens?",
     "expect": [
-      "You get a Warrior token. (×6)"
+      "You get a Warrior token (six times)."
     ],
     "notExpect": [
       "not tracked in detail"
@@ -10910,7 +10910,7 @@
     "id": "making-tokens-triggers-etb",
     "text": "I control Impact Tremors and I make three 1/1 tokens. What happens?",
     "expect": [
-      "opponent takes 1 damage. (×3)"
+      "opponent takes 1 damage (three times)."
     ],
     "notExpect": [
       "Nothing changes"
@@ -10921,7 +10921,7 @@
     "id": "creating-tokens-triggers-soul-warden",
     "text": "I control Soul Warden and create two 2/2 tokens. What happens?",
     "expect": [
-      "You gain 1 life. (×2)"
+      "You gain 1 life (twice)."
     ],
     "notExpect": [
       "Nothing changes"
@@ -11524,7 +11524,7 @@
     "id": "azusa-allows-three-lands",
     "text": "I play a land and I have Azusa, Lost but Seeking. Can I play two more?",
     "expect": [
-      "a basic land enters the battlefield. (×3)"
+      "a basic land enters the battlefield (three times)."
     ],
     "notExpect": [
       "can't play another land",
@@ -11547,7 +11547,7 @@
     "id": "land-drops-reset-each-turn",
     "text": "I play a land, then it's my next turn and I play another land. Is that fine?",
     "expect": [
-      "a basic land enters the battlefield. (×2)"
+      "a basic land enters the battlefield (twice)."
     ],
     "notExpect": [
       "can't play another land",
@@ -12369,7 +12369,7 @@
     "id": "keywords-on-a-sized-creature",
     "text": "My 2/2 has double strike and first strike. What happens if it attacks?",
     "expect": [
-      "opponent takes 2 damage. (×2)"
+      "opponent takes 2 damage (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -12391,7 +12391,7 @@
     "id": "trailer-with-n-creatures-out",
     "text": "I cast Blasphemous Act with five creatures on the battlefield. What happens?",
     "expect": [
-      "a creature: the battlefield → your graveyard. (×5)"
+      "a creature: the battlefield → your graveyard (five times)."
     ],
     "notExpect": [
       "Not understood"
@@ -12436,7 +12436,7 @@
     "id": "attack-with-a-keyword-noun-and-a-counter",
     "text": "I attack with a 1/1 double striker with a +1/+1 counter. How much damage?",
     "expect": [
-      "opponent takes 2 damage. (×2)"
+      "opponent takes 2 damage (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -12700,7 +12700,7 @@
     "id": "tag-question-both-die",
     "text": "I attack with a 2/2 and they block with a 2/2, both die right?",
     "expect": [
-      "Yes: your 2/2 creature died (it's in the graveyard).",
+      "your 2/2 creature died (it's in the graveyard).",
       "Yes: opponent's 2/2 creature died (it's in the graveyard)."
     ],
     "notExpect": [
@@ -13590,7 +13590,7 @@
     "id": "how-much-damage-from-attackers",
     "text": "if I don't block how much damage do I take from two 3/3s",
     "expect": [
-      "You take 3 damage. (×2)"
+      "You take 3 damage (twice)."
     ],
     "notExpect": [
       "opponent takes"
@@ -14078,7 +14078,7 @@
     "id": "fireball-split-between-two",
     "text": "I Fireball for 4 split between their two 2/2s",
     "expect": [
-      "a 2/2 creature: the battlefield → opponent's graveyard. (×2)"
+      "a 2/2 creature: the battlefield → opponent's graveyard (twice)."
     ],
     "notExpect": [],
     "cite": []
@@ -14153,8 +14153,8 @@
     "id": "two-named-die-at-the-same-time",
     "text": "my Blood Artist and their Grizzly Bears die at the same time",
     "expect": [
-      "opponent loses 1 life. (×2)",
-      "You gain 1 life. (×2)"
+      "opponent loses 1 life (twice).",
+      "You gain 1 life (twice)."
     ],
     "notExpect": [],
     "cite": [
@@ -14414,7 +14414,7 @@
     "id": "land-and-sol-ring-turn-one",
     "text": "I play a land and Sol Ring turn 1, how much mana do I have",
     "expect": [
-      "You can make 2 mana right now: a basic land → one mana of any color; Sol Ring → {C}{C}; less the 1 already spent on what was cast."
+      "You can make 2 mana right now: a basic land → one mana of any colour; Sol Ring → {C}{C}; less the 1 already spent on what was cast."
     ],
     "notExpect": [],
     "cite": []
@@ -14532,7 +14532,7 @@
     "id": "hangarback-with-counters-dies",
     "text": "my Hangarback Walker with 3 counters dies",
     "expect": [
-      "You get a Thopter token. (×3)"
+      "You get a Thopter token (three times)."
     ],
     "notExpect": [
       "not tracked in detail"
@@ -14543,7 +14543,7 @@
     "id": "hangarback-attacks-with-counters",
     "text": "I attack with Hangarback with 2 counters and they block with a 5/5, what do I get",
     "expect": [
-      "You get a Thopter token. (×2)"
+      "You get a Thopter token (twice)."
     ],
     "notExpect": [
       "can't attack"
@@ -14660,7 +14660,7 @@
     "id": "they-settle-my-attackers",
     "text": "they Settle my attackers, do I get lands",
     "expect": [
-      "a creature: the battlefield → exile. (×2)"
+      "a creature: the battlefield → exile (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -14695,7 +14695,7 @@
     "id": "blood-artist-wrath-each-side",
     "text": "I have Blood Artist and cast Wrath of God with 4 creatures on each side",
     "expect": [
-      "opponent loses 1 life. (×9)"
+      "opponent loses 1 life (nine times)."
     ],
     "notExpect": [],
     "cite": []
@@ -14704,8 +14704,8 @@
     "id": "hailfire-permanents-and-cards",
     "text": "they cast Torment of Hailfire for 5 and I have 2 permanents and 3 cards",
     "expect": [
-      "a permanent: the battlefield → your graveyard. (×2)",
-      "You discard a card. (×3)"
+      "a permanent: the battlefield → your graveyard (twice).",
+      "You discard a card (three times)."
     ],
     "notExpect": [
       "Unknown card"
@@ -14872,7 +14872,7 @@
     "text": "I alpha strike with three 2/2s into their two 1/1s",
     "expect": [
       "opponent takes 2 damage.",
-      "a 1/1 creature: the battlefield → opponent's graveyard. (×2)"
+      "a 1/1 creature: the battlefield → opponent's graveyard (twice)."
     ],
     "notExpect": [
       "a 2/2 creature: the battlefield → your graveyard"
@@ -15012,7 +15012,7 @@
     "id": "fireball-split-over-their-two-creatures",
     "text": "If I cast Fireball with X=4 targeting their two creatures, how much damage does each take?",
     "expect": [
-      "a creature has 2 damage marked. (×2)"
+      "a creature has 2 damage marked (twice)."
     ],
     "notExpect": [
       "opponent takes 4 damage"
@@ -15175,7 +15175,7 @@
     "id": "vial-in-a-thalia-at-one",
     "text": "I have Aether Vial at 1. Can I vial in a Thalia?",
     "expect": [
-      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)."
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counter)."
     ],
     "notExpect": [
       "Not understood"
@@ -15247,7 +15247,7 @@
     "id": "hailfire-sacrifices-two-permanents-then-life",
     "text": "My opponent casts Torment of Hailfire with X=3. I have 5 life and 2 permanents. What happens?",
     "expect": [
-      "a permanent: the battlefield → your graveyard. (×2)",
+      "a permanent: the battlefield → your graveyard (twice).",
       "You go from 5 to 2 life."
     ],
     "notExpect": [
@@ -15320,7 +15320,7 @@
     "text": "I attack with Questing Beast. My opponent has Fog. Does damage get through?",
     "expect": [
       "Fog can't prevent Questing Beast's damage (Questing Beast).",
-      "opponent takes 4 damage."
+      "opponent takes 4 damage in all."
     ],
     "notExpect": [
       "Damage to opponent from Questing Beast is prevented.",
@@ -15370,7 +15370,7 @@
     "id": "wrath-my-board-of-four-with-zulaport",
     "text": "I have Zulaport Cutthroat and my opponent Wraths my board of 4 creatures. What happens?",
     "expect": [
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "notExpect": [
       "Not understood"
@@ -15424,7 +15424,7 @@
     "text": "I copy my opponent's Grave Titan with Clone. Do I get zombies?",
     "expect": [
       "Clone, a copy of Grave Titan, enters the battlefield.",
-      "You get a Zombie token. (×2)"
+      "You get a Zombie token (twice)."
     ],
     "notExpect": [
       "needs 0 targets"
@@ -15498,7 +15498,7 @@
     "id": "lotus-cobra-landfall-mana-counted",
     "text": "I have Lotus Cobra and play a Forest. How much mana do I get?",
     "expect": [
-      "You can make 2 mana right now: Forest → {G}; plus 1 mana of any color already in your mana pool."
+      "You can make 2 mana right now: Forest → {G}; plus 1 mana of any colour already in your mana pool."
     ],
     "notExpect": [],
     "cite": []
@@ -15577,7 +15577,7 @@
     "id": "four-player-blasphemous-act",
     "text": "In a four player game, I cast Blasphemous Act. Everyone has creatures. What happens?",
     "expect": [
-      "a creature has 13 damage marked. (×4)",
+      "a creature has 13 damage marked (four times).",
       "a creature: the battlefield → opponent 2's graveyard.",
       "a creature: the battlefield → opponent 3's graveyard."
     ],
@@ -15603,7 +15603,7 @@
     "id": "tithe-three-opponents-draw",
     "text": "I control Smothering Tithe and each of my three opponents draws a card. How many Treasures do I get?",
     "expect": [
-      "You get a Treasure token. (×3)"
+      "You get a Treasure token (three times)."
     ],
     "notExpect": [
       "Not understood",
@@ -15647,7 +15647,7 @@
     "id": "rite-of-replication-kicked-five-copies",
     "text": "I cast Rite of Replication kicked on my opponent's Sun Titan. What do I get?",
     "expect": [
-      "You get a token copy of Sun Titan. (×5)"
+      "You get a token copy of Sun Titan (five times)."
     ],
     "notExpect": [
       "not tracked in detail",
@@ -15725,7 +15725,7 @@
     "expect": [
       "You gain 5 life.",
       "Thragtusk: the battlefield → exile.",
-      "You get a Beast token."
+      "you get a Beast token (3/3)."
     ],
     "notExpect": [
       "still a spell on the stack"
@@ -16012,8 +16012,8 @@
     "id": "selfless-spirit-vs-wrath",
     "text": "Opponent casts Wrath. I have Selfless Spirit and two Grizzly Bears. Do my creatures survive?",
     "expect": [
-      "Grizzly Bears is indestructible and isn't destroyed. (×2)",
-      "No: Grizzly Bears is still on the battlefield. (×2)"
+      "Grizzly Bears is indestructible and isn't destroyed (twice).",
+      "Grizzly Bears is still on the battlefield (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -16026,7 +16026,7 @@
     "id": "trample-damage-after-giant-growth",
     "text": "My opponent blocks my 4/4 with a 2/2. I cast Giant Growth on my attacker. How much trample damage goes through?",
     "expect": [
-      "opponent takes 5 damage.",
+      "opponent takes 5 damage in all.",
       "opponent takes 5 damage in all."
     ],
     "notExpect": [
@@ -16183,7 +16183,7 @@
     "id": "settle-when-i-attack-with-three",
     "text": "My opponent casts Settle the Wreckage when I attack with three creatures. What do I get?",
     "expect": [
-      "a creature: the battlefield → exile. (×3)"
+      "a creature: the battlefield → exile (three times)."
     ],
     "notExpect": [
       "for 0 (that many)"
@@ -16232,8 +16232,8 @@
     "id": "damnation-how-many-creatures",
     "text": "I have two Grizzly Bears. My opponent casts Damnation. How many creatures do I have?",
     "expect": [
-      "Grizzly Bears: the battlefield → your graveyard. (×2)",
-      "You have 0 creatures left."
+      "Grizzly Bears: the battlefield → your graveyard (twice).",
+      "You have no creatures left."
     ],
     "notExpect": [
       "Not understood"
@@ -16306,7 +16306,7 @@
     "id": "blood-artist-wrath-four-on-my-side",
     "text": "I have Blood Artist and my opponent Wraths with 4 creatures on my side. How much life do they lose?",
     "expect": [
-      "opponent loses 1 life. (×5)",
+      "opponent loses 1 life (five times).",
       "opponent loses 5 life in all."
     ],
     "notExpect": [
@@ -16330,7 +16330,7 @@
     "id": "sheoldred-brainstorm-six",
     "text": "I have Sheoldred, the Apocalypse. My opponent casts Brainstorm. How much life do they lose?",
     "expect": [
-      "opponent loses 2 life. (×3)",
+      "opponent loses 2 life (three times).",
       "opponent loses 6 life in all."
     ],
     "notExpect": [
@@ -16389,7 +16389,7 @@
     "id": "chalice-control-on-one-ponder",
     "text": "I control Chalice on 1 and cast Ponder. Is it countered?",
     "expect": [
-      "Ponder is countered."
+      "Ponder is countered: it never resolves and goes to its"
     ],
     "notExpect": [
       "You draw 1 card."
@@ -16495,7 +16495,7 @@
     "text": "I have Containment Priest. My opponent casts Living Death with two creatures in their graveyard. What happens?",
     "expect": [
       "Containment Priest: the battlefield → your graveyard.",
-      "opponent gets a creature, a creature back from exile onto the battlefield (Living Death)."
+      "opponent gets two creatures back from exile onto the battlefield (Living Death)."
     ],
     "notExpect": [
       "Not understood"
@@ -16649,7 +16649,7 @@
     "id": "elesh-norn-two-tokens",
     "text": "I control Elesh Norn and my opponent has two 2/2 tokens. What happens to them?",
     "expect": [
-      "a 2/2 token: the battlefield → opponent's graveyard. (×2)"
+      "a 2/2 token: the battlefield → opponent's graveyard (twice)."
     ],
     "notExpect": [
       "Nothing changes"
@@ -16736,7 +16736,7 @@
     "id": "mirror-entity-x-five-three-creatures",
     "text": "I have Mirror Entity and activate it for X=5 with three creatures. What are they?",
     "expect": [
-      "a creature is 5/5 until end of turn. (×3)",
+      "a creature is 5/5 until end of turn (three times).",
       "a creature is 5/5."
     ],
     "notExpect": [
@@ -16825,7 +16825,7 @@
     "id": "rancor-one-one-tramples-over-chump",
     "text": "I have a 1/1 with Rancor attacking and my opponent chumps with a 0/1. How much trample?",
     "expect": [
-      "opponent takes 2 damage.",
+      "opponent takes 2 damage in all.",
       "opponent takes 2 damage in all."
     ],
     "notExpect": [
@@ -17100,8 +17100,8 @@
     "id": "living-end-two-for-three",
     "text": "I cast Living End with two creatures in my graveyard and my opponent has three creatures. What happens?",
     "expect": [
-      "a creature: your graveyard → exile. (×2)",
-      "a creature: the battlefield → opponent's graveyard. (×3)",
+      "a creature: your graveyard → exile (twice).",
+      "a creature: the battlefield → opponent's graveyard (three times).",
       "opponent gets nothing back (Living End)."
     ],
     "notExpect": [
@@ -17255,7 +17255,7 @@
     "id": "copied-rhystic-two-draws",
     "text": "I copy my Rhystic Study with Copy Enchantment. Do I draw twice when they cast a spell?",
     "expect": [
-      "You draw 1 card. (×2)",
+      "You draw 1 card (twice).",
       "Yes: You draw 2 cards in all."
     ],
     "notExpect": [
@@ -17267,7 +17267,7 @@
     "id": "anointed-procession-titan-attack",
     "text": "I have Anointed Procession and my Grave Titan attacks. How many Zombies do I get?",
     "expect": [
-      "You get a Zombie token. (×4)"
+      "You get a Zombie token (four times)."
     ],
     "notExpect": [
       "Not understood"
@@ -17292,8 +17292,8 @@
     "id": "rite-of-replication-kicked-titan",
     "text": "I cast Rite of Replication kicked on my opponent's Grave Titan. How many tokens?",
     "expect": [
-      "You get a token copy of Grave Titan. (×5)",
-      "You get a Zombie token. (×10)"
+      "You get a token copy of Grave Titan (five times).",
+      "You get a Zombie token (ten times)."
     ],
     "notExpect": [
       "Not understood"
@@ -17443,7 +17443,7 @@
     "text": "My opponent has a 1/1 first striker blocking my 2/2. Who dies?",
     "expect": [
       "Yes: a 1/1 creature with first strike died (it's in the graveyard).",
-      "No: a 2/2 creature is still on the battlefield."
+      "a 2/2 creature is still on the battlefield."
     ],
     "notExpect": [
       "Not understood"
@@ -17480,7 +17480,7 @@
     "id": "trample-over-two-chumps",
     "text": "I attack with a 6/6 trample and they block with a 0/1 and a 0/2. How much goes through?",
     "expect": [
-      "opponent takes 3 damage."
+      "opponent takes 3 damage in all."
     ],
     "notExpect": [
       "Not understood"
@@ -17518,8 +17518,8 @@
     "id": "bile-blight-hits-all-zombie-tokens",
     "text": "I have a Zombie token and my opponent casts Bile Blight targeting it. I also have two other Zombie tokens. What happens?",
     "expect": [
-      "Zombie token is -1/-1 until end of turn. (×3)",
-      "Zombie token: the battlefield → your graveyard. (×3)"
+      "Zombie token is -1/-1 until end of turn (three times).",
+      "Zombie token: the battlefield → your graveyard (three times)."
     ],
     "notExpect": [
       "Not understood",
@@ -17593,8 +17593,8 @@
     "id": "bile-blight-four-of-them",
     "text": "I have a 1/1 Soldier token and cast Bile Blight on my opponent's Elf Warrior token while they have four of them. What happens?",
     "expect": [
-      "Elf Warrior is -2/-2 until end of turn. (×4)",
-      "Elf Warrior: the battlefield → opponent's graveyard. (×4)"
+      "Elf Warrior is -2/-2 until end of turn (four times).",
+      "Elf Warrior: the battlefield → opponent's graveyard (four times)."
     ],
     "notExpect": [
       "Not understood"
@@ -17617,7 +17617,7 @@
     "text": "I cast Sol Ring and my opponent has Mana Drain. If they counter it, how much mana do they get next turn?",
     "expect": [
       "Sol Ring is countered.",
-      "opponent adds 1 colorless mana ({C} × 1, Sol Ring's mana value) at the beginning of opponent's next main phase, from Mana Drain's delayed trigger; it's added then, not now, and lasts until that phase ends."
+      "opponent adds 1 colourless mana ({C} × 1, Sol Ring's mana value) at the beginning of opponent's next main phase, from Mana Drain's delayed trigger; it's added then, not now, and lasts until that phase ends."
     ],
     "notExpect": [
       "Not understood",
@@ -17910,7 +17910,7 @@
     "expect": [
       "Wall of Omens has 2 damage marked.",
       "No: Wall of Omens is still on the battlefield.",
-      "No: a 2/2 creature is still on the battlefield."
+      "a 2/2 creature is still on the battlefield."
     ],
     "notExpect": [
       "Not understood"
@@ -17979,7 +17979,7 @@
     "id": "chalice-on-one-vs-gitaxian-probe",
     "text": "Opponent has Chalice on 1. I cast Gitaxian Probe paying 2 life. Does Chalice counter it?",
     "expect": [
-      "Gitaxian Probe is countered."
+      "Gitaxian Probe is countered: it never resolves and goes to its"
     ],
     "notExpect": [
       "Not understood",
@@ -18288,7 +18288,7 @@
     "id": "cryptolith-rite-two-bears-mana",
     "text": "I control Cryptolith Rite and two Grizzly Bears. How much mana do I have?",
     "expect": [
-      "You can make 2 mana right now: Grizzly Bears → one mana of any color; Grizzly Bears → one mana of any color."
+      "You can make 2 mana right now: Grizzly Bears → one mana of any colour; Grizzly Bears → one mana of any colour."
     ],
     "notExpect": [
       "Not understood"
@@ -18468,7 +18468,7 @@
     "text": "I cast Lotus Petal and sacrifice it. What mana do I get?",
     "expect": [
       "Lotus Petal enters the battlefield.",
-      "Lotus Petal's mana ability: add one mana of any color."
+      "Lotus Petal's mana ability: add one mana of any colour."
     ],
     "notExpect": [
       "Not understood",
@@ -18596,7 +18596,7 @@
     "id": "infect-and-wither-attackers-both-blocked",
     "text": "I attack with a 1/1 with infect and a 1/1 with wither. They block both with 2/2s. What happens?",
     "expect": [
-      "a 2/2 creature has 1 -1/-1 counter. (×2)",
+      "a 2/2 creature has 1 -1/-1 counter (twice).",
       "a 1/1 creature with wither: the battlefield → your graveyard."
     ],
     "notExpect": [
@@ -18610,7 +18610,7 @@
     "text": "I attack with a 3/3 and my opponent blocks with a 2/2 first striker. Who dies?",
     "expect": [
       "Yes: a 2/2 creature with first strike died (it's in the graveyard).",
-      "No: a 3/3 creature is still on the battlefield."
+      "a 3/3 creature is still on the battlefield."
     ],
     "notExpect": [
       "Not understood"
@@ -18623,7 +18623,7 @@
     "id": "deathtouch-blocker-vs-trampler",
     "text": "I have a 1/1 deathtouch blocker. They attack with a 6/6 trample. How much tramples over?",
     "expect": [
-      "You take 5 damage.",
+      "you take 5 damage in all.",
       "a 6/6 creature with trample: the battlefield → opponent's graveyard.",
       "you take 5 damage in all."
     ],
@@ -18676,7 +18676,7 @@
     "id": "ashes-to-ashes-two-bears",
     "text": "My opponent casts Ashes to Ashes on my two Grizzly Bears. What happens?",
     "expect": [
-      "Grizzly Bears: the battlefield → exile. (×2)",
+      "Grizzly Bears: the battlefield → exile (twice).",
       "opponent takes 5 damage."
     ],
     "notExpect": [
@@ -18712,8 +18712,8 @@
     "id": "living-death-counted-boards",
     "text": "I cast Living Death with two creatures in my graveyard. My opponent has three on the battlefield. What happens?",
     "expect": [
-      "a creature: the battlefield → opponent's graveyard. (×3)",
-      "a creature enters the battlefield. (×2)"
+      "a creature: the battlefield → opponent's graveyard (three times).",
+      "a creature enters the battlefield (twice)."
     ],
     "notExpect": [
       "Not understood"
@@ -18773,7 +18773,7 @@
     "id": "zulaport-three-sacrifices-to-altar",
     "text": "I control Zulaport Cutthroat and sacrifice three creatures to Ashnod's Altar. How much life do they lose?",
     "expect": [
-      "Ashnod's Altar's mana ability: add {C}{C}. (×3)",
+      "Ashnod's Altar's mana ability: add {C}{C} (three times).",
       "opponent loses 3 life in all."
     ],
     "notExpect": [
@@ -18785,7 +18785,7 @@
     "id": "craterhoof-how-much-do-i-swing-for",
     "text": "I have Craterhoof Behemoth in hand and 5 creatures. If I cast it, how much damage do I swing for?",
     "expect": [
-      "a creature is 7/7 with trample until end of turn. (×5)",
+      "a creature is 7/7 with trample until end of turn (five times).",
       "Yes: opponent takes 46 damage in all."
     ],
     "notExpect": [
@@ -18797,7 +18797,7 @@
     "id": "four-attackers-into-two-blockers",
     "text": "I attack with 4 creatures into their 2 blockers. How many get through?",
     "expect": [
-      "2 of your 4 attackers are unblocked: a creature, a creature."
+      "2 of your 4 attackers are unblocked: two creatures."
     ],
     "notExpect": [
       "Not understood"
@@ -18809,8 +18809,8 @@
     "text": "I have Impact Tremors and cast Empty the Warrens with storm count 4. How much damage?",
     "expect": [
       "Storm puts 4 copies of Empty the Warrens on the stack, above the original.",
-      "You get a Goblin token. (×10)",
-      "opponent takes 1 damage. (×10)"
+      "You get a Goblin token (ten times).",
+      "opponent takes 1 damage (ten times)."
     ],
     "notExpect": [
       "Not understood",
@@ -18824,7 +18824,7 @@
     "id": "two-mentors-how-many-can-i-draw",
     "text": "I control two Mentor of the Meek and cast a 1/1. How many cards can I draw?",
     "expect": [
-      "You draw 1 card. (×2)",
+      "You draw 1 card (twice).",
       "You draw 2 cards in all."
     ],
     "notExpect": [
@@ -18860,7 +18860,7 @@
     "id": "talk-swing-team-three-dudes",
     "text": "i swing my team, 3 dudes, 2/2s, they got one 1/1 blocker. how much do they take",
     "expect": [
-      "opponent takes 2 damage. (×2)",
+      "opponent takes 2 damage (twice).",
       "a 1/1 creature: the battlefield → opponent's graveyard."
     ],
     "notExpect": [
@@ -19203,7 +19203,7 @@
     "id": "trampler-blocked-by-0-1",
     "text": "they block my 5/5 trampler with a 0/1, how much gets through",
     "expect": [
-      "opponent takes 4 damage."
+      "opponent takes 4 damage in all."
     ],
     "cite": [
       "702.19b"
@@ -19268,7 +19268,7 @@
     "text": "my 2/2 first striker blocks their 2/2, who dies",
     "expect": [
       "No: a 2/2 creature with first strike is still on the battlefield.",
-      "Yes: a 2/2 creature died (it's in the graveyard)."
+      "a 2/2 creature died (it's in the graveyard)."
     ],
     "cite": [
       "702.7b"
@@ -19383,7 +19383,7 @@
     "id": "double-strike-10-10-at-20",
     "text": "i have 20 life and they attack with a 10/10 double strike unblocked, am i dead",
     "expect": [
-      "You take 10 damage. (×2)",
+      "You take 10 damage (twice).",
       "Yes: You have lost the game."
     ],
     "cite": [
@@ -19674,7 +19674,7 @@
     "text": "they attack with a 3/3 flyer and i have a 2/2 with reach and a 4/4 without, which can block",
     "expect": [
       "Yes: a 2/2 creature with reach can block a 3/3 creature with flying.",
-      "No: a 4/4 creature can't block a 3/3 creature with flying (flying)."
+      "a 4/4 creature can't block a 3/3 creature with flying (flying)."
     ]
   },
   {
@@ -19682,7 +19682,7 @@
     "text": "i have a 4/4 and cast a spell that gives it +3/+3 and trample, they block with a 2/2, how much gets through",
     "expect": [
       "a 4/4 creature is 7/7 until end of turn.",
-      "opponent takes 5 damage."
+      "opponent takes 5 damage in all."
     ]
   },
   {
@@ -19699,7 +19699,7 @@
     "id": "held-wrath-not-cast-in-response",
     "text": "i have 3 creatures and they have wrath in hand, should i attack",
     "expect": [
-      "opponent takes 1 damage. (×3)"
+      "opponent takes 1 damage (three times)."
     ],
     "notExpect": [
       "Wrath of God is cast"
@@ -19880,7 +19880,7 @@
     "text": "they attack with a 5/5 and i have three 1/1s, can i triple block and kill it",
     "expect": [
       "a 5/5 creature has 3 damage marked.",
-      "a 1/1 creature: the battlefield → your graveyard. (×3)"
+      "a 1/1 creature: the battlefield → your graveyard (three times)."
     ]
   },
   {
@@ -19910,7 +19910,7 @@
     "id": "dies-draw-enchantment-wrath-3",
     "text": "i have a card that says whenever a creature dies draw a card, they wrath with 3 creatures on my board, how many do i draw",
     "expect": [
-      "You draw 1 card. (×3)",
+      "You draw 1 card (three times).",
       "You draw 3 cards in all."
     ]
   },
@@ -19937,7 +19937,7 @@
     "text": "they block my 2/2 with a 1/1 and a 1/1, does my 2/2 die",
     "expect": [
       "Yes: a 2/2 creature died (it's in the graveyard).",
-      "a 1/1 creature: the battlefield → opponent's graveyard. (×2)"
+      "a 1/1 creature: the battlefield → opponent's graveyard (twice)."
     ]
   },
   {
@@ -20030,7 +20030,7 @@
     "text": "i have a 2/2 with first strike and they block with a 2/2 with deathtouch, who dies",
     "expect": [
       "a 2/2 creature with deathtouch: the battlefield → opponent's graveyard.",
-      "No: a 2/2 creature with first strike is still on the battlefield."
+      "a 2/2 creature with first strike is still on the battlefield."
     ],
     "cite": [
       "702.7b"
@@ -20070,7 +20070,7 @@
     "id": "says-opponent-casts-gain-1-twice",
     "text": "they have a creature that says whenever an opponent casts a spell you gain 1 life, i cast two spells, how much do they gain",
     "expect": [
-      "opponent gains 1 life. (×2)"
+      "opponent gains 1 life (twice)."
     ]
   },
   {
@@ -20187,7 +20187,7 @@
     "text": "my opponent has a creature that says it can't be blocked by creatures with power 2 or less, i have a 2/2 and a 3/3, which can block",
     "expect": [
       "No: a 2/2 creature can't block a creature that says \"it can't be blocked by creatures with power 2 or less\".",
-      "Yes: a 3/3 creature can block a creature that says \"it can't be blocked by creatures with power 2 or less\"."
+      "a 3/3 creature can block a creature that says \"it can't be blocked by creatures with power 2 or less\"."
     ]
   },
   {
@@ -20201,7 +20201,7 @@
     "id": "says-dies-gain-1-wrath-4",
     "text": "i have an artifact that says whenever a creature dies you gain 1 life, they wrath with 4 creatures total on the board, how much do i gain",
     "expect": [
-      "You gain 1 life. (×4)",
+      "You gain 1 life (four times).",
       "You gain 4 life in all."
     ]
   },
@@ -20268,7 +20268,7 @@
     "id": "two-2-2s-one-blocked-damage",
     "text": "i attack with two 2/2s, they have one 3/3, they block one, how much damage do they take",
     "expect": [
-      "opponent takes 2 damage."
+      "opponent takes 2 damage in all."
     ]
   },
   {
@@ -20463,7 +20463,7 @@
     "text": "they have an enchantment that says creatures can't block, i attack with everything with three 2/2s into their 4/4, how much damage",
     "expect": [
       "a 4/4 creature can't block.",
-      "opponent takes 2 damage. (×3)"
+      "opponent takes 2 damage (three times)."
     ]
   },
   {
@@ -20524,7 +20524,7 @@
     "id": "says-destroy-all-artifacts-both",
     "text": "i cast a spell that says destroy all artifacts, they have 2 artifacts and i have 1, what happens",
     "expect": [
-      "an artifact: the battlefield → opponent's graveyard. (×2)",
+      "an artifact: the battlefield → opponent's graveyard (twice).",
       "an artifact: the battlefield → your graveyard."
     ]
   },
@@ -20732,7 +20732,7 @@
     "id": "trample-4-4-into-1-1-damage",
     "text": "i have a 4/4 with trample and they block with a 1/1, how much damage do they take",
     "expect": [
-      "opponent takes 3 damage.",
+      "opponent takes 3 damage in all.",
       "Yes: opponent takes 3 damage in all."
     ]
   },
@@ -20816,7 +20816,7 @@
     "id": "says-artifact-creature-enters-gain-1",
     "text": "i have an artifact that says whenever a creature enters you gain 1 life, i cast two creatures, how much life do i gain",
     "expect": [
-      "You gain 1 life. (×2)",
+      "You gain 1 life (twice).",
       "You gain 2 life in all."
     ]
   },
@@ -20972,7 +20972,7 @@
       "a 2/2 creature is 3/3 until end of turn.",
       "a 2/2 creature: the battlefield → opponent's graveyard.",
       "No: your 2/2 creature is still on the battlefield.",
-      "Yes: opponent's 2/2 creature died (it's in the graveyard)."
+      "opponent's 2/2 creature died (it's in the graveyard)."
     ]
   },
   {
@@ -20986,7 +20986,7 @@
     "id": "says-attack-token-twice-over-two-turns",
     "text": "i have a creature that says whenever this creature attacks create a 1/1 token, i attack with it twice over two turns, how many tokens",
     "expect": [
-      "You get a 1/1 token. (×2)",
+      "You get a 1/1 token (twice).",
       "You have 2 tokens."
     ]
   },
@@ -20995,7 +20995,7 @@
     "text": "they have a creature that says other creatures you control get +1/+1, and two 2/2s, i kill the lord, how big are the 2/2s",
     "expect": [
       "a creature that says \"other creatures you control get +1/+1\": the battlefield → opponent's graveyard.",
-      "a 2/2 creature is 2/2. (×2)"
+      "a 2/2 creature is 2/2 (twice)."
     ]
   },
   {
@@ -21043,7 +21043,7 @@
     "text": "i have a 2/2 with first strike and they block with a 2/2 with deathtouch, who dies",
     "expect": [
       "Yes: a 2/2 creature with deathtouch died (it's in the graveyard).",
-      "No: a 2/2 creature with first strike is still on the battlefield."
+      "a 2/2 creature with first strike is still on the battlefield."
     ]
   },
   {
@@ -21099,7 +21099,7 @@
     "id": "says-dies-gain-1-wrath-three",
     "text": "i have an enchantment that says whenever a creature dies you gain 1 life, they wrath with 3 creatures on my side, how much life do i gain",
     "expect": [
-      "You gain 1 life. (×3)",
+      "You gain 1 life (three times).",
       "You gain 3 life in all."
     ]
   },
@@ -21139,14 +21139,14 @@
     "text": "they have a creature that says it can't be blocked by creatures with power 2 or less, i have a 2/2 and a 3/3, which can block it",
     "expect": [
       "No: a 2/2 creature can't block a creature that says \"it can't be blocked by creatures with power 2 or less\".",
-      "Yes: a 3/3 creature can block a creature that says \"it can't be blocked by creatures with power 2 or less\"."
+      "a 3/3 creature can block a creature that says \"it can't be blocked by creatures with power 2 or less\"."
     ]
   },
   {
     "id": "says-opponent-casts-you-draw-two",
     "text": "my opponent has a creature that says whenever an opponent casts a spell you draw a card, i cast two spells, how many do they draw",
     "expect": [
-      "opponent draws 1 card. (×2)",
+      "opponent draws 1 card (twice).",
       "opponent draws 2 cards in all."
     ]
   },
@@ -21186,7 +21186,7 @@
     "id": "two-says-creatures-counter-on-enter",
     "text": "i have two creatures that say whenever another creature enters put a +1/+1 counter on this creature, i cast a third creature, how big are they",
     "expect": [
-      "a creature that says \"whenever another creature enters put a +1/+1 counter on this creature\" is 3/3 (2/2 base, 1 +1/+1 counter). (×2)"
+      "a creature that says \"whenever another creature enters put a +1/+1 counter on this creature\" is 3/3 (2/2 base, 1 +1/+1 counter) (twice)."
     ]
   },
   {
@@ -21286,7 +21286,7 @@
     "id": "5-5-double-blocked-by-1-1s",
     "text": "i attack with a 5/5 and they block with a 1/1 and a 1/1, how much damage do they take",
     "expect": [
-      "a 1/1 creature: the battlefield → opponent's graveyard. (×2)",
+      "a 1/1 creature: the battlefield → opponent's graveyard (twice).",
       "No: opponent takes no damage."
     ]
   },
@@ -21301,8 +21301,8 @@
     "id": "says-anthem-attack-with-three",
     "text": "i cast a spell that says creatures you control get +1/+1 until end of turn, i have three 1/1s, they have a 2/2, i attack with everything, what happens",
     "expect": [
-      "a 1/1 creature is 2/2 until end of turn. (×3)",
-      "opponent takes 2 damage. (×3)"
+      "a 1/1 creature is 2/2 until end of turn (three times).",
+      "opponent takes 2 damage (three times)."
     ]
   },
   {
@@ -21336,7 +21336,7 @@
     "id": "says-attack-trigger-plus-2-damage",
     "text": "they have a creature that says whenever this creature attacks it gets +2/+0 until end of turn, it's a 1/1, they attack, how much damage do i take",
     "expect": [
-      "You take 3 damage.",
+      "you take 3 damage in all.",
       "Yes: you take 3 damage in all."
     ]
   },
@@ -21345,7 +21345,7 @@
     "text": "my creature has deathtouch and trample, it's a 3/3, they block with a 2/2, how much damage goes through",
     "expect": [
       "a 2/2 creature has 1 damage marked.",
-      "opponent takes 2 damage.",
+      "opponent takes 2 damage in all.",
       "Yes: opponent takes 2 damage in all."
     ],
     "cite": [
@@ -21357,7 +21357,7 @@
     "text": "i cast a spell that says copy target creature spell, they cast a 4/4, i copy it, what do i get",
     "expect": [
       "A copy of a 4/4 creature is put on the stack.",
-      "a 4/4 creature enters the battlefield. (×2)"
+      "a 4/4 creature enters the battlefield (twice)."
     ],
     "cite": [
       "707.10"
@@ -21423,7 +21423,7 @@
     "text": "i attack with a 2/2 and they block with a 2/2, i cast a spell that says target creature gains first strike until end of turn on mine, who dies",
     "expect": [
       "Yes: opponent's 2/2 creature died (it's in the graveyard).",
-      "No: your 2/2 creature is still on the battlefield."
+      "your 2/2 creature is still on the battlefield."
     ]
   },
   {
@@ -21532,7 +21532,7 @@
     "id": "says-dies-draw-double-block-two-die",
     "text": "i have a creature that says whenever a creature you control dies draw a card, i block their 5/5 with two 1/1s, how many cards do i draw",
     "expect": [
-      "a 1/1 creature: the battlefield → your graveyard. (×2)",
+      "a 1/1 creature: the battlefield → your graveyard (twice).",
       "You draw 2 cards in all."
     ]
   },
@@ -21591,7 +21591,7 @@
     "text": "they attack me with a 2/2 with menace and i have two 1/1s, if i block with both what happens",
     "expect": [
       "a 2/2 creature with menace: the battlefield → opponent's graveyard.",
-      "a 1/1 creature: the battlefield → your graveyard. (×2)"
+      "a 1/1 creature: the battlefield → your graveyard (twice)."
     ]
   },
   {
@@ -21611,7 +21611,7 @@
     "text": "i have a creature that says at the beginning of combat on your turn target creature you control gets +2/+0 until end of turn, i attack with a 2/2, how much damage",
     "expect": [
       "a 2/2 creature is 4/2 until end of turn.",
-      "opponent takes 4 damage.",
+      "opponent takes 4 damage in all.",
       "Yes: opponent takes 4 damage in all."
     ],
     "cite": [
@@ -21663,7 +21663,7 @@
     "id": "says-team-flying-attack-both",
     "text": "i have two 2/2s and cast a spell that says creatures you control gain flying until end of turn, they have a 4/4 without flying, i attack with both, how much damage",
     "expect": [
-      "a 2/2 creature has flying until end of turn. (×2)",
+      "a 2/2 creature has flying until end of turn (twice).",
       "Yes: opponent takes 4 damage in all."
     ]
   },
@@ -21698,7 +21698,7 @@
     "id": "says-pw-plus-one-three-turns",
     "text": "i have a planeswalker that says +1 each opponent loses 1 life with 3 loyalty, i use it three turns in a row, how much life do they lose",
     "expect": [
-      "opponent loses 1 life. (×3)",
+      "opponent loses 1 life (three times).",
       "opponent loses 3 life in all."
     ]
   },
@@ -21737,7 +21737,7 @@
     "id": "says-cast-lose-1-each-spell",
     "text": "they have a creature that says whenever a player casts a spell that player loses 1 life, i cast two spells, how much life do i lose",
     "expect": [
-      "You lose 1 life. (×2)",
+      "You lose 1 life (twice).",
       "You lose 2 life in all."
     ]
   },
@@ -21752,7 +21752,7 @@
     "id": "block-one-of-two-attackers-damage",
     "text": "they attack with a 3/3 and a 2/2, i have a 4/4, i block the 3/3, how much damage do i take",
     "expect": [
-      "You take 2 damage.",
+      "you take 2 damage in all.",
       "a 3/3 creature: the battlefield → opponent's graveyard.",
       "Yes: you take 2 damage in all."
     ]
@@ -21855,7 +21855,7 @@
     "id": "two-says-creatures-counter-on-their-creature",
     "text": "i have two creatures that say whenever another creature enters put a +1/+1 counter on this creature, they cast a creature, do mine get counters",
     "expect": [
-      "a creature that says \"whenever another creature enters put a +1/+1 counter on this creature\" has 1 +1/+1 counter. (×2)"
+      "a creature that says \"whenever another creature enters put a +1/+1 counter on this creature\" has 1 +1/+1 counter (twice)."
     ]
   },
   {
@@ -21882,7 +21882,7 @@
     "expect": [
       "a 2/2 creature is 2/4 until end of turn.",
       "Yes: your 2/2 creature died (it's in the graveyard).",
-      "No: opponent's 2/2 creature is still on the battlefield."
+      "opponent's 2/2 creature is still on the battlefield."
     ]
   },
   {
@@ -22090,7 +22090,7 @@
     "text": "i control a creature that says this creature can't be blocked by creatures with power 2 or less, i attack, they have a 2/2 and a 3/3, what can block",
     "expect": [
       "No: a 2/2 creature can't block a creature that says \"this creature can't be blocked by creatures with power 2 or less\".",
-      "Yes: a 3/3 creature can block a creature that says \"this creature can't be blocked by creatures with power 2 or less\"."
+      "a 3/3 creature can block a creature that says \"this creature can't be blocked by creatures with power 2 or less\"."
     ]
   },
   {
@@ -22098,7 +22098,7 @@
     "text": "i have a 2/2 with first strike and they block with a 2/2, who dies",
     "expect": [
       "Yes: a 2/2 creature died (it's in the graveyard).",
-      "No: a 2/2 creature with first strike is still on the battlefield."
+      "a 2/2 creature with first strike is still on the battlefield."
     ],
     "cite": [
       "702.7b"
@@ -22196,7 +22196,7 @@
     "id": "said-dies-trigger-wrath-lookback",
     "text": "my opponent has a creature that says whenever a creature dies, you lose 1 life, i cast a spell that says destroy all creatures, they have 2 creatures and i have 1, what happens",
     "expect": [
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "cite": [
       "603.10a"
@@ -22217,7 +22217,7 @@
     "id": "attack-both-they-block-one",
     "text": "i have two 2/2s and they have a 4/4, i attack with both, they block one, how much damage do they take",
     "expect": [
-      "opponent takes 2 damage.",
+      "opponent takes 2 damage in all.",
       "Yes: opponent takes 2 damage in all."
     ]
   },
@@ -22340,7 +22340,7 @@
     "id": "said-each-creature-self-damage",
     "text": "they have two 2/2s and i cast a spell that says each creature deals damage to itself equal to its power, what happens",
     "expect": [
-      "a 2/2 creature: the battlefield → opponent's graveyard. (×2)"
+      "a 2/2 creature: the battlefield → opponent's graveyard (twice)."
     ],
     "notExpect": [
       "not modeled"
@@ -22410,7 +22410,7 @@
     "id": "deathtouch-1-1-blocks-5-5-trample",
     "text": "i have a 1/1 with deathtouch and i block their 5/5 with trample, how much damage do i take",
     "expect": [
-      "You take 4 damage.",
+      "you take 4 damage in all.",
       "a 5/5 creature with trample: the battlefield → opponent's graveyard.",
       "Yes: you take 4 damage in all."
     ],
@@ -22460,7 +22460,7 @@
     "text": "i have a 1/1 and a 1/1 and cast a spell that says creatures you control get +1/+1 and gain flying until end of turn, they have a 2/2, i attack with both, can they block",
     "expect": [
       "No: a 2/2 creature can't block a 1/1 creature (flying).",
-      "opponent takes 2 damage. (×2)"
+      "opponent takes 2 damage (twice)."
     ],
     "cite": [
       "702.9b"
@@ -22525,7 +22525,7 @@
     "text": "i attack with a 3/3 and they have a 0/4 wall, they block, does anything die",
     "expect": [
       "No: a 0/4 wall creature is still on the battlefield.",
-      "No: a 3/3 creature is still on the battlefield."
+      "a 3/3 creature is still on the battlefield."
     ]
   },
   {
@@ -22568,7 +22568,7 @@
     "id": "trample-4-4-double-blocked",
     "text": "i have a 4/4 with trample and they block with a 2/2 and a 1/1, how much damage do they take",
     "expect": [
-      "opponent takes 1 damage."
+      "opponent takes 1 damage in all."
     ],
     "cite": [
       "702.19b"
@@ -22709,7 +22709,7 @@
     "text": "i attack with a 2/2 and they block with a 2/2, then i cast a spell that says target creature gets +1/+1 until end of turn on mine, who dies",
     "expect": [
       "Yes: opponent's 2/2 creature died (it's in the graveyard).",
-      "No: your 2/2 creature is still on the battlefield."
+      "your 2/2 creature is still on the battlefield."
     ]
   },
   {
@@ -22788,7 +22788,7 @@
     "text": "my opponent has two creatures and i cast a spell that says each player sacrifices two creatures, i have one creature, what happens",
     "expect": [
       "a creature: the battlefield → your graveyard.",
-      "a creature: the battlefield → opponent's graveyard. (×2)"
+      "a creature: the battlefield → opponent's graveyard (twice)."
     ],
     "notExpect": [
       "not tracked"
@@ -22816,7 +22816,7 @@
     "text": "i have a creature with flying and they have a creature with reach and a creature without, i attack, which can block",
     "expect": [
       "Yes: a creature with reach can block a creature with flying.",
-      "No: a creature can't block a creature with flying (flying)."
+      "a creature can't block a creature with flying (flying)."
     ],
     "cite": [
       "702.17b"
@@ -22883,7 +22883,7 @@
     "id": "team-indestructible-vs-wrath",
     "text": "i have 2 creatures and cast a spell that says creatures you control gain indestructible until end of turn, they cast a spell that says destroy all creatures, what happens",
     "expect": [
-      "a creature is indestructible and isn't destroyed. (×2)"
+      "a creature is indestructible and isn't destroyed (twice)."
     ],
     "cite": [
       "702.12b"
@@ -22940,7 +22940,7 @@
     "id": "said-destroy-two-targets-on-both",
     "text": "they have two 2/2s and i cast a spell that says destroy target creature and target creature on both, what happens",
     "expect": [
-      "a 2/2 creature: the battlefield → opponent's graveyard. (×2)"
+      "a 2/2 creature: the battlefield → opponent's graveyard (twice)."
     ],
     "notExpect": [
       "Need to know"
@@ -23024,7 +23024,7 @@
     "id": "said-each-creature-1-damage-to-controller",
     "text": "my opponent casts a spell that says each creature deals 1 damage to its controller, i have 3 creatures, how much do i lose",
     "expect": [
-      "You take 1 damage. (×3)"
+      "You take 1 damage (three times)."
     ],
     "notExpect": [
       "not modeled"
@@ -23124,14 +23124,14 @@
     "text": "i have a 3/3 that says this creature can't be blocked by creatures with flying, they have a 4/4 with flying and a 1/1, i attack, what can block",
     "expect": [
       "No: a 4/4 creature with flying can't block a 3/3 creature that says \"this creature can't be blocked by creatures with flying\".",
-      "Yes: a 1/1 creature can block a 3/3 creature that says \"this creature can't be blocked by creatures with flying\"."
+      "a 1/1 creature can block a 3/3 creature that says \"this creature can't be blocked by creatures with flying\"."
     ]
   },
   {
     "id": "said-cast-trigger-that-player-loses-1-at-2",
     "text": "my opponent has a creature that says whenever a player casts a spell, that player loses 1 life, i cast two spells, i'm at 2, what happens",
     "expect": [
-      "You lose 1 life. (×2)",
+      "You lose 1 life (twice).",
       "You lose the game."
     ]
   },
@@ -23276,7 +23276,7 @@
     "text": "i attack with a Hill Giant and they block with a Wall of Omens, does anything die",
     "expect": [
       "No: Wall of Omens is still on the battlefield.",
-      "No: Hill Giant is still on the battlefield."
+      "Hill Giant is still on the battlefield."
     ]
   },
   {
@@ -23291,7 +23291,7 @@
     "id": "anthem-tokens-vs-pyroclasm",
     "text": "they have a Glorious Anthem and two 1/1 tokens, i cast Pyroclasm, do the tokens die",
     "expect": [
-      "a 1/1 token: the battlefield → opponent's graveyard. (×2)"
+      "a 1/1 token: the battlefield → opponent's graveyard (twice)."
     ],
     "cite": [
       "704.5g"
@@ -23508,7 +23508,7 @@
     "id": "trample-5-5-vs-1-1-how-much-do-i-take",
     "text": "They attack with a 5/5 trampler and I block with a 1/1. How much do I take?",
     "expect": [
-      "You take 4 damage."
+      "you take 4 damage in all."
     ],
     "cite": [
       "702.19b"
@@ -23539,7 +23539,7 @@
     "id": "electrickery-two-1-1s-do-both-die",
     "text": "I have two 1/1s and they cast Electrickery. Do both die?",
     "expect": [
-      "Yes: a 1/1 creature died (it's in the graveyard). (×2)"
+      "Yes: a 1/1 creature died (it's in the graveyard) (twice)."
     ]
   },
   {
@@ -23593,7 +23593,7 @@
     "text": "They cast Anger of the Gods. I have a 2/2 and a 3/3. Do both die?",
     "expect": [
       "No: a 2/2 creature didn't die, but it left the battlefield; it's in exile.",
-      "No: a 3/3 creature didn't die, but it left the battlefield; it's in exile."
+      "a 3/3 creature didn't die, but it left the battlefield; it's in exile."
     ]
   },
   {
@@ -23776,7 +23776,7 @@
     "id": "double-block-4-4-with-two-2-2s-damage-each",
     "text": "They block my 4/4 with a 2/2 and a 2/2. How much damage does each take?",
     "expect": [
-      "a 2/2 creature has 2 damage marked. (×2)",
+      "a 2/2 creature has 2 damage marked (twice).",
       "a 4/4 creature: the battlefield → your graveyard."
     ],
     "cite": [
@@ -23886,7 +23886,7 @@
     "id": "1-1-vs-1-1-first-strike-who-dies",
     "text": "I have a 1/1 and they have a 1/1 with first strike. I attack and they block. Who dies?",
     "expect": [
-      "Yes: a 1/1 creature died (it's in the graveyard).",
+      "a 1/1 creature died (it's in the graveyard).",
       "No: a 1/1 creature with first strike is still on the battlefield."
     ],
     "cite": [
@@ -23928,8 +23928,8 @@
     "id": "overrun-two-creatures-no-blockers",
     "text": "I have two creatures and cast Overrun. I attack with both. They have no blockers. How much damage?",
     "expect": [
-      "a creature is 4/4 with trample until end of turn. (×2)",
-      "opponent takes 4 damage. (×2)"
+      "a creature is 4/4 with trample until end of turn (twice).",
+      "opponent takes 4 damage (twice)."
     ]
   },
   {
@@ -24091,7 +24091,7 @@
     "text": "I have two Grizzly Bears and cast Ajani Goldmane's -1. Do they get +1/+1?",
     "expect": [
       "Ajani Goldmane has 3 loyalty.",
-      "Grizzly Bears has 1 +1/+1 counter. (×2)"
+      "Grizzly Bears has 1 +1/+1 counter (twice)."
     ],
     "notExpect": [
       "Ajani Goldmane: the battlefield → your graveyard."
@@ -24124,7 +24124,7 @@
     "id": "casual-wrath-three-dudes",
     "text": "opp casts wrath, i have 3 dudes, do they all die",
     "expect": [
-      "Yes: a creature died (it's in the graveyard). (×3)"
+      "Yes: a creature died (it's in the graveyard) (three times)."
     ]
   },
   {
@@ -24167,7 +24167,7 @@
     "text": "i have a 1/1 and they have a 1/1, i attack and they block, do both die",
     "expect": [
       "Yes: opponent's 1/1 creature died (it's in the graveyard).",
-      "Yes: your 1/1 creature died (it's in the graveyard)."
+      "your 1/1 creature died (it's in the graveyard)."
     ]
   },
   {
@@ -24196,8 +24196,8 @@
     "id": "anthem-tokens-vs-pyroclasm-do-they-die",
     "text": "I have Glorious Anthem and two 1/1 tokens. They cast Pyroclasm. Do my tokens die?",
     "expect": [
-      "a 1/1 token ceases to exist; it doesn't stay in the zone it went to. (×2)",
-      "Yes: a 1/1 token died, and as a token it then ceased to exist (704.5d). (×2)"
+      "a 1/1 token ceases to exist; it doesn't stay in the zone it went to (twice).",
+      "Yes: a 1/1 token died, and as a token it then ceased to exist (704.5d) (twice)."
     ],
     "cite": [
       "704.5d"
@@ -24225,7 +24225,7 @@
     "id": "elesh-norn-vs-three-2-2s",
     "text": "I have Elesh Norn, Grand Cenobite. They have three 2/2s. What happens?",
     "expect": [
-      "a 2/2 creature: the battlefield → opponent's graveyard. (×3)"
+      "a 2/2 creature: the battlefield → opponent's graveyard (three times)."
     ],
     "cite": [
       "704.5f"
@@ -24406,8 +24406,8 @@
     "text": "I have a 4/4 and they have a 2/2 and a 3/3. I attack and they double block. Who dies?",
     "expect": [
       "Yes: a 2/2 creature died (it's in the graveyard).",
-      "No: a 3/3 creature is still on the battlefield.",
-      "Yes: a 4/4 creature died (it's in the graveyard)."
+      "a 3/3 creature is still on the battlefield.",
+      "a 4/4 creature died (it's in the graveyard)."
     ],
     "cite": [
       "510.1c"
@@ -24499,7 +24499,7 @@
     "id": "20-life-vs-10-10-double-strike",
     "text": "I have 20 life and they attack with a 10/10 with double strike. Do I die?",
     "expect": [
-      "You take 10 damage. (×2)",
+      "You take 10 damage (twice).",
       "Yes: You have lost the game."
     ],
     "cite": [
@@ -24556,7 +24556,7 @@
     "text": "I attack with a 3/3 into their 2/2 and 2/2. They double block. Can I kill both?",
     "expect": [
       "Yes: a 2/2 creature died (it's in the graveyard).",
-      "No: a 2/2 creature is still on the battlefield.",
+      "a 2/2 creature is still on the battlefield.",
       "a 3/3 creature: the battlefield → your graveyard."
     ],
     "cite": [
@@ -24623,7 +24623,7 @@
     "id": "named-wrath-bob-two-carol-one",
     "text": "Alice casts Wrath of God. Bob has two creatures and Carol has one. What dies?",
     "expect": [
-      "a creature: the battlefield → Bob's graveyard. (×2)",
+      "a creature: the battlefield → Bob's graveyard (twice).",
       "a creature: the battlefield → Carol's graveyard."
     ]
   },
@@ -24690,7 +24690,7 @@
     "id": "what-if-i-block-the-2-2-instead",
     "text": "What if I block the 2/2 instead of the 4/4? How much do I take?",
     "expect": [
-      "You take 4 damage."
+      "you take 4 damage in all."
     ]
   },
   {
@@ -24748,7 +24748,7 @@
     "id": "ghostly-prison-four-lands-two-attackers-mana-left",
     "text": "They have Ghostly Prison and I have 4 lands. I attack with two creatures. Do I have mana left?",
     "expect": [
-      "You pay {2} for Ghostly Prison (a creature attacks). (×2)",
+      "You pay {2} for Ghostly Prison (a creature attacks) (twice).",
       "You have no mana left: everything the situation gave you was spent (on costs paid as things were attacked with or cast)."
     ]
   },
@@ -24838,7 +24838,7 @@
     "id": "goblin-grenade-sacrificing-one-of-three",
     "text": "I have three 1/1 Goblins and cast Goblin Grenade sacrificing one. How much damage to them?",
     "expect": [
-      "opponent takes 5 damage."
+      "opponent takes 5 damage in all."
     ]
   },
   {
@@ -24976,7 +24976,7 @@
     "expect": [
       "opponent takes 2 damage.",
       "Yes: a 2/2 creature died (it's in the graveyard).",
-      "Yes: Grizzly Bears died (it's in the graveyard).",
+      "Grizzly Bears died (it's in the graveyard).",
       "Rancor: your graveyard → your hand."
     ],
     "cite": [
@@ -25065,7 +25065,7 @@
     "id": "cmd-smothering-tithe-two-draws",
     "text": "i control Smothering Tithe and they draw two cards, do i get treasures",
     "expect": [
-      "You get a Treasure token. (×2)"
+      "You get a Treasure token (twice)."
     ]
   },
   {
@@ -25080,7 +25080,7 @@
     "text": "i'm the monarch and they hit me with a 1/1, who is the monarch now",
     "expect": [
       "You take 1 damage.",
-      "opponent is the monarch."
+      "opponent is the monarch (twice)."
     ]
   },
   {
@@ -25180,7 +25180,7 @@
     "text": "I attack with a 3/3. They block with a 2/2 and then cast Giant Growth on their blocker. Who dies?",
     "expect": [
       "No: a 2/2 creature is still on the battlefield.",
-      "Yes: a 3/3 creature died (it's in the graveyard)."
+      "a 3/3 creature died (it's in the graveyard)."
     ]
   },
   {
@@ -25270,7 +25270,7 @@
     "text": "They attack with a 2/2 with first strike and I block with a 2/2 with deathtouch. Who dies?",
     "expect": [
       "Yes: a 2/2 creature with deathtouch died (it's in the graveyard).",
-      "No: a 2/2 creature with first strike is still on the battlefield."
+      "a 2/2 creature with first strike is still on the battlefield."
     ],
     "cite": [
       "702.7b"
@@ -25289,7 +25289,7 @@
     "text": "I have a 4/4 and they have a 4/4. I attack, they block, and I cast Lightning Bolt on theirs after blocks. Who dies?",
     "expect": [
       "Yes: opponent's 4/4 creature died (it's in the graveyard).",
-      "Yes: your 4/4 creature died (it's in the graveyard)."
+      "your 4/4 creature died (it's in the graveyard)."
     ]
   },
   {
@@ -25297,7 +25297,7 @@
     "text": "They cast Pyroclasm. I have a 2/2 and a 3/3. What survives?",
     "expect": [
       "No: a 2/2 creature is in the graveyard.",
-      "Yes: a 3/3 creature is still on the battlefield."
+      "a 3/3 creature is still on the battlefield."
     ]
   },
   {
@@ -25378,7 +25378,7 @@
     "id": "evacuation-three-2-2s",
     "text": "I have three 2/2s and they cast Evacuation. Where do my creatures go?",
     "expect": [
-      "a 2/2 creature: the battlefield → your hand. (×3)"
+      "a 2/2 creature: the battlefield → your hand (three times)."
     ]
   },
   {
@@ -25461,7 +25461,7 @@
     "id": "face-down-morph-bolted-what-is-it",
     "text": "They have a face-down morph and I Bolt it. What is it?",
     "expect": [
-      "Face down, it is a 2/2 creature with no name, no mana cost, no creature types and no abilities, colorless (708.2). Whatever card is underneath doesn't matter until it's turned face up; if it leaves the battlefield face down it's revealed as it goes (708.9), and a 2/2 dies to 3 damage.",
+      "Face down, it is a 2/2 creature with no name, no mana cost, no creature types and no abilities, colourless (708.2). Whatever card is underneath doesn't matter until it's turned face up; if it leaves the battlefield face down it's revealed as it goes (708.9), and a 2/2 dies to 3 damage.",
       "a 2/2 creature: the battlefield → opponent's graveyard."
     ]
   },
@@ -25624,7 +25624,7 @@
     "text": "My opponent has Propaganda. I attack with three Grizzly Bears and pay only 4. What happens?",
     "expect": [
       "Grizzly Bears can't attack (can't pay {2} for Propaganda).",
-      "opponent takes 2 damage. (×2)"
+      "opponent takes 2 damage (twice)."
     ],
     "cite": [
       "508.1c"
@@ -25645,7 +25645,7 @@
     "id": "doran-treefolk-harbinger-deals-three",
     "text": "I control Doran, the Siege Tower and attack with a Treefolk Harbinger. How much damage does it deal?",
     "expect": [
-      "opponent takes 3 damage."
+      "opponent takes 3 damage in all."
     ],
     "cite": [
       "510.1a"
@@ -25712,7 +25712,7 @@
     "text": "My opponent attacks me with a 5/5 trample. I block with a 0/1 Saproling token. How much damage do I take?",
     "expect": [
       "Saproling token has 1 damage marked.",
-      "You take 4 damage.",
+      "you take 4 damage in all.",
       "you take 4 damage in all."
     ]
   },
@@ -25864,7 +25864,7 @@
     "id": "rhystic-three-unpaid-spells",
     "text": "I control Rhystic Study and my opponent casts three spells this turn and pays for none of them. How many cards do I draw?",
     "expect": [
-      "You draw 1 card. (×3)",
+      "You draw 1 card (three times).",
       "You draw 3 cards in all."
     ]
   },
@@ -26279,7 +26279,7 @@
     "expect": [
       "a 4/4 creature: the battlefield → opponent's graveyard.",
       "a 2/2 creature: the battlefield → your graveyard.",
-      "No: a 3/3 creature is still on the battlefield."
+      "a 3/3 creature is still on the battlefield."
     ]
   },
   {
@@ -26324,7 +26324,7 @@
     "text": "I attack with a 3/3 and my opponent blocks with a 3/3. Before damage they cast Giant Growth. Who dies?",
     "expect": [
       "No: opponent's 3/3 creature is still on the battlefield.",
-      "Yes: your 3/3 creature died (it's in the graveyard)."
+      "your 3/3 creature died (it's in the graveyard)."
     ]
   },
   {
@@ -26394,7 +26394,7 @@
     "id": "best-block-first-striker-vs-two-bears",
     "text": "My opponent attacks me with two 2/2s. I have a 2/2 with first strike. What's my best block?",
     "expect": [
-      "Blocking a 2/2 creature with a 2/2 creature with first strike: saves you 2 damage; a 2/2 creature with first strike survives and a 2/2 creature dies (first strike kills it before it deals damage). (×2)"
+      "Blocking a 2/2 creature with a 2/2 creature with first strike: saves you 2 damage; a 2/2 creature with first strike survives and a 2/2 creature dies (first strike kills it before it deals damage) (twice)."
     ]
   },
   {
@@ -26484,7 +26484,7 @@
     "id": "overrun-two-bears-how-much-if-i-attack",
     "text": "I have two Grizzly Bears and cast Overrun. How much damage do I deal if I attack?",
     "expect": [
-      "Grizzly Bears is 5/5 with trample until end of turn. (×2)",
+      "Grizzly Bears is 5/5 with trample until end of turn (twice).",
       "opponent takes 10 damage in all."
     ]
   },
@@ -26525,8 +26525,8 @@
     "text": "I control Blood Artist and my opponent casts Pyroclasm. I have two 1/1 tokens. What happens?",
     "expect": [
       "Blood Artist: the battlefield → your graveyard.",
-      "opponent loses 1 life. (×3)",
-      "You gain 1 life. (×3)"
+      "opponent loses 1 life (three times).",
+      "You gain 1 life (three times)."
     ]
   },
   {
@@ -26601,8 +26601,8 @@
     "id": "four-four-double-blocked-kills-both",
     "text": "I attack with a 4/4 and my opponent blocks with two 2/2s. Can I kill both?",
     "expect": [
-      "a 2/2 creature: the battlefield → opponent's graveyard. (×2)",
-      "Yes: a 2/2 creature died (it's in the graveyard). (×2)"
+      "a 2/2 creature: the battlefield → opponent's graveyard (twice).",
+      "Yes: a 2/2 creature died (it's in the graveyard) (twice)."
     ]
   },
   {
@@ -26617,7 +26617,7 @@
     "id": "vial-mother-in-hand-cant-save-summoning-sick",
     "text": "I have Aether Vial with 1 counter and Mother of Runes in hand. My opponent casts Doom Blade on my Grizzly Bears. Can I save it?",
     "expect": [
-      "No: you could put Mother of Runes onto the battlefield with Aether Vial in response (mana value 1 matches its 1 counter), but its ability has {T} in the cost, and a creature that came under your control this turn can't pay {T} (302.6, \"summoning sickness\"). Mother of Runes is on the battlefield afterwards, but Grizzly Bears is gone.",
+      "you could put Mother of Runes onto the battlefield with Aether Vial in response (mana value 1 matches its 1 counter), but its ability has {T} in the cost, and a creature that came under your control this turn can't pay {T} (302.6, \"summoning sickness\"). Mother of Runes is on the battlefield afterwards, but Grizzly Bears is gone.",
       "Grizzly Bears: the battlefield → your graveyard."
     ],
     "notExpect": [
@@ -26755,7 +26755,7 @@
     "text": "I control Sheoldred, the Apocalypse. My opponent casts Brainstorm. What happens?",
     "expect": [
       "opponent draws 3 cards.",
-      "opponent loses 2 life. (×3)"
+      "opponent loses 2 life (three times)."
     ]
   },
   {
@@ -26896,7 +26896,7 @@
     "id": "trample-four-four-vs-saproling",
     "text": "I attack with a 4/4 with trample and my opponent blocks with a 0/1 Saproling. How much damage do they take?",
     "expect": [
-      "opponent takes 3 damage.",
+      "opponent takes 3 damage in all.",
       "opponent takes 3 damage in all."
     ]
   },
@@ -26971,7 +26971,7 @@
     "text": "My opponent has a 2/2 and I have a 1/1 with deathtouch. If I block, who dies?",
     "expect": [
       "Yes: a 1/1 creature with deathtouch died (it's in the graveyard).",
-      "Yes: a 2/2 creature died (it's in the graveyard)."
+      "a 2/2 creature died (it's in the graveyard)."
     ]
   },
   {
@@ -26988,7 +26988,7 @@
     "id": "settle-two-attackers-how-many-lands",
     "text": "I attack with two 2/2s and my opponent casts Settle the Wreckage. How many lands do I get?",
     "expect": [
-      "a 2/2 creature: the battlefield → exile. (×2)",
+      "a 2/2 creature: the battlefield → exile (twice).",
       "You get 2 basic lands: one for each creature exiled this way, put onto the battlefield tapped (you may search for fewer or none, 701.23b)."
     ]
   },
@@ -27291,7 +27291,7 @@
     "id": "attack-with-batterskull-germ",
     "text": "I attack with a Germ token equipped with Batterskull. How much damage does it deal?",
     "expect": [
-      "opponent takes 4 damage."
+      "opponent takes 4 damage in all."
     ],
     "notExpect": [
       "can't attack",
@@ -27462,7 +27462,7 @@
     "id": "settle-how-many-creatures-do-i-lose",
     "text": "I attack with two 2/2s. My opponent casts Settle the Wreckage on me. How many creatures do I lose?",
     "expect": [
-      "You lose 2 creatures: a 2/2 creature, a 2/2 creature."
+      "You lose 2 creatures: two 2/2 creatures."
     ]
   },
   {
@@ -27836,7 +27836,7 @@
     "id": "holy-day-two-attackers",
     "text": "I attack with two 2/2s and my opponent casts Holy Day. What happens?",
     "expect": [
-      "Damage to opponent from a 2/2 creature is prevented. (×2)"
+      "Damage to opponent from a 2/2 creature is prevented (twice)."
     ]
   },
   {
@@ -28098,7 +28098,7 @@
     "text": "My opponent attacks with a 3/3. I block with Wall of Omens. Does anything die?",
     "expect": [
       "No: Wall of Omens is still on the battlefield.",
-      "No: a 3/3 creature is still on the battlefield."
+      "a 3/3 creature is still on the battlefield."
     ]
   },
   {
@@ -28325,8 +28325,8 @@
     "id": "two-rancors-return",
     "text": "I have two Rancors on my Grizzly Bears. My opponent kills the Bears. What happens to the Rancors?",
     "expect": [
-      "Rancor: the battlefield → your graveyard. (×2)",
-      "Rancor: your graveyard → your hand. (×2)"
+      "Rancor: the battlefield → your graveyard (twice).",
+      "Rancor: your graveyard → your hand (twice)."
     ]
   },
   {
@@ -28439,7 +28439,7 @@
     "text": "I have Lotus Cobra. I crack Misty Rainforest. How much mana do I get?",
     "expect": [
       "Forest enters the battlefield.",
-      "You can make 2 mana right now: Forest → {G}; plus 1 mana of any color already in your mana pool."
+      "You can make 2 mana right now: Forest → {G}; plus 1 mana of any colour already in your mana pool."
     ]
   },
   {
@@ -28641,7 +28641,7 @@
     "id": "scavenging-ooze-how-big",
     "text": "I have Scavenging Ooze and two green mana. My opponent's graveyard has two creatures. How big can it get?",
     "expect": [
-      "You gain 1 life. (×2)",
+      "You gain 1 life (twice).",
       "Scavenging Ooze is 4/4 (2/2 base, 2 +1/+1 counters)."
     ]
   },
@@ -28745,7 +28745,7 @@
     "id": "grave-titan-cloudshift-zombies",
     "text": "I have Grave Titan and cast Cloudshift on it. How many Zombies do I have?",
     "expect": [
-      "You get a Zombie token. (×2)",
+      "You get a Zombie token (twice).",
       "You have 2 zombies."
     ]
   },
@@ -29053,7 +29053,7 @@
     "expect": [
       "a 2/2 creature is 5/5 until end of turn.",
       "a 3/3 creature: the battlefield → opponent's graveyard.",
-      "No: a 2/2 creature is still on the battlefield."
+      "a 2/2 creature is still on the battlefield."
     ]
   },
   {
@@ -29112,8 +29112,8 @@
     "id": "electrolyze-kill-both-bears",
     "text": "I have two Grizzly Bears and my opponent casts Electrolyze. Can they kill both?",
     "expect": [
-      "Grizzly Bears has 1 damage marked. (×2)",
-      "No: Grizzly Bears is still on the battlefield. (×2)"
+      "Grizzly Bears has 1 damage marked (twice).",
+      "No: Grizzly Bears is still on the battlefield (twice)."
     ]
   },
   {
@@ -29330,7 +29330,7 @@
     "id": "grave-titan-attacks-zombies-after",
     "text": "I have Grave Titan and it attacks. How many Zombies do I have after?",
     "expect": [
-      "You get a Zombie token. (×2)",
+      "You get a Zombie token (twice).",
       "You have 2 zombies."
     ]
   },
@@ -29353,14 +29353,14 @@
     "text": "My opponent attacks me with a 3/3 and I have a 2/2 with first strike and a 2/2. If I double block, what dies?",
     "expect": [
       "Yes: a 3/3 creature died (it's in the graveyard).",
-      "Yes: a 2/2 creature with first strike died (it's in the graveyard)."
+      "a 2/2 creature with first strike died (it's in the graveyard)."
     ]
   },
   {
     "id": "vial-one-mother-in-hand-save",
     "text": "I have Aether Vial with 1 counter and Mother of Runes in hand. My opponent Bolts my Bears. Can I save it?",
     "expect": [
-      "No: you could put Mother of Runes onto the battlefield with Aether Vial in response (mana value 1 matches its 1 counter), but its ability has {T} in the cost"
+      "you could put Mother of Runes onto the battlefield with Aether Vial in response (mana value 1 matches its 1 counter), but its ability has {T} in the cost"
     ]
   },
   {
@@ -29628,9 +29628,9 @@
     "id": "selfless-spirit-two-others-survive",
     "text": "My opponent casts Damnation and I have Selfless Spirit and two other creatures. I sacrifice Spirit. What survives?",
     "expect": [
-      "a creature is indestructible and isn't destroyed. (×2)",
-      "Yes: a creature is still on the battlefield. (×2)",
-      "No: Selfless Spirit is in the graveyard."
+      "a creature is indestructible and isn't destroyed (twice).",
+      "Yes: a creature is still on the battlefield (twice).",
+      "Selfless Spirit is in the graveyard."
     ]
   },
   {
@@ -29705,7 +29705,7 @@
     "text": "I attack with a 2/2 and my opponent blocks with a 2/2. I cast Brute Force on mine. Who dies?",
     "expect": [
       "Yes: opponent's 2/2 creature died (it's in the graveyard).",
-      "No: your 2/2 creature is still on the battlefield."
+      "your 2/2 creature is still on the battlefield."
     ]
   },
   {
@@ -30033,7 +30033,7 @@
     "text": "My opponent casts Damnation. I have Selfless Spirit and Thalia, Guardian of Thraben. What survives if I sacrifice Spirit?",
     "expect": [
       "Thalia, Guardian of Thraben is indestructible and isn't destroyed.",
-      "Yes: Thalia, Guardian of Thraben is still on the battlefield."
+      "Thalia, Guardian of Thraben is still on the battlefield."
     ],
     "notExpect": [
       "Thalia, Guardian of Thraben: the battlefield → your graveyard."
@@ -30168,7 +30168,7 @@
     "text": "I attack with Hollow One and my opponent blocks with Tarmogoyf when the graveyards have 3 types. Who dies?",
     "expect": [
       "Yes: Tarmogoyf died (it's in the graveyard).",
-      "No: Hollow One is still on the battlefield."
+      "Hollow One is still on the battlefield."
     ],
     "cite": []
   },
@@ -30471,7 +30471,7 @@
     "id": "bridge-their-empty-hand-my-3-3",
     "text": "My opponent casts Ensnaring Bridge. I have 4 cards in hand and they have 0. Can I attack with my 3/3?",
     "expect": [
-      "No: a 3/3 creature can't attack (Ensnaring Bridge: opponent has 0 cards in hand"
+      "No: a 3/3 creature can't attack (Ensnaring Bridge: opponent has no cards in hand"
     ],
     "cite": []
   },
@@ -30960,7 +30960,7 @@
     "id": "kor-firewalker-bolt-face",
     "text": "I cast Lightning Bolt on my opponent at 3 life while they have Kor Firewalker. Do they gain life?",
     "expect": [
-      "opponent gains 1 life.",
+      "opponent gains 1 life in all.",
       "opponent goes from 3 to 1 life."
     ],
     "cite": []
@@ -30970,7 +30970,7 @@
     "text": "I have Deathrite Shaman and there is a land in my opponent's graveyard. Can I tap it for mana?",
     "expect": [
       "a basic land: opponent's graveyard → exile.",
-      "You have 1 mana of any color in your mana pool."
+      "You have 1 mana of any colour in your mana pool."
     ],
     "notExpect": [
       "but 0 were given"
@@ -31082,7 +31082,7 @@
     "id": "chalice-one-probe-anyway",
     "text": "My opponent controls Chalice of the Void on 1 and I cast Gitaxian Probe paying life. Is it countered anyway?",
     "expect": [
-      "Gitaxian Probe is countered."
+      "Gitaxian Probe is countered: it never resolves and goes to its"
     ],
     "cite": []
   },
@@ -31165,7 +31165,7 @@
     "id": "trample-5-5-into-0-4-wall",
     "text": "My opponent attacks me with a 5/5 trample and I block with a 0/4 Wall. How much do I take?",
     "expect": [
-      "You take 1 damage."
+      "you take 1 damage in all."
     ],
     "cite": []
   },
@@ -31218,7 +31218,7 @@
     "text": "I have Ensnaring Bridge and one card in hand. My opponent has two 1/1s and a 3/3. What can attack me?",
     "expect": [
       "a 3/3 creature can't attack (Ensnaring Bridge)",
-      "You take 1 damage. (×2)"
+      "You take 1 damage (twice)."
     ],
     "notExpect": [
       "Nothing changes"
@@ -31622,8 +31622,8 @@
     "id": "selfless-spirit-vs-wrath-two-others",
     "text": "They cast Wrath of God. I have Selfless Spirit and two other creatures. If I sac Spirit, do my creatures survive?",
     "expect": [
-      "a creature is indestructible and isn't destroyed. (×2)",
-      "Yes: Selfless Spirit died (it's in the graveyard)."
+      "a creature is indestructible and isn't destroyed (twice).",
+      "Selfless Spirit died (it's in the graveyard)."
     ],
     "cite": []
   },
@@ -31856,7 +31856,7 @@
     "text": "I attack with Delver of Secrets unflipped and they block with a 1/1. Who dies?",
     "expect": [
       "Yes: a 1/1 creature died (it's in the graveyard).",
-      "Yes: Delver of Secrets died (it's in the graveyard)."
+      "Delver of Secrets died (it's in the graveyard)."
     ],
     "cite": []
   },
@@ -31985,7 +31985,7 @@
     "text": "I cast Wrath of God. I have Thalia and they have Tarmogoyf. Who survives?",
     "expect": [
       "No: Thalia, Guardian of Thraben is in the graveyard.",
-      "No: Tarmogoyf is in the graveyard."
+      "Tarmogoyf is in the graveyard."
     ],
     "cite": []
   },
@@ -32001,7 +32001,7 @@
     "id": "bridge-vs-animated-wall",
     "text": "I have Ensnaring Bridge and no cards in hand. They attack with a 0/4 wall that was animated to 2/4. Can it attack?",
     "expect": [
-      "No: a 2/4 wall creature can't attack (Ensnaring Bridge: You have 0 cards in hand and a 2/4 wall creature's power is 2, 508.1c)."
+      "No: a 2/4 wall creature can't attack (Ensnaring Bridge: you have no cards in hand and a 2/4 wall creature's power is 2, 508.1c)."
     ],
     "cite": []
   },
@@ -32118,7 +32118,7 @@
     "id": "bridge-zero-cards-vs-goyf-four-types",
     "text": "They attack with Tarmogoyf. I have Ensnaring Bridge and 0 cards. Graveyards have 4 types. Can it attack?",
     "expect": [
-      "No: Tarmogoyf can't attack (Ensnaring Bridge: You have 0 cards in hand and Tarmogoyf's power is 4, 508.1c)."
+      "No: Tarmogoyf can't attack (Ensnaring Bridge: you have no cards in hand and Tarmogoyf's power is 4, 508.1c)."
     ],
     "cite": []
   },
@@ -32256,7 +32256,7 @@
     "text": "I attack with Mirran Crusader and they block with a black 4/4. What happens?",
     "expect": [
       "a 4/4 black creature can't block Mirran Crusader (protection).",
-      "opponent takes 2 damage. (×2)"
+      "opponent takes 2 damage (twice)."
     ],
     "cite": []
   },
@@ -32334,7 +32334,7 @@
     "id": "chalice-one-vial-one-thalia",
     "text": "They have Chalice on 1 and I have Aether Vial on 1. Can I vial in a Thalia?",
     "expect": [
-      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)."
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counter)."
     ],
     "cite": []
   },
@@ -32479,7 +32479,7 @@
     "id": "bridge-vs-my-spirit-tokens",
     "text": "They have Ensnaring Bridge with 2 cards in hand. I have Spirit tokens from Lingering Souls. Can they attack?",
     "expect": [
-      "opponent takes 1 damage."
+      "opponent takes 1 damage in all."
     ],
     "cite": []
   },
@@ -32498,7 +32498,7 @@
     "id": "spirits-into-bridge-zero-cards",
     "text": "I attack with two Spirit tokens into their Ensnaring Bridge with 0 cards in hand. Can they attack?",
     "expect": [
-      "Spirit token can't attack (Ensnaring Bridge). (×2)"
+      "Spirit token can't attack (Ensnaring Bridge) (twice)."
     ],
     "cite": []
   },
@@ -32660,7 +32660,7 @@
     "id": "two-finks-wrath-both-persist",
     "text": "I have two Kitchen Finks. Wrath of God. Do both come back?",
     "expect": [
-      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1. (×2)"
+      "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1 (twice)."
     ],
     "cite": []
   },
@@ -33702,7 +33702,7 @@
     "text": "I attack with Thalia and they block with Kitchen Finks. Who dies?",
     "expect": [
       "Kitchen Finks comes back with a -1/-1 counter (persist)",
-      "No: Thalia, Guardian of Thraben is still on the battlefield"
+      "Thalia, Guardian of Thraben is still on the battlefield"
     ],
     "cite": []
   },
@@ -34278,7 +34278,7 @@
     "text": "They attack with Tarmogoyf with 4 types in graveyards. I have a 4/4 blocker. Who dies?",
     "expect": [
       "Yes: a 4/4 creature died",
-      "No: Tarmogoyf is still on the battlefield"
+      "Tarmogoyf is still on the battlefield"
     ],
     "cite": []
   },
@@ -34287,7 +34287,7 @@
     "text": "I have Dark Confidant and Kor Firewalker. They cast Pyroclasm. What survives?",
     "expect": [
       "No: Dark Confidant is in the graveyard",
-      "Yes: Kor Firewalker is still on the battlefield"
+      "Kor Firewalker is still on the battlefield"
     ],
     "cite": []
   },
@@ -34965,7 +34965,7 @@
     "text": "They cast Wrath of God. I have Selfless Spirit and Thalia. Do I lose both if I don't sacrifice?",
     "expect": [
       "Yes: Selfless Spirit died",
-      "Yes: Thalia, Guardian of Thraben died"
+      "Thalia, Guardian of Thraben died"
     ]
   },
   {
@@ -35018,7 +35018,7 @@
     "id": "tt237-vial-one-thalia",
     "text": "I have Aether Vial on 1 and Thalia in hand. Can I put Thalia in?",
     "expect": [
-      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)"
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counter)"
     ]
   },
   {
@@ -35039,7 +35039,7 @@
     "id": "tt237-hymn-two-lands-in-hand",
     "text": "They Hymn me and I have only two lands in hand. What happens?",
     "expect": [
-      "You discard a basic land and a basic land"
+      "You discard two basic lands"
     ]
   },
   {
@@ -35103,7 +35103,7 @@
     "text": "I have Kitchen Finks and they cast Pyroclasm. Does Finks come back and does it die again?",
     "expect": [
       "Kitchen Finks comes back with a -1/-1 counter (persist)",
-      "No: Kitchen Finks is still on the battlefield"
+      "Kitchen Finks is still on the battlefield"
     ]
   },
   {
@@ -35138,7 +35138,7 @@
     "id": "tt238-bridge-and-no-cards",
     "text": "They have Ensnaring Bridge and no cards. I attack with two 2/2s. What happens?",
     "expect": [
-      "a 2/2 creature can't attack (Ensnaring Bridge). (×2)"
+      "a 2/2 creature can't attack (Ensnaring Bridge) (twice)."
     ]
   },
   {
@@ -35231,7 +35231,7 @@
     "id": "tt239-two-guides-into-bridge-one-card",
     "text": "I attack with two Goblin Guides into their Ensnaring Bridge with one card in hand. How many can attack?",
     "expect": [
-      "Goblin Guide can't attack (Ensnaring Bridge). (×2)"
+      "Goblin Guide can't attack (Ensnaring Bridge) (twice)."
     ],
     "notExpect": [
       "opponent takes 2 damage"
@@ -35259,8 +35259,8 @@
     "id": "tt240-pyroclasm-my-skite-and-thalia",
     "text": "My opponent casts Pyroclasm with my Spellskite and Thalia out. Can Spellskite redirect it? What dies?",
     "expect": [
-      "Yes: Thalia, Guardian of Thraben died",
-      "No: Spellskite is still on the battlefield",
+      "Thalia, Guardian of Thraben died",
+      "Spellskite is still on the battlefield",
       "No. Spellskite's ability changes a target of a spell or ability, and Pyroclasm has no targets"
     ],
     "notExpect": [
@@ -35358,7 +35358,7 @@
     "text": "They cast Hymn to Tourach and I have three cards in hand: two lands and a Bolt. What are the odds I keep the Bolt?",
     "expect": [
       "33% to keep it",
-      "You discard 2 of Lightning Bolt, a basic land and a basic land at random"
+      "You discard 2 of Lightning Bolt, two basic lands at random"
     ],
     "cite": [
       "701.9a"
@@ -35550,7 +35550,7 @@
     "text": "They attack me with a 3/3 and I'm at 3. I have Spellskite untapped. Can I block and survive?",
     "expect": [
       "Yes: Spellskite can block a 3/3 creature",
-      "Yes: You are still in the game at 3 life"
+      "You are still in the game at 3 life"
     ]
   },
   {
@@ -35745,7 +35745,7 @@
     "text": "I attack with Insectile Aberration. They have Spellskite and a 2/2. What can block it?",
     "expect": [
       "No: Spellskite can't block Insectile Aberration (flying)",
-      "No: a 2/2 creature can't block Insectile Aberration (flying)"
+      "a 2/2 creature can't block Insectile Aberration (flying)"
     ]
   },
   {
@@ -35801,7 +35801,7 @@
     "id": "tt245-vial-one-thalia-stays",
     "text": "I have Aether Vial on 1. Can I put Thalia in?",
     "expect": [
-      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counters)"
+      "Thalia, Guardian of Thraben stays in hand (mana value 2 ≠ 1 counter)"
     ]
   },
   {
@@ -35908,7 +35908,7 @@
     "text": "I attack with a 2/2 flier. They have a 3/3 with reach and a 4/4. What can block?",
     "expect": [
       "Yes: a 3/3 creature with reach can block a 2/2 creature with flying",
-      "No: a 4/4 creature can't block a 2/2 creature with flying (flying)"
+      "a 4/4 creature can't block a 2/2 creature with flying (flying)"
     ]
   },
   {
@@ -35953,7 +35953,7 @@
     "id": "tt247-two-guides-into-my-empty-hand-bridge",
     "text": "They attack with two Goblin Guides and I have Ensnaring Bridge with no cards. Can they attack?",
     "expect": [
-      "No: Goblin Guide can't attack (Ensnaring Bridge: You have 0 cards in hand and Goblin Guide's power is 2, 508.1c). (×2)"
+      "No: Goblin Guide can't attack (Ensnaring Bridge: you have no cards in hand and Goblin Guide's power is 2, 508.1c) (twice)."
     ],
     "notExpect": [
       "(×4)"
@@ -36116,7 +36116,7 @@
     "text": "I have Tarmogoyf and Thalia. They Pyroclasm. Who dies?",
     "expect": [
       "Yes: Tarmogoyf died (it's in the graveyard)",
-      "Yes: Thalia, Guardian of Thraben died (it's in the graveyard)"
+      "Thalia, Guardian of Thraben died (it's in the graveyard)"
     ]
   },
   {
@@ -36190,7 +36190,7 @@
     "id": "tt250-two-guides-bridge-two-cards",
     "text": "I have two Goblin Guides. I attack with both into their Ensnaring Bridge with 2 cards in hand. Which can attack?",
     "expect": [
-      "Yes: Goblin Guide can attack. (×2)"
+      "Yes: Goblin Guide can attack (twice)."
     ]
   },
   {
@@ -36243,7 +36243,7 @@
     "id": "tt250-chalice-zero-two-moxen",
     "text": "They have Chalice on 0 and I cast Mox Opal. Then I cast a second Mox Opal. What happens?",
     "expect": [
-      "Mox Opal is countered. (×2)"
+      "Mox Opal is countered (twice)."
     ]
   },
   {
@@ -36349,7 +36349,7 @@
     "text": "I block their Goblin Guide with Kitchen Finks. Does Guide die and does Finks live?",
     "expect": [
       "Yes: Goblin Guide died (it's in the graveyard)",
-      "Yes: Kitchen Finks is still on the battlefield"
+      "Kitchen Finks is still on the battlefield"
     ]
   },
   {
@@ -36434,7 +36434,7 @@
     "text": "They attack with Insectile Aberration and I have Spellskite and a 2/2 reach. Who can block?",
     "expect": [
       "No: Spellskite can't block Insectile Aberration (flying)",
-      "Yes: a 2/2 creature with reach can block Insectile Aberration"
+      "a 2/2 creature with reach can block Insectile Aberration"
     ]
   },
   {
@@ -37158,7 +37158,7 @@
     "id": "tt259-bridge-empty-hand-one-one",
     "text": "They have Ensnaring Bridge with no cards in hand. Can I attack with my 1/1?",
     "expect": [
-      "No: a 1/1 creature can't attack (Ensnaring Bridge: opponent has 0 cards in hand and a 1/1 creature's power is 1, 508.1c)"
+      "No: a 1/1 creature can't attack (Ensnaring Bridge: opponent has no cards in hand and a 1/1 creature's power is 1, 508.1c)"
     ]
   },
   {
@@ -37482,7 +37482,7 @@
     "text": "They have Ensnaring Bridge with 1 card in hand. I have Goblin Guide and a 1/1. What can attack?",
     "expect": [
       "No: Goblin Guide can't attack (Ensnaring Bridge: opponent has 1 card in hand and Goblin Guide's power is 2, 508.1c)",
-      "Yes: a 1/1 creature can attack"
+      "a 1/1 creature can attack"
     ]
   },
   {
@@ -37570,7 +37570,7 @@
     "text": "They attack with a 3/3 and I have a 2/2 and a 2/2. If I double block, who dies?",
     "expect": [
       "a 3/3 creature: the battlefield → opponent's graveyard",
-      "Yes: a 3/3 creature died (it's in the graveyard)"
+      "a 3/3 creature died (it's in the graveyard)"
     ]
   },
   {
@@ -37628,7 +37628,7 @@
     "text": "They cast Wrath. I have Thalia and Selfless Spirit and sacrifice Spirit in response. Does Thalia survive and does Spirit?",
     "expect": [
       "Yes: Thalia, Guardian of Thraben is still on the battlefield",
-      "No: Selfless Spirit is in the graveyard"
+      "Selfless Spirit is in the graveyard"
     ]
   },
   {
@@ -38154,7 +38154,7 @@
     "text": "My opponent casts Fork on their own Fireball with X=5. How much damage does the copy deal?",
     "expect": [
       "A copy of Fireball is put on the stack targeting you, with X = 5 like the original.",
-      "You take 5 damage. (×2)"
+      "You take 5 damage (twice)."
     ],
     "notExpect": [
       "X = 0"
@@ -38169,7 +38169,7 @@
     "text": "My opponent casts Fireball at me. X is 5. They Fork it. How much damage does the copy deal?",
     "expect": [
       "with X = 5 like the original",
-      "You take 5 damage. (×2)"
+      "You take 5 damage (twice)."
     ],
     "notExpect": [
       "X = 0"
@@ -38289,8 +38289,8 @@
     "text": "I copy Kolaghan's Command choosing discard and shock with Twincast. Can the copy choose different modes?",
     "expect": [
       "The copy can't choose different modes",
-      "opponent discards 1 card. (×2)",
-      "opponent takes 2 damage. (×2)"
+      "opponent discards 1 card (twice).",
+      "opponent takes 2 damage (twice)."
     ],
     "cite": [
       "707.10",
@@ -38685,8 +38685,8 @@
     "id": "kw-extort-two-syndics-trigger-twice",
     "text": "I control two Syndic of Tithes. I cast Lightning Bolt at the opponent and pay for both extorts. How much life does the opponent have?",
     "expect": [
-      "opponent loses 1 life. (×2)",
-      "You gain 1 life. (×2)"
+      "opponent loses 1 life (twice).",
+      "You gain 1 life (twice)."
     ],
     "cite": [
       "702.101a"
@@ -38795,7 +38795,7 @@
     "id": "kw-mentor-equal-power-no-target",
     "text": "I attack with Barging Sergeant and a 4/4 creature. Does the 4/4 get a counter?",
     "expect": [
-      "opponent takes 4 damage. (×2)"
+      "opponent takes 4 damage (twice)."
     ],
     "notExpect": [
       "has 1 +1/+1 counter"
@@ -38949,7 +38949,7 @@
     "id": "st12",
     "text": "I cast Thassa's Oracle and its trigger goes on the stack. My opponent casts Force of Will targeting the trigger. Does it work?",
     "expect": [
-      "No: Force of Will can't be cast targeting Thassa's Oracle's triggered ability"
+      "Force of Will can't be cast targeting Thassa's Oracle's triggered ability"
     ],
     "notExpect": [
       "Force of Will doesn't resolve"
@@ -39100,7 +39100,7 @@
     "expect": [
       "a 2/2 creature regenerates.",
       "Yes: your 2/2 creature is still on the battlefield.",
-      "No: regenerating a 2/2 creature tapped it, removed all damage from it and removed it from combat (701.19a), so it's no longer blocking."
+      "regenerating a 2/2 creature tapped it, removed all damage from it and removed it from combat (701.19a), so it's no longer blocking."
     ],
     "notExpect": [],
     "cite": [
@@ -39467,7 +39467,7 @@
     "expect": [
       "Staggershock is exiled as it resolves (rebound): you may cast it for free from exile at the beginning of your next upkeep (702.88a).",
       "At the beginning of your upkeep, you cast Staggershock from exile without paying its mana cost (rebound).",
-      "opponent takes 2 damage. (×2)",
+      "opponent takes 2 damage (twice).",
       "it was cast from exile, not from hand, so rebound doesn't exile it again"
     ],
     "cite": [
@@ -40789,7 +40789,7 @@
     "id": "tu5",
     "text": "I attack my opponent with two 2/2s and they don't block. Then I cast Relentless Assault in my second main phase. Do my creatures untap?",
     "expect": [
-      "a 2/2 creature untaps (Relentless Assault).",
+      "a 2/2 creature untaps (Relentless Assault) (twice).",
       "Yes: Relentless Assault untaps all creatures that attacked this turn (701.26b)",
       "After this main phase you get an additional combat phase followed by an additional main phase"
     ],
@@ -41188,7 +41188,7 @@
     "text": "I cast Lurrus from my companion zone. Can I put Lurrus into my hand?",
     "expect": [
       "can't be cast from the companion zone directly",
-      "Yes: pay {3}"
+      "pay {3}"
     ],
     "cite": [
       "702.139a",
@@ -41232,7 +41232,7 @@
     "text": "I control Blood Artist and three other creatures. Wrath of God destroys all of them. How many times does Blood Artist trigger?",
     "expect": [
       "Blood Artist triggers 4 times: once for each creature that died, itself included.",
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "cite": [
       "603.10a"
@@ -41704,7 +41704,7 @@
     "text": "I exile a token with Path to Exile. Does it come back? Do they get a land?",
     "expect": [
       "it can't come back (111.8)",
-      "Yes: the search is opponent's."
+      "the search is opponent's."
     ],
     "cite": [
       "704.5d",
@@ -41992,8 +41992,8 @@
     "id": "cm8",
     "text": "My commander is Kozilek, Butcher of Truth. Can I play Sol Ring? Can I play a card with a Phyrexian red mana symbol?",
     "expect": [
-      "Yes: Sol Ring has no colored mana symbols",
-      "No: its {R/P} Phyrexian symbol is red"
+      "Yes: Sol Ring has no coloured mana symbols",
+      "its {R/P} Phyrexian symbol is red"
     ],
     "notExpect": [
       "Sol Ring enters the battlefield"
@@ -42553,7 +42553,7 @@
     "text": "My opponent casts Spell Queller, exiling my Lightning Bolt. Later Spell Queller dies. Can I cast Lightning Bolt for free? Do I have to?",
     "expect": [
       "Yes: when Spell Queller left the battlefield",
-      "No: it says \"may\""
+      "it says \"may\""
     ],
     "cite": [
       "607.2a",
@@ -42631,7 +42631,7 @@
     "text": "I control Harsh Mentor. My opponent taps Birds of Paradise for mana and then cracks Polluted Delta. How much damage do they take?",
     "expect": [
       "opponent pays 1 life.",
-      "opponent takes 2 damage.",
+      "opponent takes 2 damage in all.",
       "opponent takes 2 damage in all."
     ],
     "cite": [
@@ -42758,7 +42758,7 @@
     "id": "au14",
     "text": "I control Orcish Bowmasters. During their main phase my opponent casts Wheel of Fortune. What happens?",
     "expect": [
-      "opponent takes 1 damage. (×7)",
+      "opponent takes 1 damage (seven times).",
       "Orc Army token gets 1 +1/+1 counter and is 7/7"
     ],
     "cite": [
@@ -42771,7 +42771,7 @@
     "text": "I control Notion Thief. During their main phase my opponent casts Wheel of Fortune. How many cards do we each draw?",
     "expect": [
       "opponent skips 7 draws (Notion Thief); you draw instead.",
-      "You draw 7 cards. (×2)"
+      "You draw 7 cards (twice)."
     ],
     "cite": [
       "614.1a",
@@ -42944,7 +42944,7 @@
     "text": "My opponent controls Torpor Orb. My Kitchen Finks dies. Does it persist, and do I gain 2 life?",
     "expect": [
       "Kitchen Finks comes back with a -1/-1 counter (persist); it's now 2/1.",
-      "No: you gain no life here."
+      "you gain no life here."
     ],
     "cite": [
       "702.79a",
@@ -43104,7 +43104,7 @@
     "expect": [
       "a 2/2 creature regenerates.",
       "Yes: your 2/2 creature is still on the battlefield.",
-      "No: regenerating a 2/2 creature tapped it, removed all damage from it and removed it from combat (701.19a), so it's no longer blocking."
+      "regenerating a 2/2 creature tapped it, removed all damage from it and removed it from combat (701.19a), so it's no longer blocking."
     ],
     "cite": [
       "701.19a",
@@ -43612,7 +43612,7 @@
     "text": "i got blood artist and three other dudes. wrath kills all of em. how many times does blood artist trigger",
     "expect": [
       "Blood Artist triggers 4 times: once for each creature that died, itself included.",
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "cite": [
       "603.10a"
@@ -43623,7 +43623,7 @@
     "text": "i got blood artist and three other guys. wrath kills all of em. how many times does blood artist trigger",
     "expect": [
       "Blood Artist triggers 4 times: once for each creature that died, itself included.",
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "cite": [
       "603.10a"
@@ -44301,7 +44301,7 @@
     "id": "wd105",
     "text": "i swing with two 2/2s and they dont block. then in main two i cast relentless assault. do my guys untap",
     "expect": [
-      "a 2/2 creature untaps (Relentless Assault).",
+      "a 2/2 creature untaps (Relentless Assault) (twice).",
       "Yes: Relentless Assault untaps all creatures that attacked this turn (701.26b)",
       "After this main phase you get an additional combat phase followed by an additional main phase"
     ],
@@ -44314,7 +44314,7 @@
     "id": "wd106",
     "text": "i swing with two 2/2s, they dont block. in main 2 i cast relentless assault. do my guys untap",
     "expect": [
-      "a 2/2 creature untaps (Relentless Assault).",
+      "a 2/2 creature untaps (Relentless Assault) (twice).",
       "Yes: Relentless Assault untaps all creatures that attacked this turn (701.26b)",
       "After this main phase you get an additional combat phase followed by an additional main phase"
     ],
@@ -44661,7 +44661,7 @@
     "text": "i path a token. does it come back? do they get a land",
     "expect": [
       "it can't come back (111.8)",
-      "Yes: the search is opponent's."
+      "the search is opponent's."
     ],
     "cite": [
       "704.5d",
@@ -45062,7 +45062,7 @@
     "id": "ed2",
     "text": "Alice, Bob, Carol and I are playing. I control Smothering Tithe. Bob casts Wheel of Fortune and nobody pays. How many Treasures do I get?",
     "expect": [
-      "You get a Treasure token. (×21)"
+      "You get a Treasure token (21 times)."
     ],
     "notExpect": [
       "(×28)"
@@ -45076,7 +45076,7 @@
     "text": "Alice, Bob, Carol and I are playing. Alice controls Sol Ring and Ghostly Prison, Bob controls two Treasure tokens and Carol controls Propaganda. I control Smothering Tithe. I cast Dockside Extortionist. How many Treasures do I get?",
     "expect": [
       "X is 5",
-      "You get a Treasure token. (×5)"
+      "You get a Treasure token (five times)."
     ],
     "cite": [
       "608.2h"
@@ -45168,7 +45168,7 @@
     "id": "ed11",
     "text": "Alice, Bob, Carol and I are playing. Carol is the monarch. Bob goaded my Grizzly Bears. On my turn it attacks Carol and isn't blocked. Who is the monarch?",
     "expect": [
-      "You are the monarch."
+      "You are the monarch (twice)."
     ],
     "notExpect": [
       "Bob is the monarch"
@@ -45426,7 +45426,7 @@
     "text": "Alice, Bob, Carol and I are playing. Alice controls Sol Ring and Rhystic Study. I control Smothering Tithe. I cast Dockside Extortionist. What happens?",
     "expect": [
       "Alice pays {2}",
-      "You get a Treasure token. (×2)"
+      "You get a Treasure token (twice)."
     ],
     "cite": [
       "608.2h"
@@ -45448,7 +45448,7 @@
     "id": "nm2-devoid",
     "text": "Can I play Kozilek's Return in my mono-blue Commander deck?",
     "expect": [
-      "No: Kozilek's Return is colorless (devoid), but its color identity is red"
+      "No: Kozilek's Return is colourless (devoid), but its colour identity is red"
     ],
     "cite": [
       "702.114a",
@@ -45494,7 +45494,7 @@
     "id": "nm6-domain",
     "text": "I control Raugrin Triome and a Forest and cast Tribal Flames at the opponent. How much damage does the opponent take?",
     "expect": [
-      "opponent takes 4 damage."
+      "opponent takes 4 damage in all."
     ],
     "cite": [
       "207.2c",
@@ -46130,7 +46130,7 @@
     "id": "lv32",
     "text": "I am at 7 life and control Griselbrand. I activate it paying 7 life. Do I draw seven cards?",
     "expect": [
-      "You lose the game."
+      "you lose the game first (you go from 7 to 0 life)."
     ],
     "notExpect": [
       "You draw 7 cards."
@@ -46177,7 +46177,7 @@
     "text": "My opponent controls Ethersworn Canonist and has cast two spells this turn. I cast Empty the Warrens as my first spell this turn. How many Goblins do I get?",
     "expect": [
       "Storm puts 2 copies of Empty the Warrens on the stack",
-      "You get a Goblin token."
+      "You get a Goblin token (six times)."
     ],
     "notExpect": [
       "can't be cast"
@@ -47307,8 +47307,8 @@
     "id": "cr14",
     "text": "I attack with Engulfing Slagwurm and my opponent blocks with two Grizzly Bears. What happens?",
     "expect": [
-      "Grizzly Bears: the battlefield → opponent's graveyard. (×2)",
-      "You gain 2 life. (×2)"
+      "Grizzly Bears: the battlefield → opponent's graveyard (twice).",
+      "You gain 2 life (twice)."
     ],
     "cite": [
       "509.3d"
@@ -47701,7 +47701,7 @@
     "text": "harsh mentor is out. opp taps birds for mana and cracks polluted delta. how much dmg do they take",
     "expect": [
       "opponent pays 1 life.",
-      "opponent takes 2 damage.",
+      "opponent takes 2 damage in all.",
       "Yes: opponent takes 2 damage in all."
     ],
     "cite": [
@@ -47713,7 +47713,7 @@
     "id": "wx18",
     "text": "bowmasters is out. on their turn opp casts wheel of fortune. what happens",
     "expect": [
-      "opponent takes 1 damage. (×7)",
+      "opponent takes 1 damage (seven times).",
       "Orc Army token gets 1 +1/+1 counter and is 7/7"
     ],
     "cite": [
@@ -47765,7 +47765,7 @@
     "id": "wx22",
     "text": "me, alice, bob and carol playing. i have smothering tithe. bob wheels and nobody pays. how many treasures do i get",
     "expect": [
-      "You get a Treasure token. (×21)"
+      "You get a Treasure token (21 times)."
     ],
     "notExpect": [
       "(×28)"
@@ -47779,7 +47779,7 @@
     "text": "me, alice, bob and carol playing. alice has sol ring and rhystic, i got tithe. i cast dockside. what happens",
     "expect": [
       "Alice pays {2}",
-      "You get a Treasure token. (×2)"
+      "You get a Treasure token (twice)."
     ],
     "cite": [
       "608.2h"
@@ -47973,7 +47973,7 @@
     "id": "wx40",
     "text": "can i play kozilek's return in my mono blue edh deck",
     "expect": [
-      "No: Kozilek's Return is colorless (devoid), but its color identity is red"
+      "No: Kozilek's Return is colourless (devoid), but its colour identity is red"
     ],
     "cite": [
       "702.114a",
@@ -48149,7 +48149,7 @@
     "text": "opp has canonist and cast two spells this turn. i cast empty the warrens as my first spell. how many goblins do i get",
     "expect": [
       "Storm puts 2 copies of Empty the Warrens on the stack",
-      "You get a Goblin token."
+      "You get a Goblin token (six times)."
     ],
     "notExpect": [
       "can't be cast"
@@ -48310,7 +48310,7 @@
     "text": "i have finks and opp pyroclasms. does finks come back and die again",
     "expect": [
       "Kitchen Finks comes back with a -1/-1 counter (persist)",
-      "No: Kitchen Finks is still on the battlefield"
+      "Kitchen Finks is still on the battlefield"
     ]
   },
   {
@@ -48392,7 +48392,7 @@
     "id": "wx78",
     "text": "alice, bob, carol and I playing. i control smothering tithe. bob casts wheel of fortune and nobody pays. how many treasures do i get",
     "expect": [
-      "You get a Treasure token. (×21)"
+      "You get a Treasure token (21 times)."
     ],
     "notExpect": [
       "(×28)"
@@ -48593,7 +48593,7 @@
     "id": "pc1",
     "text": "I attack with Guardian of the Guildpact. Can my opponent block it with Ornithopter?",
     "expect": [
-      "Ornithopter can block Guardian of the Guildpact: it's colorless, and protection from monocolored only stops monocolored creatures."
+      "Ornithopter can block Guardian of the Guildpact: it's colourless, and protection from monocolored only stops monocolored creatures."
     ],
     "cite": [
       "702.16f",
@@ -48799,7 +48799,7 @@
     "id": "pc17",
     "text": "I activate Black Lotus. Can my opponent destroy it in response?",
     "expect": [
-      "Black Lotus's mana ability: add three mana of any one color."
+      "Black Lotus's mana ability: add three mana of any one colour."
     ],
     "cite": [
       "605.3b",
@@ -49079,7 +49079,7 @@
     "id": "dp9",
     "text": "I cast Imprisoned in the Moon on my opponent's Jace, the Mind Sculptor. What types does it have?",
     "expect": [
-      "Jace, the Mind Sculptor is a colorless land (Imprisoned in the Moon).",
+      "Jace, the Mind Sculptor is a colourless land (Imprisoned in the Moon).",
       "Jace, the Mind Sculptor is Legendary Land (printed Legendary Planeswalker — Jace)."
     ],
     "notExpect": [
@@ -49097,7 +49097,7 @@
     "id": "dp10",
     "text": "I cast Song of the Dryads on my opponent's Grizzly Bears. What happens?",
     "expect": [
-      "Grizzly Bears is a colorless Forest land, not a creature"
+      "Grizzly Bears is a colourless Forest land, not a creature"
     ],
     "notExpect": [
       "Not modeled"
@@ -49318,7 +49318,7 @@
     "text": "I cast Banefire with X=5 at my opponent. They control a Circle of Protection: Red and activate it. Do they take damage?",
     "expect": [
       "Circle of Protection: Red's activated ability can't prevent Banefire's damage (it can't be prevented).",
-      "opponent takes 5 damage."
+      "opponent takes 5 damage in all."
     ],
     "notExpect": [
       "Not modeled"
@@ -49725,7 +49725,7 @@
     "id": "un31",
     "text": "I control seven lands and cast Avenger of Zendikar. What happens?",
     "expect": [
-      "You get a Plant token. (×7)"
+      "You get a Plant token (seven times)."
     ],
     "notExpect": [
       "Not modeled"
@@ -49903,7 +49903,7 @@
     "text": "I attack with Colossal Dreadmaw equipped with Basilisk Collar. My opponent blocks with Mirran Crusader. How much damage does my opponent take and how much life do I gain?",
     "expect": [
       "Damage to Mirran Crusader from Colossal Dreadmaw is prevented (protection).",
-      "opponent takes 5 damage.",
+      "opponent takes 5 damage in all.",
       "You gain 5 life in all."
     ],
     "notExpect": [
@@ -50166,7 +50166,7 @@
     "id": "ex23",
     "text": "I attack with Boros Swiftblade and it's unblocked. After first-strike damage my opponent casts Fog. How much damage does my opponent take?",
     "expect": [
-      "opponent takes 1 damage.",
+      "opponent takes 1 damage in all.",
       "Damage to opponent from Boros Swiftblade is prevented.",
       "opponent takes 1 damage in all."
     ],
@@ -50254,7 +50254,7 @@
     "text": "I control Blood Artist and three Grizzly Bears. My opponent casts Wrath of God. How many times does Blood Artist trigger?",
     "expect": [
       "Blood Artist triggers 4 times",
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "notExpect": [
       "Not modeled"
@@ -50297,7 +50297,7 @@
     "id": "ce2",
     "text": "My opponent controls Blind Obedience and two artifacts. I cast Dockside Extortionist. Can I tap the Treasures for mana?",
     "expect": [
-      "You get a Treasure token. (×3)",
+      "You get a Treasure token (three times).",
       "No, not this turn: the Treasures entered tapped, and {T} is part of the cost, which a tapped permanent can't pay (118.3)."
     ],
     "cite": [
@@ -50360,7 +50360,7 @@
     "text": "My opponent controls Aven Mindcensor. I cast Demonic Consultation naming a card that isn't in my library. What happens?",
     "expect": [
       "Aven Mindcensor doesn't apply: Demonic Consultation doesn't search the library.",
-      "Your whole library is exiled (the named card isn't in it); you have 0 cards left."
+      "Your whole library is exiled (the named card isn't in it); you have no cards left."
     ],
     "notExpect": [
       "top four cards"
@@ -50387,7 +50387,7 @@
     "text": "I control Isochron Scepter imprinting Dramatic Reversal, Sol Ring and Grim Monolith. Is that infinite mana?",
     "expect": [
       "Yes: an arbitrarily large amount of mana.",
-      "netting 3 colorless mana (and one cast spell) per round"
+      "netting 3 colourless mana (and one cast spell) per round"
     ],
     "cite": [
       "707.12",
@@ -50414,7 +50414,7 @@
     "expect": [
       "No: the copy Bonus Round makes is put onto the stack, not cast (707.10), so it doesn't count for storm (702.40a)",
       "Storm puts 1 copy of Brain Freeze on the stack, above the original.",
-      "opponent mills 3 cards. (×3)"
+      "opponent mills 3 cards (three times)."
     ],
     "cite": [
       "603.7a",
@@ -50470,7 +50470,7 @@
     "text": "It's my opponent's turn and they control Grand Abolisher. Can I sacrifice my Treasure for mana? Can I crack my Misty Rainforest?",
     "expect": [
       "No: Grand Abolisher says Treasure token's activated abilities can't be activated.",
-      "Yes: Misty Rainforest can activate its ability, mana permitting."
+      "Misty Rainforest can activate its ability, mana permitting."
     ],
     "cite": [
       "602.5"
@@ -50480,7 +50480,7 @@
     "id": "ce16",
     "text": "I cast Last Chance. In the extra turn I activate Sundial of the Infinite during my upkeep. Do I lose the game?",
     "expect": [
-      "No: ending the extra turn with Sundial of the Infinite before its end step skips that end step (725.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (725.1e)"
+      "ending the extra turn with Sundial of the Infinite before its end step skips that end step (725.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (725.1e)"
     ],
     "notExpect": [
       "At the beginning of the extra turn's end step you lose"
@@ -50597,7 +50597,7 @@
     "id": "ce25",
     "text": "My opponent controls Collector Ouphe and two artifacts. I cast Dockside Extortionist. Do I get Treasures? Can I sacrifice them for mana?",
     "expect": [
-      "You get a Treasure token. (×2)",
+      "You get a Treasure token (twice).",
       "No: you get the 2 Treasures, but Collector Ouphe stops activated abilities of artifacts, mana abilities included (602.5)"
     ],
     "cite": [
@@ -51069,7 +51069,7 @@
     "text": "I control Berta, Wise Extrapolator and cast Grizzly Bears. Does increment trigger?",
     "expect": [
       "Berta, Wise Extrapolator has 1 +1/+1 counter.",
-      "You have 1 mana of any color in your mana pool."
+      "You have 1 mana of any colour in your mana pool."
     ],
     "notExpect": [
       "Not modeled"
@@ -51215,7 +51215,7 @@
     "id": "ns29",
     "text": "I control Omnath, Locus of the Void and add GG during my first main phase, then go to combat. How big is Omnath?",
     "expect": [
-      "Your 2 unspent mana doesn't empty; it becomes colorless (Omnath, Locus of the Void).",
+      "Your 2 unspent mana doesn't empty; it becomes colourless (Omnath, Locus of the Void).",
       "Omnath, Locus of the Void is 8/8."
     ],
     "notExpect": [
@@ -51568,7 +51568,7 @@
     "text": "My opponent controls Repercussion and two Grizzly Bears. I control Grizzly Bears. I cast Pyroclasm. What happens?",
     "expect": [
       "You take 2 damage.",
-      "Opponent takes 2 damage.",
+      "Opponent takes 2 damage (twice).",
       "deals 2 damage to Grizzly Bears's controller, opponent"
     ],
     "cite": [
@@ -51958,7 +51958,7 @@
     "id": "pt11",
     "text": "i have a planeswalker that says +1 each opponent loses one life with three loyalty, i use it three turns in a row, how much life do they lose",
     "expect": [
-      "opponent loses 1 life. (×3)",
+      "opponent loses 1 life (three times).",
       "opponent loses 3 life in all."
     ],
     "notExpect": [],
@@ -51996,7 +51996,7 @@
     "id": "pt14",
     "text": "I cast Lightning Bolt on them at 3 life while they have Kor Firewalker. Do they gain life?",
     "expect": [
-      "opponent gains 1 life.",
+      "opponent gains 1 life in all.",
       "opponent goes from 3 to 1 life."
     ],
     "notExpect": [],
@@ -52107,7 +52107,7 @@
     "id": "pt23",
     "text": "My opponent attacks with Grizzly Bears - I cast Settle the Wreckage - How many lands do they get?",
     "expect": [
-      "opponent searches their library for 1 (that many) basic land cards and puts it onto the battlefield tapped (Settle the Wreckage)."
+      "opponent searches their library for 1 (that many) basic land card and puts it onto the battlefield tapped (Settle the Wreckage)."
     ],
     "notExpect": [],
     "cite": [
@@ -52187,7 +52187,7 @@
     "text": "Quick question: I attack with Colossal Dreadmaw equipped with Basilisk Collar. My opponent blocks with Mirran Crusader. How much damage does my opponent take and how much life do I gain?",
     "expect": [
       "Damage to Mirran Crusader from Colossal Dreadmaw is prevented (protection).",
-      "opponent takes 5 damage.",
+      "opponent takes 5 damage in all.",
       "You gain 5 life in all."
     ],
     "notExpect": [
@@ -52369,7 +52369,7 @@
     "text": "I attack with a 3/3. They block with a 2/2 and then cast Giant Growth on their blocker. Who dies? thanks",
     "expect": [
       "No: a 2/2 creature is still on the battlefield.",
-      "Yes: a 3/3 creature died (it's in the graveyard)."
+      "a 3/3 creature died (it's in the graveyard)."
     ],
     "notExpect": [],
     "cite": [],
@@ -52445,7 +52445,7 @@
     "id": "pt49",
     "text": "I have Rhystic Study and my opponent casts three spells this turn, paying for none of them. Thanks!",
     "expect": [
-      "You draw 1 card. (×3)"
+      "You draw 1 card (three times)."
     ],
     "notExpect": [],
     "cite": [
@@ -52495,7 +52495,7 @@
     "id": "pt53",
     "text": "I control seven lands and cast the avenger of zendikar. What happens?",
     "expect": [
-      "You get a Plant token. (×7)"
+      "You get a Plant token (seven times)."
     ],
     "notExpect": [
       "Not modeled"
@@ -52809,7 +52809,7 @@
     "id": "yq12",
     "text": "I have Grave Titan and it attacks. Do I get Zombies?",
     "expect": [
-      "Yes: you get a Zombie token (×2)."
+      "Yes: you get a Zombie token (twice)"
     ]
   },
   {
@@ -52956,7 +52956,7 @@
     "id": "yq33",
     "text": "My 2/2 blocks their 2/2. Do both die?",
     "expect": [
-      "Yes, both die: a 2/2 creature and a 2/2 creature both go to the graveyard."
+      "Yes, both die: two 2/2 creatures both go to the graveyard."
     ]
   },
   {
@@ -53229,7 +53229,7 @@
     "id": "or20",
     "text": "I control Coldsteel Heart. I tap it for mana. What happens?",
     "expect": [
-      "Coldsteel Heart's mana ability: add one mana of the chosen color."
+      "Coldsteel Heart's mana ability: add one mana of the chosen colour."
     ],
     "cite": [
       "605.1a"
@@ -53249,7 +53249,7 @@
     "id": "or22",
     "text": "I control Abundant Growth attached to a Forest. What can the Forest tap for?",
     "expect": [
-      "{T}: Add one mana of any color (from Abundant Growth)"
+      "{T}: Add one mana of any colour (from Abundant Growth)"
     ],
     "cite": []
   },
@@ -53311,7 +53311,7 @@
     "text": "I control Elvish Warmaster. I cast Llanowar Elves. How many tokens do I have?",
     "expect": [
       "Elvish Warmaster's ability doesn't trigger again this turn (it triggers only once each turn).",
-      "You have 1 token."
+      "you have 1 token on the battlefield."
     ],
     "cite": [
       "603.2"
@@ -59716,7 +59716,7 @@
     "text": "I evoke Grief and respond to the sacrifice trigger with Undying Malice. What happens?",
     "expect": [
       "Grief returns to the battlefield tapped with a +1/+1 counter on it",
-      "Grief: opponent discards a nonland card (which one depends on opponent's hand). (×2)"
+      "Grief: opponent discards a nonland card (which one depends on opponent's hand) (twice)."
     ],
     "cite": [
       "702.74a"
@@ -59905,7 +59905,7 @@
     "id": "rt31",
     "text": "I activate Mystic Forge. What can I cast off the top of my library?",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)",
+      "Artifact spells and colourless spells, from the top of your library (Mystic Forge)",
       "Lands can't be played from there"
     ],
     "cite": [
@@ -60009,7 +60009,7 @@
     "text": "I control Kinnan, Bonder Prodigy and Basalt Monolith. Can I generate infinite mana?",
     "expect": [
       "Yes: tap Basalt Monolith and get {C}{C}{C}{C}, pay {3} to untap it",
-      "each round nets 1 mana (colorless)",
+      "each round nets 1 mana (colourless)",
       "it pays the {5} of Kinnan, Bonder Prodigy's {5}{G}{U} ability"
     ],
     "cite": [
@@ -61194,7 +61194,7 @@
     "id": "lo42",
     "text": "I have Mystic Forge. What can I cast off the top?",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
+      "Artifact spells and colourless spells, from the top of your library (Mystic Forge)"
     ],
     "notExpect": [
       "Cast Off"
@@ -61205,7 +61205,7 @@
     "id": "lo43",
     "text": "I control Mystic Forge. What may I cast from the top of my library?",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
+      "Artifact spells and colourless spells, from the top of your library (Mystic Forge)"
     ],
     "notExpect": [],
     "cite": []
@@ -61703,7 +61703,7 @@
     "text": "How much damage does my opponent take and how much life do I gain? I swing with Colossal Dreadmaw equipped with Basilisk Collar and he blocks with Mirran Crusader.",
     "expect": [
       "Damage to Mirran Crusader from Colossal Dreadmaw is prevented (protection).",
-      "opponent takes 5 damage.",
+      "opponent takes 5 damage in all.",
       "You gain 5 life in all."
     ],
     "notExpect": [
@@ -61722,7 +61722,7 @@
     "text": "I attack with Colossal Dreadmaw that's equipped with Basilisk Collar, my opp blocks with Mirran Crusader, how much damage does he take and how much life do I gain",
     "expect": [
       "Damage to Mirran Crusader from Colossal Dreadmaw is prevented (protection).",
-      "opponent takes 5 damage.",
+      "opponent takes 5 damage in all.",
       "You gain 5 life in all."
     ],
     "notExpect": [
@@ -62030,7 +62030,7 @@
     "id": "w3-45",
     "text": "How much damage does my opponent take? I attack with Boros Swiftblade, it's unblocked, and after first-strike damage he casts Fog.",
     "expect": [
-      "opponent takes 1 damage.",
+      "opponent takes 1 damage in all.",
       "Damage to opponent from Boros Swiftblade is prevented.",
       "opponent takes 1 damage in all."
     ],
@@ -62045,7 +62045,7 @@
     "id": "w3-46",
     "text": "I attack with Boros Swiftblade and it's unblocked and after first strike damage my opponent casts Fog so how much damage does he take",
     "expect": [
-      "opponent takes 1 damage.",
+      "opponent takes 1 damage in all.",
       "Damage to opponent from Boros Swiftblade is prevented.",
       "opponent takes 1 damage in all."
     ],
@@ -62191,7 +62191,7 @@
     "text": "How many times does Blood Artist trigger? I control it and three Grizzly Bears and my opponent casts Wrath of God.",
     "expect": [
       "Blood Artist triggers 4 times",
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "notExpect": [
       "Not modeled"
@@ -62205,7 +62205,7 @@
     "text": "I control Blood Artist and 3 Grizzly Bears and my opp casts Wrath of God, how many times does Blood Artist trigger",
     "expect": [
       "Blood Artist triggers 4 times",
-      "opponent loses 1 life. (×4)"
+      "opponent loses 1 life (four times)."
     ],
     "notExpect": [
       "Not modeled"
@@ -62232,7 +62232,7 @@
     "id": "w3-63",
     "text": "Can I tap the Treasures for mana? My opponent controls Blind Obedience and two artifacts and I cast Dockside Extortionist.",
     "expect": [
-      "You get a Treasure token. (×3)",
+      "You get a Treasure token (three times).",
       "No, not this turn: the Treasures entered tapped, and {T} is part of the cost, which a tapped permanent can't pay (118.3)."
     ],
     "notExpect": [],
@@ -62245,7 +62245,7 @@
     "id": "w3-64",
     "text": "my opp has Blind Obedience and 2 artifacts, I cast Dockside Extortionist, so can I tap the Treasures for mana",
     "expect": [
-      "You get a Treasure token. (×3)",
+      "You get a Treasure token (three times).",
       "No, not this turn: the Treasures entered tapped, and {T} is part of the cost, which a tapped permanent can't pay (118.3)."
     ],
     "notExpect": [],
@@ -62335,7 +62335,7 @@
     "text": "What happens? My opponent controls Aven Mindcensor and I cast Demonic Consultation naming a card that isn't in my library.",
     "expect": [
       "Aven Mindcensor doesn't apply: Demonic Consultation doesn't search the library.",
-      "Your whole library is exiled (the named card isn't in it); you have 0 cards left."
+      "Your whole library is exiled (the named card isn't in it); you have no cards left."
     ],
     "notExpect": [
       "top four cards"
@@ -62349,7 +62349,7 @@
     "text": "Is that infinite mana? I control Isochron Scepter with Dramatic Reversal imprinted, plus Sol Ring and Grim Monolith.",
     "expect": [
       "Yes: an arbitrarily large amount of mana.",
-      "netting 3 colorless mana (and one cast spell) per round"
+      "netting 3 colourless mana (and one cast spell) per round"
     ],
     "notExpect": [],
     "cite": [
@@ -62362,7 +62362,7 @@
     "text": "I have Isochron Scepter imprinting Dramatic Reversal along with Sol Ring and Grim Monolith, is that infinite mana",
     "expect": [
       "Yes: an arbitrarily large amount of mana.",
-      "netting 3 colorless mana (and one cast spell) per round"
+      "netting 3 colourless mana (and one cast spell) per round"
     ],
     "notExpect": [],
     "cite": [
@@ -62390,7 +62390,7 @@
     "expect": [
       "No: the copy Bonus Round makes is put onto the stack, not cast (707.10), so it doesn't count for storm (702.40a)",
       "Storm puts 1 copy of Brain Freeze on the stack, above the original.",
-      "opponent mills 3 cards. (×3)"
+      "opponent mills 3 cards (three times)."
     ],
     "notExpect": [],
     "cite": [
@@ -62405,7 +62405,7 @@
     "expect": [
       "No: the copy Bonus Round makes is put onto the stack, not cast (707.10), so it doesn't count for storm (702.40a)",
       "Storm puts 1 copy of Brain Freeze on the stack, above the original.",
-      "opponent mills 3 cards. (×3)"
+      "opponent mills 3 cards (three times)."
     ],
     "notExpect": [],
     "cite": [
@@ -62463,7 +62463,7 @@
     "text": "Can I sacrifice my Treasure for mana? Can I crack my Misty Rainforest? It's my opponent's turn and he controls Grand Abolisher.",
     "expect": [
       "No: Grand Abolisher says Treasure token's activated abilities can't be activated.",
-      "Yes: Misty Rainforest can activate its ability, mana permitting."
+      "Misty Rainforest can activate its ability, mana permitting."
     ],
     "notExpect": [],
     "cite": [
@@ -62474,7 +62474,7 @@
     "id": "w3-91",
     "text": "Do I lose the game? I cast Last Chance and in the extra turn I activate Sundial of the Infinite during my upkeep.",
     "expect": [
-      "No: ending the extra turn with Sundial of the Infinite before its end step skips that end step (725.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (725.1e)"
+      "ending the extra turn with Sundial of the Infinite before its end step skips that end step (725.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (725.1e)"
     ],
     "notExpect": [
       "At the beginning of the extra turn's end step you lose"
@@ -62489,7 +62489,7 @@
     "id": "w3-92",
     "text": "I cast Last Chance and then in the extra turn during my upkeep I activate Sundial of the Infinite, do I lose the game",
     "expect": [
-      "No: ending the extra turn with Sundial of the Infinite before its end step skips that end step (725.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (725.1e)"
+      "ending the extra turn with Sundial of the Infinite before its end step skips that end step (725.1d), so Last Chance's delayed \"you lose the game\" trigger never triggers (725.1e)"
     ],
     "notExpect": [
       "At the beginning of the extra turn's end step you lose"
@@ -62679,7 +62679,7 @@
     "id": "w3-109",
     "text": "Do I get Treasures? Can I sacrifice them for mana? My opponent controls Collector Ouphe and 2 artifacts and I cast Dockside Extortionist.",
     "expect": [
-      "You get a Treasure token. (×2)",
+      "You get a Treasure token (twice).",
       "No: you get the 2 Treasures, but Collector Ouphe stops activated abilities of artifacts, mana abilities included (602.5)"
     ],
     "notExpect": [],
@@ -62692,7 +62692,7 @@
     "id": "w3-110",
     "text": "my opp has Collector Ouphe and two artifacts and I cast Dockside Extortionist so do I get Treasures and can I sac them for mana",
     "expect": [
-      "You get a Treasure token. (×2)",
+      "You get a Treasure token (twice).",
       "No: you get the 2 Treasures, but Collector Ouphe stops activated abilities of artifacts, mana abilities included (602.5)"
     ],
     "notExpect": [],
@@ -63070,7 +63070,7 @@
     "text": "Does increment trigger? I control Berta, Wise Extrapolator and cast Grizzly Bears.",
     "expect": [
       "Berta, Wise Extrapolator has 1 +1/+1 counter.",
-      "You have 1 mana of any color in your mana pool."
+      "You have 1 mana of any colour in your mana pool."
     ],
     "notExpect": [
       "Not modeled"
@@ -63085,7 +63085,7 @@
     "text": "I have Berta, Wise Extrapolator and I cast Grizzly Bears, does increment trigger",
     "expect": [
       "Berta, Wise Extrapolator has 1 +1/+1 counter.",
-      "You have 1 mana of any color in your mana pool."
+      "You have 1 mana of any colour in your mana pool."
     ],
     "notExpect": [
       "Not modeled"
@@ -63348,7 +63348,7 @@
     "id": "w3-177",
     "text": "How big is Omnath? I control Omnath, Locus of the Void and I add GG in my first main phase and then go to combat.",
     "expect": [
-      "Your 2 unspent mana doesn't empty; it becomes colorless (Omnath, Locus of the Void).",
+      "Your 2 unspent mana doesn't empty; it becomes colourless (Omnath, Locus of the Void).",
       "Omnath, Locus of the Void is 8/8."
     ],
     "notExpect": [
@@ -63947,7 +63947,7 @@
     "text": "What happens? I control Grizzly Bears, my opponent controls Repercussion and 2 Grizzly Bears, and I cast Pyroclasm.",
     "expect": [
       "You take 2 damage.",
-      "Opponent takes 2 damage.",
+      "Opponent takes 2 damage (twice).",
       "deals 2 damage to Grizzly Bears's controller, opponent"
     ],
     "notExpect": [],
@@ -63961,7 +63961,7 @@
     "text": "my opp has Repercussion and two Grizzly Bears and I have a Grizzly Bears and I cast Pyroclasm so what happens",
     "expect": [
       "You take 2 damage.",
-      "Opponent takes 2 damage.",
+      "Opponent takes 2 damage (twice).",
       "deals 2 damage to Grizzly Bears's controller, opponent"
     ],
     "notExpect": [],
@@ -64998,7 +64998,7 @@
     "id": "mk5",
     "text": "I control Basalt Monolith and Mana Reflection. Can I generate infinite mana?",
     "expect": [
-      "each round nets 3 mana (colorless)"
+      "each round nets 3 mana (colourless)"
     ],
     "notExpect": [],
     "cite": [
@@ -65146,7 +65146,7 @@
     "id": "mk17",
     "text": "I control Mystic Forge. Can I cast Lightning Bolt off the top?",
     "expect": [
-      "No: Lightning Bolt can't be cast from the top of your library with Mystic Forge: it's neither an artifact nor colorless"
+      "No: Lightning Bolt can't be cast from the top of your library with Mystic Forge: it's neither an artifact nor colourless"
     ],
     "notExpect": [],
     "cite": [
@@ -65504,7 +65504,7 @@
     "text": "he controls Aven Mindcensor, I cast Demonic Consultation and name a card that's not in my library, what happens",
     "expect": [
       "Aven Mindcensor doesn't apply: Demonic Consultation doesn't search the library.",
-      "Your whole library is exiled (the named card isn't in it); you have 0 cards left."
+      "Your whole library is exiled (the named card isn't in it); you have no cards left."
     ],
     "notExpect": [
       "top four cards"
@@ -65819,7 +65819,7 @@
     "id": "w4-43",
     "text": "I control Omnath, Locus of the Void and add two green mana during my first main phase and then move to combat so how big is Omnath",
     "expect": [
-      "Your 2 unspent mana doesn't empty; it becomes colorless (Omnath, Locus of the Void).",
+      "Your 2 unspent mana doesn't empty; it becomes colourless (Omnath, Locus of the Void).",
       "Omnath, Locus of the Void is 8/8."
     ],
     "notExpect": [
@@ -66200,7 +66200,7 @@
     "text": "I evoke Grief and respond to the sacrifice trigger with Undying Malice, so what happens",
     "expect": [
       "Grief returns to the battlefield tapped with a +1/+1 counter on it",
-      "Grief: opponent discards a nonland card (which one depends on opponent's hand). (×2)"
+      "Grief: opponent discards a nonland card (which one depends on opponent's hand) (twice)."
     ],
     "notExpect": [],
     "cite": [
@@ -66490,7 +66490,7 @@
     "id": "w4-98",
     "text": "What can I cast off the top of my library? I activate Mystic Forge.",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library"
+      "Artifact spells and colourless spells, from the top of your library"
     ],
     "notExpect": [],
     "cite": [
@@ -66501,7 +66501,7 @@
     "id": "w4-99",
     "text": "I'm using Mystic Forge, what can I cast from the top of my library",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library"
+      "Artifact spells and colourless spells, from the top of your library"
     ],
     "notExpect": [],
     "cite": [
@@ -66642,7 +66642,7 @@
     "text": "Can I generate infinite mana? I control Kinnan, Bonder Prodigy and Basalt Monolith.",
     "expect": [
       "Yes: tap Basalt Monolith and get {C}{C}{C}{C}, pay {3} to untap it",
-      "each round nets 1 mana (colorless)",
+      "each round nets 1 mana (colourless)",
       "it pays the {5} of Kinnan, Bonder Prodigy's {5}{G}{U} ability"
     ],
     "notExpect": [],
@@ -66657,7 +66657,7 @@
     "text": "I've got Kinnan, Bonder Prodigy and Basalt Monolith, can I make infinite mana",
     "expect": [
       "Yes: tap Basalt Monolith and get {C}{C}{C}{C}, pay {3} to untap it",
-      "each round nets 1 mana (colorless)",
+      "each round nets 1 mana (colourless)",
       "it pays the {5} of Kinnan, Bonder Prodigy's {5}{G}{U} ability"
     ],
     "notExpect": [],
@@ -66991,7 +66991,7 @@
     "text": "it's their turn and they control Grand Abolisher, can I sac my Treasure for mana and can I crack my Misty Rainforest",
     "expect": [
       "No: Grand Abolisher says Treasure token's activated abilities can't be activated.",
-      "Yes: Misty Rainforest can activate its ability, mana permitting."
+      "Misty Rainforest can activate its ability, mana permitting."
     ],
     "notExpect": [],
     "cite": [
@@ -67239,7 +67239,7 @@
     "text": "What happens? I evoke Grief and in response to the sacrifice trigger I cast Undying Malice.",
     "expect": [
       "Grief returns to the battlefield tapped with a +1/+1 counter on it",
-      "Grief: opponent discards a nonland card (which one depends on opponent's hand). (×2)"
+      "Grief: opponent discards a nonland card (which one depends on opponent's hand) (twice)."
     ],
     "notExpect": [],
     "cite": [
@@ -68344,7 +68344,7 @@
     "id": "r2-55",
     "text": "I control Smothering Tithe. An opponent draws three cards. How many triggers?",
     "expect": [
-      "You get a Treasure token. (×3)"
+      "You get a Treasure token (three times)."
     ],
     "cite": [
       "603.2"
@@ -73338,7 +73338,7 @@
     "id": "w5-109",
     "text": "How many triggers? I control Smothering Tithe and an opponent draws three cards.",
     "expect": [
-      "You get a Treasure token. (×3)"
+      "You get a Treasure token (three times)."
     ],
     "notExpect": [],
     "cite": [
@@ -73349,7 +73349,7 @@
     "id": "w5-110",
     "text": "I have Smothering Tithe and an opponent draws three cards, how many triggers",
     "expect": [
-      "You get a Treasure token. (×3)"
+      "You get a Treasure token (three times)."
     ],
     "notExpect": [],
     "cite": [
@@ -74658,7 +74658,7 @@
     "id": "w5-213",
     "text": "Can I generate infinite mana? I control Basalt Monolith and Mana Reflection.",
     "expect": [
-      "each round nets 3 mana (colorless)"
+      "each round nets 3 mana (colourless)"
     ],
     "notExpect": [],
     "cite": [
@@ -74670,7 +74670,7 @@
     "id": "w5-214",
     "text": "I've got Basalt Monolith and Mana Reflection, can I make infinite mana?",
     "expect": [
-      "each round nets 3 mana (colorless)"
+      "each round nets 3 mana (colourless)"
     ],
     "notExpect": [],
     "cite": [
@@ -74954,7 +74954,7 @@
     "id": "w5-237",
     "text": "Can I cast Lightning Bolt off the top? I control Mystic Forge.",
     "expect": [
-      "No: Lightning Bolt can't be cast from the top of your library with Mystic Forge: it's neither an artifact nor colorless"
+      "No: Lightning Bolt can't be cast from the top of your library with Mystic Forge: it's neither an artifact nor colourless"
     ],
     "notExpect": [],
     "cite": [
@@ -74965,7 +74965,7 @@
     "id": "w5-238",
     "text": "I control Mystic Forge, can I cast Lightning Bolt off the top",
     "expect": [
-      "No: Lightning Bolt can't be cast from the top of your library with Mystic Forge: it's neither an artifact nor colorless"
+      "No: Lightning Bolt can't be cast from the top of your library with Mystic Forge: it's neither an artifact nor colourless"
     ],
     "notExpect": [],
     "cite": [
@@ -75350,7 +75350,7 @@
     "id": "w5-270",
     "text": "my Grizzly Bears equipped with Whispersilk Cloak attacks and he blocks with Wall of Omens, can they block and can they Doom Blade Grizzly Bears",
     "expect": [
-      "No: Wall of Omens can't block Grizzly Bears.",
+      "Wall of Omens can't block Grizzly Bears.",
       "Doom Blade can't target Grizzly Bears."
     ],
     "notExpect": [],
@@ -77382,7 +77382,7 @@
     "id": "w5-449",
     "text": "What can I cast off the top? I have Mystic Forge.",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
+      "Artifact spells and colourless spells, from the top of your library (Mystic Forge)"
     ],
     "notExpect": [
       "Cast Off"
@@ -77393,7 +77393,7 @@
     "id": "w5-450",
     "text": "Mystic Forge is on my battlefield, what can I cast off the top",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
+      "Artifact spells and colourless spells, from the top of your library (Mystic Forge)"
     ],
     "notExpect": [
       "Cast Off"
@@ -77404,7 +77404,7 @@
     "id": "w5-451",
     "text": "What may I cast from the top of my library? I control Mystic Forge.",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
+      "Artifact spells and colourless spells, from the top of your library (Mystic Forge)"
     ],
     "notExpect": [],
     "cite": []
@@ -77413,7 +77413,7 @@
     "id": "w5-452",
     "text": "with Mystic Forge out, what can I cast from the top of my library?",
     "expect": [
-      "Artifact spells and colorless spells, from the top of your library (Mystic Forge)"
+      "Artifact spells and colourless spells, from the top of your library (Mystic Forge)"
     ],
     "notExpect": [],
     "cite": []
@@ -80261,7 +80261,7 @@
     "id": "x3-2",
     "text": "My opponent controls a face-down morph creature. I cast Clone copying it. What is my Clone?",
     "expect": [
-      "So Clone becomes a nameless, colorless 2/2 with no abilities."
+      "So Clone becomes a nameless, colourless 2/2 with no abilities."
     ],
     "notExpect": [
       "Clone: the battlefield → your graveyard."
@@ -80305,7 +80305,7 @@
       "Grizzly Bears phases out."
     ],
     "notExpect": [
-      "not modeled"
+      "not modelled"
     ],
     "cite": [
       "702.26g"
@@ -80366,7 +80366,7 @@
     "id": "x3-10",
     "text": "I control Gemrazer mutated under Delver of Secrets. At my upkeep I reveal an instant and transform Delver of Secrets. What is my creature?",
     "expect": [
-      "No: Gemrazer can't mutate onto Delver of Secrets; mutate needs a non-Human creature with the same owner (702.140a)."
+      "Gemrazer can't mutate onto Delver of Secrets; mutate needs a non-Human creature with the same owner (702.140a)."
     ],
     "cite": [
       "702.140a"
@@ -80485,7 +80485,7 @@
       "it can still go to the command zone, since it's still a commander (903.9a)"
     ],
     "notExpect": [
-      "not modeled"
+      "not modelled"
     ],
     "cite": [
       "903.3",

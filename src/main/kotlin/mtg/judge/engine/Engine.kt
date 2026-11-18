@@ -2002,7 +2002,7 @@ class Engine(val state: GameState) {
             val saved: (GameObject) -> Boolean = { o -> (o.counters["shield"] ?: 0) > 0 || state.shields.any { it.replacement == Replacement.Regenerate && it.objectId == o.id && (it.remaining ?: 0) > 0 } ||
                 state.objects.values.any { a -> a.isOnBattlefield() && a.attachedTo == o.id && Regex("""(?i)\b(?:umbra|totem) armor\b""").containsMatchIn(a.rulesText) } }
             val dying = state.objects.values.filter { o -> o.isOnBattlefield() && state.hasCreatureType(o) && o.toughness?.let { t -> t <= 0 || (!o.has("indestructible") && !saved(o) && ((o.damage >= t && o.damage > 0) || (o.dealtDeathtouchDamage && o.damage > 0))) } == true }
-            if (dying.size > 1) { leavingTogether = dying.map { it.id }.toSet(); trace.step("${dying.joinToString(", ") { it.name }} are all put into their owners' graveyards by the same state-based check, simultaneously; abilities that trigger on a creature dying see all of them go, including a creature's own leaving alongside the others.", "704.3", "603.10a") }
+            if (dying.size > 1) { leavingTogether = dying.map { it.id }.toSet(); trace.step("${mtg.judge.situation.Grammar.andList(dying.map { it.name })} are ${if (dying.size == 2) "both" else "all"} put into their owners' graveyards by the same state-based check, simultaneously; abilities that trigger on a creature dying see all of them go, including a creature's own leaving alongside the others.", "704.3", "603.10a") }
             heldTriggers { try { for (obj in state.objects.values.toList()) {
                 if (!obj.isOnBattlefield()) continue
                 if (state.hasCreatureType(obj)) {

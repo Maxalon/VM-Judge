@@ -533,7 +533,7 @@ object DirectAnswers {
         // "zombies" is a Zombie, "faeries" a Faerie, "rubies" would be a Ruby.
         val t = if (type.endsWith("ie")) "(?:${Regex.escape(type)}|${Regex.escape(type.dropLast(2) + "y")})" else Regex.escape(type)
         val made = c.outs.filter { Regex("""(?i)\bgets? (?:an? |\d+ )(?:[\w/-]+ )*?${t}s? tokens?\b""").containsMatchIn(it) }
-        if (made.isNotEmpty()) return yes(made.first()).removeSuffix(".") + (if (made.size > 1) " (×${made.size})" else "") + "."
+        if (made.isNotEmpty()) return Grammar.foldRepeat(yes(made.first()), made.size)
         c.outs.firstOrNull { Regex("""(?i)\bdoesn't trigger\b""").containsMatchIn(it) && relevantName(c, it) }?.let { return no(it) }
         return null
     }
