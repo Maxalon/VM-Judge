@@ -11,7 +11,7 @@ object TableTalk {
 
     private val lead = Regex("""^(?:(?:ok(?:ay)?|alright|well|um+|so|and)[, ]+)*(?:so )?basically,? """, ci)
     private val leadSo = Regex("""^(?:(?:ok(?:ay)?|alright|well|um+|so)[, ]+)+""", ci)
-    private val sentBreak = Regex("""(?<=[.?!])\s+(?=\S)""")
+    private val sentBreak = Regex("""(?<=[.?!])(?<!U\.S\.S\.)\s+(?=\S)""")
 
     private const val SUBJ = """(?:i|we|it|that|this|he|she|they|you|there|my|the|your|his|her|their|its|a|an|opp|opponent|[A-Z][\w'’-]*)"""
     private val tailQuestion = Regex(
@@ -443,7 +443,7 @@ object TableTalk {
         if (t.isEmpty() || System.getenv("MTG_NO_TT") != null) return t
         t = lead.replace(t, "")
         t = leadSo.replace(t, "")
-        t = withOut(applyPlain(t))
+        t = withOut(applyPlain(pre6(t)))
         t = applyPlain4(t)
         // "so my opponent ...": the filler at the start of any sentence.
         t = t.split(sentBreak).joinToString(" ") { sn -> val st = leadSo.replace(sn, "").replace(Regex("""^and """, ci), ""); if (st == sn) sn else capFirst(st) }
@@ -455,6 +455,7 @@ object TableTalk {
         var t = bigNumbers(t0)
         if (!off("plain4")) for ((re, rep) in plain4) t = re.replace(t) { m -> m.expandReplacement(rep) }
         if (!off("plain5")) for ((re, rep) in plain5) t = re.replace(t) { m -> m.expandReplacement(rep) }
+        if (!off("plain6")) t = applyPlain6(t)
         t = Regex("""@g(\w+)""").replace(t) { m -> when (m.groupValues[1].lowercase()) { "cycling" -> "cycle"; "casting" -> "cast"; "activating" -> "activate"; "equipping" -> "equip"; else -> "sacrifice" } }
         t = Regex("""@n(\w+)""").replace(t) { m -> (unitsW[m.groupValues[1].lowercase()] ?: if (m.groupValues[1].lowercase() == "ten") 10 else null)?.toString() ?: m.groupValues[1] }
         t = relatives(t)
@@ -475,7 +476,7 @@ object TableTalk {
         "eleven" to 11, "twelve" to 12, "thirteen" to 13, "fourteen" to 14, "fifteen" to 15, "sixteen" to 16, "seventeen" to 17, "eighteen" to 18, "nineteen" to 19)
     private val unitsW = mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9)
     private const val BIGW = """(?:(?:eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen)|(?:twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety)(?:[- ](?:one|two|three|four|five|six|seven|eight|nine))?)"""
-    private val bigNum = Regex("""(?<![\w-])($BIGW)\b(?=\s+(?:other\s+)?(?:life|cards?|damage|poison|counters?|loyalty|mana)\b)|(?<=\bis at )($BIGW)\b""", ci)
+    private val bigNum = Regex("""(?<![\w-])($BIGW)\b(?=\s+(?:other\s+)?(?:combat\s+)?(?:life|cards?|damage|poison|counters?|loyalty|mana)\b)|(?<=\bis at )($BIGW)\b""", ci)
     /** "forty life", "at eighteen", "sixty cards": the number as digits. */
     private fun bigNumbers(t: String) = bigNum.replace(t) { m ->
         val w = m.groupValues[1].ifEmpty { m.groupValues[2] }.lowercase().split('-', ' ')
@@ -601,7 +602,8 @@ object TableTalk {
         val b = splitTailQuestion(a)
         val c = splitRunOns(b)
         val d = splitRunOns(splitTailQuestion(a))
-        return listOf(splitRunOns(splitCommaQuestion(b)), splitCommaQuestion(b), c, d, b).map { targetPronoun(ensureQ(it)) }.distinct().filter { it != plain }
+        val more = variants6(plain)
+        return (listOf(splitRunOns(splitCommaQuestion(b)), splitCommaQuestion(b), c, d, b).map { targetPronoun(ensureQ(it)) } + more).distinct().filter { it != plain }
     }
 
     // A question typed without its question mark ("..., what happens") gets one, so it is read as the question.
@@ -721,8 +723,245 @@ object TableTalk {
             u = (if (commas) runOn else runOnAnd).replace(u) { ". " }
             // "in response, I ..." keeps its comma form.
             u = Regex("""(?i)\b(in response|after blockers are declared)\.\s+""").replace(u, "$1, ")
-            out += u.split(Regex("""\.\s+""")).filter { it.isNotBlank() }.map { capFirst(it.trim().trimEnd(',')) + "." }
+            out += u.split(Regex("""(?<!\bU\.S\.S)\.\s+""")).filter { it.isNotBlank() }.map { capFirst(it.trim().trimEnd(',')) + "." }
         }
         return out.joinToString(" ")
+    }
+
+    // ---- Wording6: the newest rulings told the way a table tells them. ----
+    private val SV6 = """(?:is|are|was|were|has|have|had|control|controls|cast|casts|attack|attacks|attacked|play|plays|activate|activates|sacrifice|sacrifices|dies|died|enters|entered|deals|dealt|gets|got|crack|cracks|concede|concedes|conceded)"""
+    private val S6 = """(?:I|we|my [\w' -]+?|they|their [\w' -]+?|he|she|an? [\w' -]+?|$NM(?: [\w' -]+?)?|the [\w' -]+?) $SV6\b[^?.!]*"""
+
+    /** Applied before every other rule: single words that only change how a card's place is said. */
+    private fun pre6(t0: String): String {
+        var t = t0
+        // "Parhelion II sits in my graveyard": is in.
+        t = Regex("""\b(sits?|sat|sitting) in (my|their|his|her|the|your) (graveyard|hand|library|command zone|exile)\b""", ci).replace(t) { m -> (if (m.groupValues[1].lowercase() == "sat") "was" else if (m.groupValues[1].lowercase() == "sitting") "is" else "is") + " in ${m.groupValues[2]} ${m.groupValues[3]}" }
+        // "two Myth Unbound on my side", "two Goblin Electromancers are on my side": I control them (before the single-card rule reads the plural).
+        t = Regex("""\b(two|three|four|five|\d+) ((?-i:[A-Z])[\w'-]*(?: (?-i:[A-Z])[\w'-]*)*|differently named lands) (?:are |is )?on my side\b""", ci).replace(t) { m -> "I control ${m.groupValues[1]} ${m.groupValues[2]}" }
+        // "..., I cast Shock and Emet-Selch's trigger targets Lightning Bolt": the trigger is a sentence of its own, before "X and Y in my graveyard" can run across it.
+        t = Regex(""",? and (?=(?-i:[A-Z])[\w'’-]*(?:-[A-Z]\w+)?(?: of the [A-Z]\w+(?: [A-Z]\w+)?)?'s (?:trigger|ability)\b)""").replace(t) { ". " }
+        // "in my draw step I draw two from Howling Mine": the draw said as the rules text says it.
+        t = Regex("""\b(?:in|during) my draw step I draw (two|\d+)(?: cards)? from (?:a |the )?($NM)""", ci).replace(t) { m -> "I draw ${m.groupValues[1]} cards in my draw step from a ${m.groupValues[2]}" }
+        // "I have Ocelot Pride and the city's blessing but I didn't gain life this turn": the board, then the fact.
+        t = Regex("""\bI have ($NM) and the city's blessing but (I didn't gain life this turn)""", ci).replace(t) { m -> "I control ${m.groupValues[1]}. ${m.groupValues[2]} but I have the city's blessing" }
+        // "In my upkeep its trigger goes on the stack": at my upkeep.
+        t = Regex("""\bin my (upkeep|end step|draw step) (?=its trigger)""", ci).replace(t) { m -> "at my ${m.groupValues[1]} " }
+        return t
+    }
+
+    private fun cap6(s: String) = capFirst(s.trim())
+
+    private val plain6: List<Pair<Regex, (MatchResult) -> String>> = listOf(
+        // "What happens if I cast X and target Y?", "What happens when I create a token and I control Guide of Souls?": the facts, then the question.
+        Regex("""^what (?:happens|would happen|will happen) (?:if|when) ((?:I|we|my|they|their|he|she|an?|the|$NM)\b[^?.!]*?)\??$""", ci) to { m: MatchResult -> cap6(m.groupValues[1]) + ". What happens?" },
+        // "How much does X cost when Y is in my command zone?", "how much damage does my opponent take if I attack with Z": the board first.
+        Regex("""^((?:how (?:much|many|big)|how much damage)\b[^?.!]*?) (?:when|if|while) ($S6)\??$""", ci) to { m: MatchResult -> cap6(m.groupValues[2]) + ". " + cap6(m.groupValues[1]) + "?" },
+        // "I cast X and target Y": targeting.
+        Regex("""\b(cast|casts) ($NM) and targets? (?=\S)""") to { m: MatchResult -> "${m.groupValues[1]} ${m.groupValues[2]} targeting " },
+        // "I pitch a green card to Force of Vigor and target Null Rod with it": cast by exiling.
+        Regex("""\b(I|we|they|he|she|my opponent) (?:pitch|pitches|exile|exiles) (an?|one) (white|blue|black|red|green) card (?:to|for|into) ($NM) and targets? ($NM)(?: with it)?""", ci) to { m: MatchResult -> "${m.groupValues[1]} cast ${m.groupValues[4]} by exiling ${m.groupValues[2]} ${m.groupValues[3]} card, targeting ${m.groupValues[5]}" },
+        // "they Daze it by returning an Island": the card as a verb.
+        Regex("""\b(I|we|they|he|she|my opponent) (?-i:([A-Z][\w'-]+(?: [A-Z][\w'-]+)*)) (?:it |that )?by (returning|discarding|sacrificing|exiling|tapping)\b""", ci) to { m: MatchResult -> "${m.groupValues[1]} cast ${m.groupValues[2]} ${if (m.groupValues[3].lowercase() == "returning") "" else "by "}${m.groupValues[3]}" },
+        // "Their Ragavan is targeted": my opponent's.
+        Regex("""\b(?i:their|his|her) ($NM) is targeted\b""") to { m: MatchResult -> "My opponent's ${m.groupValues[1]} is targeted" },
+        // "last turn" at the start of a later sentence, or after a question: the time said last.
+        Regex("""(?<=[.?!] )last turn,? (I [^,.?]+?)(?=,| so | and |\.|\?|$)""", ci) to { m: MatchResult -> m.groupValues[1] + " last turn" },
+        // "they FoW by pitching while I control Thalia, Guardian of Thraben, how much does it cost": the board first.
+        Regex("""^((?:I|we|they|my opponent|he|she) [^.?!]*?\bby (?:pitching|exiling)[^.?!]*?) while ((?:I|we|they|my opponent|he|she) (?:control|controls|have|has) (?:(?!,\s*(?:how|what|can|does|do|is|will|who|which)\b)[^.?!])+?)(,\s*(?=(?:how|what|can|does|do|is|will|who|which)\b)|\?|$)""", ci) to { m: MatchResult -> cap6(m.groupValues[2]) + ". " + cap6(m.groupValues[1]) + (if (m.groupValues[3].startsWith(",")) ". " else "") },
+        // "casts X by pitching and I control Y": two statements.
+        Regex("""\b(by (?:pitching|exiling(?: an?)?(?: \w+)?(?: card)?)) and (?=(?:I|we|my opponent|they|he|she) (?:control|controls|have|has)\b)""", ci) to { m: MatchResult -> m.groupValues[1] + ". " },
+        // "how much is Sphinx of the Final Word to cast": what does it cost.
+        Regex("""\bhow much (?:is|are) ($NM) to (?:cast|play|run)\b""", ci) to { m: MatchResult -> "how much does ${m.groupValues[1]} cost" },
+        // "uses the -3 of Karn Liberated": Karn's -3.
+        Regex("""\b(activate|activates|use|uses|activated|used) the ([+\-−]\d+|minus \d+|plus \d+) (?:ability )?(?:of|on|from) ($NM)\b""", ci) to { m: MatchResult -> "${m.groupValues[1].replace(Regex("^use", RegexOption.IGNORE_CASE), "activate").replace(Regex("^used", RegexOption.IGNORE_CASE), "activated")} ${m.groupValues[3]}'s ${m.groupValues[2]}" },
+        // "Parhelion II that Greasefang returned": returned by.
+        Regex("""\b($NM) that ($NM) (returned|reanimated|brought back)\b""") to { m: MatchResult -> "${m.groupValues[1]} returned by ${m.groupValues[2]}" },
+        // "I Sneak Attack Emrakul in": Sneak Attack in X.
+        Regex("""\b(Sneak Attack|Through the Breach) ($NM) in\b""") to { m: MatchResult -> "${m.groupValues[1]} in ${m.groupValues[2]}" },
+        // "Time Vault plus Voltaic Key", "infinite turns or no": plain statements and the question.
+        Regex("""(?<=[a-z]) plus (?=(?-i:[A-Z]))""", ci) to { _: MatchResult -> " and " },
+        Regex("""\bI've (?=(?-i:[A-Z]))""", ci) to { _: MatchResult -> "I have " },
+        Regex(""",\s*(infinite turns|infinite mana|infinite combat|an infinite loop|a loop)(?: or (?:no|not|nah|nope))?\s*\??$""", ci) to { m: MatchResult -> ". Do I get ${m.groupValues[1]}?" },
+        // "... library how many cards can I mill myself": the question is its own sentence.
+        Regex("""(?<=[a-z0-9]) (how many cards can I (?:mill|draw|exile|discard)[^?.]*?)\s*[?.]?$""", ci) to { m: MatchResult -> ". " + cap6(m.groupValues[1]) + "?" },
+        // "Tainted Pact, exiling my whole library and taking nothing".
+        Regex("""\b(Tainted Pact),? exiling\b""", ci) to { m: MatchResult -> m.groupValues[1] + " and exile" },
+        Regex("""\blibrary and taking nothing\b""", ci) to { _: MatchResult -> "library, taking nothing" },
+        // "I draw two from Howling Mine": cards.
+        Regex("""\bdraw (two|three|four|\d+) (?:cards )?from (?:a |the )?(?=(?-i:[A-Z]))""", ci) to { m: MatchResult -> "draw ${m.groupValues[1]} cards from a " },
+        // "they have a face-down morph creature": my opponent controls.
+        Regex("""\b(?:they|he|she) (?:have|has) (an? face-down)""", ci) to { m: MatchResult -> "my opponent controls " + m.groupValues[1] },
+        // "what happens to them" after tokens.
+        Regex("""\bwhat happens to them\b(?=.*\btokens?\b)|(?<=\btokens?\b.{0,120})\bwhat happens to them\b""", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)) to { _: MatchResult -> "what happens to my tokens" },
+        // "at my upkeep ...": a timing phrase after "and" begins its own sentence.
+        Regex(""" and (?=(?:at|in|during) my (?:upkeep|draw step|end step|combat|main phase|cleanup step)\b)""", ci) to { _: MatchResult -> ". " },
+        // "my Gemrazer is mutated under my Bloodline Keeper".
+        Regex("""\b(?:my )?($NM) is mutated (on top of|under|over|onto) (?:my )?($NM)""") to { m: MatchResult -> "I control ${m.groupValues[1]} mutated ${m.groupValues[2]} ${m.groupValues[3]}" },
+        // "can my opponent Time Stop in my untap step": cast.
+        Regex("""\b(can|could) (I|we|my opponent|they|he|she) ($NM)(?= (?:during|in|at|before|after) (?:my|their|the|your|his|her)\b)""", ci) to { m: MatchResult -> "${m.groupValues[1]} ${m.groupValues[2]} cast ${m.groupValues[3]}" },
+        // "during my untap step can my opponent cast Time Stop": the question first.
+        Regex("""^(?:during|in|at) (my|their|the|your) ([\w ]+? (?:step|phase)),? (can|could|does|do|is|will) ([^?.!]+?)\??$""", ci) to { m: MatchResult -> cap6("${m.groupValues[3]} ${m.groupValues[4]} during ${m.groupValues[1]} ${m.groupValues[2]}") + "?" },
+        // "the Grizzly Bears of my opponent's that I took with Act of Treason".
+        Regex("""\bthe ($NM) of my opponent's\b""") to { m: MatchResult -> "my opponent's " + m.groupValues[1] },
+        Regex("""\bthat I (?:took|stole|swiped|grabbed) with\b""", ci) to { _: MatchResult -> "that I gained control of with" },
+        // "I Control Magic my opponent's commander", "I Act of Treason'd their Bears": gained control of it with the card.
+        Regex("""\bI (Act of Treason|Threaten|Agent of Treachery|Mark of Mutiny|Zealous Conscripts|Gilded Drake)(?:'d|ed|d)? ((?:my |an? |the )?opponent's|their|an opponent's) ($NM|commander|creature)""") to { m: MatchResult -> "I gained control of ${m.groupValues[2].replace("their", "my opponent's").replace("an opponent's", "my opponent's")} ${m.groupValues[3]} with ${m.groupValues[1]}" },
+        // ", my commander X is on the battlefield": a statement of its own.
+        Regex(""",\s+(?:and\s+)?(?=my commander\b)""", ci) to { _: MatchResult -> ". " },
+        // "I'm in an extra turn from Time Walk and cast another Time Walk".
+        Regex("""\bI'm in (?:an|my) extra turn from ($NM)(?: and|,) (?:I )?cast\b""", ci) to { m: MatchResult -> "During my extra turn from ${m.groupValues[1]} I cast" },
+        // ---- batch 4 ----
+        // "in my pod", "at a cEDH table": a four-player game.
+        Regex("""\b(?:in my (?:cedh |commander |edh )?pod|at (?:a|my|our) (?:cedh|edh|commander) table|in a (?:cedh |commander |edh )?pod)\b""", ci) to { _: MatchResult -> "in a four-player game" },
+        Regex("""^(two|three|four|five)[- ]player game,?\s+""", ci) to { m: MatchResult -> "In a ${m.groupValues[1].lowercase()}-player game, " },
+        Regex("""\bone opponent (\w+s) my\b""", ci) to { m: MatchResult -> "my opponent ${m.groupValues[1]} my" },
+        // "their suspended Ancestral Vision": my opponent's.
+        Regex("""\b(?:their|his|her) suspended\b""", ci) to { _: MatchResult -> "my opponent's suspended" },
+        // "... and Bloodline Keeper transforms", "and that opponent concedes", "and my creature commander is in my graveyard": a statement of its own.
+        Regex(""" and (?=$NM transforms\b)""") to { _: MatchResult -> ". " },
+        Regex(""" and (?=that (?:opponent|player) (?:concedes|leaves|loses)\b)""", ci) to { _: MatchResult -> ". " },
+        Regex(""" and (?=my (?:creature )?commander (?:is|has)\b)""", ci) to { _: MatchResult -> ". " },
+        Regex(""" and (?=(?:my opponent|he|she|they) (?:counters? it|double blocks?|triple blocks?|gang blocks?)\b)""", ci) to { _: MatchResult -> ". " },
+        Regex(""" and (?=(?-i:[A-Z])[\w'’-]*(?:-[A-Z]\w+)?(?: of the [A-Z]\w+(?: [A-Z]\w+)?)?'s (?:trigger|ability)\b)""") to { _: MatchResult -> ". " },
+        Regex(""" and (?=I go to -?\d+)""", ci) to { _: MatchResult -> ". " },
+        Regex(""" and (?=(?:at|in|during) (?:my|their|his|her|your|the) (?:next )?(?:upkeep|draw step|end step|combat|main phase|cleanup step|turn)\b)""", ci) to { _: MatchResult -> ". " },
+        Regex(""",\s+(?=I (?:didn't|did not|gained|created|made|went|go)\b)""", ci) to { _: MatchResult -> ". " },
+        Regex(""",\s+(?=the (?:first|second|third|next|other) [\w ]+? (?:pass|passes|respond|responds|cast|casts)\b)""", ci) to { _: MatchResult -> ". " },
+        // "hits me for 4 combat damage", "hit its owner for twenty-one combat damage": deals it.
+        Regex("""\bhits? (me|them|us|my opponent|its owner|their owner) for (\w+|\d+) combat damage""", ci) to { m: MatchResult -> "deals ${m.groupValues[2]} combat damage to ${m.groupValues[1]}" },
+        Regex("""\b(?:their|his|her) ($NM) is a copy of\b""", ci) to { m: MatchResult -> "my opponent's ${m.groupValues[1]} is copying" },
+        Regex("""\bdelve (two|2|three|3|one|1|four|4) (instants?|sorcer(?:y|ies)|cards?)""", ci) to { m: MatchResult -> "delving ${m.groupValues[1]} ${m.groupValues[2]}" },
+        // "my Psychic Frog that has two +1/+1 counters": with them on it.
+        Regex("""\b(my|their|my opponent's) ($NM) that has (\w+|\d+) (\+1/\+1 counters?)""", ci) to { m: MatchResult -> "${m.groupValues[1]} ${m.groupValues[2]} with ${m.groupValues[3]} ${m.groupValues[4]} on it" },
+        // "Ajani's cat died", "the cat of Ajani dies": the cat dies.
+        Regex("""\bthe cat of ($NM) (?:dies|died)\b""", ci) to { m: MatchResult -> "${m.groupValues[1]}'s cat dies" },
+        Regex("""\b($NM)'s cat died\b""", ci) to { m: MatchResult -> "${m.groupValues[1]}'s cat dies" },
+        Regex("""(?<=\bto it) too\b""", ci) to { _: MatchResult -> "" },
+        // "for free": without paying its mana cost; aimed at my card.
+        Regex("""\bfor free\b(?= on (?:my|their))""", ci) to { _: MatchResult -> "without paying its mana cost" },
+        Regex("""(without paying its mana cost) on (my|their)\b""", ci) to { m: MatchResult -> "${m.groupValues[1]} targeting ${m.groupValues[2]}" },
+        // "I Angel's Grace and then Ad Nauseam", "I Expressive Iteration and exile a land": the cast said as a verb.
+        Regex("""\b(I|we|they|he|she|my opponent) ((?-i:[A-Z])[\w'’-]*(?: (?-i:[A-Z])[\w'’-]*)*) and then (?=(?-i:[A-Z]))""", ci) to { m: MatchResult ->
+            if (m.groupValues[2] in setOf("I", "Then", "My")) m.value else "${m.groupValues[1]} cast ${m.groupValues[2]} and then " },
+        Regex("""\b(I|we|they|he|she|my opponent) ((?-i:[A-Z])[\w'’-]*(?: (?-i:[A-Z])[\w'’-]*)*) and (?=(?:exile|choose|put|play|pay|sacrifice|discard|return|search|reveal|take|name|target)\b)""", ci) to { m: MatchResult ->
+            if (m.groupValues[2] in setOf("I", "Then", "My")) m.value else "${m.groupValues[1]} cast ${m.groupValues[2]} and " },
+        // "can I put Rancor on my Progenitus": the creature, then the cast.
+        Regex("""^can I put ($NM) on my ($NM)\??$""", ci) to { m: MatchResult -> "I control ${m.groupValues[2]}. Can I cast ${m.groupValues[1]} on ${m.groupValues[2]}?" },
+        // "they Sure Strike one of the Grizzly Bears": cast on one of them.
+        Regex("""\b(I|we|they|he|she|my opponent) ($NM) (one of (?:the|my|their) )""", ci) to { m: MatchResult -> "${m.groupValues[1]} cast ${m.groupValues[2]} on ${m.groupValues[3]}" },
+        // "Glistener Elf with Basilisk Collar attacks": I attack with it, equipped.
+        Regex("""\b(?:my )?($NM) with ($NM) attacks\b""") to { m: MatchResult -> "I attack with ${m.groupValues[1]} equipped with ${m.groupValues[2]}" },
+        // "they Stomp from Bonecrusher Giant": cast.
+        Regex("""\b(I|we|they|he|she|my opponent) ($NM) from ($NM)(?=\s*(?:and|,|\.|\?|$))""", ci) to { m: MatchResult -> "${m.groupValues[1]} cast ${m.groupValues[2]} from ${m.groupValues[3]}" },
+        // "Dark Confidant of mine flips X".
+        Regex("""\b($NM) of mine\b""") to { m: MatchResult -> "my ${m.groupValues[1]}" },
+        Regex("""\b(Dark Confidant|Bob) flips\b""", ci) to { m: MatchResult -> "${m.groupValues[1]} reveals" },
+        // "I Control Magic my opponent's commander": stolen.
+        // "a creature with deathtouch deals three damage to my Darksteel Myr": my creature is dealt it.
+        Regex("""^(an? creature with \w+) deals (\w+|\d+) damage to my ($NM)""", ci) to { m: MatchResult -> "My ${m.groupValues[3]} is dealt ${m.groupValues[2]} damage by ${m.groupValues[1]}" },
+        // "Shiny Impetus is on their Grizzly Bears and I control it": attached.
+        Regex("""^($NM) is on (?:their|my opponent's) ($NM) and I control it""", ci) to { m: MatchResult -> "I control ${m.groupValues[1]} attached to my opponent's ${m.groupValues[2]}" },
+        // "..., does Land Tax trigger at the beginning of my upkeep": the time first.
+        Regex("""\b(does|do) ($NM) trigger (at the beginning of [^?.,]+?)\s*[?.!]*$""", ci) to { m: MatchResult -> cap6(m.groupValues[3]) + ", " + m.groupValues[1].lowercase() + " " + m.groupValues[2] + " trigger?" },
+Regex("""\bdouble block me\b""", ci) to { _: MatchResult -> "double block" },
+        // "with Lotus Petal mana": with mana from it.
+        Regex("""\bwith (?:the )?($NM) mana\b""") to { m: MatchResult -> "with mana from ${m.groupValues[1]}" },
+        // "I activate my Goblin Charbelcher with no lands in my library".
+        Regex("""\bI activate my ($NM) with no lands in my library\b""", ci) to { m: MatchResult -> "I control ${m.groupValues[1]} and have no lands in my library. I activate it" },
+        // "can I station my D-7 Battle Cruiser during combat": I control it, then the question.
+        Regex("""^can I (station|crew|activate) my ($NM) (during|in|at) ([^?.]+?)\??$""", ci) to { m: MatchResult -> "I control ${m.groupValues[2]}. Can I ${m.groupValues[1]} it ${m.groupValues[3]} ${m.groupValues[4]}?" },
+        Regex("""\b(?:two|2) times\b(?! as)""", ci) to { _: MatchResult -> "twice" },
+        Regex("""^with no (\w+) on my side,?\s*""", ci) to { m: MatchResult -> "I control no ${m.groupValues[1]}. " },
+        // "a modal spell with two modes chosen", "a spell that has only one mode".
+        Regex("""\ba modal spell with (\w+|\d+) modes chosen\b""", ci) to { m: MatchResult -> "a modal spell choosing ${m.groupValues[1]} modes" },
+        Regex("""\bthat has only (one|1|a single) mode\b""", ci) to { _: MatchResult -> "with only one mode" },
+        // "with Captain Pike and five differently named lands I cast": the board first.
+        Regex("""^with ($NM) and (\w+) differently named lands,?\s+""", ci) to { m: MatchResult -> "I control ${m.groupValues[1]} and ${m.groupValues[2]} differently named lands. " },
+        // "my creature commander that has a Background is in my graveyard".
+        Regex("""\bmy creature commander that has an? (\w+) is in my graveyard\b""", ci) to { m: MatchResult -> "my commander is a creature with a ${m.groupValues[1]}. My creature commander is in my graveyard" },
+        // "I Control Magic my opponent's commander": stolen with it.
+        Regex("""\bI (Control Magic|Mind Control|Treachery|Persuasion|Dominate Monster)(?:'d|ed|d)? ((?:my |an? |the )?opponent's|their|an opponent's) ($NM|commander|creature)(?! and that (?:opponent|player) concedes)""") to { m: MatchResult -> "I steal ${m.groupValues[2].replace("their", "my opponent's").replace("an opponent's", "my opponent's")} ${m.groupValues[3]} with ${m.groupValues[1]}" },
+        // ---- batch 5 ----
+        // "their Ragavan is targeted and I Ephemerate my Solitude": the cast, while it is targeted.
+        Regex("""\b(?:their|my opponent's) ($NM) is targeted and I ($NM) my ($NM)""", ci) to { m: MatchResult -> "I cast ${m.groupValues[2]} on my ${m.groupValues[3]} while my opponent's ${m.groupValues[1]} is targeted" },
+        // "..., Pithing Needle resolves naming Jace": its own sentence.
+        Regex(""",\s+(?:the )?($NM) resolves naming\b""", ci) to { m: MatchResult -> ". ${m.groupValues[1]} resolves naming" },
+        // "and Ajani's cat dies": its own sentence.
+        Regex(""" and (?=(?-i:[A-Z])[\w'’-]+'s (?:cat|token|creature)\b)""", ci) to { _: MatchResult -> ". " },
+        // "I have Ocelot Pride and the city's blessing but I didn't gain life this turn".
+        Regex("""\bI have ($NM) and the city's blessing but (I didn't gain life this turn)""", ci) to { m: MatchResult -> "I control ${m.groupValues[1]}. ${m.groupValues[2]} but I have the city's blessing" },
+        Regex("""\bpitch(?:ing)? (an?|one) (white|blue|black|red|green) card\b""", ci) to { m: MatchResult -> "exiling ${m.groupValues[1]} ${m.groupValues[2]} card" },
+        // ---- batch 6 ----
+        // ", and I cast ...", "... counters and I play ...": the second statement is a sentence of its own.
+        Regex(""",\s+and\s+(?=(?:I|we|my opponent|they|he|she) (?:cast|casts|play|plays|activate|activates|attack|attacks|crack|cracks)\b)""", ci) to { _: MatchResult -> ". " },
+        Regex("""(?<=\bcounters?) and (?=I (?:play|activate|crack|attack)\b)""", ci) to { _: MatchResult -> ". " },
+        Regex(""" and (?=I (?:turn|flip|unmorph) (?:it|\w+) face up\b)""", ci) to { _: MatchResult -> ". " },
+        Regex(""",\s+(?=my opponent blocks with\b)""", ci) to { _: MatchResult -> ". " },
+        Regex("""\b(I cast ($NM) face down(?: last turn)?),? and attack with it""", ci) to { m: MatchResult -> "${m.groupValues[1]}. I attack with it" },
+        // "an opponent is the monarch", "an opponent has the initiative": my opponent.
+        Regex("""\ban opponent (is|has) the (monarch|initiative)\b""", ci) to { m: MatchResult -> "my opponent ${m.groupValues[1]} the ${m.groupValues[2]}" },
+        Regex("""\b(concedes?) on my turn\b""", ci) to { m: MatchResult -> "${m.groupValues[1]} during my turn" },
+        // "I Control Magic'd an opponent's Bears and that opponent concedes": I control them with it.
+        Regex("""\bI (Control Magic|Mind Control|Treachery|Persuasion)(?:'d|ed|d)? ((?:my |an? |the )?opponent's|their|an opponent's) ($NM)(?= and that (?:opponent|player) concedes)""") to { m: MatchResult -> "I control ${m.groupValues[2].replace("their", "my opponent's").replace("an opponent's", "my opponent's")} ${m.groupValues[3]} with ${m.groupValues[1]}" },
+        // "eight poison counters": digits.
+        Regex("""\b(one|two|three|four|five|six|seven|eight|nine|ten) poison counters?\b""", ci) to { m: MatchResult -> (mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10)[m.groupValues[1].lowercase()] ?: 0).toString() + " poison counters" },
+        // "a Plant token with 3 +1/+1 counters": on it.
+        Regex("""(\btoken with (?:\d+|\w+) \+1/\+1 counters?)(?! on it)""", ci) to { m: MatchResult -> m.groupValues[1] + " on it" },
+        // "with 1 ice counter".
+        Regex("""\bwith (?:one|1|a single) ice counter\b(?! on it)""", ci) to { _: MatchResult -> "with one ice counter on it" },
+        // "I go to -5, do I lose the game": a statement and its question.
+        Regex("""\bI go to (-?\d+)(?: life)?,? (do I lose the game)\??$""", ci) to { m: MatchResult -> "I go to ${m.groupValues[1]} life. Do I lose the game?" },
+        // "I control X and cast a modal spell": two statements.
+        Regex("""\b(I (?:control|have) [^.?!]+?) and (cast|play|activate) (?=a )""", ci) to { m: MatchResult -> "${m.groupValues[1]}. I ${m.groupValues[2]} " },
+        // "they respond with a Lightning Bolt at me".
+        Regex("""\b(responds?|responded) with (?:an? )?($NM) at (me|my opponent|them)\b""", ci) to { m: MatchResult -> "${m.groupValues[1]} with ${m.groupValues[2]} targeting ${m.groupValues[3]}" },
+        // "exiled it with Ooze".
+        Regex("""\bwith (?:the )?Ooze\b""") to { _: MatchResult -> "with Scavenging Ooze" },
+        // "they Disfigure my River Boa that has a regeneration shield".
+        Regex("""\b(they|he|she|my opponent) ($NM) my ($NM) (?:that|which) has a regeneration shield\b""", ci) to { m: MatchResult -> "My ${m.groupValues[3]} has a regeneration shield. My opponent casts ${m.groupValues[2]} on ${m.groupValues[3]}" },
+        // ---- batch 7 ----
+        // "I control Thing in the Ice with one ice counter on it, my opponent controls Grizzly Bears": two statements.
+        Regex(""",\s+(?=my opponent controls\b)""", ci) to { _: MatchResult -> ". " },
+        // "..., my opponent's suspended Ancestral Vision loses its last time counter": its own sentence.
+        Regex("""(\bI control [^.?!]+?) and (?=my opponent's (?:suspended )?(?-i:[A-Z])(?![^.?!]*\bthat I (?:gained|took|stole)\b))""", ci) to { m: MatchResult -> m.groupValues[1] + ". " },
+        // "Can I Deflecting Swat their Thassa's Oracle trigger to change the target".
+        Regex("""\bcan I ($NM) (?:their|my opponent's) ($NM) trigger to change the target\b""", ci) to { m: MatchResult -> "can I use ${m.groupValues[1]} to change the target of my opponent's ${m.groupValues[2]} trigger" },
+        // "my opponents control four, three and two artifacts and enchantments": digits.
+        Regex("""\b(control|controls) (one|two|three|four|five|six|seven|eight|nine|\d+), (one|two|three|four|five|six|seven|eight|nine|\d+) and (one|two|three|four|five|six|seven|eight|nine|\d+) (artifacts and enchantments)""", ci) to { m ->
+            fun d(w: String) = (mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9)[w.lowercase()] ?: w.toIntOrNull() ?: 0).toString()
+            "${m.groupValues[1]} ${d(m.groupValues[2])}, ${d(m.groupValues[3])} and ${d(m.groupValues[4])} ${m.groupValues[5]}" },
+        // "everybody controls Soul Warden and I cast Grizzly Bears, in what order do the triggers resolve".
+        Regex("""\beveryone controls|\beverybody controls|\beach of us controls|\ball of us control""", ci) to { _: MatchResult -> "each player controls" },
+        Regex("""(\bcontrols? (?-i:[A-Z])[\w'’-]*(?: (?-i:[A-Z])[\w'’-]*)*) and (?=I (?:cast|play)\b)""", ci) to { m: MatchResult -> m.groupValues[1] + ". " },
+        Regex("""(?<=\bI (?:cast|play|activate) [^,.?!]{2,60}),\s*(in what order [^?.]*?)\??$""", ci) to { m: MatchResult -> ". " + cap6(m.groupValues[1]) + "?" },
+        // "my teammate has 8 poison counters and I have seven, do we lose".
+        Regex("""\b(poison counters and I have) (one|two|three|four|five|six|seven|eight|nine|ten|\d+)(?=\s*[,.?]|$)""", ci) to { m: MatchResult -> m.groupValues[1] + " " + (mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10)[m.groupValues[2].lowercase()]?.toString() ?: m.groupValues[2]) + " poison counters" },
+        Regex(""",\s*(do we lose(?: the game)?)\??$""", ci) to { m: MatchResult -> ". " + cap6(m.groupValues[1]) + "?" },
+        // "they exile it with Scavenging Ooze": my opponent exiles it.
+        Regex("""\b(they|he|she) (?:exile|exiles|exiled) (it|that card|them) with ($NM)""", ci) to { m: MatchResult -> "my opponent exiles ${m.groupValues[2]} with ${m.groupValues[3]}" },
+        // "my Benevolent Hydra has two +1/+1 counters and I activate its ability".
+        Regex("""\bmy ($NM) has (\w+|\d+) (\+1/\+1 counters?)(?:\.\s+|,?\s+and\s+)I activate its ability""", ci) to { m: MatchResult -> "I control ${m.groupValues[1]} with ${m.groupValues[2]} ${m.groupValues[3]} on it. I activate ${m.groupValues[1]}'s ability" },
+        // "I stole my opponent's commander with Treachery and it deals 21 ...": the steal, then the damage.
+        Regex("""\b(I steal|I stole) (my opponent's commander with $NM) and (?=it deals\b)""", ci) to { m: MatchResult -> "I stole ${m.groupValues[2]}. " },
+        // "my Gemrazer is mutated on top of Grizzly Bears": I control it mutated there.
+        Regex("""\b[Mm]y ($NM) is mutated (on top of|under|over|onto) ($NM)""") to { m: MatchResult -> "I control ${m.groupValues[1]} mutated ${m.groupValues[2]} ${m.groupValues[3]}" },
+    )
+
+    private fun applyPlain6(t0: String): String {
+        var t = t0
+        for ((re, f) in plain6) t = re.replace(t) { m -> f(m) }
+        return t.replace(Regex(""",\s*\.(?=\s|$)"""), ".")
+    }
+
+    /** Extra readings tried when the plain one leaves clauses unread. */
+    private fun variants6(plain: String): List<String> {
+        val out = mutableListOf<String>()
+        // "... and it deals 21 combat damage to its owner", "..., and that opponent concedes": a run-on whose second half has "it" or "that X" for its subject.
+        val sp = Regex("""(?:,\s*(?:and\s+)?|\s+and\s+(?:then\s+)?)(?=(?:it|that (?:opponent|player|creature)|its (?:owner|controller)) (?!is\b)[a-z]+)""", ci)
+        if (sp.containsMatchIn(plain)) out += plain.split(sentBreak).joinToString(" ") { sn -> if (qStart.containsMatchIn(sn) || sn.endsWith("?")) sn else sp.replace(sn.trimEnd('.'), ". ").split(Regex("""\.\s+""")).filter { it.isNotBlank() }.joinToString(" ") { capFirst(it.trim().trimEnd(',')) + "." } }
+        // "I station X twice in one turn, how many cards do I exile." (no question mark): the statement, then the question.
+        if (!plain.trimEnd().endsWith("?") && !qStart.containsMatchIn(plain.split(sentBreak).last()) && Regex("""\bhow many\b""", ci).containsMatchIn(plain.split(sentBreak).last())) out += splitCommaQuestion(plain.trimEnd('.', ' ') + "?").let { targetPronoun(ensureQ(it)) }
+        return out
     }
 }
