@@ -74,7 +74,7 @@ internal object MoreEffects5 {
         // Academy Rector: "When ~ dies, you may exile it." — the card that just went to the graveyard (701.13a, 603.10a).
         if (Regex("""^exile it$""", I).matches(s)) return More5("exile-it", s, listOf("701.13a", "603.10a"))
         // Orim's Chant kicked: "creatures can't attack this turn" — every creature, even one that arrives later this turn.
-        if (Regex("""^creatures can't attack this turn$""", I).matches(s)) return More5("no-attacks", s, listOf("611.2a", "508.1"))
+        if (Regex("""^creatures can't attack this turn$""", I).matches(s)) return More5("no-attacks", s, listOf("611.2a", "508.1c"))
         // Grafted Exoskeleton: "sacrifice that permanent" — the one it became unattached from (read before the narrated "sacrifice …").
         if (Regex("""^sacrifice that permanent$""", I).matches(s)) return More5("sac-that", s, listOf("701.21a"))
         return null
@@ -503,7 +503,7 @@ internal object MoreEffects5 {
             }
             "no-attacks" -> {
                 mem(st).noAttacks = "${st.turnNumber}|${st.activePlayer}" to src
-                tr.step("Until the end of this turn, creatures can't attack. This changes the rules of the game rather than the creatures, so it also stops creatures that come onto the battlefield later this turn.", "611.2a", "611.2c", "508.1")
+                tr.step("Until the end of this turn, creatures can't attack. This changes the rules of the game rather than the creatures, so it also stops creatures that come onto the battlefield later this turn.", "611.2a", "611.2c", "508.1c")
                 st.outcomes += "Creatures can't attack this turn ($src)."
             }
             "freeze-targets" -> {

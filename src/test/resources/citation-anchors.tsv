@@ -325,6 +325,7 @@
 603.2b	when a phase or step begins
 603.2c	an ability triggers only once each
 603.2d	an ability may state that a
+603.2e	some trigger events use the word
 603.2h	a triggered ability may have an
 603.3	once an ability has triggered its
 603.3a	a triggered ability is controlled by
@@ -436,6 +437,10 @@
 700.2b	the controller of a modal triggered
 700.2d	if a player is allowed to
 700.2f	modal spells and abilities may have
+700.3	some effects cause objects to be
+700.3a	each of the affected objects must
+700.3c	objects grouped into piles don t
+700.3d	a pile can contain zero or
 700.4	the term dies means is put
 700.5	a player s devotion to color
 700.17	some abilities trigger when a player
