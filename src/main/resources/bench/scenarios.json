@@ -71143,8 +71143,8 @@
     "id": "o2-12",
     "text": "Alice, Bob and I are playing. Bob's Grizzly Bears is equipped with my Bloodthirsty Blade. Who does it have to attack?",
     "expect": [
-      "Grizzly Bears must attack You or Alice (Bob's choice)",
-      "It can't attack Bob while such an attack is possible"
+      "Grizzly Bears must attack Alice: a player who didn't goad it",
+      "It can't attack you while that attack is possible (701.15b)"
     ],
     "cite": [
       "701.15b"
@@ -75314,8 +75314,8 @@
     "id": "w5-267",
     "text": "Who does it have to attack? Alice, Bob and I are playing and Bob's Grizzly Bears is equipped with my Bloodthirsty Blade.",
     "expect": [
-      "Grizzly Bears must attack You or Alice (Bob's choice)",
-      "It can't attack Bob while such an attack is possible"
+      "Grizzly Bears must attack Alice: a player who didn't goad it",
+      "It can't attack you while that attack is possible (701.15b)"
     ],
     "notExpect": [],
     "cite": [
@@ -75326,8 +75326,8 @@
     "id": "w5-268",
     "text": "Alice, Bob and me are playing, Bob's Grizzly Bears is equipped with my Bloodthirsty Blade, who does it have to attack?",
     "expect": [
-      "Grizzly Bears must attack You or Alice (Bob's choice)",
-      "It can't attack Bob while such an attack is possible"
+      "Grizzly Bears must attack Alice: a player who didn't goad it",
+      "It can't attack you while that attack is possible (701.15b)"
     ],
     "notExpect": [],
     "cite": [
@@ -80240,6 +80240,349 @@
       "MTR 1.12",
       "IPG 4.3",
       "MTR 5.2"
+    ]
+  },
+  {
+    "id": "x3-1",
+    "text": "My opponent controls Grizzly Bears. I cast Clone copying Grizzly Bears, then I cast Phantasmal Image copying my Clone. What is Phantasmal Image?",
+    "expect": [
+      "Phantasmal Image is now Grizzly Bears: Creature — Bear Illusion 2/2",
+      "Phantasmal Image, a copy of Grizzly Bears, enters the battlefield."
+    ],
+    "notExpect": [
+      "Phantasmal Image enters as itself"
+    ],
+    "cite": [
+      "707.2",
+      "707.9a"
+    ]
+  },
+  {
+    "id": "x3-2",
+    "text": "My opponent controls a face-down morph creature. I cast Clone copying it. What is my Clone?",
+    "expect": [
+      "So Clone becomes a nameless, colorless 2/2 with no abilities."
+    ],
+    "notExpect": [
+      "Clone: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "708.2a"
+    ]
+  },
+  {
+    "id": "x3-3",
+    "text": "I control a Marit Lage token from Dark Depths. I cast Spark Double copying Marit Lage. What happens?",
+    "expect": [
+      "Spark Double copies the Marit Lage token as the effect that created it defined it: a 20/20 with flying and indestructible",
+      "Spark Double enters with 1 additional +1/+1 counter."
+    ],
+    "cite": [
+      "111.3",
+      "707.9f"
+    ]
+  },
+  {
+    "id": "x3-4",
+    "text": "I control Avenger of Zendikar and a Plant token with three +1/+1 counters on it. I cast Clone copying the Plant token. How big is my Clone?",
+    "expect": [
+      "Clone copies the Plant token as the effect that created it defined it: a 0/1",
+      "Clone (copying Plant token) is 0/1."
+    ],
+    "notExpect": [
+      "copy of Avenger of Zendikar"
+    ],
+    "cite": [
+      "111.3",
+      "707.2"
+    ]
+  },
+  {
+    "id": "x3-5",
+    "text": "My Grizzly Bears is equipped with Bonesplitter. I cast Slip Out the Back on Grizzly Bears. What happens to Bonesplitter?",
+    "expect": [
+      "Bonesplitter phases out along with Grizzly Bears (702.26g)",
+      "Grizzly Bears phases out."
+    ],
+    "notExpect": [
+      "not modeled"
+    ],
+    "cite": [
+      "702.26g"
+    ]
+  },
+  {
+    "id": "x3-6",
+    "text": "I control two Goblin tokens. I cast Teferi's Protection. What happens to my tokens?",
+    "expect": [
+      "A phased-out token doesn't cease to exist; tokens continue to exist on the battlefield while phased out (702.26d)."
+    ],
+    "notExpect": [
+      "ceases to exist; it doesn't stay"
+    ],
+    "cite": [
+      "702.26d"
+    ]
+  },
+  {
+    "id": "x3-7",
+    "text": "I control Blood Artist and Thragtusk. I cast Teferi's Protection. Does anything trigger?",
+    "expect": [
+      "No: nothing triggers. Phasing out isn't leaving the battlefield"
+    ],
+    "cite": [
+      "702.26d"
+    ]
+  },
+  {
+    "id": "x3-8",
+    "text": "I control Jace, the Mind Sculptor. My opponent casts Pithing Needle and I respond with Teferi's Protection. Pithing Needle resolves naming Jace, the Mind Sculptor. Can I activate Jace after it phases in?",
+    "expect": [
+      "No: once Jace, the Mind Sculptor phases in, Pithing Needle (naming Jace, the Mind Sculptor) stops its abilities."
+    ],
+    "notExpect": [
+      "Yes: once"
+    ],
+    "cite": [
+      "602.5",
+      "702.26c"
+    ]
+  },
+  {
+    "id": "x3-9",
+    "text": "I enchant my opponent's Grizzly Bears with Pacifism. Then I cast Teferi's Protection. Can Grizzly Bears attack?",
+    "expect": [
+      "Yes: Grizzly Bears can attack.",
+      "Pacifism phases out"
+    ],
+    "notExpect": [
+      "Grizzly Bears phases out"
+    ],
+    "cite": [
+      "702.26b"
+    ]
+  },
+  {
+    "id": "x3-10",
+    "text": "I control Gemrazer mutated under Delver of Secrets. At my upkeep I reveal an instant and transform Delver of Secrets. What is my creature?",
+    "expect": [
+      "No: Gemrazer can't mutate onto Delver of Secrets; mutate needs a non-Human creature with the same owner (702.140a)."
+    ],
+    "cite": [
+      "702.140a"
+    ]
+  },
+  {
+    "id": "x3-11",
+    "text": "My opponent's Delver of Secrets has transformed into Insectile Aberration. I cast Clone copying it. What is my Clone?",
+    "expect": [
+      "Clone is Insectile Aberration (3/2) with mana value 0; it isn't double-faced, so it can't transform back (712.6d, 701.27d)."
+    ],
+    "notExpect": [
+      "Clone: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "712.6d",
+      "701.27d"
+    ]
+  },
+  {
+    "id": "x3-12",
+    "text": "I control Gemrazer mutated on top of Grizzly Bears. My opponent casts Unsummon on it. What happens?",
+    "expect": [
+      "Both cards of the merged creature (Grizzly Bears and Gemrazer) go to your hand."
+    ],
+    "cite": [
+      "731.3"
+    ]
+  },
+  {
+    "id": "x3-13",
+    "text": "I control Gemrazer mutated on top of Llanowar Elves. My opponent casts Clone copying it. What does Clone have?",
+    "expect": [
+      "Clone copies the whole merged permanent: Gemrazer (4/4) with every ability of Llanowar Elves as well (707.2, 731.2a)."
+    ],
+    "notExpect": [
+      "copy of Llanowar Elves"
+    ],
+    "cite": [
+      "731.2a"
+    ]
+  },
+  {
+    "id": "x3-14",
+    "text": "I control Gemrazer mutated under Bloodline Keeper. Bloodline Keeper transforms. What is my creature?",
+    "expect": [
+      "Bloodline Keeper transforms into Lord of Lineage (5/5), keeping the abilities of Gemrazer underneath (731.2i, 702.140e)."
+    ],
+    "cite": [
+      "731.2i"
+    ]
+  },
+  {
+    "id": "x3-15",
+    "text": "I control Solemnity and Doubling Season. I cast Jace, the Mind Sculptor. How much loyalty does it have?",
+    "expect": [
+      "6: Jace, the Mind Sculptor has 6 loyalty."
+    ],
+    "notExpect": [
+      "0 loyalty"
+    ],
+    "cite": [
+      "306.5b"
+    ]
+  },
+  {
+    "id": "x3-16",
+    "text": "Can my opponent cast Time Stop during my untap step?",
+    "expect": [
+      "No: no player gets priority during the untap step, so Time Stop can't be cast then (502.4)."
+    ],
+    "notExpect": [
+      "Yes: opponent can cast Time Stop"
+    ],
+    "cite": [
+      "502.4"
+    ]
+  },
+  {
+    "id": "x3-17",
+    "text": "I control Zulaport Cutthroat and my opponent's Grizzly Bears that I gained control of with Act of Treason. I cast Wrath of God. How many times does Zulaport Cutthroat trigger?",
+    "expect": [
+      "2: Zulaport Cutthroat triggers 2 times"
+    ],
+    "cite": [
+      "603.10a"
+    ]
+  },
+  {
+    "id": "x3-18",
+    "text": "I enchant my opponent's Grizzly Bears with Rancor. My opponent sacrifices Grizzly Bears. What happens to Rancor?",
+    "expect": [
+      "Rancor: your graveyard → your hand.",
+      "Rancor: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "704.5m"
+    ]
+  },
+  {
+    "id": "x3-19",
+    "text": "I control two Myth Unbound. My commander has been cast from the command zone twice. How much extra does it cost?",
+    "expect": [
+      "Nothing extra: the tax is {4} for 2 earlier casts (903.8), and 2 Myth Unbounds take {4} off (601.2f)."
+    ],
+    "cite": [
+      "903.8",
+      "601.2f"
+    ]
+  },
+  {
+    "id": "x3-20",
+    "text": "My commander is Kenrith, the Returned King and I control Thalia, Guardian of Thraben. I cast Polymorphous Rush making Kenrith a copy of Thalia. What happens?",
+    "expect": [
+      "Kenrith, the Returned King becomes a copy of Thalia, Guardian of Thraben until end of turn, and it's still your commander (903.3).",
+      "it can still go to the command zone, since it's still a commander (903.9a)"
+    ],
+    "notExpect": [
+      "not modeled"
+    ],
+    "cite": [
+      "903.3",
+      "704.5j"
+    ]
+  },
+  {
+    "id": "x3-21",
+    "text": "I steal my opponent's commander with Control Magic and it dies. Can it go to the command zone?",
+    "expect": [
+      "Yes, but it's your opponent's choice, not yours: it goes to its owner's graveyard (400.3)"
+    ],
+    "cite": [
+      "400.3",
+      "903.9a"
+    ]
+  },
+  {
+    "id": "x3-22",
+    "text": "My opponent's commander is Kenrith, the Returned King, and I control it with Control Magic. My commander Atraxa, Praetors' Voice is on the battlefield. My opponent casts Leadership Vacuum targeting me. What happens?",
+    "expect": [
+      "Kenrith, the Returned King returns to opponent's command zone (Leadership Vacuum)",
+      "Atraxa, Praetors' Voice returns to your command zone (Leadership Vacuum)"
+    ],
+    "notExpect": [
+      "You control no commander"
+    ],
+    "cite": [
+      "903.3d"
+    ]
+  },
+  {
+    "id": "x3-23",
+    "text": "During my extra turn from Time Walk I cast another Time Walk. How many extra turns do I get?",
+    "expect": [
+      "One more. The second Time Walk adds an extra turn directly after the extra turn you're taking now"
+    ],
+    "cite": [
+      "500.7"
+    ]
+  },
+  {
+    "id": "x3-24",
+    "text": "During my cleanup step I discard down to seven cards and my opponent's Megrim triggers. What happens?",
+    "expect": [
+      "Because something triggered in the cleanup step, players get priority there (514.3a)"
+    ],
+    "cite": [
+      "514.3a"
+    ]
+  },
+  {
+    "id": "x3-25",
+    "text": "I activate Lethal Vapors twice in response to itself and both abilities resolve. How many turns do I skip?",
+    "expect": [
+      "2: you skip your next 2 turns"
+    ],
+    "cite": [
+      "614.10a"
+    ]
+  },
+  {
+    "id": "x3-26",
+    "text": "I control Blood Artist and Avacyn, Angel of Hope. I cast a second Avacyn, Angel of Hope. What happens?",
+    "expect": [
+      "Indestructible doesn't save it: the legend rule puts the extra Avacyn, Angel of Hope into the graveyard without destroying it (702.12b, 704.5j)."
+    ],
+    "cite": [
+      "702.12b",
+      "704.5j"
+    ]
+  },
+  {
+    "id": "x3-27",
+    "text": "I attack with my face-down disguised Fugitive Codebreaker with two +1/+1 counters on it and my opponent blocks with a 3/3. I turn it face up. How big is it?",
+    "expect": [
+      "Fugitive Codebreaker is 4/3: 2/1 face up plus its 2 +1/+1 counters, which stay on it (708.8).",
+      "It's still attacking and still blocked (506.4), now with prowess and haste."
+    ],
+    "notExpect": [
+      "can't attack (summoning sick)"
+    ],
+    "cite": [
+      "702.168d",
+      "708.8",
+      "506.4"
+    ]
+  },
+  {
+    "id": "x3-28",
+    "text": "I control Marang River Regent. My opponent casts Clone copying Marang River Regent. What happens?",
+    "expect": [
+      "Clone is a copy of Marang River Regent (6/7): the Omen half (Coil and Catch) is copied as part of the card but doesn't matter on the battlefield (721.2b, 721.4)"
+    ],
+    "cite": [
+      "721.2b",
+      "721.4"
     ]
   }
 ]

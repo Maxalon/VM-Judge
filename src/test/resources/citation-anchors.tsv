@@ -142,6 +142,7 @@
 122.6	some spells and abilities refer to
 122.6a	if an object enters the battlefield
 122.8	if a triggered ability instructs a
+201.4	if an effect instructs a player
 201.4b	if a player wants to choose
 202.1	a card s mana cost is
 202.3	the mana value of an object
@@ -461,6 +462,7 @@
 701.26a	to tap a permanent turn it
 701.26b	to untap a permanent rotate it
 701.27a	to transform a permanent turn it
+701.27c	a permanent that transforms doesn t
 701.27d	if a spell or ability instructs
 701.34a	to proliferate means to choose any
 701.36a	to populate means to choose a
@@ -790,10 +792,12 @@
 719.3b	both a prototyped spell and the
 719.4	in every zone except the stack
 719.5	a prototype card s characteristics other
+721.2b	the existence and values of these
 721.3	as a player casts an omen
 721.3a	when casting an omen card as
 721.3b	while on the stack as an
 721.3d	as an omen spell resolves its
+721.4	in every zone except the stack
 722.2a	n abilities means as long as
 722.2b	n abilities p t means as
 723.3	preparation cards can t be cast
@@ -823,6 +827,7 @@
 727.3	only one player can have the
 731.2a	a merged permanent has only the
 731.2c	because a merged permanent is the
+731.2i	a merged permanent is not a
 731.3	if a merged permanent leaves the
 732.2b	if it s night and previous
 733.1b	occasionally the game gets into a

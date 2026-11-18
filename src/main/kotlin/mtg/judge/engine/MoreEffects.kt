@@ -446,6 +446,7 @@ internal object MoreEffects {
             val back = if (o.transformed) o.printedDef else state.backFaceOf?.invoke(o.printedDef)
             if (back == null) { tr.step("${o.name} isn't a double-faced card, so it can't transform: nothing happens.", "701.27d"); return true }
             val was = o.name
+            if (Exam3Mech.transformMerged(state, o, back)) return true   // Delver of Secrets on top of a mutated pile (Exam3Mechanics.kt)
             o.def = back; o.transformed = !o.transformed
             tr.step("$was transforms: it's turned over so that ${back.name} is face up, and it has only that face's characteristics. It's the same object, so counters, damage and Auras stay with it, and it isn't summoning sick again.", "701.27a", "712.6d")
             state.outcomes += "$was transforms into ${back.name}${if (state.isCreature(o)) " (${state.describePt(o)})" else ""}."

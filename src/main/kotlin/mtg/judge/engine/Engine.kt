@@ -882,6 +882,7 @@ class Engine(val state: GameState) {
             state.outcomes += "No: ${obj.name} is in ${if (obj.zone == Zone.GRAVEYARD) "${state.player(obj.owner).possessive} graveyard" else "exile"}, so its loyalty abilities can't be activated (113.6)."
             return null
         }
+        if (obj.zone == Zone.BATTLEFIELD && obj.phasedOut) { Exam3Mech.phasedOutActivation(state, obj, playerId); return null }   // Teferi's Protection (Exam3Mechanics.kt)
         val wasOnBattlefield = obj.isOnBattlefield()   // a fetchland is sacrificed as the cost, but it was a land on the battlefield when activated (Harsh Mentor)
         val abilities = activatedAbilitiesOf(obj)
         state.moonOn(obj)?.let { moon ->
@@ -1797,6 +1798,7 @@ class Engine(val state: GameState) {
                 } else {
                     item.source.enteredFrom = Zone.STACK   // a resolving permanent spell, for "if you didn't cast it" (Phage)
                     item.source.zone = Zone.BATTLEFIELD; item.source.tapped = false; item.source.summoningSick = state.isCreature(item.source); item.source.timestamp = state.tick()
+                    Exam3Mech.nameOnEnter(state, item)   // Pithing Needle cast naming a card: "As this enters, choose a card name" (Exam3Mechanics.kt)
                     if (def.isAura) {
                         val t = item.targets.firstOrNull()
                         val tid = (t as? Ref.Obj)?.id
@@ -1963,7 +1965,7 @@ class Engine(val state: GameState) {
             state.objects.values.filter { it.isOnBattlefield() && "Legendary" in state.supertypesOf(it) }.groupBy { it.controller to it.name }.values.filter { it.size > 1 && ExamMech.legendRuleApplies(state, it) }.forEach { group ->
                 val keep = group.maxByOrNull { it.timestamp }!!
                 val p = state.player(keep.controller)
-                for (o in group) if (o !== keep) { move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("controls", "control")} two legendary permanents named ${o.name}; ${p.subject.lowercase()} ${p.v("chooses", "choose")} one and the other is put into its owner's graveyard (the \"legend rule\", a state-based action).", "704.3", "704.5j"); changed = true }
+                for (o in group) if (o !== keep) { Exam3Mech.legendRuleNote(state, o); move(o, Zone.GRAVEYARD, "${p.subject} ${p.v("controls", "control")} two legendary permanents named ${o.name}; ${p.subject.lowercase()} ${p.v("chooses", "choose")} one and the other is put into its owner's graveyard (the \"legend rule\", a state-based action).", "704.3", "704.5j"); changed = true }
                 state.assumptions += "${p.subject} ${p.v("keeps", "keep")} the newer ${keep.name.replaceFirst(Regex("""^an? """), "")} (704.5j lets ${p.subject.lowercase()} choose which)."
             }
             // "I control Thalia and my opponent casts their own": the legend rule looks at one player at a time, so two
@@ -2022,7 +2024,7 @@ class Engine(val state: GameState) {
             for (obj in state.objects.values.toList()) {
                 // "I bounce my own token, what happens?": the answer is that it stops existing, so the outcome says
                 // it. (And the name may already end in "token", which read "a 1/1 token token".)
-                if (obj.token && !obj.isOnBattlefield() && obj.zone != Zone.STACK) {
+                if (obj.token && obj.zone != Zone.BATTLEFIELD && obj.zone != Zone.STACK) {   // a phased-out token still exists (702.26d)
                     state.objects.remove(obj.id)
                     val isCopy = obj.def.isInstantOrSorcery
                     val what = if (isCopy) "The copy of ${obj.name}" else if (obj.name.endsWith("token", true)) obj.name else "${obj.name} token"
@@ -3865,7 +3867,7 @@ class Engine(val state: GameState) {
                 if (o == null || who == null) trace.step("No creature or player to measure, so no life is gained.", "608.2h")
                 else { trace.step("${o.name}'s power is $amount${if (!o.isOnBattlefield()) " (its last known information, since it has left the battlefield)" else ""}.", "608.2h"); gainLife(who, amount) }
             }
-            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (LifeDmgMech.targeted(this, item, effect.text, ref)) Unit else if (effect.text.startsWith("ce:")) CedhMech.targeted(this, item, effect.text, ref) else if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text.startsWith("deep:")) DeepMech.targeted(this, item, effect.text, ref) else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
+            is Effect.NarratedTargeted -> forEachLegalTarget(item, effect.target) { ref -> if (LifeDmgMech.targeted(this, item, effect.text, ref)) Unit else if (effect.text.startsWith("ce:")) CedhMech.targeted(this, item, effect.text, ref) else if (effect.text.startsWith("pc:") && PauperMech.targeted(this, effect, item, ref)) Unit else if (effect.text.startsWith("deep:")) DeepMech.targeted(this, item, effect.text, ref) else if (effect.text.startsWith("x3:") && ref is Ref.Obj) Exam3Mech.targeted(this, item, effect.text, state.obj(ref.id)) else if (effect.text == "phases out" && ref is Ref.Obj) Zones.phaseOut(this, state.obj(ref.id)) else if (effect.text.startsWith("becomes a copy") && ref is Ref.Obj) LegacyMech.becomeCopy(state, item, state.obj(ref.id)).forEach { k -> onEvent(GameEvent.CountersGone(item.source, k)) } else trace.step("${item.source.name}: \"Target ${effect.target.raw} ${effect.text.replace("~", item.source.name)}.\" That target is ${state.nameOf(ref)}; the details aren't tracked here.", *effect.rules.toTypedArray()) }
             is Effect.Regenerate -> {
                 val put: (GameObject) -> Unit = { o -> state.shields += Shield(Replacement.Regenerate, o.id, null, 1, item.describe); trace.step("${o.name} gets a regeneration shield: the next time it would be destroyed this turn, it's instead tapped, its damage is removed, and it's removed from combat.", "701.19a", "614.8"); state.outcomes += "${o.name} has a regeneration shield this turn." }
                 if (effect.target == null) put(item.source) else forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let(put) }
@@ -4195,6 +4197,7 @@ class Engine(val state: GameState) {
                 if (CounterRules.resolve(this, effect.text, item)) return   // The Chain Veil (CounterRules.kt)
                 if (CedhMech.resolve(this, effect.text, item)) return   // Isochron Scepter's copy, Tainted Pact, Bonus Round, Ashiok (CedhMechanics.kt)
                 if (EdhMech.resolve(this, effect.text, item)) return   // Tergrid, Consultation, Expropriate, Leadership Vacuum (EdhMechanics.kt)
+                if (Exam3Mech.narrated(this, effect.text, item)) return   // Slip Out the Back's "It phases out", Polymorphous Rush (Exam3Mechanics.kt)
                 if (LegacyMech.narrated(this, effect.text, item)) return   // Dreadnought phased out, Chrome Mox imprint (LegacyMechanics.kt)
                 if (PauperMech.narrated(this, effect.text, item)) return   // Masticore with an empty hand (PauperMechanics.kt)
                 LegacyMech.narratedAs(state, effect.text, item)?.let { applyEffect(it, item); return }   // Children of Korlis
@@ -4806,6 +4809,7 @@ class Engine(val state: GameState) {
             state.outcomes += "$was isn't a creature: it copied ${chosen.name}'s printed card, and the effect that made ${chosen.name} a creature isn't copied (707.2)."
         }
         ExamMech.copyLeavesBehind(state, was, chosen)   // Clone copying a creature under Darksteel Mutation (ExamMechanics.kt)
+        Exam3Mech.copyNotes(state, was, chosen)   // a copy of a copy, a merged, transformed or token permanent (Exam3Mechanics.kt)
         o.def = chosen.def
         if (e.tapped) o.tapped = true
         e.except?.let { ex -> applyCopyExceptions(o, was, ex) }
@@ -5346,7 +5350,7 @@ class Engine(val state: GameState) {
     private fun countersPlaced(o: GameObject, n: Int, kind: String): Int {
         var out = n; counterStopper = null
         state.objects.values.filter { it.isOnBattlefield() }.flatMap { src -> src.abilities.filterIsInstance<StaticAbility>().flatMap { it.effects }.mapNotNull { (it as? StaticEffect.Replace)?.replacement as? Replacement.CounterMultiplier }.filter { it.anyPlayer || src.controller == o.controller }.map { src to it } }
-            .forEach { (src, m) -> if (m.factor == 0 && (m.kind == null || m.kind.equals(kind, true))) { counterStopper = src.name; trace.step("${src.name} says ${m.kind?.let { "$it counters" } ?: "counters"} can't be put on ${o.name}, so the $out $kind counter${if (out == 1) "" else "s"} ${if (out == 1) "isn't" else "aren't"} placed.", "614.1a", "122.1"); out = 0 } }
+            .forEach { (src, m) -> if (m.factor == 0 && (m.kind == null || m.kind.equals(kind, true)) && Exam3Mech.counterBanCovers(state, src, m, o)) { counterStopper = src.name; trace.step("${src.name} says ${m.kind?.let { "$it counters" } ?: "counters"} can't be put on ${o.name}, so the $out $kind counter${if (out == 1) "" else "s"} ${if (out == 1) "isn't" else "aren't"} placed.", "614.1a", "122.1"); out = 0 } }
         if (out > 0) out = orderedCounterReplacements(o, out, kind)
         return out
     }

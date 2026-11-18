@@ -1481,6 +1481,12 @@ object OracleParser {
         Regex("""^~ becomes a copy of target (land|artifact|creature|permanent|nonland permanent)(?:,? except it has this ability)?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "becomes a copy" + (if (s.contains("except it has this ability", true)) " keeping this ability" else ""), listOf("707.2")) }
         // Protean Hulk: the search and what it finds, said rather than played out (the library isn't tracked).
         if (Regex("""^search your library for any number of creature cards with total mana value \d+ or less, put them onto the battlefield, then shuffle\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Narrated(s.trim().trimEnd('.'), listOf("701.23a", "202.3"))
+        // Slip Out the Back: "Put a +1/+1 counter on target creature. It phases out." — the same target (Exam3Mech.narrated).
+        if (Regex("""^it phases out\.?(?: \(.*\))?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Narrated("It phases out", listOf("702.26b"))
+        // Polymorphous Rush: "Choose a creature on the battlefield. Any number of target creatures you control each become a copy of
+        // that creature until end of turn." The chosen creature is the cast's "copying" choice (Exam3Mech.targeted).
+        if (Regex("""^choose a creature on the battlefield\.?$""", RegexOption.IGNORE_CASE).matches(s.trim())) return Effect.Narrated("x3:choose a creature on the battlefield", listOf("608.2d"))
+        Regex("""^any number of target creatures you control each become a copy of that creature until end of turn\.?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { return Effect.NarratedTargeted(target("creature you control"), "x3:becomes a copy of that creature until end of turn", listOf("707.2")) }
         // Vision Charm, Oubliette-style "Target artifact phases out." (702.26b): the engine phases the target out (Zones.phaseOut).
         Regex("""^target ((?:nonland )?(?:artifact|creature|permanent|nonland permanent|land))s? phases out\.?(?: \(.*\))?$""", RegexOption.IGNORE_CASE).matchEntire(s.trim())?.let { m -> return Effect.NarratedTargeted(target(m.groupValues[1].lowercase()), "phases out", listOf("702.26b")) }
         // "If you control a commander as you cast this spell, you may choose both instead." / "Each mode must
