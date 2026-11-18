@@ -150,7 +150,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             // A trigger the parser couldn't read is as invisible as text it couldn't read at all: it can never fire,
             // so the answer would say "nothing changes" while the card sat there doing its thing.
             for (a in o.def.abilities) if (a is mtg.judge.engine.TriggeredAbility && a.trigger is mtg.judge.engine.Trigger.Unknown) unparsed += a.text
-            unparsed.removeAll { mtg.judge.engine.ModernMech.handlesAbility(it) || mtg.judge.engine.PauperMech.handlesAbility(it) || mtg.judge.engine.Leftovers2Mech.handlesAbility(it) || Leftovers3Asks.quiet(it, sit) }   // Amulet of Vigor, Murktide Regent (ModernMechanics.kt)
+            unparsed.removeAll { mtg.judge.engine.ModernMech.handlesAbility(it) || mtg.judge.engine.PauperMech.handlesAbility(it) || mtg.judge.engine.Leftovers2Mech.handlesAbility(it) || mtg.judge.engine.Redteam3Mech.handlesAbility(it) || Leftovers3Asks.quiet(it, sit) }   // Amulet of Vigor, Murktide Regent (ModernMechanics.kt)
             if (unparsed.isNotEmpty()) state.unsupported += mtg.judge.engine.Unsupported(o.name, "Rules text not modeled: " + unparsed.distinct().joinToString(" | "))
         }
         engine.narrateLandTypeSetters()
@@ -1046,6 +1046,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         CedhAsks.describe(e, state)?.let { return it }
         RedteamAsks.describe(e, state)?.let { return it }
         Redteam2Asks.describe(e, state)?.let { return it }
+        Redteam3Asks.describe(e, state)?.let { return it }
         LeftoversAsks.describe(e, state)?.let { return it }
         LifeDamageAsks.describe(e, state)?.let { return it }
         Leftovers2Asks.describe(e, state)?.let { return it }
@@ -1376,7 +1377,10 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
     private fun applyAskEarly(e: EventSpec, state: GameState, engine: Engine, targets: List<Ref>): Boolean {
         e.to?.takeIf { it.startsWith("loop:") }?.let { return answerLoop(it.removePrefix("loop:"), e, state, engine) }
         e.to?.takeIf { it.startsWith("kw:") }?.let { kw.answer(it.removePrefix("kw:"), e, state, engine); return true }
-                if (e.to == "playerDamage") { val p = state.player(e.player ?: throw JudgeException("ask needs a player")); val name = if (p.you) "you" else p.name; val total = state.trace.steps.sumOf { st -> Regex("""deals (\d+) (?:combat )?damage to ${Regex.escape(name)}\b""").findAll(st.text).sumOf { it.groupValues[1].toInt() } }; val prevented = state.trace.steps.any { it.text.contains("to $name") && it.text.contains("prevented") }; state.outcomes += if (total > 0) "Yes: $name ${p.v("takes", "take")} $total damage in all." else "No: $name ${p.v("takes", "take")} no damage${if (prevented) " (it's prevented)" else ""}."; return true }
+                if (e.to == "playerDamage") { val p = state.player(e.player ?: throw JudgeException("ask needs a player")); val name = if (p.you) "you" else p.name; val total = state.trace.steps.sumOf { st -> Regex("""deals (\d+) (?:combat )?damage to ${Regex.escape(name)}\b""").findAll(st.text).sumOf { it.groupValues[1].toInt() } }; val prevented = state.trace.steps.any { it.text.contains("to $name") && it.text.contains("prevented") }
+                    // Redteam3: Goblin Charbelcher with no lands and no library size said: the amount is said in words, not "no damage".
+                    if (total == 0 && state.outcomes.any { it.contains("damage to ${state.nameOf(mtg.judge.engine.Ref.Player(p.id))} equal to the number of") }) return true
+                    state.outcomes += if (total > 0) "Yes: $name ${p.v("takes", "take")} $total damage in all." else "No: $name ${p.v("takes", "take")} no damage${if (prevented) " (it's prevented)" else ""}."; return true }
                 if (e.to == "playerSacrificed") {
                     val p = state.player(e.player ?: "me")
                     val sacs = state.trace.steps.filter { st -> Regex("""^${Regex.escape(p.subject)} sacrifices? """).containsMatchIn(st.text) }
@@ -2378,6 +2382,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 if (e.to?.startsWith("l2:") == true) return Leftovers2Asks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("x3:") == true) return Exam3Asks.answer(e, state, engine) { c -> cardDef(c, state) }
                 if (e.to?.startsWith("l3:") == true) return Leftovers3Asks.answer(e, state, engine) { c -> cardDef(c, state) }
+                if (e.to?.startsWith("r3:") == true) return Redteam3Asks.answer(e, state, engine) { c -> cardDef(c, state) }
                 return false
     }
     private fun parseRef(s: String, state: GameState): Ref {
@@ -2462,7 +2467,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         WinLossAsks.playerAnswer(to, p, state)?.let { return it }
         CommanderAsks.playerAnswer(to, p, state)?.let { return it }
         val won = !p.lost && state.players.all { it.id == p.id || it.lost }
-        val alive = "${p.subject} ${p.v("is", "are")} still in the game${p.life?.let { " at $it life" } ?: ""}."
+        val alive = "${p.subject} ${p.v("is", "are")} still in the game${p.life?.let { " at $it life" } ?: ""}." + (Redteam3Asks.cantLoseNote(p, state) ?: "")
         return when (to) {
             "playerDie" -> if (p.lost) "Yes: ${p.subject} ${p.v("has", "have")} lost the game." else "No: $alive" + (if (p.librarySize == 0) " An empty library isn't a loss by itself: ${p.subject.lowercase()} ${p.v("loses", "lose")} only when ${p.subject.lowercase()} would draw from it, at the next state-based check (704.5b)." else "")
             "playerWin" -> (if (won) "Yes: ${p.subject} ${p.v("has", "have")} won the game." else if (p.lost) "No: ${p.subject} ${p.v("has", "have")} lost the game." else "No: ${p.subject} ${p.v("hasn't", "haven't")} won; ${alive.replaceFirstChar { it.lowercase() }}") + (state.objects.values.filter { it.isOnBattlefield() && it.controller == p.id && it.def.abilities.filterIsInstance<mtg.judge.engine.TriggeredAbility>().any { a -> a.trigger == mtg.judge.engine.Trigger.ThisEnters && a.text.contains("win the game", true) } && it.enteredFrom == null }.takeIf { !won }?.firstOrNull()?.let { o -> " ${o.name}'s ability triggers only as it enters the battlefield; it is already there, so nothing checks now. Say you cast it if that is what you mean." } ?: "")

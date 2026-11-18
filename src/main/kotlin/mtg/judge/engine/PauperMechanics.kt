@@ -211,6 +211,10 @@ internal object PauperMech {
                     engine.pcDamage(item.source.name, ref, lib, item.source)
                     t.step("Then the revealed cards — the whole library — go on the bottom in any order ${p.subject.lowercase()} ${p.v("chooses", "choose")}: ${p.subject.lowercase()} effectively ${p.v("orders", "order")} ${p.possessive} library.", "401.4")
                     state.outcomes += "${item.source.name} deals $lib damage to ${state.nameOf(ref)} (all $lib cards revealed, none a land; not doubled)."
+                } else if (none) {
+                    // Redteam3: "no lands in my library" with no count: every card is revealed, so the damage is the library's size.
+                    t.step("${p.subject} ${p.v("reveals", "reveal")} cards from the top of ${p.possessive} library until a land is revealed, but there is no land: the whole library is revealed, and ${item.source.name} deals damage equal to the number of cards revealed — every card in it. With no land revealed there's no Mountain to double it. Then the cards go on the bottom in any order.", "701.20a", "608.2c")
+                    state.outcomes += "${item.source.name} deals damage to ${state.nameOf(ref)} equal to the number of cards in ${p.possessive} library (all of them are revealed, none a land; not doubled). Say how many cards for the number."
                 } else {
                     t.step("${p.subject} ${p.v("reveals", "reveal")} cards from the top of ${p.possessive} library until a land is revealed; ${item.source.name} deals damage equal to the nonland cards revealed (doubled if that land is a Mountain), then the revealed cards go on the bottom.", "701.20a")
                     state.outcomes += "${item.source.name} deals damage to ${state.nameOf(ref)} equal to the nonland cards revealed before the first land (double if it's a Mountain)."

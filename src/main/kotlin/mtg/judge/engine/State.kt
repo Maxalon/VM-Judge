@@ -578,6 +578,7 @@ class GameState(
         // Blood Moon takes only the abilities from the rules text (305.7): "They have Blood Moon; they Shatter my Darksteel Citadel" — no indestructible.
         if (!stripped && ((obj.def.has(k) && moonOn(obj) == null) || k in obj.tempKeywords)) return true
         if (!stripped && MoreEffects3.gatedKeyword(obj, k)) return true   // "12+ | Flying" with 12 charge counters (MoreEffects3.kt)
+        if (!stripped && Redteam3Mech.selfConditionKeyword(this, obj, k)) return true   // Romulan Bird-of-Prey: hexproof while it isn't a creature (Redteam3Mechanics.kt)
         if (!stripped && levelBand(obj)?.keywords?.contains(k) == true) return true   // 702.87b: the band's abilities while it has that many level counters
         if (k in keywordCounters && (obj.counters[k] ?: 0) > 0) return true   // 122.1b: a keyword counter grants the keyword, and isn't an ability of the creature
         if (k == "lifelink" && LifeDmgMech.spellLifelink(this, obj)) return true   // Soulfire Grand Master's instants and sorceries (LifeDamageMechanics.kt)
@@ -631,7 +632,7 @@ class GameState(
         // "Dress Down, then I equip Sword of Fire and Ice": the later grant applies after the loss, so it isn't "no abilities".
         else if (lost != null) parts += (charsOf(obj).keywords + staticEffectsOn(obj).filter { (src, e) -> e is StaticEffect.KeywordGrant && src !== obj && abilitiesLostOn(src) == null }.flatMap { (_, e) -> (e as StaticEffect.KeywordGrant).keywords }).distinct().takeIf { it.isNotEmpty() }?.let { k -> "its earlier abilities lost (${lost.first.name}, layer 6), then ${k.joinToString(", ")} granted by a later effect" } ?: "no abilities (${lost.first.name}, layer 6)"
         else if (by7b != null && set7b != null && by7b != "its level" && obj.animatedAs == null) parts += "base set to ${set7b.first}/${set7b.second} by $by7b (layer 7b)"
-        if (lost == null) cdaOf(obj)?.let { c -> parts += "base set by its own ability (layer 7a${if (c.power is CountExpr.CardTypesInGraveyards || c.toughness is CountExpr.CardTypesInGraveyards) ": ${cardTypesInGraveyards().size} card type${if (cardTypesInGraveyards().size == 1) "" else "s"} in graveyards${cardTypesInGraveyards().takeIf { it.isNotEmpty() }?.let { t -> " (" + t.sorted().joinToString(", ") + ")" } ?: ""}" else ""})" }
+        if (lost == null) cdaOf(obj)?.let { c -> parts += "base set by its own ability (layer 7a${if (c.power is CountExpr.CardTypesInGraveyards || c.toughness is CountExpr.CardTypesInGraveyards) ": ${cardTypesInGraveyards().size} card type${if (cardTypesInGraveyards().size == 1) "" else "s"} in graveyards${cardTypesInGraveyards().takeIf { it.isNotEmpty() }?.let { t -> " (" + t.sorted().joinToString(", ") + ")" } ?: ""}" else Redteam3Mech.distinctNote(this, obj, c.power)})" }
         val statics = staticEffectsOn(obj).filter { it.second is StaticEffect.PtModify && !((it.second as StaticEffect.PtModify).power == 0 && (it.second as StaticEffect.PtModify).toughness == 0) }
         for ((src, e) in statics) { e as StaticEffect.PtModify; parts += "${sign(e.power)}/${sign(e.toughness)} from ${if (src === obj) "its own ability" + (e.condition?.let { " (condition met)" } ?: "") else src.name}" }
         parts += MoreEffects3.describeAttachedPt(this, obj)   // Cranial Plating's count (MoreEffects3.kt)
@@ -653,6 +654,9 @@ class GameState(
     fun isArtifact(o: GameObject): Boolean = "Artifact" in typesOf(o)
 
     fun matches(f: ObjFilter, o: GameObject, controller: String, source: GameObject? = null, anyZone: Boolean = false): Boolean {
+        // Redteam3: "differently named lands" — only the first permanent of each name is counted (strange new worlds).
+        if (f.distinctNames) { val g = f.copy(distinctNames = false); if (!matches(g, o, controller, source, anyZone)) return false
+            return objects.values.first { it.name == o.name && matches(g, it, controller, source, anyZone) } === o }
         // "instant or sorcery card in your graveyard": a card there, its owner's, never a permanent.
         if (f.inGraveyard) { if (o.zone != Zone.GRAVEYARD) return false; if (f.controller == null && o.owner != controller) return false }
         else if (!anyZone && !o.isOnBattlefield()) return false

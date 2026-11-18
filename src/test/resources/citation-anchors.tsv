@@ -84,6 +84,7 @@
 116.2b	turning a face down creature face
 116.2g	a player who has chosen a
 117.1a	a player may cast an instant
+117.1b	a player may activate an activated
 117.3a	the active player receives priority at
 117.3b	the active player receives priority after
 117.3c	if a player has priority when
@@ -423,6 +424,7 @@
 700.2f	modal spells and abilities may have
 700.4	the term dies means is put
 700.5	a player s devotion to color
+700.17	some abilities trigger when a player
 701.3a	to attach an aura equipment or
 701.4a	behold a quality means reveal a
 701.6a	to counter a spell or ability
@@ -652,6 +654,7 @@
 702.122a	crew is an activated ability of
 702.124a	partner abilities are keyword abilities that
 702.124d	except for determining the color identity
+702.124k	choose a background means you may
 702.126a	improvise is a static ability that
 702.130a	afflict is a triggered ability afflict
 702.131a	ascend on an instant or sorcery
@@ -728,6 +731,7 @@
 702.194c	if part of a spell s
 702.195a	storied is a static ability it
 702.195b	enduring story is a designation that
+702.196a	beam me up appears on some
 703.4d	immediately after the draw step begins
 703.4q	as each step or phase ends
 704.3	whenever a player would get priority

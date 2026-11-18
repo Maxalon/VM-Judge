@@ -54,6 +54,8 @@ data class ObjFilter(
     val colored: Boolean? = null,
     /** Redteam2: Cut Down's "creature with total power and toughness 5 or less". */
     val maxTotalPT: Int? = null,
+    /** Redteam3: "differently named lands" (strange new worlds) — each name counts once. */
+    val distinctNames: Boolean = false,
 ) {
     val verifiable get() = unknownWords.isEmpty()
 }
@@ -372,7 +374,7 @@ sealed interface Effect {
     /** "it deals that much damage to you" / "to each opponent": the recorded amount, to players rather than a target. */
     data class DamageThatMuchTo(val who: Who) : Effect
     /** "Creatures you control get +X/+X (and gain trample) until end of turn, where X is the number of [count]." */
-    data class PumpAllCount(val filter: ObjFilter, val count: CountExpr, val keywords: List<String>) : Effect
+    data class PumpAllCount(val filter: ObjFilter, val count: CountExpr, val keywords: List<String>, val negative: Boolean = false) : Effect
     /** "The owner of target permanent shuffles it into their library." */
     data class ShuffleIntoLibrary(val target: TargetSpec) : Effect
     /** "~ gets +N/+N until end of turn" (no target). */

@@ -453,7 +453,7 @@ internal object MoreEffects3 {
                 val named = item.choice?.let { c -> st.objects[c] }
                 val crew = (named?.let { listOf(it) } ?: st.objects.values.filter { it !== o && it.isOnBattlefield() && it.controller == item.controller && st.isCreature(it) && it.tapped != true }.sortedByDescending { it.power ?: 0 }).firstOrNull()
                 if (crew == null) { st.trace.step("Station's cost is tapping another untapped creature ${you.subject.lowercase()} ${you.v("controls", "control")}; none is described here, so it can't be activated.", "702.184a"); st.outcomes += "$src can't station: no other untapped creature."; return true }
-                crew.tapped = true
+                crew.tapped = true; e.meTapped(crew)   // Jett Reno: "whenever ~ becomes tapped" (603.2e)
                 val n = maxOf(0, crew.power ?: 0)
                 st.trace.step("${you.subject} ${you.v("taps", "tap")} ${crew.name} to station $src (the cost), and $src gets charge counters equal to ${crew.name}'s power, $n.", "702.184a")
                 if (n > 0 && o.isOnBattlefield()) e.putCounters(o.id, n, "charge")

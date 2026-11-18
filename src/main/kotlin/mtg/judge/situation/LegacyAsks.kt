@@ -42,6 +42,8 @@ internal object LegacyAsks {
                     !o.isOnBattlefield() && o.zone == mtg.judge.engine.Zone.BATTLEFIELD -> return true   // phased out: the trigger's resolution said it
                     !o.isOnBattlefield() -> "$n is no longer on the battlefield."
                     suppressed != null -> "No: $n's \"sacrifice it unless $unless\" is an enters-the-battlefield trigger, and ${suppressed.text.substringBefore(" is on the battlefield")} stops it from triggering at all (603.2, 603.6a). Nothing asks ${p.subject.lowercase()} to sacrifice anything, so it stays."
+                    // Redteam3: "My opponent controls Humility. I cast Phyrexian Dreadnought": it enters with no abilities, so nothing triggers.
+                    state.abilitiesLostOn(o) != null -> "No: ${state.abilitiesLostOn(o)!!.first.name} takes away ${n}'s abilities, and that already applies as it enters, so its enters-the-battlefield trigger never triggers and nothing makes you sacrifice it (603.6a, 613.1f). $n stays${state.describePt(o).takeIf { it.isNotEmpty() }?.let { " as a $it" } ?: ""}."
                     countered -> "No: the trigger that would make ${p.subject.lowercase()} sacrifice it was countered, so it never resolves (701.6a) and $n stays."
                     else -> "Yes, unless ${p.subject.lowercase()} ${unless.replace("you ", "")}: as the enters trigger resolves, ${p.subject.lowercase()} either ${p.v(unless.replace("you ", ""), unless.replace("you ", ""))} or ${p.v("sacrifices", "sacrifice")} $n (701.21a)."
                 }

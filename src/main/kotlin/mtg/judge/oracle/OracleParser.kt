@@ -297,7 +297,7 @@ object OracleParser {
      */
     private val abilityWord = Regex("""^[A-Z][A-Za-z'’]*(?: [A-Za-z'’]+){0,4}\s*[—–]\s*(?=Whenever\b|When\b|At\b)""")
     /** The same for a static ability. A cost can follow an em-dash too ("Ward—Pay 3 life"), so only sentences count. */
-    private val abilityWordStatic = Regex("""^[A-Z][A-Za-z'’]*(?: [A-Za-z'’]+){0,4}\s*[—–]\s*(?=As long as\b|~|Creatures\b|Each\b|You\b|If\b)""")
+    private val abilityWordStatic = Regex("""^[A-Z][A-Za-z'’]*(?: [A-Za-z'’]+){0,4}\s*[—–]\s*(?=As long as\b|~|Creatures\b|Each\b|You\b|If\b|All creatures\b)""")
 
     private fun parseTriggered(line: String): Ability {
         mtg.judge.engine.EdhMech.parseTriggered(line) { parseEffect(it) }?.let { return it }   // Tergrid, command-zone abilities (EdhMechanics.kt)
@@ -717,6 +717,7 @@ object OracleParser {
         mtg.judge.engine.Turns.staticNote(line)?.let { return listOf(it) }   // Stasis, Stranglehold: skip effects (614.10)
         mtg.judge.engine.MechanicsMech.staticNote(line)?.let { return listOf(it) }   // Time Vault's "skip that turn instead" (MechanicsMechanics.kt)
         mtg.judge.engine.RedteamMech.parseStatic(line)?.let { return it }   // Colossus Hammer's "gets +10/+10 and loses flying" (RedteamMechanics.kt)
+        mtg.judge.engine.Redteam3Mech.parseStatic(line)?.let { return it }   // Warp Speed, Romulan Bird-of-Prey's cloaking (Redteam3Mechanics.kt)
         mtg.judge.engine.CedhMech.parseStatic(line)?.let { return it }   // Underworld Breach, Ashiok (CedhMechanics.kt)
         mtg.judge.engine.EdhMech.parseStatic(line)?.let { return it }   // Jin-Gitaxias, Kenrith's Transformation (EdhMechanics.kt)
         mtg.judge.engine.PauperMech.parseStatic(line)?.let { return it }   // Fastbond (PauperMechanics.kt)
@@ -1040,6 +1041,10 @@ object OracleParser {
             val n = m.groupValues[1].toIntOrNull() ?: return@let
             val per = m.groupValues[2].takeIf { it.isNotEmpty() }?.let { parseCount("the number of $it") }
             if (per == null || per !is CountExpr.Unknown) return listOf(StaticEffect.SelfCostReduction(n, per))
+        }
+        // Redteam3: Cloak and Phaser's "~ costs {X} less to cast, where X is the number of differently named lands you control."
+        Regex("""^~ costs \{X\} less to cast, where X is (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            val per = parseCount(m.groupValues[1]); if (per !is CountExpr.Unknown) return listOf(StaticEffect.SelfCostReduction(1, per))
         }
         if (Regex("""^(As an additional cost to cast ~|~ costs \{[^}]+\} (less|more) to cast|You may cast ~ )""", RegexOption.IGNORE_CASE).containsMatchIn(line)) return listOf(StaticEffect.CostText(line))
         // "~ gets -X/-X, where X is your life total." (Death's Shadow)
@@ -1654,6 +1659,11 @@ object OracleParser {
             val f = parseFilter(m.groupValues[1], Kind.CREATURE); val kws = keywordsIn(m.groupValues[2]); val count = parseCount(m.groupValues[3])
             if (f.verifiable && kws != null && count !is CountExpr.Unknown) return Effect.PumpAllCount(f, count, kws.toList())
         }
+        // Redteam3: The Destruction of Praxis's "All creatures get -X/-X until end of turn, where X is the number of differently named lands you control."
+        Regex("""^(?:all |each )?(.+?) (?:get|gets) -X/-X until end of turn, where X is (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val f = parseFilter(m.groupValues[1], Kind.CREATURE); val count = parseCount(m.groupValues[2])
+            if (f.verifiable && (count as? CountExpr.Permanents)?.filter?.distinctNames == true && !m.groupValues[1].startsWith("target", true)) return Effect.PumpAllCount(f, count, emptyList(), negative = true)
+        }
         Regex("""^(?:all |each )?(.+?) (?:get|gets) \+X/\+X until end of turn, where X is (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             val f = parseFilter(m.groupValues[1], Kind.CREATURE); val count = parseCount(m.groupValues[2])
             if (f.verifiable && count !is CountExpr.Unknown && !m.groupValues[1].startsWith("target", true)) return Effect.PumpAllCount(f, count, emptyList())
@@ -2240,6 +2250,10 @@ object OracleParser {
         val colors = mutableSetOf<Char>(); val notColors = mutableSetOf<Char>()
         var maxTotalPT: Int? = null
         Regex("""\s+with total power and toughness (\d+) or less$""").find(core)?.let { m -> maxTotalPT = m.groupValues[1].toInt(); core = core.removeRange(m.range) }
+        // Redteam3: Mental Misstep's "spell with mana value 1" — exactly that mana value; "differently named lands" counts each name once.
+        Regex("""\s+with mana value (\d+)$""").find(core)?.let { m -> maxManaValue = m.groupValues[1].toInt(); minManaValue = maxManaValue; core = core.removeRange(m.range) }
+        var distinctNames = false
+        Regex("""^differently named """).find(core)?.let { m -> distinctNames = true; core = core.removeRange(m.range) }
         Regex("""\s+with power (\d+) or (greater|less)$""").find(core)?.let { m ->
             if (m.groupValues[2] == "greater") minPower = m.groupValues[1].toInt() else maxPower = m.groupValues[1].toInt()
             core = core.removeRange(m.range)
@@ -2310,6 +2324,6 @@ object OracleParser {
         if (kinds.isEmpty() && defaultKind != null) kinds += defaultKind
         if (kinds.isEmpty() && notSubtypes.isNotEmpty()) kinds += defaultKind ?: Kind.CREATURE
         if (chosenType) subtypes += "chosen-type"
-        return ObjFilter(kinds, notKinds, notSubtypes, controller, attacking, blocking, tapped, unknown, desc, subtypes, keywords, notKeywords, token, legendary, attachedToSource = attachedToSource, minPower = minPower, maxPower = maxPower, subtypesAny = subtypesAny && subtypes.size > 1, colors = colors, notColors = notColors, maxManaValue = maxManaValue, minManaValue = minManaValue, inGraveyard = inGraveyard, maxTotalPT = maxTotalPT)
+        return ObjFilter(kinds, notKinds, notSubtypes, controller, attacking, blocking, tapped, unknown, desc, subtypes, keywords, notKeywords, token, legendary, attachedToSource = attachedToSource, minPower = minPower, maxPower = maxPower, subtypesAny = subtypesAny && subtypes.size > 1, colors = colors, notColors = notColors, maxManaValue = maxManaValue, minManaValue = minManaValue, inGraveyard = inGraveyard, maxTotalPT = maxTotalPT, distinctNames = distinctNames)
     }
 }
