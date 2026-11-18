@@ -217,11 +217,14 @@ class Engine(val state: GameState) {
             val fit = needed.indexOfFirst { filterMatches(it.filter, given, playerId) }
             if (fit >= 0) {
                 val other = needed[1 - fit]
+                // Travel Preparations on one creature: "up to" lets the second target go unchosen, so nothing is asked about it (601.2c).
+                if (fit == 0 && other.raw.startsWith("up to ") && !isHarmful(effect)) null else {
                 val inferred = inferTarget(card.name, other, playerId, harmful = other.filter.controller != Who.YOU, source = obj, beneficial = other.filter.controller == Who.YOU)
                 // "Destroy up to two target artifacts": the second target must be a different object (115.3), so the first can't fill it again.
                 val sameAgain = (other.raw.startsWith("another ") || other.raw.startsWith("up to one other ")) && inferred?.singleOrNull() == given
                 if (sameAgain) state.assumptions.removeAll { it.contains("\"${other.raw}\"") }
                 if (inferred != null && inferred.size == 1 && !sameAgain) targets = if (fit == 0) listOf(given, inferred[0]) else listOf(inferred[0], given)
+                }
             }
         }
         // Two targets and none named ("target creature you control fights target creature you don't control"): each one inferred on its own.
@@ -531,7 +534,7 @@ class Engine(val state: GameState) {
         AuditMech.splitCastNote(state, item)
         wardTriggers(item)
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
-        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
+        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         // A spell at a player ("any target") can be sent to Spellskite too, it being a creature.
         val skiteCouldTake = item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" } || (item.targets.any { it is Ref.Player } && Regex("""(?i)\bany target\b""").containsMatchIn(card.oracleText))
         if (skiteCouldTake) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
@@ -1627,12 +1630,16 @@ class Engine(val state: GameState) {
         if ((step == "upkeep" || step == "draw") && Turns.skipsStep(this, step, activePlayer)) return
         state.activePlayer = activePlayer
         state.step = step
-        if (step == "precombat_main") for (saga in state.objects.values.filter { it.isOnBattlefield() && it.controller == activePlayer && "Saga" in it.def.subtypes && it.def.abilities.any { a -> a is TriggeredAbility && a.trigger is Trigger.Chapter } }) {
+        // 715.3c: only a Saga with one or more chapter abilities gets the lore counter; under Blood Moon Urza's Saga has none.
+        if (step == "precombat_main") for (saga in state.objects.values.filter { it.isOnBattlefield() && it.controller == activePlayer && "Saga" in it.def.subtypes && it.def.abilities.any { a -> a is TriggeredAbility && a.trigger is Trigger.Chapter } && underMoon(it) }) {
+            trace.step("${saga.name} is a Mountain with no abilities under ${state.moonOn(saga)!!.name}, so it has no chapter abilities and gets no lore counter as the precombat main phase begins: that turn-based action applies only to Sagas with one or more chapter abilities.", "715.3c", "305.7")
+            state.outcomes += "${saga.name} gets no lore counter: it has no chapter abilities under ${state.moonOn(saga)!!.name} (715.3c)."
+        }
+        if (step == "precombat_main") for (saga in state.objects.values.filter { it.isOnBattlefield() && it.controller == activePlayer && "Saga" in it.def.subtypes && it.def.abilities.any { a -> a is TriggeredAbility && a.trigger is Trigger.Chapter } && !underMoon(it) }) {
             val n = (saga.counters["lore"] ?: 0) + 1; saga.counters["lore"] = n
             trace.step("${state.player(activePlayer).possessive.replaceFirstChar { it.uppercase() }} precombat main phase begins, so a lore counter is put on ${saga.name} ($n now); this is a turn-based action that doesn't use the stack, and chapter $n triggers if ${saga.name} has one.", "715.3c", "715.2")
             state.outcomes += "${saga.name} gets a lore counter ($n)."
-            if (underMoon(saga)) trace.step("${saga.name} is a Mountain under Blood Moon with no abilities but \"{T}: Add {R}\", so the lore counter triggers no chapter ability; the counter is still added, since that's a rule for Sagas rather than an ability of the card (715.3c).", "715.3c", "305.7")
-            else onEvent(GameEvent.LoreCounter(saga, n))
+            onEvent(GameEvent.LoreCounter(saga, n))
         }
         state.phase = when (step) { "untap", "upkeep", "draw" -> "beginning"; "precombat_main" -> "precombat_main"; "postcombat_main" -> "postcombat_main"; "end", "cleanup" -> "ending"; else -> "combat" }
         // "end" and "upkeep" are steps; "main" is a phase. Say which, so the line reads as Magic does.
@@ -1708,6 +1715,8 @@ class Engine(val state: GameState) {
         trace.step("All players pass priority; ${item.describe} (top of the stack) starts to resolve.", "117.4", "608.1")
         // Killing the Top in response to its ability: the ability is already on the stack and exists independently of its source.
         if (item.kind != StackKind.SPELL && !item.source.isOnBattlefield() && item.source.zone != Zone.STACK && item.source.zone != Zone.COMMAND && item.effect !is WinLossEffect && !worksFromGraveyard(item)) trace.step("${item.source.name} is no longer on the battlefield, but its ability was already on the stack, and an ability on the stack exists independently of its source. It still resolves, using the source's last known information where it needs it.", "113.7a", "608.2h")
+        // Urza's Saga's chapter III on the stack when Blood Moon enters: the source lost the ability, the ability on the stack didn't.
+        if (item.kind == StackKind.TRIGGERED && item.source.isOnBattlefield() && underMoon(item.source)) trace.step("${item.source.name} has lost its abilities to ${state.moonOn(item.source)!!.name} since this ability triggered, but an ability on the stack exists independently of its source, so it still resolves in full.", "113.7a")
         // A bestowed Aura spell whose target is illegal resolves as a creature spell instead (702.103e).
         if (item.kind == StackKind.SPELL && item.source.kwf.bestowed && item.targets.isNotEmpty() && item.targets.none { isTargetLegal(item, it) }) GapMech.bestowToCreature(state, item)
         // 608.2b target legality
@@ -1907,7 +1916,16 @@ class Engine(val state: GameState) {
             if (Battles.check(state) { o, z, t, r -> move(o, z, t, *r) }) changed = true
             // 715.4: a Saga with lore counters at or past its last chapter, and no chapter ability of its on the stack, is sacrificed.
             for (saga in state.objects.values.filter { it.isOnBattlefield() && "Saga" in it.def.subtypes }) {
-                if (underMoon(saga)) continue   // no chapter abilities, so 715.4 never applies
+                if (underMoon(saga)) {   // no chapter abilities, so 715.4 never applies
+                    // Urza's Saga with chapter III on the stack when Blood Moon arrives: it isn't sacrificed afterwards either.
+                    val printedLast = saga.printedDef.abilities.filterIsInstance<TriggeredAbility>().mapNotNull { (it.trigger as? Trigger.Chapter)?.n }.maxOrNull()
+                    val line = "${saga.name} isn't sacrificed: under ${state.moonOn(saga)!!.name} it has no chapter abilities, and the Saga sacrifice applies only to a Saga with one or more chapter abilities (715.4). It stays on the battlefield as a land that taps for {R}, and gets no more lore counters (715.3c)."
+                    if (printedLast != null && (saga.counters["lore"] ?: 0) >= printedLast && state.stack.none { it.source === saga } && line !in state.outcomes) {
+                        trace.step("${saga.name} has ${saga.counters["lore"]} lore counters, but under ${state.moonOn(saga)!!.name} it has no chapter abilities: its final chapter number is 0 (715.2d), and the sacrifice state-based action looks only at Sagas with one or more chapter abilities, so it doesn't apply.", "715.2d", "715.4")
+                        state.outcomes += line
+                    }
+                    continue
+                }
                 val last = saga.def.abilities.filterIsInstance<TriggeredAbility>().mapNotNull { (it.trigger as? Trigger.Chapter)?.n }.maxOrNull() ?: continue
                 if ((saga.counters["lore"] ?: 0) >= last && state.stack.none { it.source === saga && it.kind == StackKind.TRIGGERED }) {
                     trace.step("${saga.name} has ${saga.counters["lore"]} lore counters, its final chapter is $last, and none of its chapter abilities is on the stack, so its controller sacrifices it (state-based action).", "715.4", "704.5s")
@@ -2921,7 +2939,7 @@ class Engine(val state: GameState) {
         splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -4210,10 +4228,18 @@ class Engine(val state: GameState) {
             is Effect.Transmogrify -> forEachLegalTarget(item, effect.target) { ref -> objOf(ref)?.let { o ->
                 val was = "${o.name}${if (state.isCreature(o)) " (${state.describePt(o)})" else ""}"
                 o.transmogrifiedBy = item.source.name
+                val moonBefore = state.moonOn(o)?.takeIf { "Land" in state.typesOf(o) }   // Oko on Darksteel Citadel under Blood Moon
+                val typesBefore = state.typesOf(o).filter { it != "Creature" }
                 o.def = o.def.copy(types = setOf("Creature"), subtypes = setOf(effect.subtype), colors = effect.color?.let { setOf(it) } ?: emptySet(), abilities = emptyList(), keywords = emptySet(), power = effect.power, toughness = effect.toughness)
                 o.pumps.clear(); o.tempKeywords.clear(); o.basePt = null
                 trace.step("$was loses all abilities and becomes ${effect.color?.let { c -> mapOf('W' to "a white", 'U' to "a blue", 'B' to "a black", 'R' to "a red", 'G' to "a green")[c] } ?: "a"} ${effect.subtype} creature with base power and toughness ${effect.power}/${effect.toughness}: its types, colour and abilities are replaced (layers 4, 5 and 6) and its base size set (layer 7b). Counters and Auras on it stay${if ((o.counters["+1/+1"] ?: 0) + (o.counters["-1/-1"] ?: 0) > 0) "; its counters still apply on top of the new base, in layer 7c" else ""}, and it's ${state.describePt(o)} now.", "613.1d", "613.1e", "613.1f", "613.4b", *(if ((o.counters["+1/+1"] ?: 0) + (o.counters["-1/-1"] ?: 0) > 0) arrayOf("613.4c") else emptyArray()))
-                state.outcomes += "${o.name} is now ${effect.color?.let { c -> mapOf('W' to "a white", 'U' to "a blue", 'B' to "a black", 'R' to "a red", 'G' to "a green")[c] } ?: "a"} ${effect.subtype} creature with no abilities, ${state.describePt(o)}."
+                // "Becomes a green Elk creature" sets the card type: the old ones are gone (205.1a), so an artifact land is neither now.
+                if (typesBefore.isNotEmpty()) trace.step("\"Becomes a ${effect.subtype} creature\" sets ${o.name}'s card type, so the new type replaces its old ones: it's no longer ${typesBefore.joinToString(" or ") { t -> (if (t.first().lowercaseChar() in "aeiou") "an " else "a ") + t.lowercase() }}.", "205.1a")
+                if (moonBefore != null) {
+                    trace.step("${moonBefore.name}'s effect and ${item.source.name}'s are both type-changing effects (layer 4). ${moonBefore.name} applies only to nonbasic lands, and ${item.source.name}'s effect changes whether ${o.name} is a land, so ${moonBefore.name}'s effect depends on ${item.source.name}'s (613.8a): ${item.source.name}'s applies first whatever their timestamps (613.8b), and then ${o.name} isn't a land, so ${moonBefore.name} doesn't apply to it.", "613.8a", "613.8b", "613.1d")
+                    state.outcomes.removeAll { it.startsWith("${o.name} is a") && it.endsWith("with no abilities (${moonBefore.name}).") }
+                }
+                state.outcomes += "${o.name} is now ${effect.color?.let { c -> mapOf('W' to "a white", 'U' to "a blue", 'B' to "a black", 'R' to "a red", 'G' to "a green")[c] } ?: "a"} ${effect.subtype} creature with no abilities, ${state.describePt(o)}${if (typesBefore.isNotEmpty()) ", and no longer ${typesBefore.joinToString(" or ") { t -> (if (t.first().lowercaseChar() in "aeiou") "an " else "a ") + t.lowercase() }}" else ""}${if (moonBefore != null) ": ${moonBefore.name}'s effect depends on ${item.source.name}'s, which applies first and makes it not a land, so ${moonBefore.name} no longer affects it (613.8a)" else ""}."
             } }
             is Effect.SpellCantBeCountered -> forEachLegalTarget(item, effect.target) { ref -> (ref as? Ref.Stack)?.let { r -> state.stack.firstOrNull { it.id == r.id } }?.let { sp ->
                 sp.cantBeCountered = true
@@ -4222,6 +4248,7 @@ class Engine(val state: GameState) {
             } }
             is Effect.Unparsed -> {
                 if (RedteamMech.resolve(this, effect.text, item)) return   // (RedteamMechanics.kt)
+                if (LeftoversMech.resolve(this, effect.text, item)) return   // Nourishing Shoal's "You gain X life" (LeftoversMechanics.kt)
                 if (Turns.resolve(this, effect.text, item)) return
                 if (ModernMech.unparsed(this, state, effect.text, item)) return   // Undying Malice, Not Dead After All (ModernMechanics.kt)
                 if (LimitedMech.unparsed(this, state, effect.text, item)) return   // Cytoshape, Preeminent Captain (LimitedMechanics.kt)
@@ -4707,6 +4734,11 @@ class Engine(val state: GameState) {
             chosen.pumps.takeIf { it.isNotEmpty() }?.let { ps -> val sg = { n: Int -> if (n >= 0) "+$n" else "$n" }; "${sg(ps.sumOf { it.first })}/${sg(ps.sumOf { it.second })} until end of turn" },
             "its damage".takeIf { chosen.damage > 0 })
         if (notCopied.isNotEmpty()) state.outcomes += "$was doesn't get ${chosen.name}'s ${notCopied.joinToString(" or ")}: counters and pump effects aren't copiable values, so it's ${chosen.name} as printed."
+        // Phyrexian Metamorph copying a crewed Smuggler's Copter: crewing made it a creature, an effect that isn't copied (707.2).
+        if (chosen.animatedAs != null && "Creature" !in chosen.def.types) {
+            trace.step("${chosen.name} is a creature only because of an effect that animated it (crewing, or another \"becomes a creature\" ability). That type-changing effect isn't a copiable value, so $was copies the noncreature ${chosen.def.types.joinToString(" ").lowercase()} and isn't a creature.", "707.2", "613.1d")
+            state.outcomes += "$was isn't a creature: it copied ${chosen.name}'s printed card, and the effect that made ${chosen.name} a creature isn't copied (707.2)."
+        }
         ExamMech.copyLeavesBehind(state, was, chosen)   // Clone copying a creature under Darksteel Mutation (ExamMechanics.kt)
         o.def = chosen.def
         if (e.tapped) o.tapped = true
@@ -4903,6 +4935,11 @@ class Engine(val state: GameState) {
             for (d in extra) { val o2 = state.add(GameObject(freshObjectId(d.name), d, to, obj.owner, obj.owner)); o2.timestamp = state.tick() }
             trace.step("${obj.printedDef.name} was a merged permanent, so each card that represented it (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) goes to ${zoneName(to, obj)} separately.", "731.3", "400.7")
             state.outcomes += "Both cards of the merged creature (${(listOf(obj.printedDef.name) + extra.map { it.name }).joinToString(" and ")}) go to ${zoneName(to, obj)}."
+            // Gemrazer mutated onto the commander: the merged permanent was the commander, but only the commander card may go to the command zone.
+            if (obj.commander && (to == Zone.GRAVEYARD || to == Zone.EXILE)) {
+                trace.step("The merged permanent was ${state.player(obj.owner).possessive} commander, since the commander was one of its components; once it leaves, only the card that is the commander (${obj.printedDef.name}) may be put into the command zone, and ${extra.joinToString(" and ") { it.name }} stay${if (extra.size == 1) "s" else ""} in ${zoneName(to, obj)}.", "903.3c", "903.9a")
+                state.outcomes += "${extra.joinToString(" and ") { it.name }} stay${if (extra.size == 1) "s" else ""} in ${zoneName(to, obj)}; only ${obj.printedDef.name}, the commander card, may go to the command zone (903.9a)."
+            }
         }
         // A face-down permanent or spell that goes anywhere but the battlefield is revealed as it goes (708.9), and is the card again.
         if (obj.kwf.faceDown && to != Zone.BATTLEFIELD) {

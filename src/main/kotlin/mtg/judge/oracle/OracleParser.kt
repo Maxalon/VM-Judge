@@ -1702,6 +1702,12 @@ object OracleParser {
         // Yawgmoth, Thran Physician: "Put a -1/-1 counter on up to one target creature and draw a card": the counter, then the draw.
         Regex("""^(put .+? counters? on target .+?) and draw (a|one|two|three) cards?\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
             countersOnRe.matchEntire(m.groupValues[1])?.let { return Effect.Seq(listOf(parseSentence(m.groupValues[1]), Effect.Draw(Who.YOU, number(m.groupValues[2]) ?: 1))) } }
+        // Travel Preparations: "Put a +1/+1 counter on each of up to two target creatures": two targets, a counter on each.
+        Regex("""^put (a|an|one|two|three) ([+-]\d+/[+-]\d+|\w+) counters? on each of (up to )?two target (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val n = number(m.groupValues[1]) ?: 1
+            val a = target(singular(m.groupValues[4].trim())); val b = a.copy(raw = (if (m.groupValues[3].isNotEmpty()) "up to one other " else "another ") + a.raw)
+            if (a.filter.verifiable) return Effect.Seq(listOf(Effect.PutCounters(a.copy(raw = (if (m.groupValues[3].isNotEmpty()) "up to one " else "") + a.raw), m.groupValues[2], n), Effect.PutCounters(b, m.groupValues[2], n)))
+        }
         countersOnRe.matchEntire(s)?.let { m ->
             val isX = m.groupValues[1].equals("X", true)
             val n = if (isX) 0 else (number(m.groupValues[1]) ?: return Effect.Unparsed(s))

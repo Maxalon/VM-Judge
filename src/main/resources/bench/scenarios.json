@@ -17728,7 +17728,7 @@
     "text": "I animate Mutavault and equip it with Batterskull. Then the turn ends. Is it still a creature?",
     "expect": [
       "Batterskull stays on the battlefield, unattached.",
-      "No: Mutavault isn't a creature; it's land."
+      "No: Mutavault isn't a creature; it's a land."
     ],
     "notExpect": [
       "Not understood",
@@ -32487,7 +32487,7 @@
     "id": "saga-under-blood-moon-precombat",
     "text": "They have Blood Moon and I have Urza's Saga with 2 lore counters. What happens at my precombat main phase?",
     "expect": [
-      "Urza's Saga gets a lore counter (3).",
+      "Urza's Saga gets no lore counter: it has no chapter abilities under Blood Moon (715.3c).",
       "Urza's Saga stays on the battlefield: the Saga sacrifice check applies only to a Saga with chapter abilities"
     ],
     "cite": [
@@ -52782,7 +52782,7 @@
     "id": "yq8",
     "text": "My opponent controls Blood Moon. I play Dryad Arbor. Is it a creature?",
     "expect": [
-      "Yes: Dryad Arbor is still a creature."
+      "Yes: Dryad Arbor is a creature (1/1)."
     ]
   },
   {
@@ -59860,10 +59860,10 @@
     "id": "rt29",
     "text": "I control Oath of Druids and no creatures. My opponent controls a creature. What happens at my upkeep?",
     "expect": [
-      "At the beginning of your upkeep Oath of Druids triggers for you"
+      "You reveal cards from the top of your library until a creature card, put it onto the battlefield"
     ],
     "cite": [
-      "115.1d"
+      "603.3d"
     ]
   },
   {
@@ -60707,5 +60707,818 @@
     "cite": [
       "611.2e"
     ]
+  },
+  {
+    "id": "lo1",
+    "text": "My opponent crews Smuggler's Copter. I cast Phyrexian Metamorph copying Smuggler's Copter. Is my Metamorph a creature?",
+    "expect": [
+      "No: Phyrexian Metamorph (a copy of Smuggler's Copter) isn't a creature",
+      "the effect that made Smuggler's Copter a creature isn't copied (707.2)"
+    ],
+    "notExpect": [
+      "Yes"
+    ],
+    "cite": [
+      "707.2"
+    ]
+  },
+  {
+    "id": "lo2",
+    "text": "My opponent controls Blood Moon. I activate Oko, Thief of Crowns's +1 targeting my Darksteel Citadel. What is it?",
+    "expect": [
+      "Darksteel Citadel is now a green Elk creature with no abilities, 3/3, and no longer an artifact or a land",
+      "Blood Moon's effect depends on Oko, Thief of Crowns's"
+    ],
+    "notExpect": [
+      "is a Mountain with no abilities"
+    ],
+    "cite": [
+      "613.8a",
+      "205.1a"
+    ]
+  },
+  {
+    "id": "lo3",
+    "text": "My opponent controls Ensnaring Bridge and I have one card in hand, Nourishing Shoal. I attack with Death's Shadow, which is 3/3, and then cast Nourishing Shoal exiling Thought Scour. What happens?",
+    "expect": [
+      "Nourishing Shoal can't be cast by exiling Thought Scour: Thought Scour isn't green (it's blue)"
+    ],
+    "cite": [
+      "118.3"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo4",
+    "text": "My opponent controls Ensnaring Bridge and has 4 cards in hand. I have Nourishing Shoal and Worldspine Wurm in hand. I attack with Death's Shadow, which is 3/3, and then cast Nourishing Shoal exiling Worldspine Wurm. What happens?",
+    "expect": [
+      "You gain 11 life.",
+      "Death's Shadow: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "508.1c",
+      "704.5f"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo5",
+    "text": "My opponent controls Blood Moon. My Urza's Saga's chapter III ability is on the stack. What happens?",
+    "expect": [
+      "Urza's Saga isn't sacrificed: under Blood Moon it has no chapter abilities"
+    ],
+    "notExpect": [
+      "Urza's Saga: the battlefield → your graveyard."
+    ],
+    "cite": [
+      "113.7a",
+      "715.4",
+      "715.2d"
+    ]
+  },
+  {
+    "id": "lo6",
+    "text": "I control Urza's Saga with 2 lore counters. With the chapter III trigger on the stack, my opponent puts Blood Moon onto the battlefield. What happens?",
+    "expect": [
+      "Urza's Saga isn't sacrificed"
+    ],
+    "cite": [
+      "113.7a"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo7",
+    "text": "I control Doubling Season and Vorinclex, Monstrous Raider. I put a +1/+1 counter on my Soldier token with Travel Preparations. How many counters does it get?",
+    "expect": [
+      "4: Soldier token has 4 +1/+1 counters."
+    ],
+    "cite": [
+      "614.1a"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo8",
+    "text": "I control Doubling Season and Vorinclex, Monstrous Raider. I cast Raise the Alarm. Then I cast Travel Preparations targeting the Soldier token. How many counters does it get?",
+    "expect": [
+      "Soldier token has 4 +1/+1 counters."
+    ],
+    "notExpect": [
+      "can't target"
+    ],
+    "cite": []
+  },
+  {
+    "id": "lo9",
+    "text": "My commander Grizzly Bears is attacking unblocked. I activate ninjutsu of Sakashima's Student, returning Grizzly Bears to my hand, copying Grizzly Bears. What happens?",
+    "expect": [
+      "Sakashima's Student can't copy Grizzly Bears: Grizzly Bears left the battlefield as the ninjutsu cost",
+      "Grizzly Bears: your hand → the command zone (its owner's choice, 903.9b)."
+    ],
+    "cite": [
+      "702.49a",
+      "903.9b"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo10",
+    "text": "Krenko, Mob Boss is my commander. My Grizzly Bears is attacking unblocked. I activate ninjutsu of Sakashima's Student, returning Grizzly Bears to my hand, copying Krenko, Mob Boss. What happens?",
+    "expect": [
+      "Sakashima's Student is a copy of Krenko, Mob Boss but not a commander (903.3)",
+      "the legend rule makes you keep only one (704.5j)"
+    ],
+    "cite": [
+      "903.3",
+      "704.5j"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo11",
+    "text": "My commander Grizzly Bears has Gemrazer mutated on top of it. My opponent casts Murder on it. What happens to my cards?",
+    "expect": [
+      "Gemrazer stays in your graveyard; only Grizzly Bears, the commander card, may go to the command zone (903.9a).",
+      "Grizzly Bears: your graveyard → the command zone"
+    ],
+    "cite": [
+      "903.3c",
+      "731.3"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo12",
+    "text": "I control Opposition Agent. My opponent cracks a fetchland. What happens?",
+    "expect": [
+      "A basic land is exiled instead of entering the battlefield (Opposition Agent).",
+      "You may play a basic land from exile while it stays there, as your land drop."
+    ],
+    "notExpect": [
+      "A basic land enters the battlefield."
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "lo13",
+    "text": "I control Opposition Agent. My opponent cracks a fetch.",
+    "expect": [
+      "A basic land is exiled instead of entering the battlefield (Opposition Agent)."
+    ],
+    "notExpect": [
+      "A basic land enters the battlefield."
+    ],
+    "cite": []
+  },
+  {
+    "id": "lo14",
+    "text": "My opponent casts Daze returning an Island. Can I pay 1?",
+    "expect": [
+      "Yes: Daze says",
+      "You pay {1}; Daze has no further effect."
+    ],
+    "notExpect": [
+      "A spell is countered."
+    ],
+    "cite": [
+      "118.12a"
+    ]
+  },
+  {
+    "id": "lo15",
+    "text": "I activate Dark Depths with Thespian's Stage. My opponent responds to the legend rule by using Karakas to bounce Marit Lage. What happens?",
+    "expect": [
+      "Nobody can respond to the legend rule",
+      "You get a Marit Lage.",
+      "Marit Lage token ceases to exist"
+    ],
+    "cite": [
+      "704.5j",
+      "111.7"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo16",
+    "text": "I cast Ephemerate on my Solitude while my opponent's Ragavan is targeted. What happens?",
+    "expect": [
+      "Solitude is exiled and returns as a new object (your control).",
+      "Ragavan, Nimble Pilferer: the battlefield → exile."
+    ],
+    "cite": [
+      "603.2"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo17",
+    "text": "I cast Undying Malice on Grief in response to the evoke sacrifice trigger. Grief dies. What happens?",
+    "expect": [
+      "Grief returns to the battlefield tapped with a +1/+1 counter on it"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo18",
+    "text": "We're playing four-player Commander. My library is empty and I cast Thassa's Oracle. Can my opponents respond to it?",
+    "expect": [
+      "Yes: every player gets priority, in turn order"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo19",
+    "text": "I cast Thassa's Oracle with no cards in my library in a four player pod. Can the other players respond?",
+    "expect": [
+      "Yes: every player gets priority, in turn order"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo20",
+    "text": "I Sneak Attack in Griselbrand and attack. At end of turn, in response to the sac trigger, can I draw seven?",
+    "expect": [
+      "Yes: Sneak Attack's \"sacrifice it at the beginning of the next end step\" is a delayed triggered ability"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo21",
+    "text": "Griselbrand came in off Sneak Attack. When the delayed sacrifice trigger goes on the stack, can I still activate Grisel to draw 7?",
+    "expect": [
+      "Yes: Sneak Attack's \"sacrifice it at the beginning of the next end step\" is a delayed triggered ability"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo22",
+    "text": "I Through the Breach my Emrakul, the Aeons Torn. When does annihilator trigger?",
+    "expect": [
+      "When Emrakul attacks, annihilator triggers"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo23",
+    "text": "My opponent casts Through the Breach on Emrakul. When do they sacrifice it, and when does annihilator trigger?",
+    "expect": [
+      "When Emrakul attacks, annihilator triggers"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo24",
+    "text": "My opponent has Opposition Agent. I exile Eternal Scourge to Food Chain. Is it infinite?",
+    "expect": [
+      "Yes: Food Chain and Eternal Scourge loop."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo25",
+    "text": "I have Food Chain and Eternal Scourge on the battlefield. Can I loop them?",
+    "expect": [
+      "Yes: Food Chain and Eternal Scourge loop."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo26",
+    "text": "I have Manifold Key and Time Vault. Do I get infinite turns?",
+    "expect": [
+      "Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo27",
+    "text": "With Time Vault and Manifold Key on the battlefield, can I take extra turns forever?",
+    "expect": [
+      "Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo28",
+    "text": "I have Basalt Monolith and Kinnan on the battlefield. Is that infinite mana?",
+    "expect": [
+      "Yes: tap Basalt Monolith for {C}{C}{C}"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo29",
+    "text": "With Kinnan, Bonder Prodigy out, can I loop Basalt Monolith for infinite colorless mana?",
+    "expect": [
+      "Yes: tap Basalt Monolith for {C}{C}{C}"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo30",
+    "text": "I control Yawgmoth and Young Wolf. Can I loop it forever?",
+    "expect": [
+      "No, not forever"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo31",
+    "text": "Yawgmoth, Thran Physician and a creature with undying: is that an infinite loop?",
+    "expect": [
+      "No, not forever"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo32",
+    "text": "My partner commanders are Tymna the Weaver and Kraum, Ludevic's Opus. Tymna has died twice. How much does Kraum cost?",
+    "expect": [
+      "Each partner commander has its own commander tax"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo33",
+    "text": "I have Thrasios and Tymna as partner commanders. Thrasios died once. What is the commander tax on Tymna?",
+    "expect": [
+      "Each partner commander has its own commander tax"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo34",
+    "text": "My opponent controls a creature and I control Oath of Druids and no creatures. What happens during my upkeep?",
+    "expect": [
+      "You reveal cards from the top of your library until a creature card"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo35",
+    "text": "I have Oath of Druids out, no creatures, and the opponent has Grizzly Bears. What happens at the beginning of my upkeep?",
+    "expect": [
+      "You reveal cards from the top of your library until a creature card"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo36",
+    "text": "I control Necropotence and discard down to seven at cleanup. Where does the discarded card go?",
+    "expect": [
+      "It's exiled: Necropotence says"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo37",
+    "text": "I have Necro out. I pay 3 life. What happens?",
+    "expect": [
+      "For each 1 life you pay, Necropotence exiles the top card of your library face down"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo38",
+    "text": "I control Oath of Druids and Grizzly Bears. My opponent controls no creatures. What happens at my upkeep?",
+    "expect": [
+      "Oath of Druids does nothing on your upkeep: no opponent controls more creatures than you do."
+    ],
+    "cite": [
+      "603.3d"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo39",
+    "text": "I control Food Chain and exile Eternal Scourge. My opponent controls Opposition Agent. What happens?",
+    "expect": [
+      "Yes: Food Chain and Eternal Scourge loop.",
+      "Opposition Agent doesn't stop it: nothing in the loop searches a library."
+    ],
+    "cite": [
+      "733.1b"
+    ],
+    "notExpect": []
+  },
+  {
+    "id": "lo40",
+    "text": "With Thassa's Oracle on the stack I cast Demonic Consultation naming a card not in my deck. Which one should I cast first?",
+    "expect": [
+      "Either order works by the rules."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo41",
+    "text": "I'm combining Demonic Consultation and Thassa's Oracle. What order do I cast them in?",
+    "expect": [
+      "Either order works by the rules."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo42",
+    "text": "I have Mystic Forge. What can I cast off the top?",
+    "expect": [
+      "Artifact spells and colorless spells, from the top of your library"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo43",
+    "text": "I control Mystic Forge. What may I cast from the top of my library?",
+    "expect": [
+      "Artifact spells and colorless spells, from the top of your library"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo44",
+    "text": "Lurrus of the Dream-Den is my companion. How do I get it into my hand?",
+    "expect": [
+      "Pay {3} as a special action to put Lurrus from outside the game into"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo45",
+    "text": "My companion is Lurrus. How can I put Lurrus into my hand?",
+    "expect": [
+      "Pay {3} as a special action to put Lurrus from outside the game into"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo46",
+    "text": "A copy of my opponent's commander deals combat damage to me. Does that count as commander damage?",
+    "expect": [
+      "No: a copy of a commander isn't a commander"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo47",
+    "text": "My opponent's commander deals damage to me and a clone of their commander deals damage too. Does its damage count as commander damage?",
+    "expect": [
+      "No: a copy of a commander isn't a commander"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo48",
+    "text": "My opponent Dazes my Ponder. Can I pay for it?",
+    "expect": [
+      "Yes: Daze says \"Counter target spell unless its controller pays {1}\""
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo49",
+    "text": "My opponent casts Daze on my spell. Can we pay the 1?",
+    "expect": [
+      "Yes: Daze says \"Counter target spell unless its controller pays {1}\""
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo50",
+    "text": "I Sneak Attack in Emrakul, the Aeons Torn. Does it have annihilator?",
+    "expect": [
+      "Yes when it attacks: Sneak Attack gives Emrakul haste"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo51",
+    "text": "I cast Sneak Attack and put Emrakul onto the battlefield. Does annihilator trigger?",
+    "expect": [
+      "Yes when it attacks: Sneak Attack gives Emrakul haste"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo52",
+    "text": "I cast Murktide Regent from exile with Ragavan. Does it enter with counters?",
+    "expect": [
+      "It depends on delve, not on where it's cast from"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo53",
+    "text": "Ragavan exiled my opponent's Murktide Regent and I cast it from exile. Will Murktide get counters?",
+    "expect": [
+      "It depends on delve, not on where it's cast from"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo54",
+    "text": "My opponent casts Solitude targeting my Psychic Frog. Can I discard cards in response to save it?",
+    "expect": [
+      "Yes, they can respond, but it won't save the Frog"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo55",
+    "text": "My opponent controls Psychic Frog. I evoke Solitude targeting it. In response can they make it bigger?",
+    "expect": [
+      "Yes, they can respond, but it won't save the Frog"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo56",
+    "text": "I control Guide of Souls and Ajani, Nacatl Pariah. Ajani's Cat Warrior token dies. What happens?",
+    "expect": [
+      "Ajani's ability triggers (one or more other Cats you control died)"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo57",
+    "text": "I have Ajani, Nacatl Pariah and Guide of Souls. Ajani's cat dies. What happens?",
+    "expect": [
+      "Ajani's ability triggers (one or more other Cats you control died)"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo58",
+    "text": "I cast Abuelo's Awakening on Fable of the Mirror-Breaker in my graveyard. What happens?",
+    "expect": [
+      "Fable returns as a 1/1 white Spirit creature with flying"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo59",
+    "text": "Fable of the Mirror-Breaker is in my graveyard and I cast Abuelo's Awakening targeting it. What happens?",
+    "expect": [
+      "Fable returns as a 1/1 white Spirit creature with flying"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo60",
+    "text": "Parhelion II is in my graveyard and I attack with Greasefang, Okiba Boss. What happens?",
+    "expect": [
+      "Greasefang triggers at the beginning of combat on your turn, not when"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo61",
+    "text": "I control Greasefang, Okiba Boss with Parhelion II in my graveyard. What happens?",
+    "expect": [
+      "Greasefang triggers at the beginning of combat on your turn, not when"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo62",
+    "text": "I have Puresteel Paladin with metalcraft. How much does equipping cost?",
+    "expect": [
+      "{0}: with metalcraft on, Puresteel Paladin gives each Equipment"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo63",
+    "text": "I control Puresteel Paladin and three artifacts. How much does equip cost?",
+    "expect": [
+      "{0}: with metalcraft on, Puresteel Paladin gives each Equipment"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo64",
+    "text": "I control Sigarda's Aid and cast Colossus Hammer. What happens?",
+    "expect": [
+      "Sigarda's Aid lets you cast Colossus Hammer at instant speed"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo65",
+    "text": "With Sigarda's Aid on the battlefield I cast Colossus Hammer. What happens?",
+    "expect": [
+      "Sigarda's Aid lets you cast Colossus Hammer at instant speed"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo66",
+    "text": "My creature is equipped with Shadowspear and I equip Colossus Hammer to it. Does it have trample and lifelink?",
+    "expect": [
+      "Yes: both Equipment apply."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo67",
+    "text": "I equip Colossus Hammer to a creature equipped with Shadowspear. Does the creature have lifelink?",
+    "expect": [
+      "Yes: both Equipment apply."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo68",
+    "text": "I control Yawgmoth, Thran Physician. I pay 1 life and sacrifice my creature with undying. What happens?",
+    "expect": [
+      "Yawgmoth's ability resolves: put a -1/-1 counter on up to one target"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo69",
+    "text": "I have Yawgmoth, Thran Physician. I pay 1 life and sacrifice a creature with undying to it. What happens?",
+    "expect": [
+      "Yawgmoth's ability resolves: put a -1/-1 counter on up to one target"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo70",
+    "text": "My opponent controls Thalia, Guardian of Thraben. I cast Force of Will by pitching a blue card. How much does it cost?",
+    "expect": [
+      "Force of Will still costs {1} more (Thalia, Guardian of Thraben)"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo71",
+    "text": "I control Thalia, Guardian of Thraben and my opponent pitches Force of Will. How much does Force of Will cost?",
+    "expect": [
+      "Force of Will still costs {1} more (Thalia, Guardian of Thraben)"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo72",
+    "text": "I control Guide of Souls. A token enters under my control. What happens?",
+    "expect": [
+      "If the token is a creature, Guide of Souls triggers"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo73",
+    "text": "I have Guide of Souls and I create a token. What happens?",
+    "expect": [
+      "If the token is a creature, Guide of Souls triggers"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo74",
+    "text": "I cast Show and Tell. My opponent puts Archon of Emeria onto the battlefield and I put Omniscience onto the battlefield. What happens?",
+    "expect": [
+      "Archon of Emeria lets each player cast only one spell each turn"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo75",
+    "text": "I cast Show and Tell and put in Omniscience; my opponent puts in Archon of Emeria. What happens?",
+    "expect": [
+      "Archon of Emeria lets each player cast only one spell each turn"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo76",
+    "text": "My opponent casts Pithing Needle naming Urza's Saga. Do I still get chapter abilities?",
+    "expect": [
+      "Yes: the triggered abilities still work."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo77",
+    "text": "Pithing Needle names my Urza's Saga. Does chapter III still trigger?",
+    "expect": [
+      "Yes: the triggered abilities still work."
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo78",
+    "text": "I control Underworld Breach and cast Brain Freeze. What is the storm count?",
+    "expect": [
+      "Storm counts every spell cast before it this turn by any player"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo79",
+    "text": "I cast Brain Freeze from my graveyard with Underworld Breach. How many copies do I get if I cast 4 spells before it this turn?",
+    "expect": [
+      "Storm counts every spell cast before it this turn by any player"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo80",
+    "text": "I have the initiative. My opponent deals combat damage to me. Who gets the initiative?",
+    "expect": [
+      "Your opponent: when their creatures deal combat damage to you"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo81",
+    "text": "I took the initiative. My opponent hits me with a creature. Who has the initiative now?",
+    "expect": [
+      "Your opponent: when their creatures deal combat damage to you"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo82",
+    "text": "I control Ocelot Pride. I gained life this turn and have the city's blessing. What happens at my end step?",
+    "expect": [
+      "At your end step you create a 1/1 Cat (you gained life this turn); then, having the city's blessing"
+    ],
+    "notExpect": [],
+    "cite": []
+  },
+  {
+    "id": "lo83",
+    "text": "I control Ocelot Pride and have the city's blessing, and I gained 2 life this turn. What happens at my end step?",
+    "expect": [
+      "At your end step you create a 1/1 Cat (you gained life this turn); then, having the city's blessing"
+    ],
+    "notExpect": [],
+    "cite": []
   }
 ]

@@ -82,10 +82,6 @@ internal object RedteamAsks {
             "timevault" -> R("Yes, effectively: each turn, pay {1} and tap Manifold Key to untap Time Vault, then tap Time Vault to take an extra turn after this one. Manifold Key untaps during each untap step, so you can repeat it every turn; that's one extra turn per turn, not a loop inside one turn.", listOf(
                 st("Time Vault doesn't untap during its controller's untap step, and \"{T}: Take an extra turn after this one\" is an activated ability that adds a turn directly after the current one.", "500.7", "602.2"),
                 st("Manifold Key's \"{1}, {T}: Untap another target artifact\" untaps Time Vault; the Key itself untaps in each untap step, so the pair gives an extra turn every turn.", "502.3")))
-            // "I control Oath of Druids and no creatures; my opponent has a creature."
-            "oath" -> R("At the beginning of your upkeep Oath of Druids triggers for you: you control fewer creatures than an opponent, so you target that opponent and may reveal cards from the top of your library until you reveal a creature card; you put it onto the battlefield and the other revealed cards into your graveyard. It also triggers on your opponent's upkeep, but there they control more creatures than you, so they have no legal target and nothing happens.", listOf(
-                st("Oath of Druids triggers at the beginning of each player's upkeep; that player chooses as target an opponent who controls more creatures than they do. With no such opponent the trigger has no legal target and is removed from the stack.", "603.3d", "115.1d", "608.2b"),
-                st("On resolution the player may reveal cards until a creature card is revealed, putting it onto the battlefield (not cast) and the rest into the graveyard.", "701.20a", "608.2c")))
             // "Necropotence: what happens to a card I discard?"
             "necrodiscard" -> R("It's exiled: Necropotence says \"Whenever you discard a card, exile that card from your graveyard.\" The card goes to your graveyard first, so anything that triggers on it going there sees it, and then the trigger exiles it.", listOf(
                 st("Discarding moves the card from hand to its owner's graveyard; Necropotence's triggered ability then exiles it from the graveyard as it resolves.", "701.9a", "603.2")))
@@ -104,10 +100,6 @@ internal object RedteamAsks {
             // "A clone of my opponent's commander hits me: commander damage?"
             "clonecmd" -> R("No: a copy of a commander isn't a commander, so its combat damage doesn't count toward the 21 (903.10a). Only the commander card itself is a commander; copying doesn't copy that status.", listOf(
                 st("Commander damage is combat damage dealt by a specific commander; the copy has the copiable values of the commander but not its status as a commander.", "903.10a", "707.2", "903.3")))
-            // "Food Chain + Eternal Scourge (+ Opposition Agent)"
-            "foodchain" -> R("Exile Eternal Scourge with Food Chain: you add four mana (its mana value 3, plus one), spendable only on creature spells. Eternal Scourge can be cast from exile, so cast it for {3} and do it again: one more creature-only mana each time, as many times as you like. Opposition Agent doesn't stop it: it only controls and exiles what an opponent finds while searching their library, and nothing here searches.", listOf(
-                st("Food Chain: \"Exile a creature you control: Add X mana of any one color, where X is 1 plus the exiled creature's mana value. Spend this mana only to cast creature spells.\" It's a mana ability.", "605.1a", "106.6"),
-                st("Eternal Scourge's \"You may cast Eternal Scourge from exile\" lets the loop repeat; a loop is shortcut by naming a number of repetitions.", "601.3", "733.2a")))
             // "My opponent Dazes my spell: can I pay 1?"
             "dazepay" -> R("Yes: Daze says \"Counter target spell unless its controller pays {1}\", so as Daze resolves you, the spell's controller, choose whether to pay {1}; you may activate mana abilities to do it. If you pay, your spell isn't countered.", listOf(
                 st("\"Unless its controller pays\" is a choice made as Daze resolves; the player may activate mana abilities then.", "608.2d", "608.2g", "118.12")))

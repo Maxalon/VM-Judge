@@ -285,7 +285,9 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
     /** Keyword abilities with a little game of their own (buyback, plot, foretell ...), see KeywordRulings.kt. */
     private var kw = KeywordRulings({ ref, st -> cardDef(ref, st) }, { ref, i -> faceDefOf(ref, i) })
 
-    private fun apply(e0: EventSpec, state: GameState, engine: Engine) {
+    private fun apply(e00: EventSpec, state: GameState, engine: Engine) {
+        val e0 = LeftoversAsks.bindNewTokens(e00, state)   // "the Soldier token" an earlier spell made (LeftoversAsks.kt)
+        if (LeftoversAsks.skipCast(e0, state)) return   // a Shoal whose alternative cost can't be paid isn't cast (LeftoversAsks.kt)
         // "I cast Capsize with buyback": the keyword's costs and flags are set on the card first, then the ordinary cast runs.
         val e = if (e0.verb.lowercase() == "cast" && e0.to?.startsWith("kw:") == true) kw.prepareCast(e0, state, engine) else e0
         // "I cast Stoneforge Mystic. They Stifle its trigger": the trigger exists only once the permanent spell has resolved and
@@ -790,7 +792,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                         else "${o.name} has " + cs.entries.joinToString(" and ") { (k, n) -> "$n $k counter${if (n == 1) "" else "s"}" } + "."
                     }
                     "isCreature" -> state.outcomes += state.notACreatureBecause(o)?.let { why -> "No: ${o.name} isn't a creature — ${state.player(o.controller).possessive} $why. It's still an enchantment on the battlefield, it keeps its other abilities, and it can't attack, block, or be targeted by anything that needs a creature." }
-                        ?: if (!o.isOnBattlefield()) "${o.name} isn't on the battlefield." else if (state.hasCreatureType(o)) "Yes: ${o.name} is a creature (${state.describePt(o)})${if (o.animatedAs != null) " until end of turn" else ""}." else "No: ${o.name} isn't a creature; it's ${o.def.types.joinToString(" ").lowercase()}."
+                        ?: if (!o.isOnBattlefield()) "${o.name} isn't on the battlefield." else if (state.hasCreatureType(o)) "Yes: ${o.name} is a creature (${state.describePt(o)})${if (o.animatedAs != null) " until end of turn" else ""}." else "No: ${if (o.printedDef.name != o.def.name && !o.token) "${o.printedDef.name} (a copy of ${o.name})" else o.name} isn't a creature; it's ${o.def.types.joinToString(" ").lowercase().let { t -> (if (t.first() in "aeiou") "an " else "a ") + t }}."
                     "castNow" -> { val p = state.player(e.player ?: o.owner); val fb = "flashback" in o.tempKeywords
                         val late = if ((o.zone == Zone.GRAVEYARD && (fb || o.def.has("flashback"))) || o.zone == Zone.HAND) StackAsks.sorcerySpeedProblem(o, p, state) else null
                         state.outcomes += when {
@@ -890,9 +892,11 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
                 val objId = e.obj ?: throw JudgeException("enter needs an object")
                 // Ninjutsu: the creature is put onto the battlefield tapped and attacking the player the returned creature attacked.
                 if (e.to?.startsWith("attacking:") == true) {
-                    engine.enter(objId, null)
-                    val o = state.obj(objId); o.tapped = true; o.attacking = Ref.Player(e.to.removePrefix("attacking:")); o.kwf.putAttacking = true
+                    // "…, copying Grizzly Bears" (Sakashima's Student): the copy choice, if that creature is still there to copy.
+                    engine.enter(objId, LeftoversAsks.ninjaCopyChoice(e.to, objId, state))
+                    val o = state.obj(objId); o.tapped = true; o.attacking = Ref.Player(e.to.removePrefix("attacking:").substringBefore('|')); o.kwf.putAttacking = true
                     state.trace.step("${o.name} enters the battlefield tapped and attacking ${state.nameOf(o.attacking!!)}, the player the returned creature was attacking. It was never declared as an attacker, so \"whenever ~ attacks\" abilities don't trigger for it, but it's an attacking creature for everything else. Because blockers were already declared, it enters as an unblocked creature and stays unblocked.", "702.49a", "702.49c", "508.4", "508.4d")
+                    if (e.to.contains("|copy:") && state.stack.isEmpty()) engine.stateBasedActions()   // a Student left as its printed 0/0
                 } else engine.enter(objId, e.to)
             }
             // "My opponent gains control of my creature": a control change with no card behind it.
@@ -968,6 +972,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             "cedh" -> CedhAsks.applyEvent(e, state)
             "lifedmg" -> LifeDamageAsks.applyEvent(e, state)
             "rt" -> RedteamAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
+            "lo" -> LeftoversAsks.applyEvent(e, state, engine) { c -> cardDef(c, state) }
             else -> throw JudgeException("Unknown event verb '${e.verb}'")
         }
     }
@@ -1020,6 +1025,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
         EdhAsks.describe(e, state, who)?.let { return it }
         CedhAsks.describe(e, state)?.let { return it }
         RedteamAsks.describe(e, state)?.let { return it }
+        LeftoversAsks.describe(e, state)?.let { return it }
         LifeDamageAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") LkiAsks.describe(e, state)?.let { return it }
         if (e.verb == "ask") TriggerAsks.describe(e, state)?.let { return it }
@@ -1274,6 +1280,7 @@ class Judge(private val cards: CardRepo, private val rules: RulesRepo?) {
             state.unsupported += mtg.judge.engine.Unsupported("loop", "Loops that return cards to hand and cast them again aren't played out.")
             return
         }
+        if (LeftoversAsks.foodChainLoop(state, who)) return   // Food Chain with a creature castable from exile (LeftoversAsks.kt)
         state.trace.step("No sequence of actions on this board comes back to the position it started from with something gained, so there is no loop to shortcut.", "733.1b")
         state.outcomes += "No: nothing described here forms a loop. A loop is a set of actions that can be repeated because each time round the game comes back to where it started (733.1b); none of what's on this board does that${if (state.unsupported.isNotEmpty()) ", as far as the modeled card text goes (the cards whose text isn't modeled are listed below)" else ""}."
         // Grindstone with Painter's Servant: one activation that repeats inside itself, not a loop of actions.
