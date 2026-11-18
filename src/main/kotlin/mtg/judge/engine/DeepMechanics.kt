@@ -305,6 +305,7 @@ internal object DeepMech {
     /** The part of an ability that would affect the target nobody chose does nothing (608.2c); true when that's what happened. */
     fun noTargetPart(state: GameState, item: StackItem, spec: TargetSpec): Boolean {
         if (item.targets.isNotEmpty() || !Regex("""(?i)\bup to (?:one|two|three|\w+) (?:other )?target\b""").containsMatchIn(item.text.ifEmpty { item.source.def.oracleText })) return false
+        if (Leftovers3Mech.chosenNone(state, item.source.id)) return true   // already said as it went on the stack (Leftovers3Mechanics.kt)
         state.trace.step("No target was chosen for \"${spec.raw}\", so the part of the ability that would affect it does nothing; the rest of the ability still happens.", "608.2c")
         state.outcomes += "No ${spec.raw} gets anything from ${item.source.name}'s ability: none was targeted."
         return true

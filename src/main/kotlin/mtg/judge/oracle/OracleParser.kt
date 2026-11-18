@@ -814,6 +814,9 @@ object OracleParser {
             val n = if (m.groupValues[1].equals("x", true)) null else (number(m.groupValues[1]) ?: return emptyList())
             return listOf(StaticEffect.EntersWithCounters(m.groupValues[2], n))
         }
+        // Prime Speaker Zegana: "~ enters with X +1/+1 counters on it, where X is the greatest power among other creatures you control."
+        Regex("""^~ enters(?: the battlefield)? with X ([+-]\d/[+-]\d|\w+) counters? on it, where X is the greatest power among (other )?creatures you control\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
+            return listOf(StaticEffect.EntersWithCounters(m.groupValues[1], null, per = CountExpr.Unknown("l3:greatestpower:" + (if (m.groupValues[2].isNotEmpty()) "other" else "all")))) }
         // Chasm Skulker: "~ enters with a +1/+1 counter on it for each creature you control."
         Regex("""^~ enters(?: the battlefield)? with (?:a|an|\w+) ([+-]\d/[+-]\d|\w+) counters? on it for each (.+?)\.?$""", RegexOption.IGNORE_CASE).matchEntire(line)?.let { m ->
             val per = parseCount("the number of " + m.groupValues[2].trim())
@@ -1271,8 +1274,12 @@ object OracleParser {
                     val choice = cur.removePrefix("You may ").removePrefix("you may ").trimEnd('.')
                     val cost = payRe.matchEntire(choice)?.groupValues?.get(1)
                     val then = next.substring("When you do, ".length).replace(Regex("""^(?:it|this creature|this permanent) (?=deals|gets|gains)""", RegexOption.IGNORE_CASE), "~ ").replaceFirstChar { it.uppercase() }
-                    out += Effect.IfYouDo(if (cost != null) Effect.Narrated("pay $cost", listOf("608.2g")) else parseSentence(choice.replaceFirstChar { it.uppercase() }), parseSentence(then), cost, reflexive = true, reflexiveText = next.trimEnd('.'))
-                    i += 2
+                    // Inti, Seneschal of the Sun: "When you do, put a +1/+1 counter on target attacking creature. It gains trample until end of
+                    // turn." The pronoun sentence belongs to the reflexive ability: "it" is that ability's target, not the first trigger's.
+                    val more = sentences.drop(i + 2).takeWhile { Regex("""^(?:It|That creature) (?:gains|gets|has) """).containsMatchIn(it) }
+                    val reflexive = if (more.isEmpty()) parseSentence(then) else parseEffect((listOf(then) + more).joinToString(" "))
+                    out += Effect.IfYouDo(if (cost != null) Effect.Narrated("pay $cost", listOf("608.2g")) else parseSentence(choice.replaceFirstChar { it.uppercase() }), reflexive, cost, reflexive = true, reflexiveText = (listOf(next.trimEnd('.')) + more.map { it.trimEnd('.') }).joinToString(". "))
+                    i += 2 + more.size
                 } else if (Regex("""^Spell mastery — If there are two or more instant and/or sorcery cards in your graveyard, ~ deals (\d+) damage instead\.?$""", RegexOption.IGNORE_CASE).matches(cur) && out.lastOrNull() is Effect.Damage) {
                     val n = Regex("""(\d+) damage""").find(cur)!!.groupValues[1].toInt()
                     out[out.lastIndex] = (out.last() as Effect.Damage).copy(masteryAmount = n); i++
@@ -2049,6 +2056,14 @@ object OracleParser {
             val a = target(what); val b = a.copy(raw = (if (m.groupValues[1].isNotEmpty()) "up to one other " else "another ") + a.raw)
             if (a.filter.verifiable) return Effect.Seq(listOf(Effect.Destroy(a), Effect.Destroy(b)))
         }
+        // Marang River Regent: "Return up to two other target nonland permanents to their owners' hands": N targets, each bounced;
+        // "up to" lets fewer be chosen (601.2c), and "other" keeps the source itself out.
+        Regex("""^return (up to )?(two|three|four) (other )?target (.+?) to their owners['’] hands\.?$""", RegexOption.IGNORE_CASE).matchEntire(s)?.let { m ->
+            val n = number(m.groupValues[2]) ?: 2
+            val upTo = m.groupValues[1].isNotEmpty(); val other = m.groupValues[3].isNotEmpty()
+            val a = target((if (other) "other " else "") + singular(m.groupValues[4].trim()))
+            if (a.filter.verifiable) return Effect.Seq((0 until n).map { i -> Effect.Bounce(a.copy(raw = (if (upTo) listOf("up to one ", "up to one other ", "up to one more ", "up to one last ")[i] else listOf("", "another ", "a third ", "a fourth ")[i]) + a.raw.removePrefix("other "))) })
+        }
         destroyRe.matchEntire(s)?.let { return Effect.Destroy(target(it.groupValues[1])) }
         bounceRe.matchEntire(s)?.let { m -> return Effect.Bounce(if (m.groupValues[1] == "~") null else target(m.groupValues[1])) }
         bounceChosenRe.matchEntire(s)?.let { m ->
@@ -2167,7 +2182,9 @@ object OracleParser {
 
     private fun target(desc: String, defaultKind: Kind? = null): TargetSpec {
         // "target instant or sorcery spell, except that the copy is red" (Fork): the rider isn't part of what the target has to be.
-        val d = desc.trim().let { if (it.startsWith("target ", true)) it.drop(7) else it }.trim().replace(Regex("""(?i),?\s*except that\b.*$"""), "").trim()
+        // "another target creature you control" (Benevolent Hydra): "another" excludes the source itself, like "other".
+        val another = Regex("""(?i)^another (?=target )""").containsMatchIn(desc.trim())
+        val d = desc.trim().replace(Regex("""(?i)^another (?=target )"""), "").let { if (it.startsWith("target ", true)) it.drop(7) else it }.trim().replace(Regex("""(?i),?\s*except that\b.*$"""), "").trim().let { if (another) "other $it" else it }
         // "exile up to one other target creature" (Solitude): "other" excludes the source itself, so it can't aim at itself.
         return TargetSpec(parseFilter(d, defaultKind).let { if (Regex("""(?i)^other\b""").containsMatchIn(d)) it.copy(other = true) else it }, d)
     }

@@ -21,7 +21,8 @@ class NameIndex private constructor(private val byNorm: Map<String, Entry>, val 
                      val manaValue: Int = 0) {
         val hasFlash: Boolean get() = Regex("""(?i)\bflash\b""").containsMatchIn(keywords)
         /** An instant or sorcery: it lives in hand or on the stack, never on the battlefield. */
-        val isSpellOnly: Boolean get() = (typeLine.contains("Instant") || typeLine.contains("Sorcery")) && !typeLine.contains("Land")
+        /** An omen card ("Creature — Dragon // Instant — Omen") is a creature card everywhere but the stack (721.4), so it isn't one. */
+        val isSpellOnly: Boolean get() = (typeLine.contains("Instant") || typeLine.contains("Sorcery")) && !typeLine.contains("Land") && !(typeLine.contains("— Omen") && !typeLine.substringBefore(" // ").let { it.contains("Instant") || it.contains("Sorcery") })
     }
 
     fun lookup(norm: String): Entry? = byNorm[norm]

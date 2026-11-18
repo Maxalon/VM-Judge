@@ -96,6 +96,8 @@ data class ObjectSpec(
     val named: String? = null,
     /** True when the parser put it on the battlefield only because a spell named it, with no zone said. */
     val assumed: Boolean = false,
+    /** A face-down permanent (cast for its morph or disguise cost): a 2/2 with no name or text until turned face up (708.2). */
+    val faceDown: Boolean = false,
 )
 
 @Serializable

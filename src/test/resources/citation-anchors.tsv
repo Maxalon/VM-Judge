@@ -37,6 +37,7 @@
 107.3	many objects use the letter x
 107.3a	if a spell or activated ability
 107.3b	if a player is casting a
+107.3c	if a spell or activated ability
 107.3e	if a spell or ability refers
 107.4e	a hybrid mana symbol is also
 107.4f	phyrexian mana symbols are colored mana
@@ -68,6 +69,7 @@
 114.4	abilities of emblems function in the
 115.1	some spells and abilities require their
 115.1a	an instant or sorcery spell is
+115.1c	an activated ability is targeted if
 115.1d	a triggered ability is targeted if
 115.2	only permanents are legal targets for
 115.3	the same target can t be
@@ -300,6 +302,7 @@
 601.3	a player can begin to cast
 602.1	activated abilities have a cost and
 602.1a	the activation cost is everything before
+602.1b	some text after the colon of
 602.2	to activate an ability is to
 602.2a	the player announces that they are
 602.2b	the remainder of the process for
@@ -464,6 +467,7 @@
 701.27a	to transform a permanent turn it
 701.27c	a permanent that transforms doesn t
 701.27d	if a spell or ability instructs
+701.27f	some triggered abilities trigger when an
 701.34a	to proliferate means to choose any
 701.36a	to populate means to choose a
 701.36b	if you control no creature tokens
@@ -651,6 +655,7 @@
 702.126a	improvise is a static ability that
 702.130a	afflict is a triggered ability afflict
 702.131a	ascend on an instant or sorcery
+702.131b	ascend on a permanent represents a
 702.131c	the city s blessing is a
 702.133a	jump start appears on some instants
 702.134a	mentor is a triggered ability mentor

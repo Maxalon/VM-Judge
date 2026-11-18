@@ -37,6 +37,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
     /** The stand-in a face-down card is: 2/2, colourless, no name, no types but creature, no mana cost; disguise adds ward {2} (708.2, 702.168a). */
     private fun faceDownDef(real: CardDef, disguise: Boolean): CardDef =
         OracleParser.parse("face-down-${real.oracleId}", "a face-down creature", "Creature", null, 0.0, "", "2", "2", if (disguise) listOf("Ward") else emptyList(), if (disguise) "Ward {2}" else "")
+    /** A permanent the situation says is face down already: the stand-in's characteristics over the real card (708.2). */
     private val numberWords = mapOf("one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5, "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9, "ten" to 10)
     private fun yours(p: mtg.judge.engine.Player) = if (p.you) "yours" else p.possessive
     private fun ordinal(n: Int) = when (n) { 1 -> "first"; 2 -> "second"; 3 -> "third"; 4 -> "fourth"; 5 -> "fifth"; else -> "${n}th" }
@@ -394,6 +395,7 @@ class KeywordRulings(private val cardDef: (CardRef, GameState) -> CardDef?, priv
         if (kwName == "megamorph") obj.counters["+1/+1"] = (obj.counters["+1/+1"] ?: 0) + 1
         state.trace.step("${p.subject} ${p.v("turns", "turn")} the face-down creature face up by paying its $kwName cost $cost. This is a special action: it doesn't use the stack, can't be responded to, and can be done any time ${p.subject.lowercase()} ${p.v("has", "have")} priority. It's ${real.name} again with its normal characteristics (${state.describePt(obj)}). Enters-the-battlefield abilities don't trigger, because it already entered.", if (kwName == "disguise") "702.168d" else "702.37e", "116.2b", "708.8")
         state.outcomes += "${real.name} is turned face up for $cost: ${state.describePt(obj)} again, with all its abilities. It didn't enter the battlefield, so its enters abilities don't trigger (708.8)."
+        mtg.judge.engine.Leftovers3Mech.turnedFaceUp(engine, obj)   // "When this creature is turned face up, …" goes on the stack (Leftovers3Mechanics.kt)
     }
 
     private fun castAdventure(e: EventSpec, state: GameState, engine: Engine) {

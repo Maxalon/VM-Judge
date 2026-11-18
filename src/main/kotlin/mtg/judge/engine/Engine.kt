@@ -253,7 +253,7 @@ class Engine(val state: GameState) {
         } else targets
         // The spell's own text names a target the engine couldn't model ("target creature loses all abilities …"): the target is kept, not queried.
         val unmodeledTarget = needed.isEmpty() && targets.isNotEmpty() && effect != null && effect.hasUnparsed() && !targetsAPlayer(effect) && Regex("""(?i)\btarget\b""").containsMatchIn(card.oracleText ?: "")
-        if (unmodeledTarget && !ModernMech.handles(unparsedText(effect!!)) && !Leftovers2Mech.handles(unparsedText(effect)) && !CoverageMech.handles(unparsedText(effect)) && !RedteamMech.handles(unparsedText(effect)) && !LeftoversMech.handles(unparsedText(effect))) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
+        if (unmodeledTarget && !ModernMech.handles(unparsedText(effect!!)) && !Leftovers2Mech.handles(unparsedText(effect)) && !CoverageMech.handles(unparsedText(effect)) && !RedteamMech.handles(unparsedText(effect)) && !LeftoversMech.handles(unparsedText(effect)) && !Leftovers3Mech.handles(unparsedText(effect))) trace.step("${card.name}'s text names a target the engine can't model, so ${describeTargets(targets).removePrefix(" targeting ")} is kept as its target and what the spell does to it is reported as unsupported.", "601.2c")
         // "I Stifle the mana ability": an activated mana ability never goes on the stack, so there is nothing to
         // target. Before this the answer was a clarification asking which ability was meant.
         if (needed.any { Regex("""(?i)\bability\b""").containsMatchIn(it.raw) } && targets.isEmpty() &&
@@ -550,7 +550,7 @@ class Engine(val state: GameState) {
         AuditMech.splitCastNote(state, item)
         wardTriggers(item)
         item.targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, item.controller, item.id)) } }
-        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
+        if (item.effect?.hasUnparsed() == true && !ModernMech.handles(unparsedText(item.effect)) && !CoverageMech.handles(unparsedText(item.effect)) && !RedteamMech.handles(unparsedText(item.effect)) && !LeftoversMech.handles(unparsedText(item.effect)) && !Leftovers2Mech.handles(unparsedText(item.effect)) && !Leftovers3Mech.handles(unparsedText(item.effect))) state.unsupported += Unsupported(card.name, "Part of the spell's effect is not modeled: " + unparsedText(item.effect))
         // A spell at a player ("any target") can be sent to Spellskite too, it being a creature.
         val skiteCouldTake = item.targets.mapNotNull { objOf(it) }.any { it.def.name != "Spellskite" } || (item.targets.any { it is Ref.Player } && Regex("""(?i)\bany target\b""").containsMatchIn(card.oracleText))
         if (skiteCouldTake) state.objects.values.firstOrNull { it.isOnBattlefield() && it.def.name == "Spellskite" && it.controller != item.controller }?.let { sk ->
@@ -1135,7 +1135,7 @@ class Engine(val state: GameState) {
         targets.forEach { ref -> objOf(ref)?.let { state.targetedThisTurn[it.id] = (state.targetedThisTurn[it.id] ?: 0) + 1; onEvent(GameEvent.BecomesTarget(it, playerId, item.id)) } }
         if (wasOnBattlefield) onEvent(GameEvent.AbilityActivated(obj, playerId))
         state.player(playerId).let { p -> trace.step("${p.subject} ${p.v("activates", "activate")} ${obj.name}'s ability (${ability.cost})${describeTargets(targets)}. It goes on top of the stack.", "602.2a", "405.2") }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the ability's effect is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -1525,6 +1525,7 @@ class Engine(val state: GameState) {
         val o = state.obj(objectId)
         if (what == "attack" || what == "block") state.notACreatureBecause(o)?.let { why -> return "${o.name} isn't a creature right now — ${state.player(o.controller).possessive} $why" }
         if (what == "attack") attackConditionUnmet(o, null)?.let { cond -> return "its own \"can't attack unless $cond\"" }
+        if (what == "block") Leftovers3Mech.cantBlock(state, o.id)?.let { src -> return "$src's \"until your next turn, those creatures can't block\"" }   // Taunt from the Rampart (Leftovers3Mechanics.kt)
         if (!cant(o, what)) return null
         return cantSource(o, what) ?: o.name
     }
@@ -2976,7 +2977,9 @@ class Engine(val state: GameState) {
                 if (line !in state.assumptions) state.assumptions += line
             }
         }
-        if (needed.size > targets.size) {
+        // Marang River Regent: "up to two other target nonland permanents" with nothing named: the ones it can take, if no more than N (Leftovers3Mechanics.kt).
+        val upToFewer = if (needed.size > targets.size && targets.isEmpty() && needed.size > 1) Leftovers3Mech.upToTargets(this, obj, ability, needed, isHarmful(ability.effect))?.also { targets = it } != null else false
+        if (needed.size > targets.size && !upToFewer) {
             if (state.clarifications.none { it.about == "${obj.name}'s triggered ability's target" }) state.clarifications += Clarification("${obj.name}'s trigger target", "${obj.name}'s triggered ability needs a target (${needed.joinToString("; ") { it.raw }}); which? (603.3d)")
             return null
         }
@@ -2985,7 +2988,7 @@ class Engine(val state: GameState) {
         splitSecondOnStack()?.let { ss -> trace.step("${ss.source.name} has split second, but triggered abilities still trigger and are put on the stack as normal; only casting spells and activating non-mana abilities is stopped.", "702.61b"); state.outcomes += "${obj.name}'s triggered ability still goes on the stack above ${ss.source.name}: split second doesn't stop triggered abilities (702.61b)." }
         state.stack += item
         state.player(obj.controller).let { p -> trace.step("${p.subject} ${p.v("puts", "put")} ${obj.name}'s triggered ability on the stack${if (targets.isNotEmpty()) ", choosing its target${if (targets.size == 1) "" else "s"} now: ${targets.joinToString(" and ") { state.nameOf(it) }}" else ""}${if (state.stack.size > 1) ", above ${state.stack[state.stack.size - 2].describe}" else ""}.", "603.3", "603.3a", *(if (targets.isNotEmpty()) arrayOf("603.3d") else emptyArray())) }
-        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
+        if (ability.effect.hasUnparsed() && !ModernMech.handles(unparsedText(ability.effect)) && !RedteamMech.handles(unparsedText(ability.effect)) && !LeftoversMech.handles(unparsedText(ability.effect)) && !Leftovers2Mech.handles(unparsedText(ability.effect)) && !Leftovers3Mech.handles(unparsedText(ability.effect))) state.unsupported += Unsupported(obj.name, "Part of the triggered ability is not modeled: " + unparsedText(ability.effect))
         return item
     }
 
@@ -4188,6 +4191,7 @@ class Engine(val state: GameState) {
                 else trace.step("${p.subject} ${p.v("doesn't", "don't")} control ${missing.joinToString(" or ") { "an $it" }}, so ${item.source.name} adds only what it says first, not ${effect.text}.", "605.1a")
             }
             is Effect.Narrated -> {
+                if (Leftovers3Mech.narrated(this, effect.text, item)) return   // Lethal Vapors destroying itself twice (Leftovers3Mechanics.kt)
                 if (Leftovers2Mech.narrated(this, effect.text, item)) return   // Amalia exploring with Wildgrowth Walker (Leftovers2Mechanics.kt)
                 if (Leftovers2Mech.resolve(this, effect.text, item)) return   // energy got and paid (Leftovers2Mechanics.kt)
                 if (RedteamMech.resolve(this, effect.text, item)) return   // Fable's transformed return, Role tokens (RedteamMechanics.kt)
@@ -4311,6 +4315,7 @@ class Engine(val state: GameState) {
                 state.outcomes += "${sp.source.name} can't be countered (${item.source.name})."
             } }
             is Effect.Unparsed -> {
+                if (Leftovers3Mech.resolve(this, effect.text, item)) return   // activation instructions, Grimoire, Taunt (Leftovers3Mechanics.kt)
                 if (Leftovers2Mech.resolve(this, effect.text, item)) return   // Ouroboroid, energy, Pox, Oblivion Stone (Leftovers2Mechanics.kt)
                 if (RedteamMech.resolve(this, effect.text, item)) return   // (RedteamMechanics.kt)
                 if (LeftoversMech.resolve(this, effect.text, item)) return   // Nourishing Shoal's "You gain X life" (LeftoversMechanics.kt)

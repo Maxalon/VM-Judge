@@ -225,7 +225,7 @@ internal object NewSetMech {
             n
         }
         "ns:unspentmana" -> state.player(o.controller).manaPool
-        else -> null
+        else -> Leftovers3Mech.count(state, text, o)   // Prime Speaker Zegana's "greatest power among other creatures you control" (Leftovers3Mechanics.kt)
     }
 
     /** Omnath, Locus of the Void: mana that would empty from [p]'s pool becomes colorless instead (614.1a). True when it stays. */

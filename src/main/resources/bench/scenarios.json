@@ -59853,7 +59853,7 @@
     "id": "rt26",
     "text": "I cast Abuelo's Awakening targeting Fable of the Mirror-Breaker in my graveyard. What happens?",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "cite": [
       "715.3a"
@@ -61340,7 +61340,7 @@
     "id": "lo58",
     "text": "I cast Abuelo's Awakening on Fable of the Mirror-Breaker in my graveyard. What happens?",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -61349,7 +61349,7 @@
     "id": "lo59",
     "text": "Fable of the Mirror-Breaker is in my graveyard and I cast Abuelo's Awakening targeting it. What happens?",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -66387,7 +66387,7 @@
     "id": "w4-89",
     "text": "What happens? I cast Abuelo's Awakening targeting Fable of the Mirror-Breaker in my graveyard.",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": [
@@ -66398,7 +66398,7 @@
     "id": "w4-90",
     "text": "I cast Abuelo's Awakening on the Fable of the Mirror-Breaker in my yard so what happens",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": [
@@ -68310,7 +68310,7 @@
     "id": "r2-52",
     "text": "I control Guide of Souls. A token creature enters. How much energy do I get?",
     "expect": [
-      "If the token is a creature, Guide of Souls triggers: you gain 1 life and get {E}"
+      "Guide of Souls triggers: the token is a creature, so you gain 1 life and get {E}"
     ],
     "cite": [
       "603.6a"
@@ -73266,7 +73266,7 @@
     "id": "w5-103",
     "text": "How much energy do I get? I control Guide of Souls and a token creature enters.",
     "expect": [
-      "If the token is a creature, Guide of Souls triggers: you gain 1 life and get {E}"
+      "Guide of Souls triggers: the token is a creature, so you gain 1 life and get {E}"
     ],
     "notExpect": [],
     "cite": [
@@ -73277,7 +73277,7 @@
     "id": "w5-104",
     "text": "with Guide of Souls out, a token creature enters, how much energy do I get?",
     "expect": [
-      "If the token is a creature, Guide of Souls triggers: you gain 1 life and get {E}"
+      "Guide of Souls triggers: the token is a creature, so you gain 1 life and get {E}"
     ],
     "notExpect": [],
     "cite": [
@@ -77674,7 +77674,7 @@
     "id": "w5-481",
     "text": "What happens? I cast Abuelo's Awakening on Fable of the Mirror-Breaker in my graveyard.",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -77683,7 +77683,7 @@
     "id": "w5-482",
     "text": "I Abuelo's Awakening Fable of the Mirror-Breaker from my graveyard, what happens",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -77692,7 +77692,7 @@
     "id": "w5-483",
     "text": "What happens? Fable of the Mirror-Breaker is in my graveyard and I cast Abuelo's Awakening targeting it.",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -77701,7 +77701,7 @@
     "id": "w5-484",
     "text": "I cast Abuelo's Awakening targeting Fable of the Mirror-Breaker, it's in my graveyard, what happens?",
     "expect": [
-      "Fable returns as a 1/1 Spirit creature with flying"
+      "Fable of the Mirror-Breaker returns as a 1/1 Spirit creature with flying"
     ],
     "notExpect": [],
     "cite": []
@@ -80562,8 +80562,8 @@
     "id": "x3-27",
     "text": "I attack with my face-down disguised Fugitive Codebreaker with two +1/+1 counters on it and my opponent blocks with a 3/3. I turn it face up. How big is it?",
     "expect": [
-      "Fugitive Codebreaker is 4/3: 2/1 face up plus its 2 +1/+1 counters, which stay on it (708.8).",
-      "It's still attacking and still blocked (506.4), now with prowess and haste."
+      "Fugitive Codebreaker is 4/3 (2/1 base, 2 +1/+1 counters) face up: its 2 +1/+1 counters stay on it (708.8), and it's still attacking and still blocked (506.4).",
+      "its \"when this creature is turned face up\" ability waits for, so it triggers now"
     ],
     "notExpect": [
       "can't attack (summoning sick)"
@@ -80583,6 +80583,494 @@
     "cite": [
       "721.2b",
       "721.4"
+    ]
+  },
+  {
+    "id": "l3-1",
+    "text": "I control Marang River Regent. My opponent casts Clone copying Marang River Regent. What happens?",
+    "expect": [
+      "Marang River Regent // Coil and Catch: the battlefield → your hand."
+    ],
+    "notExpect": [
+      "Not modeled: \"return up to two"
+    ],
+    "cite": [
+      "601.2c"
+    ]
+  },
+  {
+    "id": "l3-2",
+    "text": "My opponent controls Sol Ring and Grizzly Bears. I cast Marang River Regent. What happens?",
+    "expect": [
+      "Sol Ring: the battlefield → opponent's hand.",
+      "Grizzly Bears: the battlefield → opponent's hand."
+    ],
+    "cite": [
+      "603.3d"
+    ]
+  },
+  {
+    "id": "l3-3",
+    "text": "I activate Lethal Vapors twice in response to itself and both abilities resolve. How many turns do I skip?",
+    "expect": [
+      "2: you skip your next 2 turns",
+      "has already left the battlefield (an earlier activation destroyed it)"
+    ],
+    "notExpect": [
+      "(not tracked in detail)"
+    ],
+    "cite": [
+      "602.1b",
+      "400.7"
+    ]
+  },
+  {
+    "id": "l3-4",
+    "text": "I control two Myth Unbound. My commander has been cast from the command zone twice. How much extra does it cost?",
+    "expect": [
+      "Nothing extra: the tax is {4} for 2 earlier casts (903.8)"
+    ],
+    "cite": [
+      "903.8"
+    ]
+  },
+  {
+    "id": "l3-5",
+    "text": "Last turn I cast Fugitive Codebreaker face down. Can it attack this turn?",
+    "expect": [
+      "Yes: a face-down creature can attack."
+    ],
+    "notExpect": [
+      "summoning sick"
+    ]
+  },
+  {
+    "id": "l3-6",
+    "text": "Last turn I cast Fugitive Codebreaker face down. I attack with it and my opponent blocks with Grizzly Bears. After blockers are declared I turn it face up. What happens?",
+    "expect": [
+      "Fugitive Codebreaker is turned face up for {5}{R}",
+      "You draw 3 cards.",
+      "Grizzly Bears: the battlefield → opponent's graveyard."
+    ],
+    "cite": [
+      "702.168d",
+      "708.8"
+    ]
+  },
+  {
+    "id": "l3-7",
+    "text": "I control Thing in the Ice with one ice counter on it. My opponent controls Grizzly Bears and a Zombie token. I cast Lightning Bolt targeting my opponent. What happens?",
+    "expect": [
+      "Thing in the Ice transforms into Awoken Horror (7/8).",
+      "Grizzly Bears: the battlefield → opponent's hand.",
+      "Zombie token: the battlefield → opponent's hand."
+    ],
+    "cite": [
+      "701.27a",
+      "701.27f"
+    ]
+  },
+  {
+    "id": "l3-8",
+    "text": "I control Marina Vendrell's Grimoire. I have 5 cards in hand. My opponent casts Lightning Bolt targeting me. How many cards are in my hand?",
+    "expect": [
+      "2: you discard 3 cards (5 → 2 in hand).",
+      "You have 2 cards left in hand, so you don't lose to Marina Vendrell's Grimoire."
+    ],
+    "cite": [
+      "701.9a"
+    ]
+  },
+  {
+    "id": "l3-9",
+    "text": "I control Emet-Selch of the Third Seat and Lightning Bolt is in my graveyard. I cast Shock targeting my opponent. Emet-Selch's trigger targets Lightning Bolt in my graveyard. What happens?",
+    "expect": [
+      "You may cast Lightning Bolt from your graveyard as the trigger resolves, paying {R}"
+    ],
+    "cite": [
+      "608.2g"
+    ]
+  },
+  {
+    "id": "l3-10",
+    "text": "I control Grizzly Bears and Craw Wurm. I cast Prime Speaker Zegana. How many cards do I draw?",
+    "expect": [
+      "7: you draw 7 cards.",
+      "Prime Speaker Zegana enters with 6 +1/+1 counters."
+    ],
+    "cite": [
+      "107.3"
+    ]
+  },
+  {
+    "id": "l3-11",
+    "text": "My opponent controls Grizzly Bears and Serra Angel. I cast Taunt from the Rampart. Can Serra Angel block this turn and does it have to attack?",
+    "expect": [
+      "No: Serra Angel can't block (Taunt from the Rampart's \"until your next turn, those creatures can't block\" says so)."
+    ],
+    "cite": [
+      "701.15a"
+    ]
+  },
+  {
+    "id": "l3-12",
+    "text": "I control Benevolent Hydra with two +1/+1 counters on it. I activate Benevolent Hydra's ability targeting Benevolent Hydra. What happens?",
+    "expect": [
+      "No: Benevolent Hydra's ability says \"another target creature you control\""
+    ],
+    "cite": [
+      "115.1c"
+    ]
+  },
+  {
+    "id": "l3-13",
+    "text": "I control Inti, Seneschal of the Sun and Grizzly Bears. I attack with Grizzly Bears. Does Grizzly Bears have trample?",
+    "expect": [
+      "Yes: Grizzly Bears has trample.",
+      "Grizzly Bears has trample until end of turn."
+    ],
+    "cite": [
+      "603.12"
+    ]
+  },
+  {
+    "id": "l3-14",
+    "text": "My opponent's Spark Double is copying their commander Atraxa, Praetors' Voice and deals 4 combat damage to me. Is that commander damage?",
+    "expect": [
+      "No: a copy of a commander isn't a commander. Spark Double copies Atraxa, Praetors' Voice's copiable values",
+      "so its 4 combat damage isn't commander damage"
+    ],
+    "notExpect": [
+      "legend rule\", a state-based action"
+    ],
+    "cite": [
+      "903.3",
+      "707.9b"
+    ]
+  },
+  {
+    "id": "l3-15",
+    "text": "My Clone is copying my opponent's commander Kenrith, the Returned King and deals 4 combat damage to them. Does that count as commander damage?",
+    "expect": [
+      "No: a copy of a commander isn't a commander. Clone copies Kenrith, the Returned King's copiable values"
+    ],
+    "cite": [
+      "903.3",
+      "707.2"
+    ]
+  },
+  {
+    "id": "l3-16",
+    "text": "I cast Daze on my opponent's Ponder. Can I pay 1?",
+    "expect": [
+      "No: Daze says \"Counter target spell unless its controller pays {1}\", so only the targeted spell's controller (opponent) may pay {1}"
+    ],
+    "cite": [
+      "118.12a"
+    ]
+  },
+  {
+    "id": "l3-17",
+    "text": "My opponent casts Mana Leak on my Ponder. Can I pay?",
+    "expect": [
+      "Yes: Mana Leak says \"Counter target spell unless its controller pays {3}\""
+    ],
+    "cite": [
+      "608.2g"
+    ]
+  },
+  {
+    "id": "l3-18",
+    "text": "I cast Murktide Regent from exile with Ragavan, delving two instants. Does it get counters?",
+    "expect": [
+      "2 instant and sorcery cards were delved, so it enters with 2 +1/+1 counters, a 5/5"
+    ],
+    "cite": [
+      "702.66a"
+    ]
+  },
+  {
+    "id": "l3-19",
+    "text": "I cast Murktide Regent from exile with Ragavan without delving. Does it get counters?",
+    "expect": [
+      "but with no instant and sorcery card delved it enters as a 3/3 with no counters"
+    ],
+    "cite": [
+      "702.66a"
+    ]
+  },
+  {
+    "id": "l3-20",
+    "text": "My opponent casts Solitude targeting my Psychic Frog with two +1/+1 counters on it. Can I discard cards in response to save it?",
+    "expect": [
+      "Yes, you can respond, but it won't save the Frog",
+      "3 now, more for each counter added in response"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "l3-21",
+    "text": "My opponent controls Psychic Frog with a +1/+1 counter on it. I cast Solitude targeting it. Can they discard cards in response to make it bigger?",
+    "expect": [
+      "Yes, they can respond, but it won't save the Frog",
+      "2 now, more for each counter added in response"
+    ],
+    "cite": [
+      "608.2h"
+    ]
+  },
+  {
+    "id": "l3-22",
+    "text": "My opponent controls Guide of Souls and Ajani, Nacatl Pariah. Ajani's cat dies. What happens?",
+    "expect": [
+      "Ajani's ability triggers (one or more other Cats opponent controls died): opponent may exile Ajani",
+      "Guide of Souls doesn't trigger for him"
+    ],
+    "cite": [
+      "712.11a"
+    ]
+  },
+  {
+    "id": "l3-23",
+    "text": "I control Ajani, Nacatl Pariah. Ajani's cat dies. What happens?",
+    "expect": [
+      "Ajani's ability triggers (one or more other Cats you control died): you may exile Ajani and return him transformed as Ajani, Nacatl Avenger, a planeswalker."
+    ],
+    "notExpect": [
+      "Guide of Souls"
+    ],
+    "cite": [
+      "712.11a"
+    ]
+  },
+  {
+    "id": "l3-24",
+    "text": "I cast Abuelo's Awakening targeting Sol Ring in my graveyard. What happens?",
+    "expect": [
+      "Sol Ring returns as a 1/1 Spirit creature with flying in addition to its other types, keeping its colour (still artifact)"
+    ],
+    "notExpect": [
+      "chapter I"
+    ],
+    "cite": [
+      "205.1b"
+    ]
+  },
+  {
+    "id": "l3-25",
+    "text": "I cast Abuelo's Awakening targeting The Eldest Reborn in my graveyard. What happens?",
+    "expect": [
+      "The Eldest Reborn returns as a 1/1 Spirit creature with flying",
+      "so chapter I triggers: each opponent sacrifices a creature or planeswalker of their choice"
+    ],
+    "cite": [
+      "715.2b"
+    ]
+  },
+  {
+    "id": "l3-26",
+    "text": "I control Greasefang, Okiba Boss with a -1/-1 counter on it and Grizzly Bears, and Parhelion II is in my graveyard. What happens?",
+    "expect": [
+      "Greasefang alone has power 3, so you need other creatures too (Grizzly Bears 2)"
+    ],
+    "cite": [
+      "702.122a"
+    ]
+  },
+  {
+    "id": "l3-27",
+    "text": "I control Greasefang, Okiba Boss and Smuggler's Copter is in my graveyard. What happens?",
+    "expect": [
+      "return Smuggler's Copter from your graveyard to the battlefield",
+      "crew it (crew 1) before attackers are declared, e.g. by tapping Greasefang (power 4)"
+    ],
+    "cite": [
+      "507.1"
+    ]
+  },
+  {
+    "id": "l3-28",
+    "text": "I control Puresteel Paladin and two artifacts. How much does equip cost?",
+    "expect": [
+      "Its own equip cost: metalcraft is off with 2 artifacts"
+    ],
+    "notExpect": [
+      "{0}: with metalcraft on"
+    ],
+    "cite": [
+      "207.2c"
+    ]
+  },
+  {
+    "id": "l3-29",
+    "text": "I control Puresteel Paladin, Bonesplitter and one other artifact. How much does equip cost?",
+    "expect": [
+      "each Equipment's own equip ability costs what it says (Bonesplitter {1})"
+    ],
+    "cite": [
+      "207.2c"
+    ]
+  },
+  {
+    "id": "l3-30",
+    "text": "I control Sigarda's Aid and Grizzly Bears. I cast Colossus Hammer. What happens?",
+    "expect": [
+      "Here it's attached to Grizzly Bears, which is 12/12"
+    ],
+    "cite": [
+      "701.3a",
+      "613.4c"
+    ]
+  },
+  {
+    "id": "l3-31",
+    "text": "My opponent controls Sigarda's Aid and Serra Angel. They cast Colossus Hammer. What happens?",
+    "expect": [
+      "Sigarda's Aid lets opponent cast Colossus Hammer at instant speed",
+      "Here it's attached to Serra Angel, which is 14/14"
+    ],
+    "cite": [
+      "701.3a"
+    ]
+  },
+  {
+    "id": "l3-32",
+    "text": "My Grizzly Bears is equipped with Shadowspear and I equip Colossus Hammer to it. Does it have trample and lifelink?",
+    "expect": [
+      "Yes: both Equipment apply. The creature gets +11/+11 in all",
+      "Grizzly Bears is 13/13"
+    ],
+    "cite": [
+      "613.4c"
+    ]
+  },
+  {
+    "id": "l3-33",
+    "text": "My Serra Angel is equipped with Shadowspear and I equip Colossus Hammer to it. Does it have trample and lifelink?",
+    "expect": [
+      "Serra Angel is 15/15",
+      "and loses flying"
+    ],
+    "cite": [
+      "613.1f"
+    ]
+  },
+  {
+    "id": "l3-34",
+    "text": "I control Ocelot Pride. I didn't gain life this turn but I have the city's blessing. What happens at my end step?",
+    "expect": [
+      "Nothing: Ocelot Pride's end step ability has an intervening \"if\""
+    ],
+    "notExpect": [
+      "create a token copy"
+    ],
+    "cite": [
+      "603.4"
+    ]
+  },
+  {
+    "id": "l3-35",
+    "text": "I control Ocelot Pride and I created a Treasure token this turn. I gained life this turn and have the city's blessing. What happens at my end step?",
+    "expect": [
+      "You create a token copy of Treasure token (the city's blessing).",
+      "You create a token copy of Cat token (the city's blessing)."
+    ],
+    "cite": [
+      "702.131c"
+    ]
+  },
+  {
+    "id": "l3-36",
+    "text": "My opponent controls Opposition Agent. I crack a fetchland. What happens?",
+    "expect": [
+      "Opponent controls you while you search: opponent chooses which land you find"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "l3-37",
+    "text": "I control Opposition Agent and Thalia, Guardian of Thraben. My opponent cracks a fetchland. What happens?",
+    "expect": [
+      "You control your opponent while they search: you choose which land they find"
+    ],
+    "cite": [
+      "701.23a"
+    ]
+  },
+  {
+    "id": "l3-38",
+    "text": "My opponent controls Thalia, Guardian of Thraben and Sphere of Resistance. I cast Force of Will by pitching a blue card. How much does it cost?",
+    "expect": [
+      "Pitched, Force of Will costs 1 life, exiling a blue card from its caster's hand, and {2}"
+    ],
+    "cite": [
+      "118.9d"
+    ]
+  },
+  {
+    "id": "l3-39",
+    "text": "I control Thalia, Guardian of Thraben. My opponent has no untapped lands and casts Force of Will by pitching. How much does it cost?",
+    "expect": [
+      "With no mana available it can't be pitched."
+    ],
+    "cite": [
+      "118.9d"
+    ]
+  },
+  {
+    "id": "l3-40",
+    "text": "I control Guide of Souls and I create a Treasure token. What happens?",
+    "expect": [
+      "No: a Treasure token isn't a creature, so Guide of Souls doesn't trigger"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "l3-41",
+    "text": "I control Guide of Souls and I create two 1/1 Soldier tokens. What happens?",
+    "expect": [
+      "Guide of Souls triggers once for each of the 2",
+      "so you gain 2 life and get {E}{E} (2 energy counters)"
+    ],
+    "cite": [
+      "603.6a"
+    ]
+  },
+  {
+    "id": "l3-42",
+    "text": "I cast Abuelo's Awakening with X=2 targeting Sol Ring in my graveyard. What happens?",
+    "expect": [
+      "with 2 additional +1/+1 counters (X is 2), so it's 3/3 (1/1 base, 2 +1/+1 counters)",
+      "Sol Ring enters the battlefield."
+    ],
+    "cite": [
+      "205.1b"
+    ]
+  },
+  {
+    "id": "l3-43",
+    "text": "I cast Abuelo's Awakening targeting Fable of the Mirror-Breaker in my graveyard. How many tokens do I get?",
+    "expect": [
+      "You get a Goblin Shaman token."
+    ],
+    "cite": [
+      "715.3a"
+    ]
+  },
+  {
+    "id": "l3-44",
+    "text": "I control Guide of Souls and I create two 1/1 Soldier tokens. How much energy do I have?",
+    "expect": [
+      "You get {E} (Guide of Souls); you have 2 energy."
+    ],
+    "cite": [
+      "107.14"
     ]
   }
 ]

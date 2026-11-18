@@ -58,66 +58,19 @@ internal object RedteamAsks {
     private fun st(text: String, vararg rules: String) = text to rules.toList()
     private class R(val outcome: String, val steps: List<Pair<String, List<String>>>)
 
-    /** Fixed rulings for named competitive interactions, keyed as SituationParser.redteamRewrites' "rtask r_<key>" asks them. */
+    /** Fixed rulings for named competitive interactions, keyed as SituationParser.redteamRewrites' "rtask r_<key>" asks them.
+     *  (Fourteen more are worked out from the cards and the board in Leftovers3Asks.kt; SituationParser.l3RtAsk asks those.) */
     private fun ruling(key: String, e: EventSpec, state: GameState, def: (CardRef) -> CardDef?): R? {
         val p = state.player(e.player ?: "me")
         return when (key) {
-            // "A clone of my opponent's commander hits me: commander damage?"
-            "clonecmd" -> R("No: a copy of a commander isn't a commander, so its combat damage doesn't count toward the 21 (903.10a). Only the commander card itself is a commander; copying doesn't copy that status.", listOf(
-                st("Commander damage is combat damage dealt by a specific commander; the copy has the copiable values of the commander but not its status as a commander.", "903.10a", "707.2", "903.3")))
-            // "My opponent Dazes my spell: can I pay 1?"
-            "dazepay" -> R("Yes: Daze says \"Counter target spell unless its controller pays {1}\", so as Daze resolves you, the spell's controller, choose whether to pay {1}; you may activate mana abilities to do it. If you pay, your spell isn't countered.", listOf(
-                st("\"Unless its controller pays\" is a choice made as Daze resolves; the player may activate mana abilities then.", "608.2d", "608.2g", "118.12")))
-            // "Murktide from exile (Ragavan)"
-            "murktideexile" -> R("It depends on delve, not on where it's cast from: Murktide Regent enters with a +1/+1 counter for each instant and sorcery card exiled with its delve. Cast from exile with Ragavan's permission you can still delve; with no cards delved it enters as a 3/3 with no counters. Mana value and delve aren't changed by casting it from exile.", listOf(
-                st("Delve applies to the spell wherever it's cast from; the counters count the instant and sorcery cards exiled to pay with delve.", "702.66a", "702.66b", "614.1c")))
-            // "Psychic Frog vs Solitude"
-            "frogsolitude" -> R("Yes, ${if (state.objects.values.firstOrNull { it.def.name == "Psychic Frog" }?.let { state.player(it.controller).you } == true) "you" else "they"} can respond, but it won't save the Frog: discarding puts +1/+1 counters on it and exiling three cards gives it flying, and neither stops Solitude's exile. A bigger Frog only means its controller gains more life: Solitude's controller exiles it and its controller gains life equal to its power, checked as the trigger resolves.", listOf(
-                st("Psychic Frog's discard and graveyard-exile abilities are activated abilities that can be activated in response; Solitude's trigger exiles up to one other target creature and that creature's controller gains life equal to its power, using its power as the ability resolves.", "602.2", "608.2h")))
-            // "Guide of Souls and Ajani, Nacatl Pariah: the Cat dies"
-            "ajaniguide" -> R("Ajani's ability triggers (one or more other Cats you control died): you may exile Ajani and return him transformed as Ajani, Nacatl Avenger, a planeswalker. He's a new object (400.7). Guide of Souls doesn't trigger for him: it triggers when another creature enters, and Ajani, Nacatl Avenger isn't a creature.", listOf(
-                st("Exiled and returned transformed, Ajani is a new object with its back face up.", "712.11a", "400.7"),
-                st("Guide of Souls triggers only on a creature entering.", "603.6a")))
-            // "Abuelo's Awakening on Fable of the Mirror-Breaker"
-            "abuelofable" -> R("Fable returns as a 1/1 Spirit creature with flying in addition to its other types, keeping its colour (still an enchantment Saga), with X +1/+1 counters, and enters with a lore counter, so chapter I triggers and you get a Goblin Shaman token. Being a creature it's summoning sick, and as a Saga it's still sacrificed after its last chapter ability resolves; chapter III exiles it and returns it transformed as Reflection of Kiki-Jiki.", listOf(
-                st("The returned card is an enchantment creature; its Saga abilities still work, and it enters with a lore counter.", "715.3a", "205.1b"),
-                st("Chapter abilities trigger as lore counters are added.", "715.2b", "715.4")))
-            // "Greasefang, Okiba Boss with Parhelion II"
-            "greasefang" -> R("Greasefang triggers at the beginning of combat on your turn, not when it attacks: return Parhelion II from your graveyard to the battlefield; it gains haste, and it returns to your hand at the beginning of your next end step. To attack with it you must crew it (crew 4) before attackers are declared, e.g. by tapping Greasefang (power 4); then Parhelion's attack trigger creates two 4/4 flying, vigilant Angels that are attacking (they weren't declared as attackers, and they enter untapped).", listOf(
-                st("\"At the beginning of combat on your turn\" triggers in the beginning of combat step, before attackers are declared.", "507.1", "603.2"),
-                st("A Vehicle is a creature only once crewed; crew taps creatures with total power N or more.", "702.122a", "301.7")))
-            // "Puresteel Paladin with metalcraft: equip cost"
-            "puresteel" -> R("{0}: with metalcraft on, Puresteel Paladin gives each Equipment you control equip {0} in addition to its own equip ability, and a permanent with more than one equip ability can use either (702.6d). It's still an equip ability, so only as a sorcery and only targeting a creature you control.", listOf(
-                st("A permanent with several equip abilities may activate any of them; equip is activated only as a sorcery.", "702.6a", "702.6d"),
-                st("Metalcraft checks for three or more artifacts you control.", "207.2c")))
-            // "Colossus Hammer with Sigarda's Aid"
-            "sigardahammer" -> R("Sigarda's Aid lets you cast Colossus Hammer at instant speed (Equipment have flash), and when it enters its triggered ability lets you attach it to target creature you control for free, skipping equip {8}. The creature gets +10/+10 and loses flying. It's a triggered ability, so it can be responded to (e.g. by killing the creature).", listOf(
-                st("Sigarda's Aid: \"Whenever an Equipment you control enters, you may attach it to target creature you control.\" Attaching by an effect isn't activating equip.", "603.2", "301.5"),
-                st("Colossus Hammer: equipped creature gets +10/+10 and loses flying (layers 6 and 7c).", "613.1f", "613.4c")))
-            // "Colossus Hammer and Shadowspear on one creature"
-            "hammerspear" -> R("Yes: both Equipment apply. The creature gets +11/+11 in all (+10/+10 from Colossus Hammer, +1/+1 from Shadowspear), has trample and lifelink from Shadowspear, and loses flying. Equip Colossus Hammer costs {8}, as a sorcery.", listOf(
-                st("Each Equipment's static ability applies to the creature it's attached to; power/toughness changes add up in layer 7c, abilities are added and removed in layer 6.", "301.5a", "613.1f", "613.4c")))
             // "Yawgmoth with an undying creature (and Blood Artist): can I loop forever?"
             "yawgloop" -> R("No, not forever: each activation costs 1 life. Sacrifice the undying creature (pay 1 life, draw a card), it returns with a +1/+1 counter; put Yawgmoth's -1/-1 counter on it and the two counters are removed (704.5q), so it can return again next time.${if (state.objects.values.any { it.isOnBattlefield() && it.def.name == "Blood Artist" }) " Each death drains with Blood Artist." else ""} You can repeat it as long as you can pay life and have cards to draw; state the number of times as a shortcut (MTR 4.4).", listOf(
                 st("Undying returns the creature with a +1/+1 counter if it had none; a +1/+1 and a -1/-1 counter on the same permanent are removed as a state-based action.", "702.93a", "704.5q"),
                 st("Paying 1 life is part of the cost, so a player at 0 life can't pay it; a loop is shortcut by naming a number of repetitions.", "119.4", "733.2a")))
-            // "Ocelot Pride: I gained life this turn and have the city's blessing."
-            "ocelotcity" -> R("At your end step you create a 1/1 Cat (you gained life this turn); then, having the city's blessing, you create a token copy of each token you control that entered this turn, that Cat included, since it was created first.", listOf(
-                st("Ocelot Pride's instructions are followed in order: the Cat is created first, so it's one of the tokens that entered this turn when the copies are made.", "608.2c", "702.131c")))
-            // "Opposition Agent: my opponent cracks a fetchland."
-            "oppagent" -> R("You control your opponent while they search: you choose which land they find (or fail to find), it's exiled instead of entering, and you may play it from exile for as long as it stays there, using your own land drop on your turn. Their fetchland is still sacrificed and the life still paid.", listOf(
-                st("Opposition Agent: \"You control your opponents while they're searching their libraries. While an opponent is searching their library, they exile each card they find. You may play those cards for as long as they remain exiled.\"", "701.23a", "724.2"),
-                st("Playing a land from exile is still playing a land: it uses a land drop.", "305.2", "116.2a")))
             // "Yawgmoth: I pay 1 life and sacrifice a creature with undying."
             "yawgonce" -> R("Yawgmoth's ability resolves: put a -1/-1 counter on up to one target creature and draw a card. The undying creature had no +1/+1 counter, so it returns with one. To sacrifice it again and have it return, it must lose that counter first: put the next -1/-1 counter on it and the pair is removed (704.5q).", listOf(
                 st("Paying life and sacrificing are the costs; the counter and the draw happen when the ability resolves.", "602.2", "601.2h"),
                 st("Undying returns the creature with a +1/+1 counter if it had none; a +1/+1 and a -1/-1 counter on the same permanent are removed as a state-based action.", "702.93a", "704.5q")))
-            // "Thalia + Force of Will pitched: cost?"
-            "thaliafow" -> R("Pitched, Force of Will costs 1 life, exiling a blue card from its caster's hand, and {1}: Thalia's tax is a cost increase that applies on top of an alternative cost (118.9d). So its caster needs one mana as well: it can't be pitched with no mana available.", listOf(
-                st("Cost increases are added to whatever cost is being paid, an alternative cost included.", "118.9d", "601.2f")))
-            // "Guide of Souls and a token entering"
-            "guidetoken" -> R("If the token is a creature, Guide of Souls triggers: you gain 1 life and get {E} (an energy counter). A noncreature token (Treasure, Clue, a Role) doesn't trigger it.", listOf(
-                st("Guide of Souls: \"Whenever another creature you control enters, you gain 1 life and get {E}.\" A token creature entering is a creature entering.", "603.6a", "111.1", "122.1")))
             // "I Show and Tell in Omniscience and my opponent puts in Archon of Emeria": one spell a turn, and Show and Tell was one.
             "spelllimit" -> {
                 val lock = state.objects.values.firstOrNull { it.isOnBattlefield() && Regex("""(?i)can't cast more than one spell each turn""").containsMatchIn(it.def.oracleText) } ?: return null
