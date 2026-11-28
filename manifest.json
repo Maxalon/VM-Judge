@@ -1,0 +1,101 @@
+{
+  "fetched_at": "2026-11-28T13:00:10Z",
+  "scryfall": [
+    {
+      "type": "oracle_cards",
+      "updated_at": "2026-11-28T10:01:57.434+00:00",
+      "compressed_size": 25573657
+    },
+    {
+      "type": "unique_artwork",
+      "updated_at": "2026-11-28T10:03:08.744+00:00",
+      "compressed_size": 39386968
+    },
+    {
+      "type": "default_cards",
+      "updated_at": "2026-11-28T10:06:25.596+00:00",
+      "compressed_size": 81334003
+    },
+    {
+      "type": "all_cards",
+      "updated_at": "2026-11-28T10:22:51.819+00:00",
+      "compressed_size": 408152722
+    },
+    {
+      "type": "rulings",
+      "updated_at": "2026-11-28T10:00:31.704+00:00",
+      "compressed_size": 5508481
+    },
+    {
+      "type": "art_tags",
+      "updated_at": "2026-11-28T10:01:27.005+00:00",
+      "compressed_size": 13554765
+    },
+    {
+      "type": "oracle_tags",
+      "updated_at": "2026-11-28T10:00:42.388+00:00",
+      "compressed_size": 6137588
+    }
+  ],
+  "mtgjson": {
+    "date": "2026-11-27",
+    "version": "5.3.0+20261127"
+  },
+  "comprehensive_rules": {
+    "effective": "November 6, 2026",
+    "source": "https://raw.githubusercontent.com/taw/magic-search-engine/master/data/MagicCompRules.txt"
+  },
+  "files": [
+    {
+      "name": "MagicCompRules.txt",
+      "sha256": "d7cdcc11f2b7ab88b1164791dd0cafb6bf0c4e1f0863e0ee6abca2d3a7fb7674",
+      "bytes": 976151,
+      "parts": []
+    },
+    {
+      "name": "judge.db.xz",
+      "sha256": "2f5a51be07993e567d3bf9c84978d4d4207f0dfa6dd6f8d8c000d08855e31d3c",
+      "bytes": 33748028,
+      "parts": []
+    },
+    {
+      "name": "mtgjson-AllPrintings.json.xz",
+      "sha256": "aab1adb54b4fb047e52261737db8001e222420e6bac6ac6c036c86f00806d63c",
+      "bytes": 101297896,
+      "parts": [
+        "mtgjson-AllPrintings.json.xz.part00",
+        "mtgjson-AllPrintings.json.xz.part01"
+      ]
+    },
+    {
+      "name": "mtgjson-meta.json",
+      "sha256": "97627abf4884cfd172bcae8b9205d5ab3968c44909f13fcfc1fb7994222472c1",
+      "bytes": 113,
+      "parts": []
+    },
+    {
+      "name": "scryfall-bulk-manifest.json",
+      "sha256": "406b2f69b5e7369d09758f59ea4f61a1c657ba42a57bbeaa1711c24c55c209c5",
+      "bytes": 3472,
+      "parts": []
+    },
+    {
+      "name": "scryfall-default_cards.jsonl.gz",
+      "sha256": "bb8a0622b9f7346e82807fee9770a0d0a4b3a3eb9f4b9773c5126be719d07d71",
+      "bytes": 81334003,
+      "parts": []
+    },
+    {
+      "name": "scryfall-oracle_cards.jsonl.gz",
+      "sha256": "3aa9eb8c29345fd8e200fbbde67411a117076ae5de1c987977cb0787a82802b1",
+      "bytes": 25573657,
+      "parts": []
+    },
+    {
+      "name": "scryfall-rulings.jsonl.gz",
+      "sha256": "35709f8bcfb1cfb47e110d1b1c6dced19a85ef6083b7ff0e8e33f6793d684f7c",
+      "bytes": 5508481,
+      "parts": []
+    }
+  ]
+}
